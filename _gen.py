@@ -281,7 +281,10 @@ def build_body(node):
     return '\n'.join(out), bb['height'], footer_top
 
 def get_shell():
-    lines = open('index.html', encoding='utf-8').read().split('\n')
+    # _chrome.html is a frozen snapshot of the hand-built homepage chrome
+    # (nav/mega-menu/footer/styles). index.html itself is regenerated from
+    # Figma, so it must NOT be the shell source or the line offsets break.
+    lines = open('_chrome.html', encoding='utf-8').read().split('\n')
     top = '\n'.join(lines[0:179])          # up to </header> (line 179)
     footer = lines[191]                     # line 192 footer
     bottom = '\n'.join(lines[192:])         # </main> + scripts + </body>
