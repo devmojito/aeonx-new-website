@@ -5,7 +5,7 @@ shared chrome (nav/mega-menu/footer/styles) extracted from index.html.
 Usage: python3 _gen.py <NODE_ID> <out_path> "<Page Title>"
 Body nodes are flattened to absolute vw positions, same convention as index.html.
 """
-import json, sys, html, re
+import json, sys, html, re, math
 
 FACTOR = 100 / 1920.0  # vw per px
 IMG_EXPORTS = {}  # imageRef -> (export_node_id, method)
@@ -85,6 +85,26 @@ def blend_css(n, fill=None):
     if fill:
         return BLEND_MAP.get(fill.get('blendMode'))
     return None
+
+def blur_css(n):
+    """Figma blur effects -> CSS. LAYER_BLUR blurs the node itself (`filter`);
+    BACKGROUND_BLUR blurs what's behind it (`backdrop-filter`). Figma's blur
+    radius is ~2x the Gaussian std-dev CSS uses, so halve it. Kept in vw so the
+    blur scales with the viewport like the rest of the absolute layout."""
+    css = ''
+    for e in n.get('effects', []):
+        if e.get('visible', True) is False:
+            continue
+        r = e.get('radius', 0)
+        if not r:
+            continue
+        t = e.get('type')
+        if t == 'LAYER_BLUR':
+            css += f"filter:blur({vw(r/2)});"
+        elif t == 'BACKGROUND_BLUR':
+            b = f"blur({vw(r/2)})"
+            css += f"backdrop-filter:{b};-webkit-backdrop-filter:{b};"
+    return css
 
 def image_fill(fills):
     for f in fills or []:
@@ -208,6 +228,7 @@ def box_style(n, left, top, w, h):
         op = n.get('opacity', 1)
         if op < 1:
             style0 += f"opacity:{op};"
+        style0 += blur_css(n)
         name = (n.get('name') or '').strip()
         low = name.lower()
         generic = (not name) or low.startswith(('rectangle', 'image', 'img', 'imgi_',
@@ -245,6 +266,7 @@ def box_style(n, left, top, w, h):
     op = n.get('opacity', 1)
     if op < 1:
         style += f"opacity:{op};"
+    style += blur_css(n)
     visible = bg or sc or [e for e in n.get('effects', []) if e.get('visible', True)]
     if not visible:
         return None
@@ -257,7 +279,209 @@ def emit_box(n, left, top, w, h):
     klass, extra, style = r
     return f'<div class="{klass}"{extra} style="{style}"></div>'
 
+VEC_UID = [0]
+
+def svg_paint(paints):
+    """Return (paint_ref, defs_markup) for the first visible SOLID/GRADIENT paint."""
+    for f in paints or []:
+        if f.get('visible', True) is False:
+            continue
+        t = f.get('type')
+        if t == 'SOLID':
+            return col(f['color'], f.get('opacity')), ''
+        if t and t.startswith('GRADIENT'):
+            VEC_UID[0] += 1
+            gid = f'vg{VEC_UID[0]}'
+            stops = ''.join(
+                f'<stop offset="{s["position"]*100:.1f}%" stop-color="{col(s["color"])}"/>'
+                for s in f.get('gradientStops', []))
+            h = f.get('gradientHandlePositions') or []
+            if t == 'GRADIENT_RADIAL':
+                defs = f'<radialGradient id="{gid}">{stops}</radialGradient>'
+            else:
+                if len(h) >= 2:
+                    x1, y1, x2, y2 = h[0]['x'], h[0]['y'], h[1]['x'], h[1]['y']
+                else:
+                    x1, y1, x2, y2 = 0, 0, 1, 0
+                defs = (f'<linearGradient id="{gid}" x1="{x1:.3f}" y1="{y1:.3f}" '
+                        f'x2="{x2:.3f}" y2="{y2:.3f}">{stops}</linearGradient>')
+            return f'url(#{gid})', defs
+    return 'none', ''
+
+def emit_vector(n, left, top, w, h):
+    """Render a Figma VECTOR node as inline SVG using its fill/stroke geometry."""
+    fg = n.get('fillGeometry')
+    sg = n.get('strokeGeometry')
+    if (not fg and not sg) or w <= 0 or h <= 0:
+        return ''
+    fill, fdefs = svg_paint(n.get('fills'))
+    stroke, sdefs = svg_paint(n.get('strokes'))
+    paths = []
+    for g in fg or []:
+        d = g.get('path')
+        if not d:
+            continue
+        fr = 'evenodd' if g.get('windingRule') == 'EVENODD' else 'nonzero'
+        paths.append(f'<path d="{d}" fill="{fill}" fill-rule="{fr}"/>')
+    # strokeGeometry is emitted by Figma as filled outline regions
+    for g in sg or []:
+        d = g.get('path')
+        if not d:
+            continue
+        paths.append(f'<path d="{d}" fill="{stroke}"/>')
+    if not paths:
+        return ''
+    defs = fdefs + sdefs
+    defs = f'<defs>{defs}</defs>' if defs else ''
+    style = (f"position:absolute;left:{vw(left)};top:{vw(top)};"
+             f"width:{vw(w)};height:{vw(h)};overflow:visible;")
+    op = n.get('opacity', 1)
+    if op < 1:
+        style += f"opacity:{op};"
+    bl = blend_css(n)
+    if bl:
+        style += f"mix-blend-mode:{bl};"
+    style += blur_css(n)
+    return (f'<svg class="g-vec" role="presentation" aria-hidden="true" '
+            f'style="{style}" viewBox="0 0 {w:.2f} {h:.2f}" '
+            f'preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">'
+            f'{defs}{"".join(paths)}</svg>')
+
+VEC_EXPORTS = set()  # figma node ids to render as SVG assets
+
+def subtree_flags(n):
+    """Scan a node's visible subtree: (has_vector, has_text, has_image)."""
+    has_v = has_t = has_i = False
+    stack = [n]
+    while stack:
+        m = stack.pop()
+        if m is not n and m.get('visible', True) is False:
+            continue
+        mt = m.get('type')
+        if mt == 'TEXT':
+            has_t = True
+        elif mt in ('VECTOR', 'BOOLEAN_OPERATION', 'STAR', 'REGULAR_POLYGON', 'LINE'):
+            has_v = True
+        if image_ref(m.get('fills')):
+            has_i = True
+        if has_t and has_i:
+            break
+        stack.extend(m.get('children', []))
+    return has_v, has_t, has_i
+
+def render_box(n, ox, oy):
+    """Placement box for an exported asset: Figma crops SVG/PNG exports to the
+    node's render bounds (post-clip/effects), which can differ from layout bbox."""
+    rb = n.get('absoluteRenderBounds') or n.get('absoluteBoundingBox')
+    return rb['x']-ox, rb['y']-oy, rb['width'], rb['height']
+
+def emit_vec_asset(n, left, top, w, h):
+    """Render a vector node/cluster as a single exported SVG asset."""
+    if w <= 0 or h <= 0:
+        return ''
+    nid = n['id']
+    VEC_EXPORTS.add(nid)
+    fn = nid.replace(':', '-')
+    style = (f"position:absolute;left:{vw(left)};top:{vw(top)};"
+             f"width:{vw(w)};height:{vw(h)};")
+    op = n.get('opacity', 1)
+    if op < 1:
+        style += f"opacity:{op};"
+    bl = blend_css(n)
+    if bl:
+        style += f"mix-blend-mode:{bl};"
+    style += blur_css(n)
+    return (f'<img class="g-vec" src="/assets/vec/{fn}.svg" data-vec="{nid}" '
+            f'alt="" role="presentation" aria-hidden="true" style="{style}">')
+
 SKIP_NAMES = ('Nav Bar', 'footer', 'section.final-cta')
+
+def solve_true_size(W, H, th):
+    """Given a node's axis-aligned bounding box (W x H) and its rotation `th`
+    (radians), recover the node's true pre-rotation width/height. Figma's dump
+    lacks relativeTransform/size, so we invert AABB = R(th)*(w,h):
+        W = w*cos + h*sin ,  H = w*sin + h*cos
+    """
+    c, s = abs(math.cos(th)), abs(math.sin(th))
+    det = c * c - s * s
+    if abs(det) < 1e-4:            # ~45deg: singular, no clean inverse
+        return W, H
+    w = (W * c - H * s) / det
+    h = (H * c - W * s) / det
+    if w <= 0 or h <= 0:           # numeric fallback
+        return W, H
+    return w, h
+
+def emit_rotated(n, ox, oy):
+    """Reconstruct a rotated raster container (e.g. the tilted logo cards) as a
+    CSS-rotated wrapper whose children are placed in its local (unrotated) frame.
+    Rotation preserves the node's center, so the true-size box is centered on the
+    AABB center; children are inverse-rotated into local coordinates and inherit
+    the wrapper's rotation via CSS (so no per-child transform is needed while the
+    child's own rotation is ~0, which holds for these cards)."""
+    bb = n['absoluteBoundingBox']
+    th = n['rotation']
+    cx = bb['x'] + bb['width'] / 2.0
+    cy = bb['y'] + bb['height'] / 2.0
+    w, h = solve_true_size(bb['width'], bb['height'], th)
+    deg = math.degrees(th)
+    c, s = math.cos(th), math.sin(th)   # R(-th) = [[c, s], [-s, c]]
+    left, top = cx - w / 2.0 - ox, cy - h / 2.0 - oy
+    r = box_style(n, left, top, w, h)
+    if r:
+        klass, extra, style = r
+    else:
+        klass, extra, style = 'g-b', '', (
+            f"position:absolute;left:{vw(left)};top:{vw(top)};"
+            f"width:{vw(w)};height:{vw(h)};")
+    style += f"transform:rotate({deg:.4f}deg);transform-origin:center center;"
+    if n.get('clipsContent'):
+        style += "overflow:hidden;"
+        if 'g-clip' not in klass:
+            klass += ' g-clip'
+    out = [f'<div class="{klass}"{extra} style="{style}">']
+
+    def place(m):
+        if m is not n and m.get('visible', True) is False:
+            return
+        if m is n:
+            for ch in m.get('children', []):
+                place(ch)
+            return
+        mt = m.get('type')
+        mbb = m.get('absoluteBoundingBox')
+        if mbb:
+            dx = (mbb['x'] + mbb['width'] / 2.0) - cx
+            dy = (mbb['y'] + mbb['height'] / 2.0) - cy
+            lxc, lyc = c * dx + s * dy, -s * dx + c * dy    # inverse-rotate
+            lw, lh = solve_true_size(mbb['width'], mbb['height'], th)
+            ll, lt = w / 2.0 + lxc - lw / 2.0, h / 2.0 + lyc - lh / 2.0
+            if mt == 'TEXT':
+                out.append(emit_text(m, ll, lt, lw, lh)); return
+            if mt in ('RECTANGLE', 'ELLIPSE', 'LINE'):
+                out.append(emit_box(m, ll, lt, lw, lh)); return
+            if mt in ('VECTOR', 'BOOLEAN_OPERATION', 'STAR', 'REGULAR_POLYGON'):
+                if m.get('fillGeometry') or m.get('strokeGeometry'):
+                    out.append(emit_vector(m, ll, lt, lw, lh))
+                elif m.get('absoluteRenderBounds'):
+                    out.append(emit_vec_asset(m, ll, lt, lw, lh))
+                return
+            if mt in ('FRAME', 'GROUP', 'INSTANCE', 'COMPONENT'):
+                hv, ht, hi = subtree_flags(m)
+                if hv and not ht and not hi:
+                    if m.get('absoluteRenderBounds'):
+                        out.append(emit_vec_asset(m, ll, lt, lw, lh))
+                    return
+                if m.get('fills') or m.get('strokes'):
+                    b = emit_box(m, ll, lt, lw, lh)
+                    if b:
+                        out.append(b)
+        for ch in m.get('children', []):
+            place(ch)
+
+    place(n)
+    out.append('</div>')
+    return ''.join(out)
 
 def walk(n, ox, oy, out, depth=0):
     if n.get('visible', True) is False:
@@ -275,8 +499,28 @@ def walk(n, ox, oy, out, depth=0):
         h = bb['height'] if t != 'LINE' else max(bb['height'], 1)
         out.append(emit_box(n, bb['x']-ox, bb['y']-oy, bb['width'], h))
         return
-    if t == 'VECTOR':
-        return  # icons handled separately
+    if t in ('VECTOR', 'BOOLEAN_OPERATION', 'STAR', 'REGULAR_POLYGON') and bb:
+        if n.get('fillGeometry') or n.get('strokeGeometry'):
+            out.append(emit_vector(n, bb['x']-ox, bb['y']-oy, bb['width'], bb['height']))
+        elif n.get('absoluteRenderBounds'):  # null render bounds => not visible
+            l, t2, w, h = render_box(n, ox, oy)
+            out.append(emit_vec_asset(n, l, t2, w, h))
+        return
+    # vector-only cluster (icon / decorative line-art): export whole node as one SVG
+    if t in ('FRAME', 'GROUP', 'INSTANCE', 'COMPONENT') and bb:
+        hv, ht, hi = subtree_flags(n)
+        if hv and not ht and not hi:
+            if n.get('absoluteRenderBounds'):
+                l, t2, w, h = render_box(n, ox, oy)
+                out.append(emit_vec_asset(n, l, t2, w, h))
+            return
+        # rotated raster container (tilted logo/text card): the dump drops the
+        # rotation, so reconstruct it in CSS instead of drawing a flat AABB box.
+        rot = n.get('rotation')
+        if (t in ('FRAME', 'INSTANCE', 'COMPONENT') and rot
+                and abs(rot) > 0.01 and (ht or hi)):
+            out.append(emit_rotated(n, ox, oy))
+            return
     # container: draw its own fill (if any) then recurse
     if t in ('FRAME', 'INSTANCE', 'COMPONENT') and bb and n.get('clipsContent'):
         # clipping frame: emit a wrapper with overflow:hidden, children relative to it
@@ -367,6 +611,10 @@ def main():
         exists = os.path.exists(f'assets/gen/{ref}.png')
         eid, method = IMG_EXPORTS[ref]
         print(f'EXPORT {ref} {eid} {method} {"HAVE" if exists else "NEED"}')
+    for nid in sorted(VEC_EXPORTS):
+        fn = nid.replace(':', '-')
+        exists = os.path.exists(f'assets/vec/{fn}.svg')
+        print(f'VEC {nid} {"HAVE" if exists else "NEED"}')
 
 if __name__ == '__main__':
     main()

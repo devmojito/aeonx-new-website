@@ -1,0 +1,52 @@
+<svg width="84" height="84" viewBox="0 0 84 84" fill="none" xmlns="http://www.w3.org/2000/svg">
+
+<g id="What we do/Alliances/Partners Hub/Sap on AWS">
+
+<g id="AWS Section">
+<mask id="path-1-inside-1_4020_9394" fill="white">
+<path d="M-315.5 -1334.7H1604.5V242.1H-315.5V-1334.7Z"/>
+</mask>
+<path d="M-315.5 -1334.7H1604.5V242.1H-315.5V-1334.7Z" fill="#1D2025"/>
+<path d="M1604.5 242.1V241.1H-315.5V242.1V243.1H1604.5V242.1Z" fill="#ECEEF2" mask="url(#path-1-inside-1_4020_9394)"/>
+<g id="div.sap-frame">
+<g clip-path="url(#clip0_4020_9394)">
+<rect x="-55.5" y="-1264.7" width="1400" height="1436.8" fill="#23272E"/>
+<g id="div.diagram">
+<g id="Container">
+<g id="div.node">
+<g id="div.node-box">
+<rect x="6" y="6" width="72" height="72" fill="white" fill-opacity="0.035"/>
+<rect x="6" y="6" width="72" height="72" stroke="#FF6A21" stroke-width="2"/>
+<rect id="::before" x="1" y="1" width="10" height="10" fill="#191817" stroke="#FF6A21" stroke-width="2"/>
+<rect id="span.handle-a" x="1" y="77" width="6" height="6" fill="#191817" stroke="#FF6A21" stroke-width="2"/>
+<rect id="span.handle-b" x="77" y="77" width="6" height="6" fill="#191817" stroke="#FF6A21" stroke-width="2"/>
+<rect id="::after" x="73" y="1" width="10" height="10" fill="#191817" stroke="#FF6A21" stroke-width="2"/>
+<g id="span.icon-card">
+<rect x="21" y="20.7998" width="43" height="43" rx="5.5" fill="white" fill-opacity="0.04"/>
+<rect x="21" y="20.7998" width="43" height="43" rx="5.5" stroke="#FF6A21" stroke-dasharray="3 2"/>
+<g id="Component 1/4" opacity="0.95" clip-path="url(#clip1_4020_9394)">
+<g id="icon-warning">
+<path id="Vector" d="M42.4974 30.2581L55.9557 53.6331H29.0391L42.4974 30.2581Z" stroke="white" stroke-opacity="0.45" stroke-width="1.41667" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_2" d="M42.5 38.0498V45.1331" stroke="white" stroke-opacity="0.45" stroke-width="1.41667" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_3" d="M42.5 49.3831H42.5071" stroke="white" stroke-opacity="0.45" stroke-width="1.41667" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</g>
+</g>
+</g>
+</g>
+</g>
+</g>
+</g>
+<rect x="-55" y="-1264.2" width="1399" height="1435.8" stroke="white" stroke-opacity="0.14"/>
+</g>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_4020_9394">
+<rect x="-55.5" y="-1264.7" width="1400" height="1436.8" fill="white"/>
+</clipPath>
+<clipPath id="clip1_4020_9394">
+<rect width="34" height="34" fill="white" transform="translate(25.5 25.2998)"/>
+</clipPath>
+</defs>
+</svg>

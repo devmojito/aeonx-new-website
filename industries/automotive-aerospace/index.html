@@ -22,27 +22,30 @@ html,body{background:#fff;font-family:'Nunito Sans',-apple-system,sans-serif;-we
 .ax-t{margin:0;white-space:pre-wrap;overflow:visible}
 img{border:0}
 
-/* ---- NAV ---- */
-.ax-nav{position:fixed;top:0;left:0;width:100vw;height:3.4896vw;z-index:1000;
-  background:rgba(255,255,255,.72);backdrop-filter:blur(40px);-webkit-backdrop-filter:blur(40px);
-  box-shadow:0 0.2083vw 1.6667vw rgba(223,63,23,.08);display:flex;justify-content:center}
-.ax-nav__inner{width:75.0vw;max-width:1440px;height:100%;display:flex;align-items:center;padding:0 1.6667vw;gap:0}
-.ax-nav__logo{display:flex;align-items:center;height:1.4062vw;width:3.6979vw;flex:0 0 auto}
-.ax-nav__logo .ax-ico{height:100%;width:100%}
-.ax-nav__links{display:flex;align-items:center;margin-left:6.0417vw;gap:0}
-.ax-nav__link{display:flex;align-items:center;gap:0.3125vw;padding:0 0.7292vw;height:3.4896vw;
-  font-family:'Nunito Sans';font-size:0.8333vw;line-height:1.25vw;text-decoration:none;white-space:nowrap}
-.ax-nav__chev{width:1.0417vw;height:1.0417vw;display:flex;align-items:center;justify-content:center}
-.ax-nav__chev .ax-ico{width:0.5729vw;height:0.3646vw}
-.ax-nav__right{display:flex;align-items:center;gap:0.3125vw;margin-left:auto}
-.ax-nav__icon-btn{width:1.875vw;height:1.875vw;border:1px solid #d5dae2;border-radius:0.4167vw;background:#fff;
-  display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0.3125vw}
-.ax-nav__icon-btn:first-child{width:2.5vw}
-.ax-nav__icon-btn .ax-ico{width:1.1458vw;height:1.1458vw}
-.ax-nav__divider{width:1px;height:1.25vw;background:#e5e7eb;margin:0 0.1562vw}
-.ax-nav__btn{height:1.875vw;border-radius:0.4167vw;font-family:'Nunito Sans';font-weight:600;font-size:0.7292vw;
-  line-height:1.0417vw;padding:0 1.25vw;cursor:pointer;white-space:nowrap;border:1px solid #d5dae2;background:#fff;color:#3a4352}
-.ax-nav__btn--primary{background:#df3f17;color:#fff;border-color:#df3f17}
+/* ---- HEADER (announcement bar + nav row) ---- */
+.ax-header{position:fixed;top:0;left:0;width:100vw;z-index:1000}
+.ax-annc{width:100%;height:2.2917vw;display:flex;align-items:center;justify-content:center;gap:0.4167vw;
+  text-decoration:none;background:linear-gradient(to left,#ff8705 25%,rgba(223,63,23,.92) 90%)}
+.ax-annc__dot{width:0.2083vw;height:0.2083vw;background:#23272e;flex:0 0 auto}
+.ax-annc__txt{margin:0;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:0.7292vw;line-height:1.0417vw;color:#23272e;white-space:nowrap}
+.ax-nav{margin:0.4688vw 1.3021vw 0;height:3.125vw;display:flex;align-items:stretch;
+  background:rgba(255,255,255,.67);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid #d5dae2}
+.ax-nav__logo{display:flex;align-items:center;justify-content:center;width:7.8125vw;flex:0 0 auto}
+.ax-nav__logo .ax-ico{width:4.5313vw;height:1.7188vw}
+.ax-nav__links{display:flex;align-items:center;gap:1.6667vw;padding-left:2.0833vw;width:62.9688vw;height:100%;border-left:1px solid #d5dae2;flex:0 0 auto}
+.ax-nav__link{display:flex;align-items:center;gap:0.7292vw;height:100%;
+  font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:0.7292vw;line-height:1.0417vw;color:#23272e;text-decoration:none;white-space:nowrap}
+.ax-nav__chev{width:0.4167vw;height:0.4167vw;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.ax-nav__chev .ax-ico{width:100%;height:100%}
+.ax-nav__right{display:flex;align-items:center;justify-content:flex-end;gap:0.4167vw;width:26.6146vw;height:100%;
+  border-left:1px solid #d5dae2;padding:0 0.4167vw 0 0.4688vw;flex:0 0 auto}
+.ax-nav__soc{width:1.3021vw;height:1.3021vw;display:flex;align-items:center;justify-content:center;flex:0 0 auto;text-decoration:none}
+.ax-nav__soc .ax-ico{width:100%;height:100%}
+.ax-nav__btn{display:flex;align-items:center;justify-content:center;height:1.7708vw;
+  font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.625vw;line-height:1.0417vw;white-space:nowrap;
+  border:1px solid #d5dae2;background:#fff;color:#23272e;text-decoration:none;cursor:pointer;flex:0 0 auto}
+.ax-nav__btn--talk{width:6.9792vw}
+.ax-nav__btn--primary{width:9.8438vw;background:#df3f17;border-color:#df3f17;color:#fff;font-weight:400}
 .ax-nav__burger{display:none;flex-direction:column;justify-content:center;gap:5px;width:44px;height:44px;
   margin-left:auto;background:none;border:none;cursor:pointer;padding:10px}
 .ax-nav__burger span{display:block;height:2px;width:24px;background:#23272e;border-radius:2px;transition:transform .3s,opacity .3s}
@@ -51,75 +54,55 @@ img{border:0}
 .ax-nav__burger[aria-expanded="true"] span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
 
 @media (max-width:1024px){
-  .ax-nav{height:64px}
-  .ax-nav__inner{width:100%;max-width:none;padding:0 20px}
-  .ax-nav__logo{height:24px;width:64px}
+  .ax-annc{display:none}
+  .ax-nav{margin:0;height:64px;border:none;border-bottom:1px solid #d5dae2;background:rgba(255,255,255,.92);padding:0 20px;align-items:center}
+  .ax-nav__logo{width:auto;justify-content:flex-start}
+  .ax-nav__logo .ax-ico{width:96px;height:36px}
   .ax-nav__burger{display:flex}
   .ax-nav__links,.ax-nav__right{position:absolute;top:64px;left:0;width:100%;flex-direction:column;align-items:flex-start;
-    background:#fff;margin:0;padding:0;gap:0;box-shadow:0 12px 24px rgba(0,0,0,.08);
+    background:#fff;margin:0;padding:0;gap:0;border:none;box-shadow:0 12px 24px rgba(0,0,0,.08);
     max-height:0;overflow:hidden;transition:max-height .35s ease}
-  .ax-nav__right{top:auto}
+  .ax-nav__right{top:auto;justify-content:flex-start}
   .ax-nav.is-open .ax-nav__links{max-height:340px;padding:8px 0}
-  .ax-nav.is-open .ax-nav__right{max-height:240px;padding:8px 20px 20px;gap:12px}
+  .ax-nav.is-open .ax-nav__right{max-height:260px;padding:12px 20px 20px;gap:12px}
   .ax-nav__link{height:auto;padding:14px 20px;font-size:16px;line-height:1.4;width:100%}
-  .ax-nav__chev .ax-ico{width:11px;height:7px}
-  .ax-nav__right{position:static;flex-direction:row;flex-wrap:wrap;width:auto;box-shadow:none;max-height:none;
-    overflow:visible;margin-left:auto}
-  .ax-nav__icon-btn{width:40px;height:40px;border-radius:8px;padding:8px}
-  .ax-nav__icon-btn:first-child{width:40px}
-  .ax-nav__icon-btn .ax-ico{width:20px;height:20px}
-  .ax-nav__divider{height:24px}
-  .ax-nav__btn{height:40px;font-size:14px;line-height:20px;padding:0 18px;border-radius:8px}
-}
-@media (max-width:768px){
-  .ax-nav__right{position:absolute;top:64px;left:0;width:100%;flex-direction:column;align-items:stretch;
-    background:#fff;max-height:0;overflow:hidden;transition:max-height .35s ease;box-shadow:0 12px 24px rgba(0,0,0,.08);margin:0}
-  .ax-nav.is-open .ax-nav__links{box-shadow:none}
-  .ax-nav.is-open .ax-nav__right{max-height:300px;padding:12px 20px 20px;gap:10px}
-  .ax-nav__divider{display:none}
-  .ax-nav__icon-btn,.ax-nav__icon-btn:first-child{width:100%;height:44px;justify-content:flex-start;gap:10px;padding:0 14px}
-  .ax-nav__btn{width:100%}
+  .ax-nav__chev{width:12px;height:12px}
+  .ax-nav__soc{display:none}
+  .ax-nav__btn,.ax-nav__btn--talk,.ax-nav__btn--primary{width:100%;height:44px;font-size:14px}
 }
 
 /* ---- MEGA MENU ---- */
-.ax-mm{position:fixed;left:0;top:3.4896vw;width:100vw;height:18.9063vw;z-index:999;display:none;
-  background:rgba(255,255,255,.72);backdrop-filter:blur(40px);-webkit-backdrop-filter:blur(40px);
-  border-bottom:1px solid #d5dae2;box-shadow:0 1.25vw 2.5vw rgba(35,39,46,.08)}
+/* ---- MEGA MENU ---- */
+.ax-mm{position:fixed;top:5.8854vw;left:0;width:100vw;min-height:18.9583vw;z-index:999;display:none;
+  background:#fff;border-top:0.0521vw solid #d5dae2;box-shadow:0 0.625vw 1.5625vw rgba(16,24,40,.10);box-sizing:border-box}
 .ax-mm.is-open{display:flex}
-.ax-mm__side{width:12.5vw;flex:0 0 auto;border-right:1px solid #d5dae2;padding-top:1.25vw;display:flex;flex-direction:column}
-.ax-mm__si{display:flex;align-items:center;justify-content:space-between;height:2.1875vw;
-  padding:0 1.0937vw 0 1.3542vw;border:none;border-left:2px solid transparent;background:transparent;cursor:pointer;
-  font-family:'Nunito Sans';font-size:0.7292vw;font-weight:600;line-height:1.0417vw;color:#526077;text-align:left}
-.ax-mm__si svg{width:0.8333vw;height:0.8333vw;color:#64748b}
-.ax-mm__si:hover{color:#23272e}
-.ax-mm__si.is-active{color:#f27a45;background:rgba(242,122,69,.13);border-left-color:#f27a45}
-.ax-mm__si.is-active svg{color:#f27a45}
-.ax-mm__body{flex:1 1 auto;padding:1.875vw 0 0 2.7083vw;min-width:0}
+.ax-mm a{text-decoration:none}
+.ax-mm__side{flex:0 0 12.5vw;width:12.5vw;border-right:0.0521vw solid #d5dae2;padding:1.25vw 0;box-sizing:border-box}
+.ax-mm__si{display:flex;align-items:center;justify-content:space-between;width:100%;box-sizing:border-box;
+  padding:0.5729vw 1.25vw 0.5729vw 1.3542vw;border:0;border-left:0.1042vw solid transparent;background:none;cursor:pointer;
+  font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:0.7292vw;line-height:1.0417vw;color:#526077;text-align:left}
+.ax-mm__si:hover{color:#f27a45}
+.ax-mm__si.is-active{background:rgba(242,122,69,.13);border-left-color:#f27a45;color:#f27a45;font-weight:600}
+.ax-mm__si svg{width:0.8333vw;height:0.8333vw;flex:none;display:block}
+.ax-mm__body{flex:1 1 auto;padding:1.875vw 0 1.875vw 2.7083vw;box-sizing:border-box}
 .ax-mm__group{display:none}
-.ax-mm__group.is-active{display:flex;gap:0}
-.ax-mm__col{list-style:none;margin:0;padding:0;width:12.8125vw}
-.ax-mm__col li{margin:0 0 0.625vw}
-.ax-mm__col a{display:block;width:9.8958vw;padding:0.3646vw 0;font-family:'Nunito Sans';font-size:0.7292vw;
-  font-weight:400;line-height:1.0417vw;color:#8695aa;text-decoration:none}
-.ax-mm__col a:hover{color:#df3f17}
-.ax-mm__feat{width:14.0625vw;flex:0 0 auto;border-left:1px solid #d5dae2;padding:1.875vw 1.6667vw 0 1.7708vw}
-.ax-mm__ftag{margin:0;font-family:'Nunito Sans';font-size:0.6771vw;font-weight:600;line-height:1.1458vw;color:#df3f17}
-.ax-mm__fimg{position:relative;margin-top:0.2604vw;width:10.625vw;height:5.9896vw;border-radius:0.3125vw;overflow:hidden;
-  background:linear-gradient(151deg,#400e0a 0%,#b92d15 50%,#f27a45 100%)}
-.ax-mm__fimg span{position:absolute;border-radius:50%;background:rgba(223,63,23,.2);border:1px solid rgba(223,63,23,.28)}
-.ax-mm__ftitle{margin:0.7812vw 0 0;font-family:'Nunito Sans';font-size:0.7292vw;font-weight:600;line-height:1.0417vw;color:#23272e}
-.ax-mm__fdesc{margin:0.2604vw 0 0;font-family:'Nunito Sans';font-size:0.625vw;font-weight:500;line-height:1.0417vw;color:#3a4352}
-.ax-mm__fbtn{display:inline-flex;align-items:center;margin-top:1.7188vw;height:1.6667vw;padding:0 1.25vw;border-radius:0.4167vw;
-  background:#df3f17;color:#fff;font-family:'Nunito Sans';font-size:0.625vw;font-weight:600;text-decoration:none;
-  box-shadow:inset 0 0 0.1042vw 0 #932619}
-.ax-mm__fbtn:hover{background:#c93812}
+.ax-mm__group.is-active{display:flex}
+.ax-mm__col{display:flex;flex-direction:column;width:9.8958vw;padding-right:2.9167vw;box-sizing:border-box}
+.ax-mm__ln{font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:0.7292vw;line-height:1.0417vw;color:#8695aa;padding:0.3646vw 0;white-space:nowrap}
+.ax-mm__ln:hover{color:#df3f17}
+.ax-mm__feat{flex:0 0 14.0625vw;width:14.0625vw;border-left:0.0521vw solid #d5dae2;padding:1.875vw 1.7188vw;box-sizing:border-box}
+.ax-mm__feat-lbl{font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:0.6771vw;line-height:1.1458vw;color:#df3f17}
+.ax-mm__feat-img{margin-top:0.4688vw;width:100%;height:5.9766vw;border-radius:0.3125vw;overflow:hidden;position:relative;
+  background:linear-gradient(135deg,#400E0A 0%,#B92D15 50%,#F27A45 100%)}
+.ax-mm__feat-img i{position:absolute;border-radius:50%;background:rgba(255,255,255,.08)}
+.ax-mm__feat-ttl{margin-top:0.7813vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:0.7292vw;line-height:1.0417vw;color:#23272e}
+.ax-mm__feat-desc{margin-top:0.3125vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.625vw;line-height:0.9375vw;color:#3a4352}
+.ax-mm__feat-btn{display:inline-block;margin-top:0.8333vw;background:#df3f17;color:#fff;font-family:'Nunito Sans',sans-serif;
+  font-weight:600;font-size:0.625vw;line-height:1.6667vw;height:1.6667vw;padding:0 0.9375vw;border-radius:0.4167vw}
 .ax-nav__link.is-open{color:#df3f17 !important;box-shadow:inset 0 -2px 0 #df3f17}
 .ax-nav__link.is-open .ax-nav__chev path{fill:#df3f17}
 @media (max-width:1024px){.ax-mm{display:none !important}}
 
-/* ---- DARK MODE (functional invert; design ships light-only) ---- */
-html.ax-dark{filter:invert(1) hue-rotate(180deg);background:#0e1013}
-html.ax-dark img,html.ax-dark video,html.ax-dark .g-img,html.ax-dark [style*="background-image"]{filter:invert(1) hue-rotate(180deg)}
 /* ---- SEARCH OVERLAY ---- */
 .ax-search{position:fixed;inset:0;z-index:2000;display:none;background:rgba(21,24,30,.55);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
 .ax-search.is-open{display:block}
@@ -148,81 +131,46 @@ html.ax-dark img,html.ax-dark video,html.ax-dark .g-img,html.ax-dark [style*="ba
 <meta property="og:url" content="https://aeonx.digital/industries/automotive-aerospace/">
 </head>
 <body>
-<header class="ax-nav">
-  <div class="ax-nav__inner">
+<header class="ax-header">
+  <a class="ax-annc" href="#" aria-label="Announcement">
+    <span class="ax-annc__dot"></span>
+    <p class="ax-annc__txt">Grep, Embeddings, or Both? Join us for a live webinar on June 30th to see the retrieval harness we built for agents.</p>
+    <span class="ax-annc__dot"></span>
+  </a>
+  <nav class="ax-nav" aria-label="Primary">
     <a class="ax-nav__logo" href="/" aria-label="AeonX Digital"><svg class="ax-ico" viewBox="0 0 71.0 27.0" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"><path transform="matrix(1 0 0 -1 0.0 21.3400)" d="M10.8099 5.80967L9.01968 10.133C8.66226 10.9576 8.39632 11.6062 8.22154 12.0792C8.04645 12.5518 7.89053 13.0569 7.7541 13.5939C7.63967 13.1779 7.50513 12.7637 7.3489 12.3514C7.1933 11.9391 6.89089 11.1845 6.44294 10.0877L4.72092 5.80967L10.8099 5.80967ZM8.9741 15.5004L15.7248 0L13.2163 0L11.5854 3.92605L4.01363 3.92605L2.40604 0L0 0L6.63658 15.5004L8.9741 15.5004Z" fill="#15181e" fill-rule="nonzero"/><path transform="matrix(1 0 0 -1 17.31 21.3400)" d="M6.36843 11.383L6.36843 9.98298L1.634 9.98298L1.634 6.64145L6.02517 6.64145L6.02517 5.24139L1.634 5.24139L1.634 1.38318L6.50266 1.38318L6.50266 0L0 0L0 11.383L6.36843 11.383Z" fill="#15181e" fill-rule="nonzero"/><path transform="matrix(1 0 0 -1 25.7 21.5651)" d="M5.49738 10.5331C4.76525 10.5331 4.11297 10.3399 3.54054 9.95391C2.96811 9.56787 2.52644 9.02335 2.21649 8.32066C1.90654 7.61797 1.75156 6.81933 1.75156 5.92503C1.75156 5.26392 1.84336 4.64156 2.02788 4.05827C2.21209 3.47499 2.47457 2.97642 2.81565 2.56256C3.1564 2.1487 3.55751 1.83205 4.01804 1.61262C4.47919 1.39287 4.98875 1.28347 5.54767 1.28347C6.09527 1.28347 6.59918 1.39444 7.06033 1.61669C7.52117 1.83894 7.92322 2.15839 8.26712 2.57507C8.61071 2.99174 8.87162 3.47374 9.05049 4.02077C9.22935 4.56779 9.31863 5.18045 9.31863 5.85813C9.31863 6.56926 9.22935 7.20942 9.05049 7.77895C8.87162 8.34848 8.61071 8.84143 8.26712 9.2581C7.92322 9.67478 7.51677 9.99143 7.04776 10.208C6.57843 10.4247 6.06132 10.5331 5.49738 10.5331ZM5.51404 11.8163C6.66488 11.8163 7.66074 11.565 8.50163 11.0623C9.34252 10.5594 9.98065 9.86232 10.4167 8.97052C10.8523 8.07903 11.0702 7.05814 11.0702 5.90815C11.0702 5.00822 10.9432 4.193 10.6889 3.46249C10.4346 2.73198 10.0658 2.10838 9.58268 1.59168C9.09953 1.07498 8.51986 0.680496 7.84369 0.408236C7.16784 0.136288 6.40773 0 5.56433 0C4.41915 0 3.42455 0.254135 2.58114 0.762708C1.73742 1.27097 1.09646 1.97366 0.657628 2.87077C0.219108 3.76788 0 4.78035 0 5.90815C0 6.75806 0.122911 7.54265 0.368733 8.26222C0.614242 8.98178 0.971977 9.60538 1.4413 10.133C1.91063 10.661 2.49312 11.0733 3.18847 11.3705C3.88413 11.6678 4.65932 11.8163 5.51404 11.8163Z" fill="#15181e" fill-rule="nonzero"/><path transform="matrix(1 0 0 -1 39.08 21.3400)" d="M9.15109 11.383L9.15109 0L7.03958 0L3.4192 6.17478C2.79333 7.27476 2.36204 8.05402 2.12439 8.51227C1.88674 8.97052 1.67613 9.49409 1.4916 10.083C1.58654 8.83298 1.634 7.39978 1.634 5.7831L1.634 0L0 0L0 11.383L2.22907 11.383L6.12576 4.675C6.91353 3.3137 7.44164 2.22778 7.70978 1.41662C7.63717 2.17776 7.59536 2.68884 7.58404 2.94985C7.57304 3.39434 7.56329 3.8332 7.5548 4.26644C7.54632 4.7 7.54067 4.97196 7.53815 5.08324C7.53532 5.1942 7.53375 5.46927 7.53375 5.90813L7.53375 11.383L9.15109 11.383Z" fill="#15181e" fill-rule="nonzero"/><path transform="matrix(1 0 0 -1 24.68 26.9681)" d="M0.628388 3.83759L0.628388 0.531705L0.950598 0.531705C1.24043 0.531705 1.46048 0.542334 1.61074 0.563902C1.76131 0.585158 1.91251 0.626731 2.06529 0.688622C2.2561 0.772082 2.42113 0.88742 2.55944 1.03465C2.69807 1.18187 2.80432 1.35505 2.87882 1.55354C2.9527 1.75234 2.98948 1.96458 2.98948 2.19121C2.98948 2.36406 2.96496 2.53287 2.91561 2.69728C2.86625 2.8617 2.79521 3.01111 2.70279 3.14584C2.61069 3.28025 2.50003 3.39778 2.37115 3.49812C2.24226 3.59846 2.10049 3.67442 1.94583 3.72568C1.84712 3.76413 1.72075 3.79226 1.56735 3.81039C1.41395 3.82852 1.21025 3.83759 0.956883 3.83759L0.628388 3.83759ZM0 4.37586L0.911933 4.37586C1.22314 4.37586 1.46896 4.36523 1.64971 4.34397C1.94363 4.31615 2.21743 4.24082 2.47111 4.11797C2.72416 3.99513 2.93856 3.83884 3.11396 3.64879C3.28874 3.45874 3.42391 3.2393 3.51979 2.99048C3.61504 2.74167 3.66314 2.46878 3.66314 2.17183C3.66314 1.93489 3.62793 1.70733 3.55845 1.48946C3.48835 1.27159 3.39028 1.07591 3.26328 0.901799C3.13691 0.72769 2.98225 0.576093 2.79961 0.446996C2.61729 0.317586 2.4139 0.216616 2.19071 0.144097C2.07912 0.105649 1.96721 0.0768907 1.85562 0.0575105C1.74402 0.0384429 1.62111 0.0240677 1.48688 0.0143776C1.35265 0.00468753 1.19107 0 1.00215 0L0 0L0 4.37586Z" fill="#e1541d" fill-rule="nonzero"/><path transform="matrix(1 0 0 -1 29.26 26.9681)" d="M0.628702 4.37586L0.628702 0L0 0L0 4.37586L0.628702 4.37586Z" fill="#e1541d" fill-rule="nonzero"/><path transform="matrix(1 0 0 -1 30.82 27.0000)" d="M3.60436 4.22519L3.56223 3.61972C3.38619 3.71787 3.21015 3.78945 3.03412 3.83446C2.85777 3.87916 2.66067 3.90167 2.44126 3.90167C2.09358 3.90167 1.7852 3.83164 1.51706 3.69192C1.2486 3.55188 1.04082 3.35496 0.893706 3.10083C0.746904 2.8467 0.673031 2.56037 0.673031 2.24216C0.673031 1.90926 0.747842 1.61168 0.896845 1.35005C1.04585 1.08841 1.25647 0.886489 1.52901 0.744576C1.80124 0.602663 2.11339 0.531705 2.46515 0.531705C2.64936 0.531705 2.84802 0.561396 3.06053 0.621099L3.06053 1.88675L2.11779 1.88675L2.11779 2.41845L3.6886 2.41845L3.6886 0.201615C3.4673 0.129095 3.25731 0.0772075 3.05864 0.0462618C2.85997 0.015316 2.64998 0 2.42899 0C2.06152 0 1.72893 0.0509484 1.42998 0.153476C1.13166 0.256003 0.873901 0.406667 0.656998 0.605157C0.440096 0.803961 0.27663 1.0409 0.165664 1.3166C0.0550121 1.59198 0 1.90269 0 2.24872C0 2.70353 0.105624 3.09582 0.316868 3.42591C0.528427 3.756 0.816372 4.00638 1.1807 4.17705C1.54441 4.34803 1.95213 4.43337 2.40291 4.43337C2.84111 4.43337 3.24128 4.36398 3.60436 4.22519Z" fill="#e1541d" fill-rule="nonzero"/><path transform="matrix(1 0 0 -1 35.64 26.9681)" d="M0.628388 4.37586L0.628388 0L0 0L0 4.37586L0.628388 4.37586Z" fill="#e1541d" fill-rule="nonzero"/><path transform="matrix(1 0 0 -1 36.92 26.9681)" d="M3.41165 4.37586L3.41165 3.83759L2.03291 3.83759L2.03291 0L1.40483 0L1.40483 3.83759L0 3.83759L0 4.37586L3.41165 4.37586Z" fill="#e1541d" fill-rule="nonzero"/><path transform="matrix(1 0 0 -1 40.41 26.9681)" d="M3.05172 1.64012L2.54624 2.86076C2.44534 3.09333 2.37052 3.2765 2.32086 3.40997C2.2715 3.54344 2.22781 3.68599 2.18915 3.83759C2.15677 3.72037 2.11873 3.60315 2.07472 3.48687C2.03071 3.37059 1.94522 3.1574 1.81885 2.84794L1.33285 1.64012L3.05172 1.64012ZM2.53337 4.37586L4.43927 0L3.73103 0L3.27083 1.10842L1.13292 1.10842L0.679324 0L0 0L1.87354 4.37586L2.53337 4.37586Z" fill="#e1541d" fill-rule="nonzero"/><path transform="matrix(1 0 0 -1 45.44 26.9681)" d="M0.62838 4.37586L0.62838 0.531705L2.48713 0.531705L2.48713 0L0 0L0 4.37586L0.62838 4.37586Z" fill="#e1541d" fill-rule="nonzero"/><path transform="translate(49.25 8.61)" d="M15.7515 0C15.7204 0 15.6893 0 15.6581 0C15.6267 0 15.6113 0.0153163 15.6113 0.0465746L8.92725 6.71648L2.38373 0.0697055C2.33689 0.0234432 2.28219 0 2.21995 0L0.18703 0C0.061918 0 0 0.0697043 0 0.209117C0 0.224433 0 0.247877 0 0.279135C0 0.309768 0.0150882 0.340713 0.0465234 0.371971L7.24484 7.76208L0.70069 14.3388C0.669569 14.3541 0.654167 14.3773 0.654167 14.4085C0.654167 14.4395 0.654167 14.4626 0.654167 14.4782C0.654167 14.633 0.731801 14.7105 0.88772 14.7105L2.92126 14.7105C2.95206 14.7105 2.98319 14.7105 3.01462 14.7105C3.04543 14.7105 3.06901 14.6949 3.08472 14.6642L8.95052 8.7614L14.7233 14.6642C14.739 14.6949 14.7855 14.7105 14.8635 14.7105L16.8498 14.7105C16.9746 14.7105 17.0369 14.633 17.0369 14.4782C17.0369 14.4626 17.0369 14.4395 17.0369 14.4085C17.0369 14.3773 17.0212 14.3541 16.9904 14.3388L10.5399 7.76208L17.8551 0.371971C17.886 0.340713 17.9017 0.309768 17.9017 0.279135C17.9017 0.247877 17.9017 0.224433 17.9017 0.209117C17.9017 0.0697043 17.8394 0 17.7146 0L15.7515 0Z" fill="#15181e" fill-rule="nonzero"/><path transform="translate(51.95 -0.0)" d="M19.0494 13.5149L6.25591 0L0 6.55707L6.32161 2.36657L19.0494 13.5149Z" fill="#e1541d" fill-rule="nonzero"/></svg></a>
-    <nav class="ax-nav__links" id="ax-menu" aria-label="Primary">
-      <a class="ax-nav__link" data-menu="who-we-are" href="/who-we-are" style="font-weight:600;color:#23272e">Who we are<span class="ax-nav__chev"><svg class="ax-ico" viewBox="0 0 20.0 20.0" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"><path transform="translate(7.26 5.34)" d="M7.88542 0.24375L4.65208 3.47708L1.41875 0.24375C1.09375 -0.08125 0.56875 -0.08125 0.24375 0.24375C-0.08125 0.56875 -0.08125 1.09375 0.24375 1.41875L4.06875 5.24375C4.39375 5.56875 4.91875 5.56875 5.24375 5.24375L9.06875 1.41875C9.39375 1.09375 9.39375 0.56875 9.06875 0.24375C8.74375 -0.0729167 8.21042 -0.08125 7.88542 0.24375Z" fill="#526077" fill-rule="nonzero"/></svg></span></a><a class="ax-nav__link" data-menu="what-we-do" href="/what-we-do" style="font-weight:500;color:#526077">What we do<span class="ax-nav__chev"><svg class="ax-ico" viewBox="0 0 20.0 20.0" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"><path transform="translate(7.26 5.34)" d="M7.88542 0.24375L4.65208 3.47708L1.41875 0.24375C1.09375 -0.08125 0.56875 -0.08125 0.24375 0.24375C-0.08125 0.56875 -0.08125 1.09375 0.24375 1.41875L4.06875 5.24375C4.39375 5.56875 4.91875 5.56875 5.24375 5.24375L9.06875 1.41875C9.39375 1.09375 9.39375 0.56875 9.06875 0.24375C8.74375 -0.0729167 8.21042 -0.08125 7.88542 0.24375Z" fill="#526077" fill-rule="nonzero"/></svg></span></a><a class="ax-nav__link" data-menu="insights" href="/insights" style="font-weight:500;color:#526077">Insights<span class="ax-nav__chev"><svg class="ax-ico" viewBox="0 0 20.0 20.0" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"><path transform="translate(7.26 5.34)" d="M7.88542 0.24375L4.65208 3.47708L1.41875 0.24375C1.09375 -0.08125 0.56875 -0.08125 0.24375 0.24375C-0.08125 0.56875 -0.08125 1.09375 0.24375 1.41875L4.06875 5.24375C4.39375 5.56875 4.91875 5.56875 5.24375 5.24375L9.06875 1.41875C9.39375 1.09375 9.39375 0.56875 9.06875 0.24375C8.74375 -0.0729167 8.21042 -0.08125 7.88542 0.24375Z" fill="#526077" fill-rule="nonzero"/></svg></span></a><a class="ax-nav__link" data-menu="investor" href="/investor" style="font-weight:500;color:#526077">Investor<span class="ax-nav__chev"><svg class="ax-ico" viewBox="0 0 20.0 20.0" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"><path transform="translate(7.26 5.34)" d="M7.88542 0.24375L4.65208 3.47708L1.41875 0.24375C1.09375 -0.08125 0.56875 -0.08125 0.24375 0.24375C-0.08125 0.56875 -0.08125 1.09375 0.24375 1.41875L4.06875 5.24375C4.39375 5.56875 4.91875 5.56875 5.24375 5.24375L9.06875 1.41875C9.39375 1.09375 9.39375 0.56875 9.06875 0.24375C8.74375 -0.0729167 8.21042 -0.08125 7.88542 0.24375Z" fill="#526077" fill-rule="nonzero"/></svg></span></a>
-    </nav>
+    <div class="ax-nav__links" id="ax-menu">
+      <a class="ax-nav__link" data-menu="who-we-are" href="/who-we-are">Who we are<span class="ax-nav__chev"><svg class="ax-ico" viewBox="0 0 8 8" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4.0136 6.50943L1.01872 1.51798L7.00847 1.51799L4.0136 6.50943Z" fill="#23272E"/></svg></span></a><a class="ax-nav__link" data-menu="what-we-do" href="/what-we-do">What we do<span class="ax-nav__chev"><svg class="ax-ico" viewBox="0 0 8 8" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4.0136 6.50943L1.01872 1.51798L7.00847 1.51799L4.0136 6.50943Z" fill="#23272E"/></svg></span></a><a class="ax-nav__link" data-menu="insights" href="/insights">Insights<span class="ax-nav__chev"><svg class="ax-ico" viewBox="0 0 8 8" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4.0136 6.50943L1.01872 1.51798L7.00847 1.51799L4.0136 6.50943Z" fill="#23272E"/></svg></span></a><a class="ax-nav__link" data-menu="investor" href="/investor">Investor<span class="ax-nav__chev"><svg class="ax-ico" viewBox="0 0 8 8" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4.0136 6.50943L1.01872 1.51798L7.00847 1.51799L4.0136 6.50943Z" fill="#23272E"/></svg></span></a>
+    </div>
     <div class="ax-nav__right">
-      <button id="ax-search-btn" class="ax-nav__icon-btn" aria-label="Search"><svg class="ax-ico" viewBox="0 0 24.0 24.0" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"><path transform="translate(3.48 3.47)" d="M12.5006 11.0006L11.7106 11.0006L11.4306 10.7306C12.6306 9.33063 13.2506 7.42063 12.9106 5.39063C12.4406 2.61063 10.1206 0.390626 7.32063 0.0506256C3.09063 -0.469374 -0.469374 3.09063 0.0506256 7.32063C0.390626 10.1206 2.61063 12.4406 5.39063 12.9106C7.42063 13.2506 9.33063 12.6306 10.7306 11.4306L11.0006 11.7106L11.0006 12.5006L15.2506 16.7506C15.6606 17.1606 16.3306 17.1606 16.7406 16.7506C17.1506 16.3406 17.1506 15.6706 16.7406 15.2606L12.5006 11.0006ZM6.50063 11.0006C4.01063 11.0006 2.00063 8.99063 2.00063 6.50063C2.00063 4.01063 4.01063 2.00063 6.50063 2.00063C8.99063 2.00063 11.0006 4.01063 11.0006 6.50063C11.0006 8.99063 8.99063 11.0006 6.50063 11.0006Z" fill="#3a4352" fill-rule="nonzero"/></svg></button>
-      <button id="ax-theme-btn" class="ax-nav__icon-btn" aria-label="Toggle theme" aria-pressed="false"><svg class="ax-ico" viewBox="0 0 24.0 24.0" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"><path transform="translate(1.0 1.0)" d="M11 8C12.65 8 14 9.35 14 11C14 12.65 12.65 14 11 14C9.35 14 8 12.65 8 11C8 9.35 9.35 8 11 8ZM11 6C8.24 6 6 8.24 6 11C6 13.76 8.24 16 11 16C13.76 16 16 13.76 16 11C16 8.24 13.76 6 11 6ZM1 12L3 12C3.55 12 4 11.55 4 11C4 10.45 3.55 10 3 10L1 10C0.45 10 0 10.45 0 11C0 11.55 0.45 12 1 12ZM19 12L21 12C21.55 12 22 11.55 22 11C22 10.45 21.55 10 21 10L19 10C18.45 10 18 10.45 18 11C18 11.55 18.45 12 19 12ZM10 1L10 3C10 3.55 10.45 4 11 4C11.55 4 12 3.55 12 3L12 1C12 0.45 11.55 0 11 0C10.45 0 10 0.45 10 1ZM10 19L10 21C10 21.55 10.45 22 11 22C11.55 22 12 21.55 12 21L12 19C12 18.45 11.55 18 11 18C10.45 18 10 18.45 10 19ZM4.99 3.58C4.6 3.19 3.96 3.19 3.58 3.58C3.19 3.97 3.19 4.61 3.58 4.99L4.64 6.05C5.03 6.44 5.67 6.44 6.05 6.05C6.43 5.66 6.44 5.02 6.05 4.64L4.99 3.58ZM17.36 15.95C16.97 15.56 16.33 15.56 15.95 15.95C15.56 16.34 15.56 16.98 15.95 17.36L17.01 18.42C17.4 18.81 18.04 18.81 18.42 18.42C18.81 18.03 18.81 17.39 18.42 17.01L17.36 15.95ZM18.42 4.99C18.81 4.6 18.81 3.96 18.42 3.58C18.03 3.19 17.39 3.19 17.01 3.58L15.95 4.64C15.56 5.03 15.56 5.67 15.95 6.05C16.34 6.43 16.98 6.44 17.36 6.05L18.42 4.99ZM6.05 17.36C6.44 16.97 6.44 16.33 6.05 15.95C5.66 15.56 5.02 15.56 4.64 15.95L3.58 17.01C3.19 17.4 3.19 18.04 3.58 18.42C3.97 18.8 4.61 18.81 4.99 18.42L6.05 17.36Z" fill="#df3f17" fill-rule="nonzero"/></svg></button>
-      <span class="ax-nav__divider"></span>
-      <button class="ax-nav__btn ax-nav__btn--ghost">Contact us</button>
-      <button class="ax-nav__btn ax-nav__btn--primary">Request RFP &rarr;</button>
+      <a class="ax-nav__soc" href="#" aria-label="X"><svg class="ax-ico" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3.3167 3.67148L10.4769 13.2987L3.27148 21.126H4.89313L11.2015 14.2731L16.2984 21.126H21.8169L14.2539 10.9573L20.9606 3.67148H19.339L13.5293 9.98291L8.83523 3.67148H3.3167ZM5.70145 4.87264H8.23668L19.4318 19.9247H16.8966L5.70145 4.87264Z" fill="#23272E"/></svg></a>
+      <a class="ax-nav__soc" href="#" aria-label="LinkedIn"><svg class="ax-ico" viewBox="0 0 25 25" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20.5148 3.39804H5.08217C4.37503 3.39804 3.80048 3.98063 3.80048 4.69581V20.1003C3.80048 20.8155 4.37503 21.398 5.08217 21.398H20.5148C21.2219 21.398 21.8005 20.8155 21.8005 20.1003V4.69581C21.8005 3.98063 21.2219 3.39804 20.5148 3.39804ZM9.24065 18.8266H6.5728V10.2364H9.24467V18.8266H9.24065ZM7.90673 9.06322C7.05092 9.06322 6.35985 8.36813 6.35985 7.51634C6.35985 6.66456 7.05092 5.96947 7.90673 5.96947C8.75851 5.96947 9.4536 6.66456 9.4536 7.51634C9.4536 8.37215 8.76253 9.06322 7.90673 9.06322ZM19.2411 18.8266H16.5732V14.648C16.5732 13.6516 16.5532 12.3699 15.1871 12.3699C13.7969 12.3699 13.584 13.4547 13.584 14.5757V18.8266H10.9161V10.2364H13.4755V11.4096H13.5116C13.8692 10.7346 14.7411 10.0235 16.0389 10.0235C18.7389 10.0235 19.2411 11.8034 19.2411 14.1177V18.8266Z" fill="#23272E"/></svg></a>
+      <a class="ax-nav__soc" href="#" aria-label="YouTube"><svg class="ax-ico" viewBox="0 0 25 25" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M23.5027 6.57044C23.2409 5.58503 22.4699 4.80894 21.4908 4.54557C19.7162 4.06699 12.6004 4.06699 12.6004 4.06699C12.6004 4.06699 5.48452 4.06699 3.7099 4.54557C2.73086 4.80899 1.95977 5.58503 1.69806 6.57044C1.22256 8.35657 1.22256 12.0832 1.22256 12.0832C1.22256 12.0832 1.22256 15.8097 1.69806 17.5959C1.95977 18.5813 2.73086 19.325 3.7099 19.5884C5.48452 20.067 12.6004 20.067 12.6004 20.067C12.6004 20.067 19.7162 20.067 21.4908 19.5884C22.4699 19.325 23.2409 18.5813 23.5027 17.5959C23.9782 15.8097 23.9782 12.0832 23.9782 12.0832C23.9782 12.0832 23.9782 8.35657 23.5027 6.57044ZM10.2731 15.4666V8.69969L16.2205 12.0832L10.2731 15.4666Z" fill="#23272E"/></svg></a>
+      <a class="ax-nav__btn ax-nav__btn--talk" href="/contact-us/">TALK TO US</a>
+      <a class="ax-nav__btn ax-nav__btn--primary" href="/contact-us/">REQUEST A PROPOSAL</a>
     </div>
     <button class="ax-nav__burger" id="ax-burger" aria-label="Open menu" aria-expanded="false" aria-controls="ax-menu">
       <span></span><span></span><span></span>
     </button>
-  </div>
-<div class="ax-mm" id="ax-mm-who-we-are" data-menu="who-we-are" aria-label="Who we are menu">
-<div class="ax-mm__side" role="tablist"><button class="ax-mm__si is-active" type="button" role="tab" aria-selected="true" data-cat="who-we-are-0">Company<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="ax-mm__si" type="button" role="tab" aria-selected="false" data-cat="who-we-are-1">Connect<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
-<div class="ax-mm__body"><div class="ax-mm__group is-active" id="ax-mm-who-we-are-0" data-cat="who-we-are-0"><ul class="ax-mm__col"><li><a href="/who-we-are/foundation">Foundation</a></li><li><a href="/who-we-are/leadership">Leadership</a></li><li><a href="/who-we-are/culture">Culture</a></li></ul></div><div class="ax-mm__group" id="ax-mm-who-we-are-1" data-cat="who-we-are-1"><ul class="ax-mm__col"><li><a href="/who-we-are/career">Career</a></li><li><a href="/contact-us">Contact us</a></li></ul></div></div>
-<div class="ax-mm__feat">
-  <p class="ax-mm__ftag">Featured</p>
-  <div class="ax-mm__fimg" aria-hidden="true"><span style="left:16px;top:-8px;width:88px;height:88px"></span><span style="left:94px;top:-14px;width:120px;height:120px"></span><span style="left:72px;top:57px;width:52px;height:52px"></span></div>
-  <p class="ax-mm__ftitle">AXIOM</p>
-  <p class="ax-mm__fdesc">Production AI for SAP. 70% L1 auto-resolution at Level 4.</p>
-  <a class="ax-mm__fbtn" href="/products/axiom">See AXIOM</a>
-</div></div>
-<div class="ax-mm" id="ax-mm-what-we-do" data-menu="what-we-do" aria-label="What we do menu">
-<div class="ax-mm__side" role="tablist"><button class="ax-mm__si is-active" type="button" role="tab" aria-selected="true" data-cat="what-we-do-0">Services<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="ax-mm__si" type="button" role="tab" aria-selected="false" data-cat="what-we-do-1">Products<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="ax-mm__si" type="button" role="tab" aria-selected="false" data-cat="what-we-do-2">Industries<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="ax-mm__si" type="button" role="tab" aria-selected="false" data-cat="what-we-do-3">Alliances<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
-<div class="ax-mm__body"><div class="ax-mm__group is-active" id="ax-mm-what-we-do-0" data-cat="what-we-do-0"><ul class="ax-mm__col"><li><a href="/services">All Services</a></li><li><a href="/services/rise-with-sap">RISE with SAP</a></li><li><a href="/services/grow-with-sap">GROW with SAP</a></li><li><a href="/services/sap-ams-axiom">SAP AMS AXIOM</a></li><li><a href="/services/aws">AWS</a></li><li><a href="/services/google-cloud">Google Cloud</a></li></ul><ul class="ax-mm__col"><li><a href="/services/multi-cloud-cms">Multi-Cloud CMS</a></li></ul></div><div class="ax-mm__group" id="ax-mm-what-we-do-1" data-cat="what-we-do-1"><ul class="ax-mm__col"><li><a href="/products">All Products</a></li><li><a data-soon="1">Supplier X</a></li><li><a data-soon="1">Order X</a></li><li><a data-soon="1">Xpense</a></li><li><a data-soon="1">LogystiX</a></li><li><a data-soon="1">ManufeX</a></li></ul><ul class="ax-mm__col"><li><a href="/products/axiom">AXIOM AI Platform</a></li></ul></div><div class="ax-mm__group" id="ax-mm-what-we-do-2" data-cat="what-we-do-2"><ul class="ax-mm__col"><li><a href="/industries/manufacturing">Manufacturing</a></li><li><a href="/industries/metals-engineering">Metals &amp; Engineering</a></li><li><a href="/industries/energy-fertiliser-oil-gas">Energy, Fertiliser, Oil &amp; Gas</a></li><li><a href="/industries/automotive-aerospace">Automotive &amp; Aerospace</a></li><li><a href="/industries/textiles-apparel">Textiles &amp; Apparel</a></li><li><a href="/industries/fmcg-distribution">FMCG &amp; Distribution</a></li></ul></div><div class="ax-mm__group" id="ax-mm-what-we-do-3" data-cat="what-we-do-3"><ul class="ax-mm__col"><li><a href="/alliances">All Alliances</a></li><li><a href="/alliances/sap-gold-partner">SAP Gold Partner</a></li><li><a href="/alliances/aws-advanced-tier">AWS Advanced Tier</a></li><li><a href="/alliances/google-cloud-partner">Google Cloud Partner</a></li><li><a data-soon="1">Anthropic</a></li><li><a href="/alliances/sap-signavio">SAP Signavio</a></li></ul></div></div>
-<div class="ax-mm__feat">
-  <p class="ax-mm__ftag">Featured</p>
-  <div class="ax-mm__fimg" aria-hidden="true"><span style="left:16px;top:-8px;width:88px;height:88px"></span><span style="left:94px;top:-14px;width:120px;height:120px"></span><span style="left:72px;top:57px;width:52px;height:52px"></span></div>
-  <p class="ax-mm__ftitle">AXIOM</p>
-  <p class="ax-mm__fdesc">Production AI for SAP. 70% L1 auto-resolution at Level 4.</p>
-  <a class="ax-mm__fbtn" href="/products/axiom">See AXIOM</a>
-</div></div>
-<div class="ax-mm" id="ax-mm-insights" data-menu="insights" aria-label="Insights menu">
-<div class="ax-mm__side" role="tablist"><button class="ax-mm__si is-active" type="button" role="tab" aria-selected="true" data-cat="insights-0">Customer Outcomes<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="ax-mm__si" type="button" role="tab" aria-selected="false" data-cat="insights-1">Editorial<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
-<div class="ax-mm__body"><div class="ax-mm__group is-active" id="ax-mm-insights-0" data-cat="insights-0"><ul class="ax-mm__col"><li><a href="/case-studies">Case Studies</a></li><li><a data-soon="1">Customer References</a></li><li><a data-soon="1">Trust &amp; Security</a></li></ul></div><div class="ax-mm__group" id="ax-mm-insights-1" data-cat="insights-1"><ul class="ax-mm__col"><li><a data-soon="1">Blog</a></li><li><a data-soon="1">Research Reports</a></li><li><a data-soon="1">Newsletter</a></li></ul></div></div>
-<div class="ax-mm__feat">
-  <p class="ax-mm__ftag">Featured</p>
-  <div class="ax-mm__fimg" aria-hidden="true"><span style="left:16px;top:-8px;width:88px;height:88px"></span><span style="left:94px;top:-14px;width:120px;height:120px"></span><span style="left:72px;top:57px;width:52px;height:52px"></span></div>
-  <p class="ax-mm__ftitle">AXIOM</p>
-  <p class="ax-mm__fdesc">Production AI for SAP. 70% L1 auto-resolution at Level 4.</p>
-  <a class="ax-mm__fbtn" href="/products/axiom">See AXIOM</a>
-</div></div>
-<div class="ax-mm" id="ax-mm-investor" data-menu="investor" aria-label="Investor menu">
-<div class="ax-mm__side" role="tablist"><button class="ax-mm__si is-active" type="button" role="tab" aria-selected="true" data-cat="investor-0">Disclosures<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="ax-mm__si" type="button" role="tab" aria-selected="false" data-cat="investor-1">Governance<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
-<div class="ax-mm__body"><div class="ax-mm__group is-active" id="ax-mm-investor-0" data-cat="investor-0"><ul class="ax-mm__col"><li><a href="/investor-relations">Investor Relations</a></li><li><a data-soon="1">Annual Reports</a></li><li><a data-soon="1">Quarterly Reports</a></li><li><a data-soon="1">BSE Disclosures</a></li></ul></div><div class="ax-mm__group" id="ax-mm-investor-1" data-cat="investor-1"><ul class="ax-mm__col"><li><a href="/investor-relations/board-of-directors">Board of Directors</a></li><li><a href="/investor-relations/shareholding-pattern">Shareholding Pattern</a></li><li><a data-soon="1">BRSR</a></li><li><a data-soon="1">Investor Grievances</a></li></ul></div></div>
-<div class="ax-mm__feat">
-  <p class="ax-mm__ftag">Featured</p>
-  <div class="ax-mm__fimg" aria-hidden="true"><span style="left:16px;top:-8px;width:88px;height:88px"></span><span style="left:94px;top:-14px;width:120px;height:120px"></span><span style="left:72px;top:57px;width:52px;height:52px"></span></div>
-  <p class="ax-mm__ftitle">AXIOM</p>
-  <p class="ax-mm__fdesc">Production AI for SAP. 70% L1 auto-resolution at Level 4.</p>
-  <a class="ax-mm__fbtn" href="/products/axiom">See AXIOM</a>
-</div></div>
+  </nav>
+<div class="ax-mm" id="ax-mm-who-we-are" data-menu="who-we-are" aria-label="Who we are menu"><div class="ax-mm__side" role="tablist"><button class="ax-mm__si is-active" data-cat="company" role="tab" aria-selected="true"><span>Company</span><svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="ax-mm__si" data-cat="connect" role="tab" aria-selected="false"><span>Connect</span><svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div><div class="ax-mm__body"><div class="ax-mm__group is-active" data-cat="company"><div class="ax-mm__col"><a class="ax-mm__ln" href="/who-we-are/foundation">FOUNDATION</a><a class="ax-mm__ln" href="/who-we-are/leadership">Leadership</a><a class="ax-mm__ln" href="/who-we-are/culture">Culture</a></div></div><div class="ax-mm__group" data-cat="connect"><div class="ax-mm__col"><a class="ax-mm__ln" href="/who-we-are/career">Career</a><a class="ax-mm__ln" href="/contact-us">Contact us</a></div></div></div><div class="ax-mm__feat"><div class="ax-mm__feat-lbl">Featured</div><div class="ax-mm__feat-img"><i style="width:8.5vw;height:8.5vw;left:-2vw;top:-2.6vw"></i><i style="width:5.6vw;height:5.6vw;left:1.1vw;top:0.9vw"></i></div><div class="ax-mm__feat-ttl">AXIOM</div><div class="ax-mm__feat-desc">Production AI for SAP. 70% L1 auto-resolution at Level 4.</div><a class="ax-mm__feat-btn" href="/products/axiom">See AXIOM</a></div></div>
+<div class="ax-mm" id="ax-mm-what-we-do" data-menu="what-we-do" aria-label="What we do menu"><div class="ax-mm__side" role="tablist"><button class="ax-mm__si is-active" data-cat="services" role="tab" aria-selected="true"><span>Services</span><svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="ax-mm__si" data-cat="products" role="tab" aria-selected="false"><span>Products</span><svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="ax-mm__si" data-cat="industries" role="tab" aria-selected="false"><span>Industries</span><svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="ax-mm__si" data-cat="alliances" role="tab" aria-selected="false"><span>Alliances</span><svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div><div class="ax-mm__body"><div class="ax-mm__group is-active" data-cat="services"><div class="ax-mm__col"><a class="ax-mm__ln" href="/services">All Services</a><a class="ax-mm__ln" href="/services/rise-with-sap">RISE with SAP</a><a class="ax-mm__ln" href="/services/grow-with-sap">GROW with SAP</a><a class="ax-mm__ln" href="/services/sap-ams-axiom">SAP AMS (AXIOM)</a><a class="ax-mm__ln" href="/services/aws">AWS</a><a class="ax-mm__ln" href="/services/google-cloud">Google Cloud</a></div><div class="ax-mm__col"><a class="ax-mm__ln" href="/services/multi-cloud-cms">Multi-Cloud CMS</a></div></div><div class="ax-mm__group" data-cat="products"><div class="ax-mm__col"><a class="ax-mm__ln" href="/products">All Products</a><a class="ax-mm__ln" data-soon="1">Supplier X</a><a class="ax-mm__ln" data-soon="1">Order X</a><a class="ax-mm__ln" data-soon="1">Xpense</a><a class="ax-mm__ln" data-soon="1">LogystiX</a><a class="ax-mm__ln" data-soon="1">ManufeX</a></div><div class="ax-mm__col"><a class="ax-mm__ln" href="/products/axiom">AXIOM AI Platform</a></div></div><div class="ax-mm__group" data-cat="industries"><div class="ax-mm__col"><a class="ax-mm__ln" href="/industries/manufacturing">Manufacturing</a><a class="ax-mm__ln" href="/industries/metals-engineering">Metals &amp; Engineering</a><a class="ax-mm__ln" href="/industries/energy-fertiliser-oil-gas">Energy</a><a class="ax-mm__ln" href="/industries/energy-fertiliser-oil-gas">Fertiliser</a><a class="ax-mm__ln" href="/industries/energy-fertiliser-oil-gas">Oil &amp; Gas</a><a class="ax-mm__ln" href="/industries/automotive-aerospace">Automotive &amp; Aerospace</a><a class="ax-mm__ln" href="/industries/textiles-apparel">Textiles &amp; Apparel</a><a class="ax-mm__ln" href="/industries/fmcg-distribution">FMCG &amp; Distribution</a></div></div><div class="ax-mm__group" data-cat="alliances"><div class="ax-mm__col"><a class="ax-mm__ln" href="/alliances">All Alliances</a><a class="ax-mm__ln" href="/alliances/sap-gold-partner">SAP Gold Partner</a><a class="ax-mm__ln" href="/alliances/aws-advanced-tier">AWS Advanced Tier</a><a class="ax-mm__ln" href="/alliances/google-cloud-partner">Google Cloud Partner</a><a class="ax-mm__ln" data-soon="1">Anthropic</a><a class="ax-mm__ln" href="/alliances/sap-signavio">SAP Signavio</a></div></div></div><div class="ax-mm__feat"><div class="ax-mm__feat-lbl">Featured</div><div class="ax-mm__feat-img"><i style="width:8.5vw;height:8.5vw;left:-2vw;top:-2.6vw"></i><i style="width:5.6vw;height:5.6vw;left:1.1vw;top:0.9vw"></i></div><div class="ax-mm__feat-ttl">AXIOM</div><div class="ax-mm__feat-desc">Production AI for SAP. 70% L1 auto-resolution at Level 4.</div><a class="ax-mm__feat-btn" href="/products/axiom">See AXIOM</a></div></div>
+<div class="ax-mm" id="ax-mm-insights" data-menu="insights" aria-label="Insights menu"><div class="ax-mm__side" role="tablist"><button class="ax-mm__si is-active" data-cat="disclosures" role="tab" aria-selected="true"><span>Disclosures</span><svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="ax-mm__si" data-cat="governance" role="tab" aria-selected="false"><span>Governance</span><svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div><div class="ax-mm__body"><div class="ax-mm__group is-active" data-cat="disclosures"><div class="ax-mm__col"><a class="ax-mm__ln" href="/investor-relations">Investor Relations</a><a class="ax-mm__ln" data-soon="1">Annual Reports</a><a class="ax-mm__ln" data-soon="1">Quarterly Reports</a><a class="ax-mm__ln" data-soon="1">BSE Disclosures</a></div></div><div class="ax-mm__group" data-cat="governance"><div class="ax-mm__col"><a class="ax-mm__ln" href="/investor-relations/board-of-directors">Board of Directors</a><a class="ax-mm__ln" href="/investor-relations/shareholding-pattern">Shareholding Pattern</a><a class="ax-mm__ln" data-soon="1">BRSR</a><a class="ax-mm__ln" data-soon="1">Investor Grievances</a></div></div></div><div class="ax-mm__feat"><div class="ax-mm__feat-lbl">Featured</div><div class="ax-mm__feat-img"><i style="width:8.5vw;height:8.5vw;left:-2vw;top:-2.6vw"></i><i style="width:5.6vw;height:5.6vw;left:1.1vw;top:0.9vw"></i></div><div class="ax-mm__feat-ttl">AXIOM</div><div class="ax-mm__feat-desc">Production AI for SAP. 70% L1 auto-resolution at Level 4.</div><a class="ax-mm__feat-btn" href="/products/axiom">See AXIOM</a></div></div>
+<div class="ax-mm" id="ax-mm-investor" data-menu="investor" aria-label="Investor menu"><div class="ax-mm__side" role="tablist"><button class="ax-mm__si is-active" data-cat="customer-outcomes" role="tab" aria-selected="true"><span>Customer Outcomes</span><svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="ax-mm__si" data-cat="editorial" role="tab" aria-selected="false"><span>Editorial</span><svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div><div class="ax-mm__body"><div class="ax-mm__group is-active" data-cat="customer-outcomes"><div class="ax-mm__col"><a class="ax-mm__ln" href="/insights">Case Studies</a><a class="ax-mm__ln" data-soon="1">Customer References</a><a class="ax-mm__ln" data-soon="1">Trust &amp; Security</a></div></div><div class="ax-mm__group" data-cat="editorial"><div class="ax-mm__col"><a class="ax-mm__ln" data-soon="1">Blog</a><a class="ax-mm__ln" data-soon="1">Research Reports</a><a class="ax-mm__ln" data-soon="1">Newsletter</a></div></div></div><div class="ax-mm__feat"><div class="ax-mm__feat-lbl">Featured</div><div class="ax-mm__feat-img"><i style="width:8.5vw;height:8.5vw;left:-2vw;top:-2.6vw"></i><i style="width:5.6vw;height:5.6vw;left:1.1vw;top:0.9vw"></i></div><div class="ax-mm__feat-ttl">AXIOM</div><div class="ax-mm__feat-desc">Production AI for SAP. 70% L1 auto-resolution at Level 4.</div><a class="ax-mm__feat-btn" href="/products/axiom">See AXIOM</a></div></div>
 </header>
 <main class="ax-page" style="height:295.9375vw">
 <div class="g-b" style="position:absolute;left:0.0000vw;top:257.2917vw;width:100.0000vw;height:38.6458vw;background-color:rgb(255,255,255);"></div>
-<div class="g-b g-clip" style="position:absolute;left:14.5833vw;top:258.5417vw;width:6.3542vw;height:2.0833vw;overflow:hidden;">
-</div>
+<img class="g-vec" src="/assets/vec/5149-15071.svg" data-vec="5149:15071" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:14.5833vw;top:257.2917vw;width:12.6042vw;height:3.6206vw;">
 <div class="g-t" style="position:absolute;left:14.5833vw;top:265.1310vw;width:9.1667vw;height:1.2500vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.9375vw;line-height:1.2500vw;color:rgb(22,22,22);text-align:left;white-space:nowrap;">Sign up to learn more </div>
 <div class="g-t" style="position:absolute;left:14.5833vw;top:267.1102vw;width:15.3125vw;height:2.5000vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.9375vw;line-height:1.2500vw;color:rgb(32,31,29);text-align:left;white-space:pre-wrap;">SAP. Cloud. AI. One accountable partner.<br></div>
 <div class="g-b g-clip" style="position:absolute;left:14.5833vw;top:271.2769vw;width:6.8750vw;height:2.5000vw;background-color:rgb(223,63,23);border-radius:0.4167vw;overflow:hidden;">
 <div class="g-t" style="position:absolute;left:1.4583vw;top:0.7292vw;width:3.9583vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:0.7292vw;line-height:1.0417vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">Get Started</div>
 </div>
-<div class="g-b g-clip" style="position:absolute;left:14.5833vw;top:276.0685vw;width:0.8333vw;height:0.8333vw;overflow:hidden;">
-</div>
+<img class="g-vec" src="/assets/vec/5149-15099.svg" data-vec="5149:15099" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:14.5833vw;top:276.0685vw;width:0.8333vw;height:0.8333vw;opacity:0.6000000238418579;">
 <div class="g-t" style="position:absolute;left:15.7292vw;top:275.4435vw;width:16.1979vw;height:2.0833vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:pre-wrap;">Ahmedabad · Mumbai · Bhuj<br>· Dehradun · Delhi NCR · Kolkata · Dubai</div>
-<div class="g-b g-clip" style="position:absolute;left:14.5833vw;top:278.0477vw;width:0.8333vw;height:0.8333vw;overflow:hidden;">
-</div>
+<img class="g-vec" src="/assets/vec/5149-15105.svg" data-vec="5149:15105" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:14.5833vw;top:278.0477vw;width:0.8333vw;height:0.8333vw;opacity:0.6000000238418579;">
 <div class="g-t" style="position:absolute;left:15.7292vw;top:277.9435vw;width:6.0938vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:center;white-space:nowrap;">+91 93219 87561</div>
-<div class="g-b g-clip" style="position:absolute;left:14.5833vw;top:279.5060vw;width:0.8333vw;height:0.8333vw;overflow:hidden;">
-</div>
+<img class="g-vec" src="/assets/vec/5149-15109.svg" data-vec="5149:15109" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:14.5833vw;top:279.5060vw;width:0.8333vw;height:0.8333vw;opacity:0.6000000238418579;">
 <div class="g-t" style="position:absolute;left:15.7292vw;top:279.4019vw;width:6.6667vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:center;white-space:nowrap;">sales@aeonx.digital</div>
 <div class="g-b" style="position:absolute;left:34.0104vw;top:257.2917vw;width:53.4896vw;height:35.1042vw;box-sizing:border-box;border:0.0521vw solid rgb(236,238,242);"></div>
 <div class="g-t" style="position:absolute;left:35.5208vw;top:259.5312vw;width:4.8958vw;height:0.9375vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:0.8333vw;line-height:0.9375vw;color:rgb(22,22,22);text-align:left;white-space:nowrap;letter-spacing:-0.0083vw;">Who we are</div>
@@ -273,38 +221,38 @@ html.ax-dark img,html.ax-dark video,html.ax-dark .g-img,html.ax-dark [style*="ba
 <div class="g-t" style="position:absolute;left:87.4479vw;top:293.6458vw;width:2.7604vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:center;white-space:nowrap;">Sitemap</div>
 <div class="g-b" style="position:absolute;left:0.0000vw;top:292.3958vw;width:100.0000vw;height:0.0521vw;background:linear-gradient(90deg, rgb(236,238,242) 0.0%);"></div>
 <div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:161.2500vw;width:100.0000vw;height:74.5833vw;background-color:rgb(32,65,108);box-sizing:border-box;border:0.0521vw solid rgb(213,218,226);overflow:hidden;">
-<div class="g-b" style="position:absolute;left:0.0000vw;top:0.0000vw;width:100.0000vw;height:74.5833vw;background:linear-gradient(90deg, rgb(255,255,255) 0.0%, rgba(255,255,255,0.000) 50.0%, rgb(255,255,255) 100.0%);box-sizing:border-box;border:0.0521vw solid rgba(255,255,255,0.240);"></div>
+<img class="g-vec" src="/assets/vec/4593-12646.svg" data-vec="4593:12646" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:0.0000vw;top:0.0000vw;width:100.0000vw;height:74.5833vw;">
 <div class="g-t" style="position:absolute;left:12.5000vw;top:5.2083vw;width:75.0000vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:0.7292vw;line-height:1.0417vw;color:rgb(242,122,69);text-align:center;white-space:nowrap;">BEYOND AMS</div>
 <h2 class="g-t" style="position:absolute;left:12.5000vw;top:7.2917vw;width:75.0000vw;height:2.8125vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:2.8125vw;line-height:2.8125vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;letter-spacing:-0.0563vw;">The same architecture runs across the SaaS suite.</h2>
-<div class="g-b g-clip" style="position:absolute;left:13.5417vw;top:13.2292vw;width:40.9375vw;height:28.7500vw;background:linear-gradient(90deg, rgba(255,255,255,0.600) 0.0%, rgba(255,255,255,0.100) 20.0%, rgba(255,255,255,0.100) 50.0%, rgba(255,255,255,0.100) 80.0%, rgba(255,255,255,0.600) 100.0%);border-radius:0.4167vw;box-sizing:border-box;border:0.0521vw solid rgba(255,255,255,0.120);overflow:hidden;">
+<div class="g-b g-clip" style="position:absolute;left:13.5417vw;top:13.2292vw;width:40.9375vw;height:28.7500vw;background:linear-gradient(90deg, rgba(255,255,255,0.600) 0.0%, rgba(255,255,255,0.100) 20.0%, rgba(255,255,255,0.100) 50.0%, rgba(255,255,255,0.100) 80.0%, rgba(255,255,255,0.600) 100.0%);border-radius:0.4167vw;box-sizing:border-box;border:0.0521vw solid rgba(255,255,255,0.120);backdrop-filter:blur(0.5208vw);-webkit-backdrop-filter:blur(0.5208vw);overflow:hidden;">
 <div class="g-t" style="position:absolute;left:1.2500vw;top:1.2500vw;width:38.4375vw;height:1.8750vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:1.2500vw;line-height:1.8750vw;color:rgb(255,255,255);text-align:left;white-space:nowrap;">Xpense</div>
 <div class="g-t" style="position:absolute;left:1.2500vw;top:3.7500vw;width:38.4375vw;height:2.5000vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:0.8333vw;line-height:1.2500vw;color:rgb(213,218,226);text-align:left;white-space:pre-wrap;">AI policy &amp; fraud detection, line-level OCR, exception routing — applied to every claim before the ledger sees it.</div>
 <div class="g-b g-clip" style="position:absolute;left:1.2500vw;top:7.5000vw;width:38.4375vw;height:20.0000vw;overflow:hidden;">
 <div class="g-img" data-ref="4b76799a523d25d52a18e7be7ca74773d1d1dc60" role="presentation" aria-hidden="true" style="position:absolute;left:0.0000vw;top:0.0000vw;width:39.1667vw;height:24.8438vw;background-image:url(/assets/gen/4b76799a523d25d52a18e7be7ca74773d1d1dc60.png);background-size:cover;background-position:center;background-repeat:no-repeat;"></div>
 </div>
 </div>
-<div class="g-b g-clip" style="position:absolute;left:55.7292vw;top:13.2292vw;width:30.7292vw;height:28.7500vw;background:linear-gradient(90deg, rgba(255,255,255,0.600) 0.0%, rgba(255,255,255,0.100) 20.0%, rgba(255,255,255,0.100) 50.0%, rgba(255,255,255,0.100) 80.0%, rgba(255,255,255,0.600) 100.0%);border-radius:0.4167vw;box-sizing:border-box;border:0.0521vw solid rgba(255,255,255,0.120);overflow:hidden;">
+<div class="g-b g-clip" style="position:absolute;left:55.7292vw;top:13.2292vw;width:30.7292vw;height:28.7500vw;background:linear-gradient(90deg, rgba(255,255,255,0.600) 0.0%, rgba(255,255,255,0.100) 20.0%, rgba(255,255,255,0.100) 50.0%, rgba(255,255,255,0.100) 80.0%, rgba(255,255,255,0.600) 100.0%);border-radius:0.4167vw;box-sizing:border-box;border:0.0521vw solid rgba(255,255,255,0.120);backdrop-filter:blur(0.5208vw);-webkit-backdrop-filter:blur(0.5208vw);overflow:hidden;">
 <div class="g-t" style="position:absolute;left:1.2500vw;top:1.2500vw;width:28.2292vw;height:1.8750vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:1.2500vw;line-height:1.8750vw;color:rgb(255,255,255);text-align:left;white-space:nowrap;">OrderX</div>
 <div class="g-t" style="position:absolute;left:1.2500vw;top:3.7500vw;width:28.2292vw;height:2.5000vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:0.8333vw;line-height:1.2500vw;color:rgb(213,218,226);text-align:left;white-space:pre-wrap;">AI-powered defect image analysis for warranty claims. Auto-approval workflows. Scheme eligibility computation.<br></div>
 <div class="g-b g-clip" style="position:absolute;left:1.2500vw;top:7.5000vw;width:28.2292vw;height:20.0000vw;overflow:hidden;">
 <div class="g-img" data-ref="52836712c278dde123795442897b1817e9ff311c" role="presentation" aria-hidden="true" style="position:absolute;left:0.0000vw;top:0.0000vw;width:29.0104vw;height:21.6667vw;background-image:url(/assets/gen/52836712c278dde123795442897b1817e9ff311c.png);background-size:cover;background-position:center;background-repeat:no-repeat;border-radius:0.8333vw;"></div>
 </div>
 </div>
-<div class="g-b g-clip" style="position:absolute;left:13.5417vw;top:43.2292vw;width:23.4896vw;height:26.1458vw;background:linear-gradient(90deg, rgba(255,255,255,0.600) 0.0%, rgba(255,255,255,0.100) 20.0%, rgba(255,255,255,0.100) 50.0%, rgba(255,255,255,0.100) 80.0%, rgba(255,255,255,0.600) 100.0%);border-radius:0.4167vw;box-sizing:border-box;border:0.0521vw solid rgba(255,255,255,0.120);overflow:hidden;">
+<div class="g-b g-clip" style="position:absolute;left:13.5417vw;top:43.2292vw;width:23.4896vw;height:26.1458vw;background:linear-gradient(90deg, rgba(255,255,255,0.600) 0.0%, rgba(255,255,255,0.100) 20.0%, rgba(255,255,255,0.100) 50.0%, rgba(255,255,255,0.100) 80.0%, rgba(255,255,255,0.600) 100.0%);border-radius:0.4167vw;box-sizing:border-box;border:0.0521vw solid rgba(255,255,255,0.120);backdrop-filter:blur(0.5208vw);-webkit-backdrop-filter:blur(0.5208vw);overflow:hidden;">
 <div class="g-t" style="position:absolute;left:1.2500vw;top:1.2500vw;width:20.9896vw;height:1.8750vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:1.2500vw;line-height:1.8750vw;color:rgb(255,255,255);text-align:left;white-space:nowrap;">ManufeX</div>
 <div class="g-t" style="position:absolute;left:1.2500vw;top:3.7500vw;width:20.9896vw;height:3.7500vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:0.8333vw;line-height:1.2500vw;color:rgb(213,218,226);text-align:left;white-space:pre-wrap;">FlexMRP™ optimisation, predictive maintenance from telemetry, in-process quality SPC — all agentic, all native.</div>
 <div class="g-b g-clip" style="position:absolute;left:1.2500vw;top:8.7500vw;width:20.9896vw;height:16.1458vw;overflow:hidden;">
 <div class="g-img" data-ref="ce026c26de2d9a19aefd01db5981152315435c77" role="presentation" aria-hidden="true" style="position:absolute;left:0.0000vw;top:0.0000vw;width:26.5909vw;height:16.8750vw;background-image:url(/assets/gen/ce026c26de2d9a19aefd01db5981152315435c77.png);background-size:cover;background-position:center;background-repeat:no-repeat;"></div>
 </div>
 </div>
-<div class="g-b g-clip" style="position:absolute;left:38.2812vw;top:43.2292vw;width:23.4896vw;height:26.1458vw;background:linear-gradient(90deg, rgba(255,255,255,0.600) 0.0%, rgba(255,255,255,0.100) 20.0%, rgba(255,255,255,0.100) 50.0%, rgba(255,255,255,0.100) 80.0%, rgba(255,255,255,0.600) 100.0%);border-radius:0.4167vw;box-sizing:border-box;border:0.0521vw solid rgba(255,255,255,0.120);overflow:hidden;">
+<div class="g-b g-clip" style="position:absolute;left:38.2812vw;top:43.2292vw;width:23.4896vw;height:26.1458vw;background:linear-gradient(90deg, rgba(255,255,255,0.600) 0.0%, rgba(255,255,255,0.100) 20.0%, rgba(255,255,255,0.100) 50.0%, rgba(255,255,255,0.100) 80.0%, rgba(255,255,255,0.600) 100.0%);border-radius:0.4167vw;box-sizing:border-box;border:0.0521vw solid rgba(255,255,255,0.120);backdrop-filter:blur(0.5208vw);-webkit-backdrop-filter:blur(0.5208vw);overflow:hidden;">
 <div class="g-t" style="position:absolute;left:1.2500vw;top:1.2500vw;width:20.9896vw;height:1.8750vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:1.2500vw;line-height:1.8750vw;color:rgb(255,255,255);text-align:left;white-space:nowrap;">SupplierX</div>
 <div class="g-t" style="position:absolute;left:1.2500vw;top:3.7500vw;width:20.9896vw;height:3.7500vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:0.8333vw;line-height:1.2500vw;color:rgb(213,218,226);text-align:left;white-space:pre-wrap;">AI clause review, AI invoice booking with 3-way match, supplier risk scoring — all running on the same Claude + MCP foundation.</div>
 <div class="g-b g-clip" style="position:absolute;left:1.2500vw;top:8.7500vw;width:20.9896vw;height:16.1458vw;overflow:hidden;">
 <div class="g-img" data-ref="92bb9424cb6ffe08c85a4848ecacb0b6968f03c6" role="presentation" aria-hidden="true" style="position:absolute;left:0.0000vw;top:0.0000vw;width:29.3229vw;height:21.2500vw;background-image:url(/assets/gen/92bb9424cb6ffe08c85a4848ecacb0b6968f03c6.png);background-size:cover;background-position:center;background-repeat:no-repeat;"></div>
 </div>
 </div>
-<div class="g-b g-clip" style="position:absolute;left:63.0208vw;top:43.2292vw;width:23.4896vw;height:26.1458vw;background:linear-gradient(90deg, rgba(255,255,255,0.600) 0.0%, rgba(255,255,255,0.100) 20.0%, rgba(255,255,255,0.100) 50.0%, rgba(255,255,255,0.100) 80.0%, rgba(255,255,255,0.600) 100.0%);border-radius:0.4167vw;box-sizing:border-box;border:0.0521vw solid rgba(255,255,255,0.120);overflow:hidden;">
+<div class="g-b g-clip" style="position:absolute;left:63.0208vw;top:43.2292vw;width:23.4896vw;height:26.1458vw;background:linear-gradient(90deg, rgba(255,255,255,0.600) 0.0%, rgba(255,255,255,0.100) 20.0%, rgba(255,255,255,0.100) 50.0%, rgba(255,255,255,0.100) 80.0%, rgba(255,255,255,0.600) 100.0%);border-radius:0.4167vw;box-sizing:border-box;border:0.0521vw solid rgba(255,255,255,0.120);backdrop-filter:blur(0.5208vw);-webkit-backdrop-filter:blur(0.5208vw);overflow:hidden;">
 <div class="g-t" style="position:absolute;left:1.2500vw;top:1.2500vw;width:20.9896vw;height:1.8750vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:1.2500vw;line-height:1.8750vw;color:rgb(255,255,255);text-align:left;white-space:nowrap;">LogystiX</div>
 <div class="g-t" style="position:absolute;left:1.2500vw;top:3.7500vw;width:20.9896vw;height:3.7500vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:0.8333vw;line-height:1.2500vw;color:rgb(213,218,226);text-align:left;white-space:pre-wrap;">Predictive ETA, route deviation alerts, detention agent, document agent — every truck and rake has an agent watching it.<br></div>
 <div class="g-b g-clip" style="position:absolute;left:1.2500vw;top:8.7500vw;width:20.9896vw;height:16.1458vw;overflow:hidden;">
@@ -317,7 +265,7 @@ html.ax-dark img,html.ax-dark video,html.ax-dark .g-img,html.ax-dark [style*="ba
 <h2 class="g-t" style="position:absolute;left:6.2500vw;top:121.1458vw;width:87.5000vw;height:3.5417vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:2.9167vw;line-height:3.5417vw;color:rgb(35,39,46);text-align:center;white-space:nowrap;">What we&#x27;ve delivered in Automotive &amp; Aerospace.</h2>
 <div class="g-b g-clip" style="position:absolute;left:15.8854vw;top:127.9427vw;width:31.9271vw;height:23.5417vw;border-radius:0.8333vw;box-sizing:border-box;border:0.1042vw solid rgb(236,238,242);overflow:hidden;">
 <div class="g-img g-clip" data-ref="47364c9ec35b378e6d3b73999661ef988c54e493" role="presentation" aria-hidden="true" style="position:absolute;left:0.0000vw;top:0.0000vw;width:31.9271vw;height:23.5417vw;background-image:url(/assets/gen/47364c9ec35b378e6d3b73999661ef988c54e493.png);background-size:cover;background-position:center;background-repeat:no-repeat;overflow:hidden;">
-<div class="g-b" style="position:absolute;left:0.8333vw;top:16.4844vw;width:30.2604vw;height:6.4583vw;background-color:rgba(255,255,255,0.220);border-radius:0.8333vw;"></div>
+<div class="g-b" style="position:absolute;left:0.8333vw;top:16.4844vw;width:30.2604vw;height:6.4583vw;background-color:rgba(255,255,255,0.220);border-radius:0.8333vw;backdrop-filter:blur(0.5208vw);-webkit-backdrop-filter:blur(0.5208vw);"></div>
 <div class="g-t" style="position:absolute;left:1.6667vw;top:17.5260vw;width:14.8438vw;height:1.2500vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:0.8333vw;line-height:1.2500vw;color:rgb(255,255,255);text-align:left;white-space:nowrap;">MANUFACTURING · SAP AMS · AXIOM</div>
 <div class="g-t" style="position:absolute;left:1.6667vw;top:19.8177vw;width:28.5938vw;height:2.2917vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:1.8750vw;line-height:2.2917vw;color:rgb(213,218,226);text-align:left;white-space:nowrap;">Lorem ipsum</div>
 </div>
@@ -350,26 +298,15 @@ html.ax-dark img,html.ax-dark video,html.ax-dark .g-img,html.ax-dark [style*="ba
 <div class="g-b g-clip" style="position:absolute;left:13.5417vw;top:79.2708vw;width:72.9167vw;height:29.1667vw;overflow:hidden;">
 <div class="g-t" style="position:absolute;left:3.2031vw;top:10.1042vw;width:17.9688vw;height:1.8750vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:1.2500vw;line-height:1.8750vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">COSTUMER IN THIS VERTICAL</div>
 <h2 class="g-t" style="position:absolute;left:3.1250vw;top:13.2812vw;width:31.2500vw;height:6.2500vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:2.5000vw;line-height:3.1250vw;color:rgb(255,255,255);text-align:left;white-space:pre-wrap;">The plants we&#x27;ve already shipped for.</h2>
-<div class="g-b g-clip" style="position:absolute;left:40.8081vw;top:8.0990vw;width:11.1207vw;height:5.1857vw;background-color:rgb(255,255,255);border-radius:0.5208vw;box-sizing:border-box;border:0.0521vw solid rgba(43,99,168,0.160);box-shadow:0.0000vw 0.9375vw 1.0417vw rgba(43,99,168,0.200);overflow:hidden;">
-<div class="g-img" data-ref="e110291f5b3e4c34ab944b328013f599ddac0b6b" role="img" aria-label="Logo Image" style="position:absolute;left:2.7802vw;top:1.2964vw;width:5.5604vw;height:2.5928vw;background-image:url(/assets/gen/e110291f5b3e4c34ab944b328013f599ddac0b6b.png);background-size:cover;background-position:center;background-repeat:no-repeat;"></div>
+<div class="g-b g-clip" style="position:absolute;left:40.9685vw;top:9.3660vw;width:10.8000vw;height:2.6517vw;background-color:rgb(255,255,255);border-radius:0.5208vw;box-sizing:border-box;border:0.0521vw solid rgba(43,99,168,0.160);box-shadow:0.0000vw 0.9375vw 1.0417vw rgba(43,99,168,0.200);transform:rotate(14.0000deg);transform-origin:center center;overflow:hidden;"><div class="g-img" data-ref="e110291f5b3e4c34ab944b328013f599ddac0b6b" role="img" aria-label="Logo Image" style="position:absolute;left:2.7000vw;top:0.6629vw;width:5.4000vw;height:1.3258vw;background-image:url(/assets/gen/e110291f5b3e4c34ab944b328013f599ddac0b6b.png);background-size:cover;background-position:center;background-repeat:no-repeat;"></div></div>
+<div class="g-b g-clip" style="position:absolute;left:57.6345vw;top:11.4493vw;width:10.8000vw;height:2.6517vw;background-color:rgb(255,255,255);border-radius:0.5208vw;box-sizing:border-box;border:0.0521vw solid rgba(43,99,168,0.160);box-shadow:0.0000vw 0.9375vw 1.0417vw rgba(43,99,168,0.200);transform:rotate(14.0000deg);transform-origin:center center;overflow:hidden;"><div class="g-img" data-ref="4b8a67201aca35f32469c363556c76089318b08e" role="img" aria-label="Logo Image" style="position:absolute;left:2.2968vw;top:0.6629vw;width:6.2065vw;height:1.3258vw;background-image:url(/assets/gen/4b8a67201aca35f32469c363556c76089318b08e.png);background-size:cover;background-position:center;background-repeat:no-repeat;"></div></div>
+<div class="g-b g-clip" style="position:absolute;left:49.3016vw;top:10.4076vw;width:10.8000vw;height:2.6517vw;background-color:rgb(255,255,255);border-radius:0.5208vw;box-sizing:border-box;border:0.0521vw solid rgba(43,99,168,0.160);box-shadow:0.0000vw 0.9375vw 1.0417vw rgba(43,99,168,0.200);transform:rotate(14.0000deg);transform-origin:center center;overflow:hidden;"><div class="g-img" data-ref="f2f9a63c63eb2d4bcc9580a36afc97a24bb2231b" role="img" aria-label="Logo Image" style="position:absolute;left:1.8669vw;top:0.6629vw;width:7.0662vw;height:1.3258vw;background-image:url(/assets/gen/f2f9a63c63eb2d4bcc9580a36afc97a24bb2231b.png);background-size:cover;background-position:center;background-repeat:no-repeat;"></div></div>
+<div class="g-b g-clip" style="position:absolute;left:38.8321vw;top:15.0951vw;width:10.8000vw;height:2.6517vw;background-color:rgb(255,255,255);border-radius:0.5208vw;box-sizing:border-box;border:0.0521vw solid rgba(43,99,168,0.160);box-shadow:0.0000vw 0.9375vw 1.0417vw rgba(43,99,168,0.200);transform:rotate(14.0000deg);transform-origin:center center;overflow:hidden;"><div class="g-img" data-ref="33523f6f7242e4c488adbdd1ddde71dc204fbf61" role="img" aria-label="Logo Image" style="position:absolute;left:2.7000vw;top:0.6629vw;width:5.4000vw;height:1.3258vw;background-image:url(/assets/gen/33523f6f7242e4c488adbdd1ddde71dc204fbf61.png);background-size:cover;background-position:center;background-repeat:no-repeat;"></div></div>
+<div class="g-b g-clip" style="position:absolute;left:55.5506vw;top:17.1785vw;width:10.8000vw;height:2.6517vw;background-color:rgb(246,247,249);border-radius:0.5208vw;transform:rotate(14.0000deg);transform-origin:center center;overflow:hidden;"><div class="g-t" style="position:absolute;left:2.7669vw;top:1.0054vw;width:5.2663vw;height:0.6408vw;font-family:'Inter',sans-serif;font-weight:600;font-size:1.2500vw;line-height:1.5000vw;color:rgb(223,63,23);text-align:center;white-space:nowrap;letter-spacing:-0.0250vw;">+ More</div></div>
+<div class="g-b g-clip" style="position:absolute;left:47.2172vw;top:16.1368vw;width:10.8000vw;height:2.6517vw;background-color:rgb(255,255,255);border-radius:0.5208vw;box-sizing:border-box;border:0.0521vw solid rgba(43,99,168,0.160);box-shadow:0.0000vw 0.9375vw 1.0417vw rgba(43,99,168,0.200);transform:rotate(14.0000deg);transform-origin:center center;overflow:hidden;"><div class="g-img" data-ref="a2620d005e374f4753ab101a5f16e863c0518f47" role="img" aria-label="Logo Image" style="position:absolute;left:2.7000vw;top:0.6629vw;width:5.4000vw;height:1.3258vw;background-image:url(/assets/gen/a2620d005e374f4753ab101a5f16e863c0518f47.png);background-size:cover;background-position:center;background-repeat:no-repeat;"></div></div>
 </div>
-<div class="g-b g-clip" style="position:absolute;left:57.4742vw;top:10.1823vw;width:11.1207vw;height:5.1857vw;background-color:rgb(255,255,255);border-radius:0.5208vw;box-sizing:border-box;border:0.0521vw solid rgba(43,99,168,0.160);box-shadow:0.0000vw 0.9375vw 1.0417vw rgba(43,99,168,0.200);overflow:hidden;">
-<div class="g-img" data-ref="4b8a67201aca35f32469c363556c76089318b08e" role="img" aria-label="Logo Image" style="position:absolute;left:2.3889vw;top:1.1989vw;width:6.3429vw;height:2.7879vw;background-image:url(/assets/gen/4b8a67201aca35f32469c363556c76089318b08e.png);background-size:cover;background-position:center;background-repeat:no-repeat;"></div>
-</div>
-<div class="g-b g-clip" style="position:absolute;left:49.1412vw;top:9.1406vw;width:11.1207vw;height:5.1857vw;background-color:rgb(255,255,255);border-radius:0.5208vw;box-sizing:border-box;border:0.0521vw solid rgba(43,99,168,0.160);box-shadow:0.0000vw 0.9375vw 1.0417vw rgba(43,99,168,0.200);overflow:hidden;">
-<div class="g-img" data-ref="f2f9a63c63eb2d4bcc9580a36afc97a24bb2231b" role="img" aria-label="Logo Image" style="position:absolute;left:1.9718vw;top:1.0949vw;width:7.1771vw;height:2.9959vw;background-image:url(/assets/gen/f2f9a63c63eb2d4bcc9580a36afc97a24bb2231b.png);background-size:cover;background-position:center;background-repeat:no-repeat;"></div>
-</div>
-<div class="g-b g-clip" style="position:absolute;left:38.6718vw;top:13.8281vw;width:11.1207vw;height:5.1857vw;background-color:rgb(255,255,255);border-radius:0.5208vw;box-sizing:border-box;border:0.0521vw solid rgba(43,99,168,0.160);box-shadow:0.0000vw 0.9375vw 1.0417vw rgba(43,99,168,0.200);overflow:hidden;">
-<div class="g-img" data-ref="33523f6f7242e4c488adbdd1ddde71dc204fbf61" role="img" aria-label="Logo Image" style="position:absolute;left:2.7802vw;top:1.2964vw;width:5.5604vw;height:2.5928vw;background-image:url(/assets/gen/33523f6f7242e4c488adbdd1ddde71dc204fbf61.png);background-size:cover;background-position:center;background-repeat:no-repeat;"></div>
-</div>
-<div class="g-b g-clip" style="position:absolute;left:55.3902vw;top:15.9115vw;width:11.1207vw;height:5.1857vw;background-color:rgb(246,247,249);border-radius:0.5208vw;overflow:hidden;">
-<div class="g-t" style="position:absolute;left:2.9279vw;top:1.6449vw;width:5.2649vw;height:1.8958vw;font-family:'Inter',sans-serif;font-weight:600;font-size:1.2500vw;line-height:1.5000vw;color:rgb(223,63,23);text-align:center;white-space:nowrap;letter-spacing:-0.0250vw;">+ More</div>
-</div>
-<div class="g-b g-clip" style="position:absolute;left:47.0569vw;top:14.8698vw;width:11.1207vw;height:5.1857vw;background-color:rgb(255,255,255);border-radius:0.5208vw;box-sizing:border-box;border:0.0521vw solid rgba(43,99,168,0.160);box-shadow:0.0000vw 0.9375vw 1.0417vw rgba(43,99,168,0.200);overflow:hidden;">
-<div class="g-img" data-ref="a2620d005e374f4753ab101a5f16e863c0518f47" role="img" aria-label="Logo Image" style="position:absolute;left:2.7802vw;top:1.2964vw;width:5.5604vw;height:2.5928vw;background-image:url(/assets/gen/a2620d005e374f4753ab101a5f16e863c0518f47.png);background-size:cover;background-position:center;background-repeat:no-repeat;"></div>
-</div>
-</div>
-<div class="g-b" style="position:absolute;left:0.0000vw;top:75.6250vw;width:100.0000vw;height:39.5833vw;background:linear-gradient(90deg, rgb(255,255,255) 0.0%, rgba(255,255,255,0.000) 50.0%, rgb(255,255,255) 100.0%);"></div>
+<img class="g-vec" src="/assets/vec/5182-10431.svg" data-vec="5182:10431" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:0.0000vw;top:75.6250vw;width:100.0000vw;height:39.5833vw;">
+<img class="g-vec" src="/assets/vec/4690-13488.svg" data-vec="4690:13488" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:84.8958vw;top:28.8923vw;width:15.1042vw;height:36.0412vw;">
 <div class="g-b" style="position:absolute;left:0.0000vw;top:50.0000vw;width:100.0000vw;height:25.6250vw;box-sizing:border-box;border:0.0521vw solid rgb(213,218,226);"></div>
 <div class="g-b" style="position:absolute;left:87.5521vw;top:50.0000vw;width:0.0000vw;height:25.6250vw;box-sizing:border-box;border:0.0521vw solid rgb(236,238,242);"></div>
 <div class="g-b" style="position:absolute;left:12.4479vw;top:50.0000vw;width:0.0000vw;height:25.6250vw;box-sizing:border-box;border:0.0521vw solid rgb(236,238,242);"></div>
@@ -378,25 +315,28 @@ html.ax-dark img,html.ax-dark video,html.ax-dark .g-img,html.ax-dark [style*="ba
 <div class="g-b" style="position:absolute;left:1.0417vw;top:1.6667vw;width:15.3646vw;height:3.5417vw;box-sizing:border-box;border:0.0521vw solid rgb(223,63,23);"></div>
 <div class="g-t" style="position:absolute;left:2.2917vw;top:1.6667vw;width:14.1146vw;height:3.5417vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:2.9167vw;line-height:3.5417vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">100%</div>
 <div class="g-t" style="position:absolute;left:2.2917vw;top:13.5417vw;width:14.1146vw;height:1.4583vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.9375vw;line-height:1.4583vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">EDI uptime on BTP</div>
+<img class="g-vec" src="/assets/vec/4690-14357.svg" data-vec="4690:14357" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:11.2500vw;top:0.0000vw;width:6.1979vw;height:7.1366vw;opacity:0.46000000834465027;">
 </div>
 <div class="g-b g-clip" style="position:absolute;left:18.4896vw;top:0.0000vw;width:17.4479vw;height:16.6667vw;background-color:rgb(246,247,249);border-radius:0.6250vw;overflow:hidden;">
 <div class="g-b" style="position:absolute;left:1.0417vw;top:1.6667vw;width:15.3646vw;height:3.5417vw;box-sizing:border-box;border:0.0521vw solid rgb(223,63,23);"></div>
 <div class="g-t" style="position:absolute;left:2.2917vw;top:1.6667vw;width:14.1146vw;height:3.5417vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:2.9167vw;line-height:3.5417vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Zero</div>
 <div class="g-t" style="position:absolute;left:2.2917vw;top:13.5417vw;width:14.1146vw;height:1.4583vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.9375vw;line-height:1.4583vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">AS9100 audit findings</div>
+<img class="g-vec" src="/assets/vec/4690-14351.svg" data-vec="4690:14351" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:11.2500vw;top:0.0000vw;width:6.1979vw;height:7.1366vw;opacity:0.46000000834465027;">
 </div>
 <div class="g-b g-clip" style="position:absolute;left:36.9792vw;top:0.0000vw;width:17.4479vw;height:16.6667vw;background-color:rgb(246,247,249);border-radius:0.6250vw;overflow:hidden;">
 <div class="g-b" style="position:absolute;left:1.0417vw;top:1.6667vw;width:15.3646vw;height:3.5417vw;box-sizing:border-box;border:0.0521vw solid rgb(223,63,23);"></div>
 <div class="g-t" style="position:absolute;left:2.2917vw;top:1.6667vw;width:14.1146vw;height:3.5417vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:2.9167vw;line-height:3.5417vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">#1</div>
 <div class="g-t" style="position:absolute;left:2.2917vw;top:13.5417vw;width:14.1146vw;height:1.4583vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.9375vw;line-height:1.4583vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">ERP replacing two</div>
+<img class="g-vec" src="/assets/vec/4690-14354.svg" data-vec="4690:14354" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:11.2500vw;top:0.0000vw;width:6.1979vw;height:7.1366vw;opacity:0.46000000834465027;">
 </div>
 <div class="g-b g-clip" style="position:absolute;left:55.4688vw;top:0.0000vw;width:17.4479vw;height:16.6667vw;background-color:rgb(246,247,249);border-radius:0.6250vw;overflow:hidden;">
 <div class="g-b" style="position:absolute;left:1.0417vw;top:1.6667vw;width:15.3646vw;height:3.5417vw;box-sizing:border-box;border:0.0521vw solid rgb(223,63,23);"></div>
 <h2 class="g-t" style="position:absolute;left:2.2917vw;top:1.6667vw;width:14.1146vw;height:3.5417vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:2.9167vw;line-height:3.5417vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">18 wks</h2>
 <div class="g-t" style="position:absolute;left:2.0833vw;top:13.5417vw;width:14.3229vw;height:1.4583vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.9375vw;line-height:1.4583vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Typical go-live timeline</div>
+<img class="g-vec" src="/assets/vec/4690-14348.svg" data-vec="4690:14348" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:11.2500vw;top:0.0000vw;width:6.1979vw;height:7.1366vw;opacity:0.46000000834465027;">
 </div>
 </div>
-<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:100.0000vw;height:50.0000vw;overflow:hidden;">
-</div>
+<img class="g-vec" src="/assets/vec/4593-12188.svg" data-vec="4593:12188" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:0.0000vw;top:0.0000vw;width:100.0000vw;height:50.0000vw;">
 <div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:44.7917vw;width:100.0000vw;height:5.2083vw;overflow:hidden;">
 </div>
 <h1 class="g-t" style="position:absolute;left:18.4896vw;top:18.4375vw;width:63.0208vw;height:7.5000vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:3.7500vw;line-height:3.7500vw;color:rgb(35,39,46);text-align:center;white-space:pre-wrap;">Dual industries. One S/4HANA.<br><span style="position:static;color:rgb(82,96,119)">Both standards respected.<br></span></h1>
@@ -407,12 +347,12 @@ html.ax-dark img,html.ax-dark video,html.ax-dark .g-img,html.ax-dark [style*="ba
 <div class="g-b g-clip" style="position:absolute;left:50.6250vw;top:30.5208vw;width:10.3646vw;height:2.5000vw;background-color:rgb(255,255,255);border-radius:0.4167vw;overflow:hidden;">
 <div class="g-t" style="position:absolute;left:1.6146vw;top:0.6250vw;width:7.1354vw;height:1.2500vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:0.8333vw;line-height:1.2500vw;color:rgb(223,63,23);text-align:center;white-space:nowrap;">Talk to a Specialist</div>
 </div>
+<img class="g-vec" src="/assets/vec/4690-13496.svg" data-vec="4690:13496" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:0.0000vw;top:0.0000vw;width:25.2842vw;height:27.2634vw;">
 <div class="g-b" style="position:absolute;left:0.0000vw;top:235.8333vw;width:100.0000vw;height:21.4583vw;background-color:rgb(255,255,255);box-sizing:border-box;border:0.0521vw solid rgb(236,238,242);"></div>
-<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:235.8333vw;width:100.0000vw;height:21.4583vw;overflow:hidden;">
-</div>
-<div class="g-b" style="position:absolute;left:12.5000vw;top:241.9196vw;width:0.0521vw;height:18.0729vw;background:linear-gradient(90deg, rgb(255,0,0) 0.0%, rgb(227,180,23) 19.7%, rgb(255,255,255) 40.9%, rgb(25,216,230) 64.9%, rgb(100,25,230) 86.5%, rgb(230,25,175) 99.0%);"></div>
+<img class="g-vec" src="/assets/vec/5175-13996.svg" data-vec="5175:13996" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:0.0000vw;top:235.8333vw;width:100.0000vw;height:21.4583vw;">
+<img class="g-vec" src="/assets/vec/5175-14010.svg" data-vec="5175:14010" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:12.5000vw;top:246.3802vw;width:75.0000vw;height:10.9375vw;">
 <div class="g-b g-clip" style="position:absolute;left:12.5000vw;top:235.8333vw;width:75.0000vw;height:21.4583vw;overflow:hidden;">
-<div class="g-b" style="position:absolute;left:0.0000vw;top:0.0000vw;width:75.0000vw;height:21.4583vw;background-color:rgba(255,255,255,0.060);"></div>
+<div class="g-b" style="position:absolute;left:0.0000vw;top:0.0000vw;width:75.0000vw;height:21.4583vw;background-color:rgba(255,255,255,0.060);backdrop-filter:blur(2.6042vw);-webkit-backdrop-filter:blur(2.6042vw);"></div>
 </div>
 <div class="g-b" style="position:absolute;left:12.5000vw;top:235.8333vw;width:75.0000vw;height:21.4583vw;box-sizing:border-box;border:0.0521vw solid rgb(236,238,242);"></div>
 <h2 class="g-t" style="position:absolute;left:14.4010vw;top:238.6198vw;width:44.0104vw;height:15.8854vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:3.3333vw;line-height:3.7500vw;color:rgb(35,39,46);text-align:left;white-space:pre-wrap;">One S/4HANA.<br>Zero compromises on either standard.</h2>
@@ -492,16 +432,8 @@ html.ax-dark img,html.ax-dark video,html.ax-dark .g-img,html.ax-dark [style*="ba
 })();
 </script>
 <script>
-/* ---- THEME TOGGLE + SITE SEARCH ---- */
+/* ---- SITE SEARCH ---- */
 (function(){
-  var root=document.documentElement;
-  try{var saved=localStorage.getItem('ax-theme');
-    if(saved==='dark'||(!saved&&window.matchMedia&&matchMedia('(prefers-color-scheme:dark)').matches))root.classList.add('ax-dark');}catch(e){}
-  var tb=document.getElementById('ax-theme-btn');
-  function sync(){if(tb)tb.setAttribute('aria-pressed',root.classList.contains('ax-dark')?'true':'false');}
-  sync();
-  if(tb)tb.addEventListener('click',function(){var d=root.classList.toggle('ax-dark');try{localStorage.setItem('ax-theme',d?'dark':'light');}catch(e){}sync();});
-
   var sb=document.getElementById('ax-search-btn');
   if(sb){
     var seen={},items=[];
@@ -531,6 +463,42 @@ html.ax-dark img,html.ax-dark video,html.ax-dark .g-img,html.ax-dark [style*="ba
     ov.addEventListener('click',function(e){if(e.target===ov)closeS();});
     document.addEventListener('keydown',function(e){if((e.key==='k'||e.key==='K')&&(e.metaKey||e.ctrlKey)){e.preventDefault();openS();}});
   }
+})();
+</script>
+<script>
+/* ---- CTA BUTTONS: make exported (non-anchor) button pills & links clickable ---- */
+(function(){
+  var ROUTES={
+    'talk to us':'/contact-us/','contact us':'/contact-us/','request a proposal':'/contact-us/',
+    'get started':'/contact-us/','sign up to learn more':'/contact-us/',
+    'explore sap services':'/services/','explore aws services':'/services/aws/',
+    'explore all services':'/services/','explore services':'/services/',
+    'explore supplierx':'/products/axiom/','explore orderx':'/products/axiom/',
+    'explore xpense':'/products/axiom/','explore logystix':'/products/axiom/',
+    'explore manufex':'/products/axiom/','explore aeonxiq':'/products/axiom/'
+  };
+  function norm(s){return (s||'').replace(/[\u2192]/g,'').replace(/\s+/g,' ').trim().toLowerCase();}
+  function make(el,href){
+    if(el.dataset.cta)return; el.dataset.cta='1';
+    el.style.cursor='pointer'; el.setAttribute('role','link'); el.setAttribute('tabindex','0');
+    function go(){location.href=href;}
+    el.addEventListener('click',go);
+    el.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();go();}});
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('.g-b'),function(el){
+    if(el.closest('a'))return;
+    var st=el.getAttribute('style')||'';
+    if(!(/background-color/.test(st)&&/border-radius/.test(st)))return;
+    var t=el.querySelector('.g-t'); if(!t)return;
+    var n=norm(t.textContent);
+    if(!n||n.length>40||el.querySelectorAll('.g-t').length>1)return;
+    make(el, ROUTES[n]||'#');
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('.g-t'),function(t){
+    if(t.closest('a')||t.closest('.g-b')||t.dataset.cta)return;
+    var n=norm(t.textContent);
+    if(n==='explore'||/^explore .+/.test(n)) make(t, ROUTES[n]||'#');
+  });
 })();
 </script>
 </body>

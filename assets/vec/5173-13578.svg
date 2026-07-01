@@ -1,0 +1,38 @@
+<svg width="1920" height="412" viewBox="0 0 1920 412" fill="none" xmlns="http://www.w3.org/2000/svg">
+
+<g id="What we do/Rise with SAP">
+
+<g id="section.final-cta">
+<mask id="path-1-outside-1_4020_9394" maskUnits="userSpaceOnUse" x="0" y="0" width="1920" height="413" fill="black">
+<rect fill="white" width="1920" height="413"/>
+<path d="M0 0H1920V412H0V0Z"/>
+</mask>
+<path d="M0 0H1920V412H0V0Z" fill="white"/>
+<path d="M1920 412V411H0V412V413H1920V412Z" fill="#ECEEF2" mask="url(#path-1-outside-1_4020_9394)"/>
+<g id="image" clip-path="url(#clip0_4020_9394)">
+<g id="Lines">
+<g id="Top">
+<path id="Rectangle 38" d="M639.5 0.349609V136.564L4.71484 0.349609H639.5Z" stroke="#FACCAE"/>
+<path id="Rectangle 39" d="M1279.5 0.349609V136.564L644.715 0.349609H1279.5Z" stroke="#FACCAE"/>
+<path id="Rectangle 40" d="M1919.5 0.349609V136.564L1284.71 0.349609H1919.5Z" stroke="#FACCAE"/>
+</g>
+<g id="Middle">
+<path id="Rectangle 38_2" d="M639.5 137.683V273.897L4.71484 137.683H639.5Z" stroke="#FACCAE"/>
+<path id="Rectangle 39_2" d="M1279.5 137.683V273.897L644.715 137.683H1279.5Z" stroke="#FACCAE"/>
+<path id="Rectangle 40_2" d="M1919.5 137.683V273.897L1284.71 137.683H1919.5Z" stroke="#FACCAE"/>
+</g>
+<g id="Bottom">
+<path id="Rectangle 38_3" d="M639.5 275.017V411.231L4.71484 275.017H639.5Z" stroke="#FACCAE"/>
+<path id="Rectangle 39_3" d="M1279.5 275.017V411.231L644.715 275.017H1279.5Z" stroke="#FACCAE"/>
+<path id="Rectangle 40_3" d="M1919.5 275.017V411.231L1284.71 275.017H1919.5Z" stroke="#FACCAE"/>
+</g>
+</g>
+</g>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_4020_9394">
+<rect width="1920" height="412" fill="white"/>
+</clipPath>
+</defs>
+</svg>

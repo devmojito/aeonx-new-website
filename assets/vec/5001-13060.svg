@@ -1,0 +1,21 @@
+<svg width="1009" height="1009" viewBox="0 0 1009 1009" fill="none" xmlns="http://www.w3.org/2000/svg">
+
+<g id="What we do/Alliances/Partners Hub/Sap on AWS" clip-path="url(#clip0_4020_9394)">
+
+<g id="Hero section">
+<g id="Ellipse 1" filter="url(#filter0_f_4020_9394)">
+<path d="M-245.551 -207C-90.5465 -207 209 -115.163 209 40.1218C209 195.407 78.2463 153.894 -76.7582 153.894C-231.763 153.894 -333.629 289.886 -333.629 134.601C-333.629 -20.6838 -400.555 -207 -245.551 -207Z" fill="#DF3F17"/>
+</g>
+</g>
+</g>
+<defs>
+<filter id="filter0_f_4020_9394" x="-1148" y="-1007" width="2157" height="2016" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feGaussianBlur stdDeviation="400" result="effect1_foregroundBlur_4020_9394"/>
+</filter>
+<clipPath id="clip0_4020_9394">
+<rect width="1920" height="6854" fill="white"/>
+</clipPath>
+</defs>
+</svg>
