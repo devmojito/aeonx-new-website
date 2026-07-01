@@ -1,2 +1,12 @@
 # Stale Figma dump backup (kept locally only)
 aeonx-node.json.stale-jun9
+
+# Large Figma build inputs — kept locally, not tracked
+aeonx-node.json
+assets.zip
+
+# Editor/build backups
+index.html.bak
+index.html.bak2
+index.html.bak3
+*.bak

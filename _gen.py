@@ -148,7 +148,34 @@ def emit_text(n, left, top, w, h):
     op = n.get('opacity', 1)
     if op < 1:
         style += f"opacity:{op};"
-    return f'<div class="g-t" style="{style}">{body}</div>'
+    tag = heading_tag(chars, fs)
+    return f'<{tag} class="g-t" style="{style}">{body}</{tag}>'
+
+# ---- semantic headings: derive one <h1> + section <h2>s from font size ----
+# Pixels are unchanged: .ax-page h1/h2 are already position:absolute and *{margin:0}
+# resets UA spacing, so a heading tag renders identically to the old <div>.
+HDG = {'maxfs': 0.0, 'h1_used': False}
+
+def scan_fontsizes(n):
+    if n.get('visible', True) is False:
+        return
+    if n.get('type') == 'TEXT':
+        fs = n.get('style', {}).get('fontSize', 16)
+        if fs > HDG['maxfs']:
+            HDG['maxfs'] = fs
+    for c in n.get('children', []):
+        scan_fontsizes(c)
+
+def heading_tag(chars, fs):
+    txt = (chars or '').strip()
+    words = txt.split()
+    mx = HDG['maxfs'] or 1
+    if (not HDG['h1_used'] and fs >= mx - 0.01 and len(words) >= 2 and len(txt) <= 90):
+        HDG['h1_used'] = True
+        return 'h1'
+    if fs >= 0.55 * mx and len(words) >= 2 and len(txt) <= 70:
+        return 'h2'
+    return 'div'
 
 def box_style(n, left, top, w, h):
     """Return (klass, extra, style) for a box/image node, or None if nothing visible."""
@@ -181,7 +208,13 @@ def box_style(n, left, top, w, h):
         op = n.get('opacity', 1)
         if op < 1:
             style0 += f"opacity:{op};"
-        return ('g-img', f' data-ref="{imgref}"', style0)
+        name = (n.get('name') or '').strip()
+        low = name.lower()
+        generic = (not name) or low.startswith(('rectangle', 'image', 'img', 'imgi_',
+                    'ellipse', 'vector', 'frame', 'group', 'mask', 'bg', 'background',
+                    'gradient', 'shape', 'union', 'subtract', 'clip'))
+        a11y = ' role="presentation" aria-hidden="true"' if generic else f' role="img" aria-label="{esc(name)}"'
+        return ('g-img', f' data-ref="{imgref}"{a11y}', style0)
     bg = solid_fill(fills) or gradient_fill(fills)
     style = f"position:absolute;left:{vw(left)};top:{vw(top)};width:{vw(w)};height:{vw(h)};"
     if bg:
@@ -270,6 +303,9 @@ def walk(n, ox, oy, out, depth=0):
 def build_body(node):
     bb = node['absoluteBoundingBox']
     ox, oy = bb['x'], bb['y']
+    HDG['maxfs'] = 0.0
+    HDG['h1_used'] = False
+    scan_fontsizes(node)
     out = []
     footer_top = None
     for c in node.get('children', []):
@@ -282,12 +318,15 @@ def build_body(node):
 
 def get_shell():
     # _chrome.html is a frozen snapshot of the hand-built homepage chrome
-    # (nav/mega-menu/footer/styles). index.html itself is regenerated from
-    # Figma, so it must NOT be the shell source or the line offsets break.
-    lines = open('_chrome.html', encoding='utf-8').read().split('\n')
-    top = '\n'.join(lines[0:179])          # up to </header> (line 179)
-    footer = lines[191]                     # line 192 footer
-    bottom = '\n'.join(lines[192:])         # </main> + scripts + </body>
+    # (nav/mega-menu/footer/styles). Split on structural markers so edits to
+    # the head/nav (adding meta tags, etc.) never shift hard-coded line offsets.
+    txt = open('_chrome.html', encoding='utf-8').read()
+    hend = txt.index('</header>') + len('</header>')
+    top = txt[:hend]                                    # head + header
+    fstart = txt.index('<section class="ax-footer"')    # footer section
+    mend = txt.index('</main>')
+    footer = txt[fstart:mend].rstrip()                  # footer markup only
+    bottom = txt[mend:]                                 # </main> + scripts + </body>
     # absolutize asset paths for sub-directory pages
     def absol(s):
         return s.replace('"assets/', '"/assets/').replace("url(assets/", "url(/assets/")
@@ -305,6 +344,13 @@ def main():
     top, footer, bottom = get_shell()
     # set title
     top = re.sub(r'<title>.*?</title>', f'<title>{esc(title)}</title>', top, flags=re.S)
+    # per-page canonical + og:url + social titles
+    BASE = 'https://aeonx.digital'
+    route = '/' + out_path[:-len('index.html')] if out_path.endswith('index.html') else '/' + out_path
+    url = BASE + route
+    top = top.replace('</head>', f'<link rel="canonical" href="{url}">\n<meta property="og:url" content="{url}">\n</head>', 1)
+    top = re.sub(r'(<meta property="og:title" content=")[^"]*(">)', lambda m: m.group(1)+esc(title)+m.group(2), top)
+    top = re.sub(r'(<meta name="twitter:title" content=")[^"]*(">)', lambda m: m.group(1)+esc(title)+m.group(2), top)
     # reposition reused footer to this page's footer offset
     if footer_top is not None:
         footer = re.sub(r'top:[\d.]+vw', f'top:{vw(footer_top)}', footer, count=1)

@@ -46,21 +46,23 @@ PAGES = [
     ("4965:26645", "investor-relations/shareholding-pattern", "Shareholding Pattern — AeonX Digital"),
 ]
 
-# alias/landing path -> target path (meta-refresh redirect)
+# alias/landing path -> (target path, title) for meta-refresh redirect stubs
 REDIRECTS = {
-    "who-we-are": "who-we-are/foundation",
-    "what-we-do": "services",
-    "investor": "investor-relations",
-    "case-studies": "insights",
-    "industries/energy-oil-gas": "industries/energy-fertiliser-oil-gas",
-    "industries/textiles": "industries/textiles-apparel",
+    "who-we-are": ("who-we-are/foundation", "Who We Are — AeonX Digital"),
+    "what-we-do": ("services", "What We Do — AeonX Digital"),
+    "investor": ("investor-relations", "Investor — AeonX Digital"),
+    "case-studies": ("insights", "Case Studies — AeonX Digital"),
+    "industries/energy-oil-gas": ("industries/energy-fertiliser-oil-gas", "Energy, Oil & Gas — AeonX Digital"),
+    "industries/textiles": ("industries/textiles-apparel", "Textiles — AeonX Digital"),
 }
 
 REDIRECT_TMPL = (
     '<!doctype html><meta charset="utf-8">\n'
     '<meta http-equiv="refresh" content="0; url=/{target}/">\n'
     '<link rel="canonical" href="/{target}/">\n'
-    '<title>AeonX Digital</title>\n'
+    '<meta name="robots" content="noindex,follow">\n'
+    '<title>{title}</title>\n'
+    '<p>Redirecting to <a href="/{target}/">{title}</a>…</p>\n'
 )
 
 def main():
@@ -72,10 +74,10 @@ def main():
         first = r.stdout.splitlines()[0] if r.stdout else r.stderr.strip()
         print(path.ljust(42), "|", first)
         files.append(out)
-    for src, target in REDIRECTS.items():
+    for src, (target, title) in REDIRECTS.items():
         os.makedirs(src, exist_ok=True)
         with open(f"{src}/index.html", "w", encoding="utf-8") as f:
-            f.write(REDIRECT_TMPL.format(target=target))
+            f.write(REDIRECT_TMPL.format(target=target, title=title))
         print(f"redirect {src}".ljust(42), "->", target)
     print("\nALLFILES", " ".join(files))
 
