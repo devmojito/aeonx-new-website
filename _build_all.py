@@ -40,6 +40,9 @@ PAGES = [
     ("5001:12024", "alliances/partners-hub/sap-on-aws", "SAP on AWS — AeonX Digital"),
 
     ("4550:4089",  "insights", "Insights — AeonX Digital"),
+    ("5323:12335", "insights/blog", "Blog — AeonX Digital"),
+    ("5342:24817", "insights/newsletter", "Newsletter — AeonX Digital"),
+    ("5255:17303", "insights/trust-security", "Trust & Security — AeonX Digital"),
 
     ("4904:7402",  "investor-relations", "Investor Relations — AeonX Digital"),
     ("4560:5289",  "investor-relations/board-of-directors", "Board of Directors — AeonX Digital"),
