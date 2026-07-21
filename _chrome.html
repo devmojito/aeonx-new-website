@@ -395,5 +395,95 @@ document.addEventListener('DOMContentLoaded',function(){
 });
 </script>
 
+<style id="ax-mnav-css">
+.ax-mnav{display:none}
+@media (max-width:768px){
+ .ax-mnav{display:block;position:fixed;left:0;top:0;width:100%;z-index:9000;font-family:'Nunito Sans',sans-serif}
+ .ax-mnav__bar{display:flex;align-items:center;height:56px;background:#fff;border-bottom:1px solid #E9ECF1}
+ .ax-mnav__logo{display:flex;align-items:center;padding:0 14px;height:100%;border-right:1px solid #E9ECF1}
+ .ax-mnav__logo svg{height:20px;width:auto}
+ .ax-mnav__title{flex:1;text-align:center;font-size:15px;color:#23272E;font-weight:500}
+ .ax-mnav__tg{width:56px;height:56px;border:0;border-left:1px solid #E9ECF1;background:#fff;font-size:20px;color:#23272E;cursor:pointer}
+ .ax-mnav__panel{position:fixed;left:0;top:56px;width:100%;height:calc(100vh - 56px);background:#fff;
+   transform:translateX(100%);transition:transform .28s ease;overflow-y:auto;display:flex;flex-direction:column}
+ .ax-mnav.is-open .ax-mnav__panel{transform:translateX(0)}
+ .ax-mnav__row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:18px 16px;
+   border-bottom:1px solid #EFF1F4;font-size:17px;color:#23272E;text-decoration:none;background:#fff;cursor:pointer}
+ .ax-mnav__row b{font-weight:600}
+ .ax-mnav__chev{color:#8A94A6;font-size:16px}
+ .ax-mnav__sub{position:absolute;left:0;top:0;width:100%;min-height:100%;background:#fff;
+   transform:translateX(100%);transition:transform .28s ease;display:flex;flex-direction:column}
+ .ax-mnav__sub.is-on{transform:translateX(0)}
+ .ax-mnav__subbar{display:flex;align-items:center;height:52px;border-bottom:1px solid #E9ECF1}
+ .ax-mnav__back{width:52px;height:52px;border:0;border-right:1px solid #E9ECF1;background:#fff;font-size:18px;color:#23272E;cursor:pointer}
+ .ax-mnav__subttl{flex:1;text-align:center;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#23272E}
+ .ax-mnav__grp{padding:16px 16px 6px;font-size:18px;font-weight:700;color:#23272E}
+ .ax-mnav__cta{margin-top:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
+ .ax-mnav__btn{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-radius:8px;
+   font-size:15px;font-weight:600;text-decoration:none}
+ .ax-mnav__btn--p{background:#DF3F17;color:#fff}
+ .ax-mnav__btn--s{background:#fff;color:#23272E;border:1px solid #D5DAE2}
+ body.ax-mnav-open{overflow:hidden}
+ .ax-mob{padding-top:56px}
+}
+</style>
+<script>
+/* mobile nav: matches Figma mobile navbar (list + drill-down + CTAs) */
+document.addEventListener('DOMContentLoaded',function(){
+  if(document.querySelector('.ax-mnav'))return;
+  var MENU=[
+   {t:'Who we are',g:[{n:'Company',l:[['Foundation','/who-we-are/foundation'],['Leadership','/who-we-are/leadership'],['Culture','/who-we-are/culture']]},
+                      {n:'Connect',l:[['Career','/who-we-are/career'],['Contact Us','/contact-us']]}]},
+   {t:'What we do',g:[{n:'Services',l:[['All Services','/services'],['RISE with SAP','/services/rise-with-sap'],['GROW with SAP','/services/grow-with-sap'],['SAP AMS · AXIOM','/services/sap-ams-axiom'],['AWS','/services/aws'],['Google Cloud','/services/google-cloud'],['Multi-cloud CMS','/services/multi-cloud-cms']]},
+                      {n:'Products',l:[['All Products','/products'],['AXIOM AI Platform','/products/axiom']]},
+                      {n:'Industries',l:[['Manufacturing','/industries/manufacturing'],['Metals & Engineering','/industries/metals-engineering'],['Energy, Fertilizer, Oil & Gas','/industries/energy-fertiliser-oil-gas'],['Automotive & Aerospace','/industries/automotive-aerospace'],['Textiles & Apparel','/industries/textiles-apparel'],['FMCG & Distribution','/industries/fmcg-distribution']]},
+                      {n:'Alliances',l:[['All Alliances','/alliances'],['Partners Hub','/alliances/partners-hub'],['SAP Gold Partner','/alliances/sap-gold-partner'],['AWS Advanced Tier','/alliances/aws-advanced-tier'],['Google Cloud Partner','/alliances/google-cloud-partner'],['SAP Signavio','/alliances/sap-signavio']]}]},
+   {t:'Insights',g:[{n:'Customer outcomes',l:[['Case Studies','/insights'],['Trust & Security','/insights/trust-security']]},
+                    {n:'Editorial',l:[['Blog','/insights/blog'],['Newsletter','/insights/newsletter']]}]},
+   {t:'Investor',g:[{n:'Disclosures',l:[['Investor Relations','/investor-relations']]},
+                    {n:'Governance',l:[['Board of Directors','/investor-relations/board-of-directors'],['Shareholding Pattern','/investor-relations/shareholding-pattern']]}]}
+  ];
+  var logoSrc=document.querySelector('.ax-nav__logo');
+  var nav=document.createElement('div'); nav.className='ax-mnav';
+  var bar='<div class="ax-mnav__bar"><a class="ax-mnav__logo" href="/">'+(logoSrc?logoSrc.innerHTML:'AEONX')+'</a>'+
+          '<span class="ax-mnav__title">Menu</span>'+
+          '<button class="ax-mnav__tg" aria-label="Open menu" aria-expanded="false">&#9776;</button></div>';
+  var rows=MENU.map(function(m,i){return '<div class="ax-mnav__row" data-i="'+i+'"><b>'+m.t+'</b><span class="ax-mnav__chev">&raquo;</span></div>';}).join('');
+  var subs=MENU.map(function(m,i){
+    var body=m.g.map(function(g){
+      return '<div class="ax-mnav__grp">'+g.n+'</div>'+g.l.map(function(l){
+        return '<a class="ax-mnav__row" href="'+l[1]+'">'+l[0]+'<span class="ax-mnav__chev">&raquo;</span></a>';}).join('');
+    }).join('');
+    return '<div class="ax-mnav__sub" data-s="'+i+'"><div class="ax-mnav__subbar"><button class="ax-mnav__back" aria-label="Back">&laquo;</button>'+
+           '<span class="ax-mnav__subttl">'+m.t+'</span><span style="width:52px"></span></div>'+body+'</div>';
+  }).join('');
+  var cta='<div class="ax-mnav__cta"><a class="ax-mnav__btn ax-mnav__btn--p" href="/contact-us/">Request a Proposal <span>&rarr;</span></a>'+
+          '<a class="ax-mnav__btn ax-mnav__btn--s" href="/contact-us/">Talk to us <span>&rarr;</span></a></div>';
+  nav.innerHTML=bar+'<div class="ax-mnav__panel">'+rows+cta+subs+'</div>';
+  document.body.appendChild(nav);
+  var tg=nav.querySelector('.ax-mnav__tg');
+  function close(){nav.classList.remove('is-open');document.body.classList.remove('ax-mnav-open');
+    tg.innerHTML='&#9776;';tg.setAttribute('aria-expanded','false');setPanel(false);
+    nav.querySelectorAll('.ax-mnav__sub').forEach(function(s){s.classList.remove('is-on');s.style.transform='translateX(100%)';});}
+  var panel=nav.querySelector('.ax-mnav__panel');
+  function setPanel(open){ panel.style.transform=open?'translateX(0)':'translateX(100%)'; }
+  setPanel(false);
+  tg.addEventListener('click',function(){
+    var open=nav.classList.toggle('is-open');
+    document.body.classList.toggle('ax-mnav-open',open);
+    setPanel(open);
+    tg.innerHTML=open?'&times;':'&#9776;'; tg.setAttribute('aria-expanded',open?'true':'false');
+    if(!open) nav.querySelectorAll('.ax-mnav__sub').forEach(function(s){s.classList.remove('is-on');s.style.transform='translateX(100%)';});
+  });
+  nav.querySelectorAll('.ax-mnav__row[data-i]').forEach(function(r){
+    r.addEventListener('click',function(){ var s=nav.querySelector('.ax-mnav__sub[data-s="'+r.dataset.i+'"]'); s.classList.add('is-on'); s.style.transform='translateX(0)'; });
+  });
+  nav.querySelectorAll('.ax-mnav__back').forEach(function(b){
+    b.addEventListener('click',function(){ var s=b.closest('.ax-mnav__sub'); s.classList.remove('is-on'); s.style.transform='translateX(100%)'; });
+  });
+  addEventListener('keydown',function(e){if(e.key==='Escape')close();});
+});
+</script>
+
 </body>
 </html>
