@@ -774,5 +774,45 @@ document.addEventListener('DOMContentLoaded',function(){
 });
 </script>
 
+<style id="ax-mnav-fix">
+@media (max-width:768px){
+ .ax-mnav__bar{display:none!important}
+ .ax-mob{padding-top:0!important}
+ .ax-mnav__panel{top:0!important;height:100vh!important}
+ .ax-mnav__phdr{display:flex;align-items:center;height:56px;border-bottom:1px solid #E9ECF1;background:#fff;flex:0 0 auto}
+ .ax-mnav__plogo{display:flex;align-items:center;padding:0 14px;height:100%;border-right:1px solid #E9ECF1}
+ .ax-mnav__plogo svg{height:20px;width:auto}
+ .ax-mnav__ptitle{flex:1;text-align:center;font-size:15px;color:#23272E}
+ .ax-mnav__pclose{width:56px;height:56px;border:0;border-left:1px solid #E9ECF1;background:#fff;font-size:24px;line-height:1;color:#23272E;cursor:pointer}
+}
+</style>
+<script>
+/* mobile nav: use the Figma navbar art as trigger; no duplicate bar */
+document.addEventListener('DOMContentLoaded',function(){
+  var nav=document.querySelector('.ax-mnav'); if(!nav)return;
+  var tg=nav.querySelector('.ax-mnav__tg');
+  var panel=nav.querySelector('.ax-mnav__panel');
+  if(!tg||!panel||panel.querySelector('.ax-mnav__phdr'))return;
+  var logo=document.querySelector('.ax-nav__logo');
+  var hdr=document.createElement('div');
+  hdr.className='ax-mnav__phdr';
+  hdr.innerHTML='<a class="ax-mnav__plogo" href="/">'+(logo?logo.innerHTML:'AEONX')+'</a>'+
+                '<span class="ax-mnav__ptitle">Menu</span>'+
+                '<button class="ax-mnav__pclose" aria-label="Close menu">&times;</button>';
+  panel.insertBefore(hdr,panel.firstChild);
+  hdr.querySelector('.ax-mnav__pclose').addEventListener('click',function(){ tg.click(); });
+  // Figma's own mobile navbar image = the trigger (right edge = burger, rest = home)
+  var art=document.querySelector('.ax-mob img[src*="5637-49182"]');
+  if(art){
+    art.style.cursor='pointer';
+    art.addEventListener('click',function(ev){
+      var r=art.getBoundingClientRect();
+      if(ev.clientX > r.right - Math.max(56,r.height*1.3)) tg.click();
+      else location.href='/';
+    });
+  }
+});
+</script>
+
 </body>
 </html>
