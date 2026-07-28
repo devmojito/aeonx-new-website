@@ -20,8 +20,8 @@ Static Figma→HTML site. Repo `github.com/devmojito/aeonx-new-website` (push ne
 ## Latest dump = 2026-07-24 (applied). Changes since prior: Home hero redesigned + hidden "Featured news" placeholder block (Mistral OCR/AI Summit — hidden in Figma, correctly skipped) + label `MANUFACTURING · SAP AMS · AXIOM`→`MANUFACTURING`.
 
 ## OPEN / IN PROGRESS (user doing a pixel diff of homepage vs Figma)
-- Hero-gap fix applied: `main.ax-page{margin-top:-8.6vw}` + `header{position:relative;z-index:50;background:#fff}` (closes the ex-baked-nav gap). VERIFY it didn't clip anything.
-- **Stat row colors wrong**: build renders BSE/280+/15+/5/6/4X + labels in dark; Figma has them **colored** (orange/blue numbers). FIX = correct fills.
+- Hero gap RESOLVED correctly: the `-8.6vw` margin hack was WRONG (clipped hero under nav). Chrome header height = annc 2.29 + nav 3.125 + margin .47 = ~5.89vw, and Figma hero starts at 5.94vw -> NO margin needed. `ax-hero-gap-fix` now only sets `header{position:relative;z-index:50;background:#fff}`. Verified vs Figma render.
+- Stat row FIXED: numbers use Figma `Text_gradient` (gradient text) + `Heading 1/Bold`; labels `text-primary #23272e` + `Body sm/Bold`. Rendered & verified.
 - Reported "missing buttons/arrows" — they ARE in source (Request a proposal/Talk to us ×, arrows ×10, most stat labels present); likely reveal-opacity or covered — verify they render.
 - General fidelity: spacing/padding/font-weight/font-size of the regenerated hero not 1:1 with Figma — needs a matching pass.
 
@@ -37,3 +37,12 @@ Root cause of "colors wrong / stat numbers dark": `_gen.py` only handled SOLID t
 - LIMITATION: variable-bound colors (`fills[].color==None` + `boundVariables`) can't be resolved via REST (token 403 on `/variables/local`). Needs Figma Dev-Mode MCP `get_variable_defs` OR a token with `file_variables:read`. Fallback = literal color in fill (usually close).
 - Baked hero navbar+announcement de-duplicated at source via `_gen SKIP_NODES`. Gap it left closed with `main.ax-page{margin-top:-8.6vw}` homepage-only style `ax-hero-gap-fix`.
 - For remaining pixel-perfection: render each Figma section via REST `/images` and diff vs built (spacing/weight/size). Ongoing.
+
+## FIGMA MCP IS CONNECTED (remote, OAuth) — use it as ground truth
+`claude mcp list` -> `figma: https://mcp.figma.com/mcp ✔ Connected`. No Figma desktop app on Linux, so the LOCAL Dev-Mode server (127.0.0.1:3845) is NOT available — the remote server is the path.
+Workflow for pixel-perfect work (fileKey `oskhBYvi1Q7GGPqrqABZQp`):
+- `mcp__figma__get_variable_defs{nodeId,fileKey}` -> resolves design tokens (colors AND type). Home tokens: Primary/600 #df3f17, text-primary #23272e, text-secondary #3a4352, text-tertiary #526077, Secondary text #295da0, bg-secondary #f6f7f9, border-light-tertiary #eceef2; type tokens e.g. `Heading 1/Bold`=Nunito Sans 700 36/44, `Body sm/Bold`=700 12/20.
+- `mcp__figma__get_screenshot{nodeId,fileKey,maxDimension}` -> ground-truth render to diff against the built page (returns a short-lived URL; curl it).
+- `mcp__figma__get_metadata` / `get_design_context` for structure + exact specs.
+KEY NODES: Home `4046:31781`; hero `5889:30861` (top 5.938vw, h 42.92vw; eyebrow top 14.01vw left 7.14vw; CTAs top 44.81vw); stats `4046:31782`.
+RULE: never guess offsets/colors again — pull the node spec via MCP first.
