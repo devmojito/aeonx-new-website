@@ -97,3 +97,15 @@ favicon, socials) all survived the rebuild.
 - Nav logo replaced with the FOOTER logo across 36 files. This also fixes brand colour: the old
   nav mark used #15181e/#e1541d, the footer mark uses #404040 + #df3f17 (Primary/600 token).
   The mobile nav clones `.ax-nav__logo` innerHTML at runtime, so it inherits this automatically.
+
+## Products rail + AXIOM scroller
+- WHITE-ON-WHITE ACTIVE TAB: the orange active-row indicator sits at 169.17vw, just outside the
+  pin script's rail band (`t<170`), so it was never detected. The active label was recoloured
+  white with nothing orange behind it => invisible. Band widened to 168vw. Verified the
+  indicator covers the active label at every panel and pin still cycles absolute->fixed->absolute.
+  NOTE: these band/panel constants are layout-dependent — re-measure after any hero/section change.
+- AXIOM SECTION (`4745:10263`): Figma stacks three ~590px cards inside a 740px frame whose
+  clipsContent is FALSE, so _gen emitted all three and they spilled into the sections below.
+  Implemented the intended behaviour as `.ax-vs`: one clipped 38.54vw window at the frame's
+  position, the three cards duplicated inside a track, CSS `translateY(-50%)` for a seamless
+  24s vertical loop, hover-pause, reduced-motion aware; originals hidden.

@@ -1304,5 +1304,57 @@ document.addEventListener('DOMContentLoaded',function(){
   onScroll();
 });
 </script>
+<style id="ax-vs-css">
+.ax-vs{position:absolute;overflow:hidden;pointer-events:auto;}
+.ax-vs__track{position:absolute;left:0;top:0;width:100%;
+  animation:ax-vs-roll 24s linear infinite;will-change:transform;}
+.ax-vs__item{width:100%;background-size:cover;background-position:center;
+  background-repeat:no-repeat;border-radius:0.83vw;}
+.ax-vs:hover .ax-vs__track{animation-play-state:paused;}
+@keyframes ax-vs-roll{from{transform:translateY(0)}to{transform:translateY(-50%)}}
+@media (prefers-reduced-motion:reduce){.ax-vs__track{animation:none}}
+</style>
+<script>
+/* AXIOM section: the design stacks three 590px cards inside a 740px frame that
+   does not clip, so they spilled into the sections below. Render it as the
+   intended vertical auto-scroller: one clipped window, the three cards
+   duplicated for a seamless loop, originals hidden. */
+document.addEventListener('DOMContentLoaded',function(){
+  var main=document.querySelector('main.ax-page'); if(!main)return;
+  if(main.querySelector('.ax-vs'))return;
+  var REFS=['7aabb50efc6b2dba3af55b21988fddbf61782ec6',
+            '120108ec59094dcfc752160e233fdcce03d2a010',
+            'c5cd6ce56636dbb4b768b5d5069f68b21bfd7eb7'];
+  var els=REFS.map(function(r){return main.querySelector('.g-img[data-ref="'+r+'"]');});
+  if(els.some(function(e){return !e;}))return;
+  var num=function(st,k){var m=(st||'').match(new RegExp(k+':\\s*(-?[0-9.]+)vw'));return m?parseFloat(m[1]):null;};
+  var st0=els[0].getAttribute('style')||'';
+  var left=num(st0,'left'), top=num(st0,'top'), w=num(st0,'width'), h=num(st0,'height');
+  if(left===null||top===null)return;
+  var GAP=0.52, WIN=38.54;                      // frame height from Figma
+  var parent=els[0].parentElement;
+  var win=document.createElement('div');
+  win.className='ax-vs';
+  win.style.cssText='left:'+left+'vw;top:'+top+'vw;width:'+w+'vw;height:'+WIN+'vw;';
+  var track=document.createElement('div'); track.className='ax-vs__track';
+  var y=0, urls=[];
+  els.forEach(function(e){
+    var m=(getComputedStyle(e).backgroundImage||'').match(/url\(["']?([^"')]+)/);
+    urls.push(m?m[1]:'');
+  });
+  for(var pass=0;pass<2;pass++){
+    urls.forEach(function(u){
+      var d=document.createElement('div');
+      d.className='ax-vs__item';
+      d.style.cssText='position:absolute;left:0;top:'+y+'vw;height:'+h+'vw;background-image:url("'+u+'");';
+      track.appendChild(d); y+=h+GAP;
+    });
+  }
+  track.style.height=y+'vw';
+  els.forEach(function(e){e.style.display='none';});
+  win.appendChild(track); parent.appendChild(win);
+});
+</script>
+
 </body>
 </html>
