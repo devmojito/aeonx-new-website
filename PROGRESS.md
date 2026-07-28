@@ -210,3 +210,34 @@ Compare against `mcp__figma__get_screenshot` on the matching node.
 Figma's navbar social icons are **X, LinkedIn, YouTube**; the site ships **Facebook,
 LinkedIn, Instagram** wired to AeonX's real, verified accounts. Matching Figma would mean
 linking to accounts that may not exist. Left as-is pending the user's call.
+
+## Tilted "customer in this vertical" logo cards — they are sheared, not rotated (2026-07-28)
+
+Symptom: the tilted logo cards rendered as long flat bars instead of the near-square
+cards Figma shows.
+
+`aeonx-node.json` was dumped WITHOUT `geometry=paths`, so it has each node's scalar
+`rotation` and the AABB of the transformed result, but **not** the node's own `size` or
+`relativeTransform`. `emit_rotated()` therefore inverted the AABB assuming a pure
+rotation. These cards are not purely rotated — their matrix is
+`[[0.9702957, -0.809017, e], [0.2419219, 0.5877852, f]]`: both basis vectors are unit
+length but **130 deg apart**, i.e. rotation + shear. Solving that as a rotation turns a
+**120x120 card into 207x51**.
+
+Fix: `_transforms.py` fetches the real 2x3 matrix + size for the 200 nodes that
+`emit_rotated()` handles (`FIGMA_TOKEN=<token> python3 _transforms.py`) into
+`_transforms.json`; `_gen.py` loads it and emits `transform:matrix(a,b,c,d,0,0)` with
+`transform-origin:0 0`, placing the wrapper at the node's true local origin and mapping
+children back through `M^-1`. Falls back to the old pure-rotation assumption when a node
+is missing from the cache, so the file is an optimisation, not a hard dependency.
+Verified: all 200 cached transforms reproduce Figma's AABB to <1px; 72 wrappers emitted.
+
+**Re-run `_transforms.py` after any re-pull of `aeonx-node.json`** — new/renamed rotated
+nodes will not be in the cache.
+
+## Hero sunburst blur (deliberate deviation)
+The bottom-right sunburst ("Brutalist 86") sits behind the full-width glass bands, so
+`backdrop-filter:blur(0.5208vw)` softens it; the top-left one ("Brutalist 84") is painted
+inside the hero, on top of those bands, so it stayed sharp and the pair looked mismatched.
+User asked for them to match, so `_postbuild.py` now blurs Brutalist 84 by the same
+amount. Figma has both crisp — this is intentional, do not "correct" it.

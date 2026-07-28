@@ -470,37 +470,58 @@ def emit_vec_asset(n, left, top, w, h):
 
 SKIP_NAMES = ('Nav Bar', 'footer', 'section.final-cta')
 
-def solve_true_size(W, H, th):
-    """Given a node's axis-aligned bounding box (W x H) and its rotation `th`
-    (radians), recover the node's true pre-rotation width/height. Figma's dump
-    lacks relativeTransform/size, so we invert AABB = R(th)*(w,h):
-        W = w*cos + h*sin ,  H = w*sin + h*cos
-    """
-    c, s = abs(math.cos(th)), abs(math.sin(th))
-    det = c * c - s * s
-    if abs(det) < 1e-4:            # ~45deg: singular, no clean inverse
+try:
+    # id -> {"m": [a, b, c, d], "size": [w, h]}, written by _transforms.py.
+    TRANSFORMS = json.load(open('_transforms.json'))
+except (OSError, ValueError):
+    TRANSFORMS = {}
+
+def solve_local_size(W, H, a, b, c, d):
+    """Recover a node's own w x h from the AABB (W x H) its transform produces.
+    For M = [[a,c],[b,d]] the AABB of a local w x h box is
+        W = |a|w + |c|h ,  H = |b|w + |d|h
+    so invert that 2x2. (Pure rotation is the special case a=d=cos, c=-b=-sin.)"""
+    A, B, C, D = abs(a), abs(c), abs(b), abs(d)
+    det = A * D - B * C
+    if abs(det) < 1e-6:            # singular (e.g. exactly 45deg rotation)
         return W, H
-    w = (W * c - H * s) / det
-    h = (H * c - W * s) / det
+    w = (W * D - H * B) / det
+    h = (H * A - W * C) / det
     if w <= 0 or h <= 0:           # numeric fallback
         return W, H
     return w, h
 
 def emit_rotated(n, ox, oy):
-    """Reconstruct a rotated raster container (e.g. the tilted logo cards) as a
-    CSS-rotated wrapper whose children are placed in its local (unrotated) frame.
-    Rotation preserves the node's center, so the true-size box is centered on the
-    AABB center; children are inverse-rotated into local coordinates and inherit
-    the wrapper's rotation via CSS (so no per-child transform is needed while the
-    child's own rotation is ~0, which holds for these cards)."""
+    """Reconstruct a transformed raster container (e.g. the tilted logo cards) as
+    a CSS-transformed wrapper whose children are placed in its local frame.
+
+    The exact 2x3 matrix comes from _transforms.json when available, and it is
+    worth the extra fetch: these cards are NOT purely rotated. Their basis vectors
+    are 130 deg apart (rotation + shear), so treating the AABB as a rotated box
+    turns a 120x120 card into a 207x51 bar -- which is exactly how the "customer
+    in this vertical" logo cards were rendering. Without the matrix we fall back
+    to assuming a pure rotation, which is right for everything else.
+
+    Children carry no transform of their own here, so they inherit the wrapper's;
+    each is mapped back into local space through M^-1."""
     bb = n['absoluteBoundingBox']
     th = n['rotation']
-    cx = bb['x'] + bb['width'] / 2.0
-    cy = bb['y'] + bb['height'] / 2.0
-    w, h = solve_true_size(bb['width'], bb['height'], th)
-    deg = math.degrees(th)
-    c, s = math.cos(th), math.sin(th)   # R(-th) = [[c, s], [-s, c]]
-    left, top = cx - w / 2.0 - ox, cy - h / 2.0 - oy
+    tr = TRANSFORMS.get(n['id'])
+    if tr:
+        a, b, c, d = tr['m']
+        w, h = tr['size']
+    else:
+        a = d = math.cos(th)
+        b = math.sin(th)
+        c = -b
+        w, h = solve_local_size(bb['width'], bb['height'], a, b, c, d)
+    # Absolute position of the node's local (0,0): its AABB corner, backed off by
+    # the transform's own minimum corner offset.
+    corners = ((0, 0), (w, 0), (0, h), (w, h))
+    orx = bb['x'] - min(a * x + c * y for x, y in corners)
+    ory = bb['y'] - min(b * x + d * y for x, y in corners)
+    det = a * d - b * c
+    left, top = orx - ox, ory - oy
     r = box_style(n, left, top, w, h)
     if r:
         klass, extra, style = r
@@ -508,7 +529,8 @@ def emit_rotated(n, ox, oy):
         klass, extra, style = 'g-b', '', (
             f"position:absolute;left:{vw(left)};top:{vw(top)};"
             f"width:{vw(w)};height:{vw(h)};")
-    style += f"transform:rotate({deg:.4f}deg);transform-origin:center center;"
+    style += (f"transform:matrix({a:.6f},{b:.6f},{c:.6f},{d:.6f},0,0);"
+              f"transform-origin:0 0;")
     if n.get('clipsContent'):
         style += "overflow:hidden;"
         if 'g-clip' not in klass:
@@ -525,11 +547,14 @@ def emit_rotated(n, ox, oy):
         mt = m.get('type')
         mbb = m.get('absoluteBoundingBox')
         if mbb:
-            dx = (mbb['x'] + mbb['width'] / 2.0) - cx
-            dy = (mbb['y'] + mbb['height'] / 2.0) - cy
-            lxc, lyc = c * dx + s * dy, -s * dx + c * dy    # inverse-rotate
-            lw, lh = solve_true_size(mbb['width'], mbb['height'], th)
-            ll, lt = w / 2.0 + lxc - lw / 2.0, h / 2.0 + lyc - lh / 2.0
+            if abs(det) < 1e-9:
+                return
+            dx = (mbb['x'] + mbb['width'] / 2.0) - orx
+            dy = (mbb['y'] + mbb['height'] / 2.0) - ory
+            lxc = (d * dx - c * dy) / det                   # M^-1 * (dx, dy)
+            lyc = (-b * dx + a * dy) / det
+            lw, lh = solve_local_size(mbb['width'], mbb['height'], a, b, c, d)
+            ll, lt = lxc - lw / 2.0, lyc - lh / 2.0
             if mt == 'TEXT':
                 out.append(emit_text(m, ll, lt, lw, lh)); return
             if mt in ('RECTANGLE', 'ELLIPSE', 'LINE'):
@@ -547,9 +572,9 @@ def emit_rotated(n, ox, oy):
                         out.append(emit_vec_asset(m, ll, lt, lw, lh))
                     return
                 if m.get('fills') or m.get('strokes'):
-                    b = emit_box(m, ll, lt, lw, lh)
-                    if b:
-                        out.append(b)
+                    box = emit_box(m, ll, lt, lw, lh)
+                    if box:
+                        out.append(box)
         for ch in m.get('children', []):
             place(ch)
 
