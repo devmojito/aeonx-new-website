@@ -131,7 +131,7 @@ img{border:0}
 <style id="ax-fx-css">.ax-svc-card{transition:box-shadow .3s ease,border-color .3s ease;isolation:isolate}.ax-svc-card::after{content:"";position:absolute;inset:-0.42vw;border-radius:0.63vw;background:linear-gradient(90deg,#FF0000 0%,#E3B316 20%,#FFFFFF 41%,#19D8E6 65%,#6419E6 87%,#E619AF 99%);filter:blur(1vw);opacity:0;transition:opacity .3s ease;z-index:-1;pointer-events:none}.ax-svc-card.ax-card-hot{border-color:#DF3F17!important;box-shadow:0 0.6vw 1.8vw rgba(223,63,23,.15)}.ax-svc-card.ax-card-hot::after{opacity:.5}</style>
 <style id="ax-reveal-css">.ax-rv{opacity:0;transform:translateY(1.4vw);transition:opacity .7s cubic-bezier(.22,.61,.36,1),transform .7s cubic-bezier(.22,.61,.36,1);}.ax-rv.ax-in{opacity:1;transform:translateY(0);}.ax-rvo{opacity:0;transition:opacity .7s ease;}.ax-rvo.ax-in{opacity:1;}@media (prefers-reduced-motion: reduce){.ax-rv,.ax-rvo{opacity:1!important;transform:none!important;transition:none!important;}}</style>
 <link rel="icon" href="/assets/favicon/favicon-32.png" sizes="32x32"><link rel="icon" href="/assets/favicon/favicon-192.png" sizes="192x192"><link rel="apple-touch-icon" href="/assets/favicon/apple-touch-icon.png">
-<style id="ax-btn-size">@media(max-width:768px){.ax-mob .g-b[data-cta] .g-t,.ax-mob .g-t[data-cta]{font-size:3.72vw!important;}}/* standardised button label size */.g-b[data-cta] .g-t,.g-t[data-cta],.ax-nav__btn,.ax-mnav__btn,.ax-mm2__feat-btn,.ax-mm2__api-btn{font-size:0.8333vw!important;line-height:1.25!important;}</style>
+
 </head>
 <body>
 <header class="ax-header">
@@ -535,6 +535,66 @@ document.addEventListener('DOMContentLoaded',function(){
       else location.href='/';
     });
   }
+});
+</script>
+
+<style id="ax-btn16-css">
+/* Buttons: real 16px labels, centred with symmetric padding. */
+.g-b[data-cta]{overflow:visible!important;}
+.g-b[data-cta] > .g-t{
+  left:0!important;right:0!important;width:auto!important;
+  top:50%!important;height:auto!important;
+  transform:translateY(-50%)!important;
+  font-size:16px!important;line-height:1.2!important;
+  text-align:center!important;white-space:nowrap!important;
+}
+.g-t[data-cta]{font-size:16px!important;line-height:1.2!important;}
+.ax-nav__btn{width:auto!important;padding:0 0.9vw!important;font-size:16px!important;}
+.ax-mnav__btn,.ax-mm2__feat-btn,.ax-mm2__api-btn{font-size:16px!important;}
+@media(max-width:768px){.ax-nav__btn{padding:0 12px!important;}}
+</style>
+<script>
+/* A pill is absolutely positioned at a fixed Figma width sized for 14px text.
+   At a real 16px the label can outgrow it, so grow the pill to fit and push any
+   pill sitting to its right in the same row across by the same amount, keeping
+   the original gap. Runs after webfonts settle so measurements are final. */
+document.addEventListener('DOMContentLoaded',function(){
+  function fit(){
+    var pills=[].slice.call(document.querySelectorAll('.g-b[data-cta]'));
+    var rows={};
+    pills.forEach(function(p){
+      var lab=p.querySelector('.g-t'); if(!lab)return;
+      var pr=p.getBoundingClientRect(); if(!pr.width)return;
+      var rng=document.createRange(); rng.selectNodeContents(lab);
+      var ink=rng.getBoundingClientRect().width;
+      var pad=Math.max(14,(pr.width-ink)/2);          // symmetric, min 14px
+      var need=Math.ceil(ink+pad*2);
+      var delta=need-pr.width;
+      if(delta>0.5){
+        p.style.width=need+'px';
+        var key=Math.round((pr.top+scrollY)/6);        // same visual row
+        (rows[key]=rows[key]||[]).push({left:pr.left,delta:delta});
+      }
+    });
+    // shift later pills in the same row so gaps survive the growth
+    pills.forEach(function(p){
+      var pr=p.getBoundingClientRect();
+      var key=Math.round((pr.top+scrollY)/6);
+      var shift=0;
+      (rows[key]||[]).forEach(function(g){ if(g.left<pr.left-1) shift+=g.delta; });
+      if(shift>0){
+        var cur=parseFloat(getComputedStyle(p).left)||0;
+        p.style.left=(cur+shift)+'px';
+        var sib=p.previousElementSibling;             // label rendered as a sibling
+        if(sib&&sib.classList&&sib.classList.contains('g-t')&&sib.dataset.cta){
+          var sl=parseFloat(getComputedStyle(sib).left)||0; sib.style.left=(sl+shift)+'px';
+        }
+      }
+    });
+  }
+  if(document.fonts&&document.fonts.ready){document.fonts.ready.then(function(){setTimeout(fit,60);});}
+  else setTimeout(fit,400);
+  addEventListener('resize',function(){clearTimeout(window.__btnT);window.__btnT=setTimeout(fit,200);});
 });
 </script>
 
