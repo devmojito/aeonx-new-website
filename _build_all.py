@@ -25,7 +25,10 @@ PAGES = [
     ("4393:2919",  "products/axiom", "AXIOM AI Platform — AeonX Digital"),
 
     ("4376:2040",  "industries/manufacturing", "Manufacturing — AeonX Digital"),
-    ("4388:2095",  "industries/metals-engineering", "Metals & Engineering — AeonX Digital"),
+    # 4388:2095 is a STALE copy of this page, parked off the live row at y=-6278 (its
+    # hero is the old white-panel layout, no stats strip, no sunbursts). The current
+    # frame sits on the live row at x=23849 between Manufacturing and Energy.
+    ("4616:9766",  "industries/metals-engineering", "Metals & Engineering — AeonX Digital"),
     ("4593:11082", "industries/energy-fertiliser-oil-gas", "Energy, Fertiliser, Oil & Gas — AeonX Digital"),
     ("4593:11892", "industries/automotive-aerospace", "Automotive & Aerospace — AeonX Digital"),
     ("4593:12702", "industries/textiles-apparel", "Textiles & Apparel — AeonX Digital"),
