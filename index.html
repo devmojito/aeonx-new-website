@@ -1278,10 +1278,14 @@ document.addEventListener('DOMContentLoaded',function(){
     if(indicator){
       indicator.el.style.position=(m==='pin')?'fixed':'absolute';
       indicator.el.style.top=railY(indicator.t+i*5.7292,m)+'vw';
-      indicator.el.style.zIndex=(m==='pin')?5:'';
+      indicator.el.style.zIndex=5;
     }
-    labels.forEach(function(L,k){ L.el.style.color=(k===i)?'#fff':L.oc; });
-    labels.forEach(function(L,k){ L.el.style.zIndex=(m==='pin')?6:''; });
+    labels.forEach(function(L,k){
+      var on=(k===i);
+      L.el.style.color=on?'#fff':L.oc;
+      L.el.style.fontWeight=on?'700':'400';   // Figma bakes bold into the default-active tab
+      L.el.style.zIndex=6;                    // always above the indicator, pinned or docked
+    });
   }
   function onScroll(){
     var y=scrollY/innerWidth*100;

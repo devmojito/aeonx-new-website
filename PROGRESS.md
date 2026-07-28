@@ -109,3 +109,10 @@ favicon, socials) all survived the rebuild.
   Implemented the intended behaviour as `.ax-vs`: one clipped 38.54vw window at the frame's
   position, the three cards duplicated inside a track, CSS `translateY(-50%)` for a seamless
   24s vertical loop, hover-pause, reduced-motion aware; originals hidden.
+
+- ACTIVE TAB WEIGHT + AEONXIQ BLANK (both in the pin script's `layout()`):
+  * Figma bakes `font-weight:700` into SupplierX (its default-active state), so SupplierX stayed
+    bold on every panel. `layout()` now sets weight explicitly: active 700, inactive 400.
+  * When the rail DOCKED, z-index was cleared on both the labels and the orange indicator, so the
+    indicator painted OVER the white active label — AeonxIQ looked like an empty orange block.
+    Labels are now always z-index 6 and the indicator always 5, in every mode.
