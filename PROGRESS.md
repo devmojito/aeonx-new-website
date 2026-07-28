@@ -401,3 +401,19 @@ Safety, because a stuck overlay is a dead site:
   not replay it. Skipped entirely under `prefers-reduced-motion`.
 
 Glyphs are a hand-written 5x7 bitmap font for `0-9` and `%` — no webfont, no image.
+
+### Cursor visibility fix (2026-07-28)
+First cut was too faint to see. Three causes, all fixed:
+1. **Sized in `vw`** — a 0.3125vw dot is ~4px on a 1400px laptop. A cursor is a physical
+   pointing device; it is now **px**: 10px dot, 40px ring (64px on hover, 30px on press).
+2. **Low contrast** — the ring was a 1.5px 55%-alpha border. Now 2px solid `#df3f17`,
+   and BOTH parts carry a white halo (`box-shadow 0 0 0 2px rgba(255,255,255,.9)` on the
+   dot, `.42` inside+outside on the ring) so they stay legible over the dark navy and
+   deep-red sections, not just white.
+3. **`(pointer:fine)` gate** — some browsers and virtualised desktops report
+   `pointer: none`, which silently killed the cursor for them. Now it EXCLUDES
+   `pointer:coarse` instead of requiring `fine`.
+
+Verified by rendering both states (idle over the hero, hover over the orange CTA) through
+a temporary same-origin iframe harness — headless Chromium reports `pointer:none`, which
+is exactly why the old gate had to go.
