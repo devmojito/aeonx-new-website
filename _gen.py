@@ -5,7 +5,7 @@ shared chrome (nav/mega-menu/footer/styles) extracted from index.html.
 Usage: python3 _gen.py <NODE_ID> <out_path> "<Page Title>"
 Body nodes are flattened to absolute vw positions, same convention as index.html.
 """
-import json, sys, html, re, math
+import json, sys, html, re, math, os
 
 FACTOR = 100 / 1920.0  # vw per px
 IMG_EXPORTS = {}  # imageRef -> (export_node_id, method)
@@ -288,11 +288,23 @@ def box_style(n, left, top, w, h):
     if sc:
         sw = n.get('strokeWeight', 1)
         style += f"box-sizing:border-box;border:{vw(sw)} solid {sc};"
+    # DROP_SHADOW -> box-shadow, INNER_SHADOW -> inset box-shadow. The inset one is
+    # not decoration: the design's secondary/ghost buttons have no visible stroke and
+    # rely on a 2px inner shadow for their entire outline.
+    shadows = []
     for e in n.get('effects', []):
-        if e.get('visible', True) and e.get('type') == 'DROP_SHADOW':
-            o = e.get('offset', {'x':0,'y':0}); rad = e.get('radius',0)
-            style += f"box-shadow:{vw(o['x'])} {vw(o['y'])} {vw(rad)} {col(e['color'])};"
-            break
+        if not e.get('visible', True):
+            continue
+        t = e.get('type')
+        if t not in ('DROP_SHADOW', 'INNER_SHADOW'):
+            continue
+        o = e.get('offset', {'x': 0, 'y': 0})
+        parts = f"{vw(o['x'])} {vw(o['y'])} {vw(e.get('radius', 0))}"
+        if e.get('spread'):
+            parts += f" {vw(e['spread'])}"
+        shadows.append(('inset ' if t == 'INNER_SHADOW' else '') + parts + ' ' + col(e['color']))
+    if shadows:
+        style += "box-shadow:" + ','.join(shadows) + ";"
     bl = blend_css(n)
     if bl:
         style += f"mix-blend-mode:{bl};"
@@ -402,10 +414,39 @@ def subtree_flags(n):
         stack.extend(m.get('children', []))
     return has_v, has_t, has_i
 
+SVG_DIMS = {}
+
+def svg_intrinsic(nid):
+    """Intrinsic px size of this node's exported SVG, or None if not downloaded."""
+    if nid not in SVG_DIMS:
+        dim = None
+        try:
+            head = open(os.path.join('assets', 'vec', nid.replace(':', '-') + '.svg'),
+                        encoding='utf-8', errors='replace').read(400)
+            m = re.search(r'<svg[^>]*?width="([\d.]+)"[^>]*?height="([\d.]+)"', head)
+            if m:
+                dim = (float(m.group(1)), float(m.group(2)))
+        except OSError:
+            pass
+        SVG_DIMS[nid] = dim
+    return SVG_DIMS[nid]
+
 def render_box(n, ox, oy):
-    """Placement box for an exported asset: Figma crops SVG/PNG exports to the
-    node's render bounds (post-clip/effects), which can differ from layout bbox."""
-    rb = n.get('absoluteRenderBounds') or n.get('absoluteBoundingBox')
+    """Placement box for an exported asset. Figma normally crops SVG/PNG exports to
+    the node's render bounds (post-clip/effects), so that is the default. But a node
+    clipped by an ancestor still exports at FULL geometry size — dropping that into
+    the clipped box squashes the entire graphic into the visible sliver (this is why
+    the hero sunbursts showed a whole compressed starburst instead of a corner of a
+    big one). So trust the file on disk: whichever box the SVG's own intrinsic size
+    matches is the box it was exported at. The ancestor's overflow:hidden (or
+    .ax-page's) then reproduces Figma's clip."""
+    bb = n['absoluteBoundingBox']
+    rb = n.get('absoluteRenderBounds') or bb
+    dim = svg_intrinsic(n['id'])
+    if dim:
+        fits = lambda b: abs(dim[0]-b['width']) <= 1.5 and abs(dim[1]-b['height']) <= 1.5
+        if not fits(rb) and fits(bb):
+            rb = bb
     return rb['x']-ox, rb['y']-oy, rb['width'], rb['height']
 
 def emit_vec_asset(n, left, top, w, h):

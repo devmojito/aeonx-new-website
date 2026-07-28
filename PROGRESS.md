@@ -170,3 +170,43 @@ Was a hand-injected homepage-only block (`#ax-cta-wash`) and got wiped by the re
 - 45% opacity by default, 100% while the pointer is inside; `pointer-events:none` so it never
   blocks the CTA buttons. Verified on /alliances/ (75 x 21.4vw, hover toggles, buttons clickable).
 - Coverage: 29 pages carry a rainbow asset and all 29 render the wash.
+
+## Hero fidelity — two _gen.py bugs fixed (2026-07-28)
+
+User reported "hero section differences" (FMCG + Manufacturing vs the Figma prototype).
+Both causes were in the generator, so both were sitewide, not per-page.
+
+1. **Squashed vector art.** `render_box()` placed every exported SVG at the node's
+   `absoluteRenderBounds`. That is right for a normal node, but a node **clipped by an
+   ancestor** still gets exported by the Figma REST API at its FULL geometry size — so
+   dropping an 838×838 sunburst into its 485×567 clipped box crammed the whole starburst
+   into the corner instead of showing a corner of a big one. (Visible as the complete
+   grey sunburst floating in the hero; Figma shows only its bottom-right quadrant.)
+   Fix: `svg_intrinsic()` reads the exported SVG's own `width`/`height` and
+   `render_box()` uses whichever box (render bounds or layout bbox) the file actually
+   matches. `.ax-page{overflow:hidden}` (or the enclosing `g-clip`) then reproduces
+   Figma's clip. Desktop-body mismatches went **484 → 33** (the 33 match neither box —
+   rotated/masked exports, left on the old behaviour).
+2. **Missing inner shadows.** The design's secondary/ghost buttons ("Talk to a
+   Specialist", "See Manufacturing Template") have `strokes[0].visible == false` — their
+   entire visible outline is an `INNER_SHADOW` (rgb(147,38,25), radius 2, offset 0).
+   `_gen.py` only emitted `DROP_SHADOW` (and `break`ed after the first one), so those
+   buttons rendered as bare text. Fix: emit `INNER_SHADOW` as `inset` box-shadow,
+   include `spread`, and join multiple shadows instead of taking only the first.
+   143 inset shadows now across 34 pages. Verified by sampling Figma's own PNG render:
+   the "border" pixel is rgb(223,192,188) — the warm inner shadow, NOT the grey
+   rgb(213,218,226) stroke, which really is off.
+
+**Do not "fix" the FMCG hero grid.** Its `image`/`Lines` frame (`4593:13808`) is
+`visible:false` in Figma — FMCG legitimately has no grid; Manufacturing does.
+
+### Screenshots without the preview pane
+The Browser pane renders these pages into a ~160px corner (unusable). Headless Chromium
+works and is now the verification path:
+`chromium --headless --disable-gpu --hide-scrollbars --window-size=1920,1004 --screenshot=out.png "http://localhost:8809/<path>/"`
+Compare against `mcp__figma__get_screenshot` on the matching node.
+
+### KNOWN DIFF, needs a decision (not a bug)
+Figma's navbar social icons are **X, LinkedIn, YouTube**; the site ships **Facebook,
+LinkedIn, Instagram** wired to AeonX's real, verified accounts. Matching Figma would mean
+linking to accounts that may not exist. Left as-is pending the user's call.
