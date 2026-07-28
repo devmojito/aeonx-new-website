@@ -18,8 +18,9 @@ GPTW_FIX = '/assets/partners/gptw-certified.png'
 MOB_OLD = 'body>*:not(.ax-mob){display:none!important}'
 MOB_NEW = 'body>*:not(.ax-mob):not(.ax-mnav){display:none!important}'
 
-CTAWASH = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '_ctawash.html'),
-                encoding='utf-8').read()
+_HERE = os.path.dirname(os.path.abspath(__file__))
+CTAWASH = open(os.path.join(_HERE, '_ctawash.html'), encoding='utf-8').read()
+CURSOR = open(os.path.join(_HERE, '_cursor.html'), encoding='utf-8').read()
 
 # The bottom-right hero sunburst ("Brutalist 86") sits behind the full-width glass
 # bands, so backdrop-filter:blur(0.5208vw) softens it. The top-left one
@@ -53,7 +54,7 @@ def blur_bursts(s, ids):
     return re.sub(r'<img class="g-vec"[^>]*data-vec="([^"]+)"[^>]*>', sub, s)
 
 def main():
-    stats = {'gptw': 0, 'mobnav': 0, 'ctawash': 0, 'burst': 0}
+    stats = {'gptw': 0, 'mobnav': 0, 'ctawash': 0, 'burst': 0, 'cursor': 0}
     bids = burst_ids()
     for f in glob.glob('**/index.html', recursive=True) + ['_chrome.html']:
         try:
@@ -64,6 +65,9 @@ def main():
         if 'ax-ctawash-css' not in s and '</body>' in s:
             s = s.replace('</body>', CTAWASH + '\n</body>', 1)
             stats['ctawash'] = stats.get('ctawash', 0) + 1
+        if 'ax-cursor-css' not in s and '</body>' in s:
+            s = s.replace('</body>', CURSOR + '\n</body>', 1)
+            stats['cursor'] += 1
         if GPTW_RAW in s:
             s = s.replace(GPTW_RAW, GPTW_FIX)
             stats['gptw'] += 1
@@ -78,7 +82,8 @@ def main():
         if s != o:
             open(f, 'w', encoding='utf-8').write(s)
     print(f"postbuild: gptw {stats['gptw']}, mobile-nav {stats['mobnav']}, "
-          f"cta-wash {stats['ctawash']}, hero-burst-blur {stats['burst']} files")
+          f"cta-wash {stats['ctawash']}, hero-burst-blur {stats['burst']}, "
+          f"cursor {stats['cursor']} files")
 
 if __name__ == '__main__':
     main()

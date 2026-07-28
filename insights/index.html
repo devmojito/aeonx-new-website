@@ -1369,6 +1369,88 @@ document.addEventListener("DOMContentLoaded",function(){
   });
 });
 </script>
+<style id="ax-cursor-css">
+/* Custom cursor: a brand-orange dot that tracks the pointer exactly, plus a ring
+   that lags behind with easing and wraps interactive elements. Desktop + fine
+   pointer only; reduced-motion users keep the native cursor. */
+.ax-cur{position:fixed;top:0;left:0;z-index:2147483000;pointer-events:none;
+  border-radius:50%;opacity:0;will-change:transform;
+  transition:opacity .2s ease,width .22s cubic-bezier(.22,.68,.28,1),
+             height .22s cubic-bezier(.22,.68,.28,1),background-color .22s ease,
+             border-color .22s ease}
+.ax-cur--dot{width:0.3125vw;height:0.3125vw;background:#df3f17;margin:-0.15625vw 0 0 -0.15625vw}
+.ax-cur--ring{width:1.4583vw;height:1.4583vw;margin:-0.72915vw 0 0 -0.72915vw;
+  border:0.0781vw solid rgba(223,63,23,.55);background:transparent}
+html.ax-cur-on .ax-cur{opacity:1}
+/* over something clickable: ring opens up and tints, dot recedes into it */
+html.ax-cur-hot .ax-cur--ring{width:2.6042vw;height:2.6042vw;margin:-1.3021vw 0 0 -1.3021vw;
+  background:rgba(223,63,23,.10);border-color:rgba(223,63,23,.85)}
+html.ax-cur-hot .ax-cur--dot{width:0.1563vw;height:0.1563vw;margin:-0.07815vw 0 0 -0.07815vw}
+/* press feedback */
+html.ax-cur-down .ax-cur--ring{width:1.0417vw;height:1.0417vw;margin:-0.52085vw 0 0 -0.52085vw}
+/* Native cursor is hidden, EXCEPT where text is entered -- losing the I-beam there
+   costs real usability and the dot cannot stand in for a caret position. */
+html.ax-cur-on,html.ax-cur-on *{cursor:none}
+html.ax-cur-on input,html.ax-cur-on textarea,html.ax-cur-on [contenteditable]{cursor:text}
+@media (max-width:1024px){.ax-cur{display:none}}
+@media (prefers-reduced-motion:reduce){.ax-cur{display:none}
+  html.ax-cur-on,html.ax-cur-on *{cursor:auto}}
+</style>
+<script>
+/* ---- CUSTOM CURSOR ---- */
+(function(){
+  if(!window.matchMedia) return;
+  if(!matchMedia('(min-width:1025px)').matches) return;
+  if(!matchMedia('(pointer:fine)').matches) return;
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  var root=document.documentElement;
+  var dot=document.createElement('div'); dot.className='ax-cur ax-cur--dot';
+  var ring=document.createElement('div'); ring.className='ax-cur ax-cur--ring';
+  dot.setAttribute('aria-hidden','true'); ring.setAttribute('aria-hidden','true');
+  (document.body||root).appendChild(ring); (document.body||root).appendChild(dot);
+
+  var HOT='a,button,[role="link"],[role="button"],input[type="submit"],'+
+          '.ax-nav__link,.ax-nav__btn,.ax-nav__soc,.ax-mm__si,.ax-mm2__ln,'+
+          '.ax-mm2__feat-btn,.ax-mm2__api-btn,.ax-tab,[data-cursor="hot"]';
+  var x=0,y=0,rx=0,ry=0,raf=0,seen=false;
+
+  function frame(){
+    // ring eases toward the pointer; the dot is always exact
+    rx+=(x-rx)*0.18; ry+=(y-ry)*0.18;
+    ring.style.transform='translate3d('+rx+'px,'+ry+'px,0)';
+    if(Math.abs(x-rx)>0.1||Math.abs(y-ry)>0.1){raf=requestAnimationFrame(frame);}
+    else{rx=x;ry=y;ring.style.transform='translate3d('+rx+'px,'+ry+'px,0)';raf=0;}
+  }
+  function tick(){ if(!raf) raf=requestAnimationFrame(frame); }
+
+  document.addEventListener('mousemove',function(e){
+    x=e.clientX; y=e.clientY;
+    dot.style.transform='translate3d('+x+'px,'+y+'px,0)';
+    if(!seen){seen=true;rx=x;ry=y;root.classList.add('ax-cur-on');}
+    tick();
+  },{passive:true});
+
+  document.addEventListener('mouseover',function(e){
+    var t=e.target;
+    if(t&&t.closest&&t.closest(HOT)) root.classList.add('ax-cur-hot');
+  },{passive:true});
+  document.addEventListener('mouseout',function(e){
+    var t=e.relatedTarget;
+    if(!t||!t.closest||!t.closest(HOT)) root.classList.remove('ax-cur-hot');
+  },{passive:true});
+
+  document.addEventListener('mousedown',function(){root.classList.add('ax-cur-down');},{passive:true});
+  document.addEventListener('mouseup',function(){root.classList.remove('ax-cur-down');},{passive:true});
+  document.addEventListener('mouseleave',function(){root.classList.remove('ax-cur-on');},{passive:true});
+  document.addEventListener('mouseenter',function(){if(seen)root.classList.add('ax-cur-on');},{passive:true});
+  // a touch anywhere means this is not really a mouse machine -- stand down
+  window.addEventListener('touchstart',function(){
+    root.classList.remove('ax-cur-on','ax-cur-hot','ax-cur-down');
+  },{passive:true,once:true});
+})();
+</script>
+
 <div class="ax-mob"><main class="ax-page" style="position:relative;height:3555.5814vw">
 <div class="g-b" style="position:absolute;left:0.0000vw;top:21.3953vw;width:100.0000vw;height:91.3953vw;box-sizing:border-box;border:0.2326vw solid rgb(228,227,222);"></div>
 <div class="g-b" style="position:absolute;left:3.7209vw;top:21.6279vw;width:92.5581vw;height:81.6279vw;box-sizing:border-box;border:0.2326vw solid rgb(236,238,242);"></div>

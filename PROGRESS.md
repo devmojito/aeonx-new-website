@@ -356,3 +356,23 @@ and drives `visibility` + `opacity` instead, so open AND close both animate:
 finishes) so the four always-rendered fixed panels never swallow a click. Verified:
 settled-open = opacity 1 / transform none / chevron `matrix(-1,0,0,-1)`; settled-closed =
 visibility hidden; 0 hidden panels with hit-testing enabled; no horizontal overflow.
+
+## Custom cursor (2026-07-28)
+
+`_cursor.html`, injected by `_postbuild.py` (rebuild-safe, idempotent — a second run
+injects 0). Dot + trailing ring, per the user's picks: hide the native cursor, desktop,
+all pages.
+
+- `.ax-cur--dot` tracks the pointer exactly; `.ax-cur--ring` eases toward it
+  (`rx += (x-rx)*0.18`) on a rAF loop that **stops when settled**, so it is not a
+  permanent frame ticker.
+- Over anything interactive (`HOT` selector: links, buttons, `[role=link]`, nav/mega-menu
+  items, tabs, `[data-cursor="hot"]`) the ring grows 20px→36px and tints; the dot shrinks.
+  `mousedown` shrinks the ring.
+- Gated to `min-width:1025px` + `pointer:fine` + not `prefers-reduced-motion`, and a
+  `touchstart` anywhere stands it down permanently.
+- `pointer-events:none`, `aria-hidden`, `z-index:2147483000`.
+
+**One deliberate carve-out from "hide the native cursor":** `input, textarea,
+[contenteditable]` keep `cursor:text`. A 3px dot cannot indicate a caret position, and
+losing the I-beam in a form is a real usability cost. Everything else is `cursor:none`.
