@@ -140,6 +140,18 @@ def emit_text(n, left, top, w, h):
 
     cso = n.get('characterStyleOverrides') or []
     sot = n.get('styleOverrideTable') or {}
+    # If every character carries an override that agrees on size/weight, promote it
+    # to the element itself. Otherwise the element keeps the (often larger) base
+    # size, which shows through for any character the overrides happen to miss.
+    if cso and len(cso) >= len(chars) > 0 and all(cso):
+        ov = [sot.get(str(s), {}) for s in cso]
+        sizes = {o.get('fontSize') for o in ov}
+        weights = {o.get('fontWeight') for o in ov}
+        if len(sizes) == 1 and None not in sizes:
+            fs = sizes.pop()
+            lh = st.get('lineHeightPx', lh)
+        if len(weights) == 1 and None not in weights:
+            fw = weights.pop()
     if cso and any(cso):
         # A run of characters can override colour, weight, size and family
         # (e.g. a bold, smaller emphasised phrase inside a heading). Capture

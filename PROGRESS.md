@@ -72,3 +72,19 @@ FIXED: no longer strip the trailing `</div>`. Verified div open/close = 403/403 
 positions CTA 44.85/73.30 vs Figma 44.81/73.27, arrows 29.93 vs 29.9.
 LESSON: after ANY post-processing of generated HTML, assert tag balance — a single lost
 closing tag silently re-parents whole sections and looks like "missing content".
+
+## SYSTEMATIC AUDIT (use this instead of eyeballing screenshots)
+`python3 _audit.py [NODE_ID]` writes `_audit_expected.json` (every visible Figma TEXT node:
+absolute left/top in vw, font-size vw, weight, colour). Then in real Chrome: force-reveal
+(`document.querySelectorAll('.ax-rv,.ax-rvo').forEach(e=>e.classList.add('ax-in'))`), match
+each `.g-t` by normalised text, and diff position/size/weight/colour.
+Chrome MCP quirk: async JS returns `{}` — stash the result on `window.__x` then read it in a
+second SYNC call.
+HOMEPAGE RESULT (after all round-3 fixes): 182 expected, 167 matched, **0 style/position
+defects**. The other 15 = 13 intentionally hidden "Liveblocks" template tabs + 2 string-match
+artifacts (\r in the text) that were manually confirmed rendering.
+Also fixed this round: when EVERY character shares an override size/weight, `_gen` now promotes
+it to the element instead of leaving the larger base size on the parent.
+ALL 34 sub-pages rebuilt so the gradient-text + override fixes propagate. 0 missing assets,
+div balance clean, chrome enhancements (reveal sweep, CTA resolver, mobile nav, photo-fit,
+favicon, socials) all survived the rebuild.
