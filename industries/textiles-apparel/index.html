@@ -861,7 +861,18 @@ function skipBtn(n){ return NOTBTN.test(n)||NOTBTN2.indexOf(n)>=0; }
 <div class="g-t" style="position:absolute;left:19.4186vw;top:2.4419vw;width:61.1628vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.2558vw;line-height:4.6512vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">Signup to LlamaParse for 10k free credits!</div>
 <img class="g-vec" src="/assets/vec/5637-69121.svg" data-vec="5637:69121" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:1.8605vw;top:10.4651vw;width:96.2791vw;height:11.8605vw;backdrop-filter:blur(0.2326vw);-webkit-backdrop-filter:blur(0.2326vw);">
 </main></div>
-<script>/* scroll reveal: fade + rise content on enter (per-page, breakpoint-aware) */document.addEventListener("DOMContentLoaded",function(){if(!("IntersectionObserver" in window))return;if(matchMedia("(prefers-reduced-motion: reduce)").matches)return;var roots=[document.querySelector("main.ax-page"),document.querySelector(".ax-mob"),document.querySelector("section.ax-footer")].filter(Boolean);var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add("ax-in");io.unobserve(e.target);}});},{rootMargin:"0px 0px -6% 0px",threshold:0.04});roots.forEach(function(root){Array.prototype.forEach.call(root.querySelectorAll(".g-t,.g-b,.g-img,.g-vec"),function(el){if(el.id==="ax-mosaic"||el.id==="ax-mosaic-m")return;if(el.offsetParent===null&&getComputedStyle(el).position!=="fixed")return;var t=el.style.transform;el.classList.add((t&&t!=="none")?"ax-rvo":"ax-rv");io.observe(el);});});});</script>
+<script>/* scroll reveal: fade + rise content on enter (per-page, breakpoint-aware) */document.addEventListener("DOMContentLoaded",function(){if(!("IntersectionObserver" in window))return;if(matchMedia("(prefers-reduced-motion: reduce)").matches)return;var roots=[document.querySelector("main.ax-page"),document.querySelector(".ax-mob"),document.querySelector("section.ax-footer")].filter(Boolean);var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add("ax-in");io.unobserve(e.target);}});},{rootMargin:"0px 0px -6% 0px",threshold:0.04});
+/* SAFETY: elements inside clipped/offscreen containers may never fire an
+   intersection, which would leave real content invisible forever. Sweep on
+   scroll (and once after load) and reveal anything already in view. */
+var _axSweep=function(){var n=document.querySelectorAll(".ax-rv:not(.ax-in),.ax-rvo:not(.ax-in)");
+ for(var i=0;i<n.length;i++){var r=n[i].getBoundingClientRect();
+  if(r.top<innerHeight*1.05&&r.bottom>-innerHeight*0.2){n[i].classList.add("ax-in");}}};
+addEventListener("scroll",_axSweep,{passive:true});
+addEventListener("resize",_axSweep);
+setTimeout(_axSweep,400);setTimeout(_axSweep,1500);setTimeout(function(){
+ var n=document.querySelectorAll(".ax-rv:not(.ax-in),.ax-rvo:not(.ax-in)");
+ for(var i=0;i<n.length;i++)n[i].classList.add("ax-in");},4000);roots.forEach(function(root){Array.prototype.forEach.call(root.querySelectorAll(".g-t,.g-b,.g-img,.g-vec"),function(el){if(el.id==="ax-mosaic"||el.id==="ax-mosaic-m")return;if(el.offsetParent===null&&getComputedStyle(el).position!=="fixed")return;var t=el.style.transform;el.classList.add((t&&t!=="none")?"ax-rvo":"ax-rv");io.observe(el);});});});</script>
 <script>
 /* photo fit: card images whose aspect differs a lot from their box would be
    heavily cropped by background-size:cover -> switch to contain (show whole photo) */

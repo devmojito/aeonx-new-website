@@ -141,22 +141,38 @@ def emit_text(n, left, top, w, h):
     cso = n.get('characterStyleOverrides') or []
     sot = n.get('styleOverrideTable') or {}
     if cso and any(cso):
-        def color_for(i):
+        # A run of characters can override colour, weight, size and family
+        # (e.g. a bold, smaller emphasised phrase inside a heading). Capture
+        # all of them, not just colour, or the emphasis is silently dropped.
+        def ov_for(i):
             sid = cso[i] if i < len(cso) else 0
             if sid and str(sid) in sot:
-                c = solid_fill(sot[str(sid)].get('fills'))
-                if c:
-                    return c
-            return None
+                o = sot[str(sid)]
+                d = {}
+                col = solid_fill(o.get('fills'))
+                if col:
+                    d['color'] = col
+                if o.get('fontWeight'):
+                    d['font-weight'] = str(o['fontWeight'])
+                if o.get('fontSize'):
+                    d['font-size'] = vw(o['fontSize'])
+                if o.get('fontFamily'):
+                    d['font-family'] = f"'{o['fontFamily']}',sans-serif"
+                return tuple(sorted(d.items()))
+            return ()
         parts = []
         i = 0
         while i < len(chars):
-            c0 = color_for(i)
+            o0 = ov_for(i)
             j = i
-            while j < len(chars) and color_for(j) == c0:
+            while j < len(chars) and ov_for(j) == o0:
                 j += 1
             seg = seg_html(chars[i:j])
-            parts.append(f'<span style="position:static;color:{c0}">{seg}</span>' if c0 else seg)
+            if o0:
+                css = ''.join(f'{k}:{v};' for k, v in o0)
+                parts.append(f'<span style="position:static;{css}">{seg}</span>')
+            else:
+                parts.append(seg)
             i = j
         body = ''.join(parts)
     else:

@@ -46,3 +46,17 @@ Workflow for pixel-perfect work (fileKey `oskhBYvi1Q7GGPqrqABZQp`):
 - `mcp__figma__get_metadata` / `get_design_context` for structure + exact specs.
 KEY NODES: Home `4046:31781`; hero `5889:30861` (top 5.938vw, h 42.92vw; eyebrow top 14.01vw left 7.14vw; CTAs top 44.81vw); stats `4046:31782`.
 RULE: never guess offsets/colors again — pull the node spec via MCP first.
+
+## FIDELITY BUGS FOUND VIA MCP (fixed) — round 2
+1. **Per-character style overrides were dropped.** `_gen.emit_text` read ONLY colour from
+   `styleOverrideTable`; Figma also stores `fontWeight`/`fontSize`/`fontFamily` there.
+   Effect: hero headline rendered at the 96px BASE size instead of the 86px override, and
+   "ONE ROOF." lost its bold (700). FIXED: segments now emit weight/size/family/colour.
+   This is systematic — any emphasised run on any page was affected.
+2. **Scroll-reveal could hide real content permanently.** Elements inside clipped/offscreen
+   containers never fired an IntersectionObserver entry, so they stayed `opacity:0` forever —
+   that is why the hero CTAs ("Request a proposal"/"Talk to us") and the scroll arrows looked
+   MISSING. They were in the DOM the whole time. FIXED: added a scroll/resize sweep + timed
+   safety that force-reveals anything still hidden (sitewide, 36 files). Verified 0 stuck.
+LESSON: "missing" elements were a rendering/visibility bug, not missing markup — always check
+computed opacity/visibility in real Chrome before concluding content is absent.
