@@ -132,3 +132,9 @@ How it holds together:
 - Nav buttons become auto-width with padding (they are flex, so siblings reflow safely).
 VERIFIED at 1464px: 56/56 labels computed `16px`, 0 asymmetric (>2px), 0 overflow;
 Get Started = 16px with 14.1px padding both sides.
+
+- BUTTON FONT-SIZE STANDARDISATION REVERTED (user request). Commits db63e06 (`ax-btn-size`,
+  0.8333vw) and f8ac71b (`ax-btn16-css`, 16px + recentring + nav padding) forced every CTA
+  label to one size with `!important`. Both style blocks removed from all 36 files, so button
+  labels use the per-element sizes _gen emits from Figma again (verified: computed == inline,
+  e.g. Request a proposal 0.7292vw, See AXIOM 1.0417vw, nav buttons 0.625vw).
