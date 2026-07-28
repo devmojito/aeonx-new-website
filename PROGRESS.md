@@ -321,3 +321,21 @@ that lookahead stopped matching and each run appended ANOTHER block. Sub-pages h
 because `_gen.py` rewrites them wholesale, but **`index.html` is hand-managed and never
 rewritten, so the homepage ended up with two mobile layouts.** The strip now anchors on
 the block's own `</main></div>`. Re-verified: 0 duplicates, tags balanced on all pages.
+
+## Image fills ignored scaleMode + imageTransform (2026-07-28)
+
+The product screenshots in the "same architecture runs across the SaaS suite" cards were
+cropped from the wrong edge — Xpense lost its whole left sidebar and logo.
+
+Every raster fill was emitted as `background-size:cover;background-position:center`
+(except TILE). Figma has four modes, and 329 of the 844 image fills in the file are not
+`FILL`:
+- `FILL` 472 → `cover` (what everything was getting)
+- `STRETCH` 176 → this is the UI's **crop** mode, NOT a stretch. The fill carries an
+  `imageTransform` 2x3 matrix mapping box UV to image UV (`i = sx*u + tx`). Inverted, it
+  becomes `background-size: w/sx h/sy` and `background-position: -tx/sx*w -ty/sy*h`.
+- `FIT` 153 → `contain`
+- `TILE` 43 → `repeat` (already handled)
+
+`image_sizing_css()` now handles all four. Verified against Figma's render of the section:
+all five cards show their full screenshot inset with the correct margins.

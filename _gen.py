@@ -171,6 +171,32 @@ def image_fill(fills):
             return f
     return None
 
+def image_sizing_css(fill, w, h):
+    """CSS sizing for a Figma IMAGE fill.
+
+    Figma's `STRETCH` is the "crop" mode from the UI: the image is not stretched to
+    the box, it is positioned by `imageTransform`, a 2x3 matrix mapping box UV to
+    image UV (`i = sx*u + tx`). Treating it as `cover` silently crops from the wrong
+    edge -- the product screenshots in the "same architecture" cards lost their left
+    sidebar. Invert the matrix into background-size + background-position instead.
+    """
+    if not fill:
+        return "background-size:cover;background-position:center;background-repeat:no-repeat;"
+    mode = fill.get('scaleMode')
+    if mode == 'TILE':
+        return "background-size:auto;background-repeat:repeat;"
+    if mode == 'FIT':
+        return "background-size:contain;background-position:center;background-repeat:no-repeat;"
+    t = fill.get('imageTransform')
+    if mode == 'STRETCH' and t and w and h:
+        sx, tx = t[0][0], t[0][2]
+        sy, ty = t[1][1], t[1][2]
+        if abs(sx) > 1e-6 and abs(sy) > 1e-6:
+            return (f"background-size:{vw(w/sx)} {vw(h/sy)};"
+                    f"background-position:{vw(-tx/sx*w)} {vw(-ty/sy*h)};"
+                    "background-repeat:no-repeat;")
+    return "background-size:cover;background-position:center;background-repeat:no-repeat;"
+
 def esc(s):
     return html.escape(s)
 
@@ -299,10 +325,7 @@ def box_style(n, left, top, w, h):
             export_id = nid; method = 'shot'
         IMG_EXPORTS[imgref] = (export_id, method)
         ifill = image_fill(fills)
-        if ifill and ifill.get('scaleMode') == 'TILE':
-            sizing = "background-size:auto;background-repeat:repeat;"
-        else:
-            sizing = "background-size:cover;background-position:center;background-repeat:no-repeat;"
+        sizing = image_sizing_css(ifill, w, h)
         style0 = (f"position:absolute;left:{vw(left)};top:{vw(top)};width:{vw(w)};height:{vw(h)};"
                   f"background-image:url(/assets/gen/{imgref}.png);{sizing}")
         cr = n.get('cornerRadius')
