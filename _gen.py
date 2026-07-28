@@ -41,7 +41,7 @@ def solid_fill(fills):
             return col(f['color'], f.get('opacity'))
     return None
 
-def gradient_fill(fills):
+def gradient_fill(fills, w=None, h_px=None):
     for f in fills or []:
         if f.get('visible', True) is False:
             continue
@@ -49,17 +49,73 @@ def gradient_fill(fills):
         if t.startswith('GRADIENT'):
             stops = f.get('gradientStops', [])
             sl = ', '.join(f"{col(s['color'])} {s['position']*100:.1f}%" for s in stops)
-            if t == 'GRADIENT_RADIAL':
+            # handles are normalised to the node box: [0] = center/start,
+            # [1] = end of the first axis, [2] = end of the second axis.
+            h = f.get('gradientHandlePositions') or []
+            if t == 'GRADIENT_ANGULAR':
+                # A conic sweep. Emitting this as a linear gradient (the old
+                # fallback) turned the soft swirl blobs on the industry heroes into
+                # hard saturated half-moons.
+                cx, cy, ang, ccw = 50.0, 50.0, 0.0, False
+                if len(h) >= 2:
+                    cx, cy = h[0]['x']*100, h[0]['y']*100
+                    dx1, dy1 = h[1]['x']-h[0]['x'], h[1]['y']-h[0]['y']
+                    ang = math.degrees(math.atan2(dx1, -dy1)) % 360
+                    if len(h) >= 3:
+                        dx2, dy2 = h[2]['x']-h[0]['x'], h[2]['y']-h[0]['y']
+                        # handedness of the two axes says which way Figma sweeps
+                        ccw = (dx1*dy2 - dy1*dx2) > 0
+                # Figma closes the sweep by interpolating the last stop back to the
+                # first; CSS holds the last stop instead, which floods the rest of
+                # the circle. Close the loop first, THEN mirror if needed -- mirroring
+                # an unclosed list puts the seam in the wrong place.
+                seq = list(stops) + ([dict(stops[0], position=1.0)] if stops else [])
+                if ccw:
+                    # conic-gradient only sweeps clockwise; mirror the stops
+                    seq = [dict(s, position=1-s['position']) for s in reversed(seq)]
+                sl = ', '.join(f"{col(s['color'])} {s['position']*100:.1f}%" for s in seq)
+                return f"conic-gradient(from {ang:.0f}deg at {cx:.1f}% {cy:.1f}%, {sl})"
+            if t in ('GRADIENT_RADIAL', 'GRADIENT_DIAMOND'):
+                if len(h) >= 3:
+                    cx, cy = h[0]['x']*100, h[0]['y']*100
+                    rx = math.hypot(h[1]['x']-h[0]['x'], h[1]['y']-h[0]['y'])*100
+                    ry = math.hypot(h[2]['x']-h[0]['x'], h[2]['y']-h[0]['y'])*100
+                    return (f"radial-gradient(ellipse {rx:.1f}% {ry:.1f}% "
+                            f"at {cx:.1f}% {cy:.1f}%, {sl})")
                 return f"radial-gradient(circle, {sl})"
-            # approximate linear angle from handles
-            h = f.get('gradientHandlePositions')
             ang = 180
-            if h and len(h) >= 2:
-                import math
+            if len(h) >= 2:
                 dx = h[1]['x']-h[0]['x']; dy = h[1]['y']-h[0]['y']
                 ang = (math.degrees(math.atan2(dx, -dy))) % 360
+                # Figma's gradient line is an arbitrary segment across the node, and
+                # it often runs well outside the box (handles at 2.5x). CSS instead
+                # fits its line to the box, so writing the stops at their raw
+                # positions squeezes the whole ramp into view -- a navy-to-pale
+                # gradient that Figma shows as almost all navy comes out mid-grey.
+                # Re-project the stops onto the CSS gradient line.
+                if w and h_px:
+                    p0 = (h[0]['x']*w, h[0]['y']*h_px)
+                    p1 = (h[1]['x']*w, h[1]['y']*h_px)
+                    vx, vy = p1[0]-p0[0], p1[1]-p0[1]
+                    seg = math.hypot(vx, vy)
+                    rad = math.radians(ang)
+                    css_len = abs(w*math.sin(rad)) + abs(h_px*math.cos(rad))
+                    if seg > 1e-6 and css_len > 1e-6:
+                        ux, uy = vx/seg, vy/seg
+                        sx = w/2.0 - css_len/2.0*ux
+                        sy = h_px/2.0 - css_len/2.0*uy
+                        off = ((p0[0]-sx)*ux + (p0[1]-sy)*uy) / css_len
+                        span = seg / css_len
+                        sl = ', '.join(
+                            f"{col(s['color'])} {(off + s['position']*span)*100:.1f}%"
+                            for s in stops)
             return f"linear-gradient({ang:.0f}deg, {sl})"
     return None
+
+def exotic_gradient(fills):
+    """True if a fill is a sweep CSS cannot reproduce (angular/diamond)."""
+    return any(f.get('visible', True) and f.get('type') in ('GRADIENT_ANGULAR', 'GRADIENT_DIAMOND')
+               for f in fills or [])
 
 def image_ref(fills):
     for f in fills or []:
@@ -269,10 +325,11 @@ def box_style(n, left, top, w, h):
                     'gradient', 'shape', 'union', 'subtract', 'clip'))
         a11y = ' role="presentation" aria-hidden="true"' if generic else f' role="img" aria-label="{esc(name)}"'
         return ('g-img', f' data-ref="{imgref}"{a11y}', style0)
-    bg = solid_fill(fills) or gradient_fill(fills)
+    bg = solid_fill(fills) or gradient_fill(fills, w, h)
     style = f"position:absolute;left:{vw(left)};top:{vw(top)};width:{vw(w)};height:{vw(h)};"
     if bg:
-        prop = 'background' if (bg.startswith('linear') or bg.startswith('radial')) else 'background-color'
+        # any gradient must go on `background`; background-color only takes a colour
+        prop = 'background' if 'gradient(' in bg else 'background-color'
         style += f"{prop}:{bg};"
     if n.get('type') == 'ELLIPSE':
         style += "border-radius:50%;"
@@ -599,6 +656,15 @@ def walk(n, ox, oy, out, depth=0):
         out.append(emit_text(n, bb['x']-ox, bb['y']-oy, bb['width'], bb['height']))
         return
     if t in ('RECTANGLE', 'ELLIPSE', 'LINE') and bb:
+        # An angular/diamond gradient is a sweep CSS cannot reproduce faithfully --
+        # conic-gradient paints the whole disc while Figma paints only a narrow arc
+        # of it (compare absoluteRenderBounds: a 1042px ellipse whose ink is
+        # 521x76). Export those shapes as SVG and place them by render bounds, the
+        # same way vector clusters are handled.
+        if exotic_gradient(n.get('fills')) and n.get('absoluteRenderBounds'):
+            l, t2, w, h = render_box(n, ox, oy)
+            out.append(emit_vec_asset(n, l, t2, w, h))
+            return
         h = bb['height'] if t != 'LINE' else max(bb['height'], 1)
         out.append(emit_box(n, bb['x']-ox, bb['y']-oy, bb['width'], h))
         return

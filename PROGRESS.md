@@ -241,3 +241,38 @@ The bottom-right sunburst ("Brutalist 86") sits behind the full-width glass band
 inside the hero, on top of those bands, so it stayed sharp and the pair looked mismatched.
 User asked for them to match, so `_postbuild.py` now blurs Brutalist 84 by the same
 amount. Figma has both crisp — this is intentional, do not "correct" it.
+
+## Gradients — three separate `_gen.py` bugs (2026-07-28)
+
+Reported as "hero section of the energy page is incorrect": the soft blob artwork
+rendered as huge saturated discs.
+
+1. **`GRADIENT_ANGULAR` fell through to `linear-gradient`.** A conic sweep became a
+   hard horizontal band. Now emitted as `conic-gradient(from <ang> at <cx>% <cy>%)`,
+   with the sweep direction taken from the handedness of the two gradient axes and the
+   loop closed by repeating the first stop at 100% (Figma interpolates the last stop
+   back to the first; CSS holds it, which floods the disc).
+2. **Gradients were written to `background-color:`.** `box_style` only routed
+   `linear`/`radial` to `background`; anything else (i.e. the new conic) went to
+   `background-color`, which is invalid, so those fills silently vanished. Now any
+   value containing `gradient(` goes on `background`.
+3. **Linear stops were not projected onto the CSS gradient line.** Figma's gradient
+   line is an arbitrary segment that often runs far outside the node (handles at 2.5x),
+   while CSS fits its line to the box. Writing the raw stop positions squeezed the whole
+   ramp into view — a navy-to-pale circle Figma paints as almost all navy came out
+   mid-grey. `gradient_fill()` now takes the node's w/h and re-projects each stop onto
+   the CSS line (`off + p*span`).
+
+**Even with all three fixed, an angular gradient is not reproducible in CSS.** Figma
+paints only a narrow arc of the shape (a 1042px ellipse whose `absoluteRenderBounds` is
+521x76) while `conic-gradient` paints the whole disc. So `_gen.py` now treats any shape
+with an ANGULAR/DIAMOND fill as an exported SVG asset (`exotic_gradient()` →
+`emit_vec_asset`), the same route vector clusters take. 5 desktop + 5 mobile ellipses.
+Verified pixel-for-pixel against Figma's own render of the group: sampled points match
+exactly once you account for the hero's 20% white glass band (e.g. Figma `f9ded7` →
+ours `fbe5df`, which is that colour under a 20% white veil).
+
+**GPTW badge is fine on all 34 pages** (audited: every one points at
+`/assets/partners/gptw-certified.png`, AR 0.588). The broken-image glyph seen next to it
+was one of the 5 new blob SVGs mid-rebuild, before `_vecfetch.py` had pulled them.
+Sitewide check now reports 0 missing assets.
