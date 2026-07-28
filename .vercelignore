@@ -1,0 +1,19 @@
+# Build tooling and working notes — not part of the deployed site
+_gen.py
+_build_all.py
+_imgfetch.py
+_vecfetch.py
+_veclean.py
+_mobile.py
+_reapply_home.py
+_audit.py
+_audit_expected.json
+_chrome.html
+PROGRESS.md
+CLAUDE.md
+aeonx-node.json
+aeonx-mobile.json
+aeonx-home-geo.json
+__pycache__/
+*.py
+*.bak*
