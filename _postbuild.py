@@ -21,6 +21,12 @@ MOB_NEW = 'body>*:not(.ax-mob):not(.ax-mnav){display:none!important}'
 _HERE = os.path.dirname(os.path.abspath(__file__))
 CTAWASH = open(os.path.join(_HERE, '_ctawash.html'), encoding='utf-8').read()
 CURSOR = open(os.path.join(_HERE, '_cursor.html'), encoding='utf-8').read()
+# Preloader is three pieces on purpose: the CSS + opt-in decision must run before first
+# paint (head), the overlay markup must exist in the HTML so there is no flash of
+# content before it appears (top of body), and the driver goes last (end of body).
+PRE_HEAD = open(os.path.join(_HERE, '_preloader.html'), encoding='utf-8').read()
+PRE_BODY = open(os.path.join(_HERE, '_preloader_body.html'), encoding='utf-8').read()
+PRE_JS = open(os.path.join(_HERE, '_preloader_js.html'), encoding='utf-8').read()
 
 # The bottom-right hero sunburst ("Brutalist 86") sits behind the full-width glass
 # bands, so backdrop-filter:blur(0.5208vw) softens it. The top-left one
@@ -54,7 +60,7 @@ def blur_bursts(s, ids):
     return re.sub(r'<img class="g-vec"[^>]*data-vec="([^"]+)"[^>]*>', sub, s)
 
 def main():
-    stats = {'gptw': 0, 'mobnav': 0, 'ctawash': 0, 'burst': 0, 'cursor': 0}
+    stats = {'gptw': 0, 'mobnav': 0, 'ctawash': 0, 'burst': 0, 'cursor': 0, 'preload': 0}
     bids = burst_ids()
     for f in glob.glob('**/index.html', recursive=True) + ['_chrome.html']:
         try:
@@ -68,6 +74,11 @@ def main():
         if 'ax-cursor-css' not in s and '</body>' in s:
             s = s.replace('</body>', CURSOR + '\n</body>', 1)
             stats['cursor'] += 1
+        if 'ax-pre-css' not in s and '</head>' in s and '<body>' in s and '</body>' in s:
+            s = s.replace('</head>', PRE_HEAD + '\n</head>', 1)
+            s = s.replace('<body>', '<body>\n' + PRE_BODY, 1)
+            s = s.replace('</body>', PRE_JS + '\n</body>', 1)
+            stats['preload'] += 1
         if GPTW_RAW in s:
             s = s.replace(GPTW_RAW, GPTW_FIX)
             stats['gptw'] += 1
@@ -83,7 +94,7 @@ def main():
             open(f, 'w', encoding='utf-8').write(s)
     print(f"postbuild: gptw {stats['gptw']}, mobile-nav {stats['mobnav']}, "
           f"cta-wash {stats['ctawash']}, hero-burst-blur {stats['burst']}, "
-          f"cursor {stats['cursor']} files")
+          f"cursor {stats['cursor']}, preloader {stats['preload']} files")
 
 if __name__ == '__main__':
     main()

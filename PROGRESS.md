@@ -376,3 +376,28 @@ all pages.
 **One deliberate carve-out from "hide the native cursor":** `input, textarea,
 [contenteditable]` keep `cursor:text`. A 3px dot cannot indicate a caret position, and
 losing the I-beam in a form is a real usability cost. Everything else is `cursor:none`.
+
+## Dot-matrix preloader (2026-07-28)
+
+Modelled on the Awwwards reference the user sent: off-white panel, mono "LOADING…" label
+in brand orange, a big 5x7 dot-matrix percentage counter on the right, a morphing 5x5 dot
+cluster bottom-left, tiny "AEONX • DIGITAL" credit.
+
+Three files, injected by `_postbuild.py` at three different points **on purpose**:
+- `_preloader.html` -> `</head>`: CSS + the opt-in decision, which must run before first
+  paint.
+- `_preloader_body.html` -> right after `<body>`: the overlay markup, so there is no
+  flash of page content before the overlay exists.
+- `_preloader_js.html` -> `</body>`: the driver (dot font, counter, cluster).
+
+Safety, because a stuck overlay is a dead site:
+- `#ax-pre{display:none}` by default; only the head script adds `html.ax-pre-on`. **No JS
+  or a JS error means no overlay at all**, never a blank screen.
+- The head script arms a 3.2s failsafe that tears the overlay down even if the driver
+  never runs.
+- Progress stalls at 92% until `window.load`, will not finish before **1.1s** (so it is
+  never a flash) and cannot outlast **2.6s** (so a slow asset cannot hold the site).
+- **Once per session**, not per page (`sessionStorage`), so clicking around the site does
+  not replay it. Skipped entirely under `prefers-reduced-motion`.
+
+Glyphs are a hand-written 5x7 bitmap font for `0-9` and `%` — no webfont, no image.

@@ -1,0 +1,54 @@
+<style id="ax-pre-css">
+/* Dot-matrix preloader. Hidden unless the head script opts this pageview in, so a
+   JS failure or a no-JS visitor can never be left staring at a blank overlay. */
+#ax-pre{display:none}
+html.ax-pre-on{overflow:hidden}
+html.ax-pre-on #ax-pre{display:block;position:fixed;inset:0;z-index:2147483100;
+  background:#f5f4f2;transition:opacity .5s ease,transform .5s cubic-bezier(.7,0,.3,1)}
+html.ax-pre-off #ax-pre{opacity:0;transform:translateY(-2vw);pointer-events:none}
+#ax-pre b{position:absolute;left:6vw;top:44vh;font-family:ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  font-weight:400;font-size:0.73vw;letter-spacing:.14em;color:#df3f17;text-transform:uppercase}
+#ax-pre-cluster{position:absolute;left:6vw;top:60vh;display:grid;
+  grid-template-columns:repeat(5,0.83vw);grid-auto-rows:0.83vw}
+#ax-pre-num{position:absolute;right:6vw;top:50vh;transform:translateY(-50%);
+  display:flex;align-items:flex-end;gap:1.1vw}
+#ax-pre-credit{position:absolute;right:6vw;top:calc(50vh + 4.9vw);
+  font-family:ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;font-size:0.57vw;
+  letter-spacing:.18em;color:#8695aa;text-transform:uppercase}
+#ax-pre .gl{display:grid;grid-template-columns:repeat(5,1.15vw);grid-auto-rows:1.15vw}
+#ax-pre .gl.pc{grid-template-columns:repeat(5,0.72vw);grid-auto-rows:0.72vw;margin-bottom:0.34vw}
+#ax-pre i{display:block;justify-self:center;align-self:center;border-radius:50%;
+  width:0.62vw;height:0.62vw;background:#23272e;opacity:0;transform:scale(.4);
+  transition:opacity .12s linear,transform .12s cubic-bezier(.2,.8,.3,1)}
+#ax-pre .gl.pc i{width:0.38vw;height:0.38vw}
+#ax-pre-cluster i{width:0.55vw;height:0.55vw}
+#ax-pre i.on{opacity:1;transform:scale(1)}
+@media (max-width:1024px){
+  #ax-pre b{top:40vh;font-size:2.6vw}
+  #ax-pre-cluster{top:56vh;grid-template-columns:repeat(5,3vw);grid-auto-rows:3vw}
+  #ax-pre-cluster i{width:1.8vw;height:1.8vw}
+  #ax-pre-num{right:auto;left:6vw;top:auto;bottom:14vh;transform:none;gap:2vw}
+  #ax-pre .gl{grid-template-columns:repeat(5,2.4vw);grid-auto-rows:2.4vw}
+  #ax-pre .gl.pc{grid-template-columns:repeat(5,1.5vw);grid-auto-rows:1.5vw}
+  #ax-pre i{width:1.5vw;height:1.5vw}
+  #ax-pre .gl.pc i{width:0.95vw;height:0.95vw}
+  #ax-pre-credit{right:auto;left:6vw;top:auto;bottom:9vh;font-size:2vw}
+}
+@media (prefers-reduced-motion:reduce){html.ax-pre-on #ax-pre{display:none}
+  html.ax-pre-on{overflow:auto}}
+</style>
+<script>
+/* Decide BEFORE first paint whether this pageview gets the preloader, and arm a hard
+   failsafe so the overlay always goes away even if the driver below never runs. */
+(function(){
+  try{
+    if(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if(sessionStorage.getItem('ax-pre')) return;   /* once per session, not per page */
+    sessionStorage.setItem('ax-pre','1');
+  }catch(e){ /* private mode: just show it */ }
+  var r=document.documentElement;
+  r.className+=' ax-pre-on';
+  setTimeout(function(){r.classList.add('ax-pre-off');
+    setTimeout(function(){r.classList.remove('ax-pre-on','ax-pre-off');},600);},3200);
+})();
+</script>

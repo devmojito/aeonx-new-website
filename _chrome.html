@@ -158,8 +158,67 @@ img{border:0}
 <style id="ax-reveal-css">.ax-rv{opacity:0;transform:translateY(1.4vw);transition:opacity .7s cubic-bezier(.22,.61,.36,1),transform .7s cubic-bezier(.22,.61,.36,1);}.ax-rv.ax-in{opacity:1;transform:translateY(0);}.ax-rvo{opacity:0;transition:opacity .7s ease;}.ax-rvo.ax-in{opacity:1;}@media (prefers-reduced-motion: reduce){.ax-rv,.ax-rvo{opacity:1!important;transform:none!important;transition:none!important;}}</style>
 <link rel="icon" href="/assets/favicon/favicon-32.png" sizes="32x32"><link rel="icon" href="/assets/favicon/favicon-192.png" sizes="192x192"><link rel="apple-touch-icon" href="/assets/favicon/apple-touch-icon.png">
 
+
+<style id="ax-pre-css">
+/* Dot-matrix preloader. Hidden unless the head script opts this pageview in, so a
+   JS failure or a no-JS visitor can never be left staring at a blank overlay. */
+#ax-pre{display:none}
+html.ax-pre-on{overflow:hidden}
+html.ax-pre-on #ax-pre{display:block;position:fixed;inset:0;z-index:2147483100;
+  background:#f5f4f2;transition:opacity .5s ease,transform .5s cubic-bezier(.7,0,.3,1)}
+html.ax-pre-off #ax-pre{opacity:0;transform:translateY(-2vw);pointer-events:none}
+#ax-pre b{position:absolute;left:6vw;top:44vh;font-family:ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  font-weight:400;font-size:0.73vw;letter-spacing:.14em;color:#df3f17;text-transform:uppercase}
+#ax-pre-cluster{position:absolute;left:6vw;top:60vh;display:grid;
+  grid-template-columns:repeat(5,0.83vw);grid-auto-rows:0.83vw}
+#ax-pre-num{position:absolute;right:6vw;top:50vh;transform:translateY(-50%);
+  display:flex;align-items:flex-end;gap:1.1vw}
+#ax-pre-credit{position:absolute;right:6vw;top:calc(50vh + 4.9vw);
+  font-family:ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;font-size:0.57vw;
+  letter-spacing:.18em;color:#8695aa;text-transform:uppercase}
+#ax-pre .gl{display:grid;grid-template-columns:repeat(5,1.15vw);grid-auto-rows:1.15vw}
+#ax-pre .gl.pc{grid-template-columns:repeat(5,0.72vw);grid-auto-rows:0.72vw;margin-bottom:0.34vw}
+#ax-pre i{display:block;justify-self:center;align-self:center;border-radius:50%;
+  width:0.62vw;height:0.62vw;background:#23272e;opacity:0;transform:scale(.4);
+  transition:opacity .12s linear,transform .12s cubic-bezier(.2,.8,.3,1)}
+#ax-pre .gl.pc i{width:0.38vw;height:0.38vw}
+#ax-pre-cluster i{width:0.55vw;height:0.55vw}
+#ax-pre i.on{opacity:1;transform:scale(1)}
+@media (max-width:1024px){
+  #ax-pre b{top:40vh;font-size:2.6vw}
+  #ax-pre-cluster{top:56vh;grid-template-columns:repeat(5,3vw);grid-auto-rows:3vw}
+  #ax-pre-cluster i{width:1.8vw;height:1.8vw}
+  #ax-pre-num{right:auto;left:6vw;top:auto;bottom:14vh;transform:none;gap:2vw}
+  #ax-pre .gl{grid-template-columns:repeat(5,2.4vw);grid-auto-rows:2.4vw}
+  #ax-pre .gl.pc{grid-template-columns:repeat(5,1.5vw);grid-auto-rows:1.5vw}
+  #ax-pre i{width:1.5vw;height:1.5vw}
+  #ax-pre .gl.pc i{width:0.95vw;height:0.95vw}
+  #ax-pre-credit{right:auto;left:6vw;top:auto;bottom:9vh;font-size:2vw}
+}
+@media (prefers-reduced-motion:reduce){html.ax-pre-on #ax-pre{display:none}
+  html.ax-pre-on{overflow:auto}}
+</style>
+<script>
+/* Decide BEFORE first paint whether this pageview gets the preloader, and arm a hard
+   failsafe so the overlay always goes away even if the driver below never runs. */
+(function(){
+  try{
+    if(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if(sessionStorage.getItem('ax-pre')) return;   /* once per session, not per page */
+    sessionStorage.setItem('ax-pre','1');
+  }catch(e){ /* private mode: just show it */ }
+  var r=document.documentElement;
+  r.className+=' ax-pre-on';
+  setTimeout(function(){r.classList.add('ax-pre-off');
+    setTimeout(function(){r.classList.remove('ax-pre-on','ax-pre-off');},600);},3200);
+})();
+</script>
+
 </head>
 <body>
+<div id="ax-pre" aria-hidden="true"><b>Loading&hellip;</b><div id="ax-pre-cluster"></div><div id="ax-pre-num"></div><div id="ax-pre-credit">AeonX&nbsp;&bull;&nbsp;Digital</div></div>
+
+
 <header class="ax-header">
   <a class="ax-annc" href="#" aria-label="Announcement">
     <span class="ax-annc__dot"></span>
@@ -717,6 +776,93 @@ html.ax-cur-on input,html.ax-cur-on textarea,html.ax-cur-on [contenteditable]{cu
   window.addEventListener('touchstart',function(){
     root.classList.remove('ax-cur-on','ax-cur-hot','ax-cur-down');
   },{passive:true,once:true});
+})();
+</script>
+
+
+<script>
+/* ---- PRELOADER (dot-matrix counter) ---- */
+(function(){
+  var root=document.documentElement;
+  if(!root.classList.contains('ax-pre-on')) return;
+  var wrap=document.getElementById('ax-pre'); if(!wrap) return;
+
+  /* 5x7 dot font, only the glyphs a percentage needs */
+  var F={
+    '0':['01110','10001','10011','10101','11001','10001','01110'],
+    '1':['00100','01100','00100','00100','00100','00100','01110'],
+    '2':['01110','10001','00001','00010','00100','01000','11111'],
+    '3':['11111','00010','00100','00010','00001','10001','01110'],
+    '4':['00010','00110','01010','10010','11111','00010','00010'],
+    '5':['11111','10000','11110','00001','00001','10001','01110'],
+    '6':['00110','01000','10000','11110','10001','10001','01110'],
+    '7':['11111','00001','00010','00100','01000','01000','01000'],
+    '8':['01110','10001','10001','01110','10001','10001','01110'],
+    '9':['01110','10001','10001','01111','00001','00010','01100'],
+    '%':['11001','11010','00010','00100','01000','01011','10011']
+  };
+  function glyph(parent,cls){
+    var g=document.createElement('div'); g.className='gl'+(cls?' '+cls:'');
+    var cells=[];
+    for(var i=0;i<35;i++){var d=document.createElement('i');g.appendChild(d);cells.push(d);}
+    parent.appendChild(g); return cells;
+  }
+  function paint(cells,ch){
+    var m=F[ch]||F['0'];
+    for(var r=0;r<7;r++){var row=m[r];
+      for(var c=0;c<5;c++) cells[r*5+c].classList.toggle('on',row.charAt(c)==='1');}
+  }
+
+  var num=document.getElementById('ax-pre-num');
+  var d1=glyph(num),d2=glyph(num),d3=glyph(num),pc=glyph(num,'pc');
+  paint(pc,'%');
+
+  /* the little morphing cluster, 5x5 frames */
+  var cl=document.getElementById('ax-pre-cluster'),cc=[];
+  for(var i=0;i<25;i++){var d=document.createElement('i');cl.appendChild(d);cc.push(d);}
+  var FR=[
+    '00100'+'00100'+'11111'+'00100'+'00100',
+    '00100'+'01110'+'11111'+'01110'+'00100',
+    '10001'+'01010'+'00100'+'01010'+'10001',
+    '00000'+'01110'+'01110'+'01110'+'00000',
+    '00000'+'00000'+'00100'+'00000'+'00000'
+  ];
+  var fi=0;
+  var clusterTimer=setInterval(function(){
+    var f=FR[fi++%FR.length];
+    for(var i=0;i<25;i++) cc[i].classList.toggle('on',f.charAt(i)==='1');
+  },170);
+
+  function show(v){
+    var s=('00'+Math.round(v)).slice(-3);
+    paint(d1,s.charAt(0)); paint(d2,s.charAt(1)); paint(d3,s.charAt(2));
+  }
+  show(0);
+
+  /* Progress eases to 100. It will not finish before MIN (so the animation is never a
+     flash) and it cannot outlast MAX (so a slow asset never holds the site hostage). */
+  var MIN=1100,MAX=2600,t0=Date.now(),loaded=false,done=false,shown=0;
+  window.addEventListener('load',function(){loaded=true;});
+  (function step(){
+    if(done) return;
+    var el=Date.now()-t0;
+    var target=Math.min(loaded?100:92,(el/MIN)*100);  /* stall at 92 until load fires */
+    if(el>=MAX) target=100;                            /* hard stop */
+    shown+=(target-shown)*0.18;
+    if(target-shown<0.4) shown=target;
+    show(shown);
+    if(shown>=99.6&&el>=MIN){show(100);finish();return;}
+    requestAnimationFrame(step);
+  })();
+
+  function finish(){
+    if(done) return; done=true;
+    clearInterval(clusterTimer);
+    setTimeout(function(){
+      root.classList.add('ax-pre-off');
+      setTimeout(function(){root.classList.remove('ax-pre-on','ax-pre-off');},560);
+    },220);
+  }
 })();
 </script>
 
