@@ -705,8 +705,7 @@ def walk(n, ox, oy, out, depth=0):
                 f"position:absolute;left:{vw(bb['x']-ox)};top:{vw(bb['y']-oy)};"
                 f"width:{vw(bb['width'])};height:{vw(bb['height'])};")
         out.append(f'<div class="{klass} g-clip"{extra} style="{style}overflow:hidden;">')
-        for c in n.get('children', []):
-            walk(c, bb['x'], bb['y'], out, depth+1)
+        walk_children(n, bb['x'], bb['y'], out, depth)
         out.append('</div>')
         return
     if t in ('FRAME', 'INSTANCE', 'GROUP', 'COMPONENT') and bb:
@@ -714,8 +713,57 @@ def walk(n, ox, oy, out, depth=0):
             b = emit_box(n, bb['x']-ox, bb['y']-oy, bb['width'], bb['height'])
             if b:
                 out.append(b)
-    for c in n.get('children', []):
-        walk(c, ox, oy, out, depth+1)
+    walk_children(n, ox, oy, out, depth)
+
+def walk_children(n, ox, oy, out, depth):
+    """Emit a container's children, honouring a Figma mask.
+
+    Figma marks a mask with isMask on the FIRST child; it masks its following
+    siblings and is never painted itself. _gen.py used to draw it like any other
+    shape, so a white-to-transparent gradient meant as an alpha mask got painted as
+    an actual white sheet -- that is the wash that swamped the DataBridge panel.
+    450 nodes across the file carry isMask.
+
+    A rectangle/ellipse mask with a fill maps onto CSS mask-image. Group and vector
+    masks (arbitrary artwork) cannot, so those are simply not painted and their
+    siblings render unmasked -- still wrong, but far less wrong than painting the
+    mask art on top of the content."""
+    kids = n.get('children') or []
+    mask = kids[0] if kids and kids[0].get('isMask') else None
+    if not mask:
+        for c in kids:
+            walk(c, ox, oy, out, depth+1)
+        return
+    img = mask_image_css(mask)
+    rest = kids[1:]
+    mb = mask.get('absoluteBoundingBox')
+    if not img or not mb:
+        for c in rest:
+            walk(c, ox, oy, out, depth+1)
+        return
+    style = (f"position:absolute;left:{vw(mb['x']-ox)};top:{vw(mb['y']-oy)};"
+             f"width:{vw(mb['width'])};height:{vw(mb['height'])};"
+             f"-webkit-mask-image:{img};mask-image:{img};"
+             "-webkit-mask-size:100% 100%;mask-size:100% 100%;"
+             "-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;")
+    out.append(f'<div class="g-mask" style="{style}">')
+    for c in rest:
+        walk(c, mb['x'], mb['y'], out, depth+1)
+    out.append('</div>')
+
+def mask_image_css(mask):
+    """CSS mask-image for a Figma mask shape, or None if it can't be expressed."""
+    if mask.get('type') not in ('RECTANGLE', 'ELLIPSE'):
+        return None
+    fills = mask.get('fills') or []
+    bb = mask.get('absoluteBoundingBox') or {}
+    grad = gradient_fill(fills, bb.get('width'), bb.get('height'))
+    if grad:
+        return grad
+    if solid_fill(fills):
+        # a plain shape mask: fully opaque inside its box
+        return 'linear-gradient(#000,#000)'
+    return None
 
 def build_body(node):
     bb = node['absoluteBoundingBox']

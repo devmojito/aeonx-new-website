@@ -84,7 +84,11 @@ def main():
         s = open(path, encoding='utf-8').read()
         # strip any prior mobile block (idempotent)
         s = re.sub(r'<style id="ax-mob-css">.*?</style>', '', s, flags=re.S)
-        s = re.sub(r'<div class="ax-mob">.*?</div>\s*(?=</body>)', '', s, flags=re.S)
+        # Anchor on the block's own closing </main></div>, NOT on </body>. _postbuild.py
+        # injects the CTA wash just before </body>, so a </body> lookahead stopped
+        # matching and every run appended ANOTHER mobile block (the homepage, which
+        # _gen.py never rewrites, ended up with two).
+        s = re.sub(r'<div class="ax-mob">.*?</main></div>\s*', '', s, flags=re.S)
         s = s.replace('</head>', STYLE + '</head>', 1)
         s = s.replace('</body>', mob + '\n</body>', 1)
         open(path, 'w', encoding='utf-8').write(s)

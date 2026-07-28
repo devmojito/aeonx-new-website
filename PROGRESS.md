@@ -292,3 +292,32 @@ are far larger than its 557x416 layout box). `_gen.py` then ALSO emitted
 render: sampled points across the orb now agree within ~25/255 on the worst channel,
 versus a solid `#DF3F17` blob before. The 4 remaining `filter:blur` values on `g-vec`
 images are the deliberate hero-sunburst blur from `_postbuild.py`.
+
+## Figma masks were painted as content (2026-07-28)
+
+The DataBridge panel on `/alliances/google-cloud-partner/` was drowned in a white wash
+that made its labels unreadable. `::before:mask` (`5069:5498`) is a white-to-transparent
+gradient rectangle with `isMask: true` — an ALPHA MASK for its following siblings, never
+painted itself. `_gen.py` drew it like any other rectangle, so the mask became an actual
+white sheet over the panel. **450 nodes across the file carry `isMask`.**
+
+Figma always puts the mask at child index 0 (verified: all 450). `walk_children()` now
+handles it:
+- RECTANGLE/ELLIPSE mask with a fill → the remaining siblings go inside a `.g-mask`
+  wrapper carrying `mask-image` built from that fill (gradient, or `linear-gradient(#000,#000)`
+  for a plain solid shape), sized to the mask's box.
+- GROUP/VECTOR masks (arbitrary artwork) → CSS can't express them, so the mask is simply
+  not painted and the siblings render unmasked. Still wrong, but far less wrong than
+  painting the mask art over the content.
+
+Only 2 `.g-mask` wrappers actually get emitted sitewide — most masks live inside
+vector-only clusters, where the SVG export already applies the mask correctly.
+
+## `_mobile.py` was appending a second mobile block
+
+`_mobile.py` stripped the previous `.ax-mob` block with a regex anchored on
+`</div>\s*(?=</body>)`. `_postbuild.py` injects the CTA wash just before `</body>`, so
+that lookahead stopped matching and each run appended ANOTHER block. Sub-pages hid it
+because `_gen.py` rewrites them wholesale, but **`index.html` is hand-managed and never
+rewritten, so the homepage ended up with two mobile layouts.** The strip now anchors on
+the block's own `</main></div>`. Re-verified: 0 duplicates, tags balanced on all pages.
