@@ -116,3 +116,14 @@ favicon, socials) all survived the rebuild.
   * When the rail DOCKED, z-index was cleared on both the labels and the orange indicator, so the
     indicator painted OVER the white active label — AeonxIQ looked like an empty orange block.
     Labels are now always z-index 6 and the indicator always 5, in every mode.
+
+## Button label size standardised
+`ax-btn-size` (all 36 files) sets every button label to ONE size: `0.8333vw` = **16px at the
+1920 design width** (`Body lg` token), covering generated pills (`.g-b[data-cta] .g-t`), orphan
+labels (`.g-t[data-cta]`), nav, mega-menu and mobile-nav buttons. Mobile block overrides to
+3.72vw (16px of the 430px mobile frame).
+WHY vw AND NOT LITERAL 16px: pills are sized in vw from Figma for 14px text. A FIXED 16px
+overflowed 9 pills below 1920 (e.g. "Explore SupplierX" spilled 31px out of a 110px pill, clipped
+by overflow:hidden). The vw form keeps one consistent size, matches the design token, and scales
+with the rest of the layout. Verified: 56/56 identical, 0 overflow.
+If literal fixed 16px at every viewport is ever wanted, the pills must become auto-width first.
