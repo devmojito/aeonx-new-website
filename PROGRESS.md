@@ -88,3 +88,12 @@ it to the element instead of leaving the larger base size on the parent.
 ALL 34 sub-pages rebuilt so the gradient-text + override fixes propagate. 0 missing assets,
 div balance clean, chrome enhancements (reveal sweep, CTA resolver, mobile nav, photo-fit,
 favicon, socials) all survived the rebuild.
+
+## Scroll arrows + nav logo
+- `assets/vec/5889-30993.svg` (hero scroll hint, 3 arrow groups) now animates: SMIL opacity
+  cascade top->middle->bottom (1.8s loop, 0.3s stagger) plus a small vertical bob, so it reads
+  as "scroll down". Backup at /tmp/5889-30993.svg.orig. SMIL works inside <img> (same approach
+  as the threads/ribbon/globe hero animations).
+- Nav logo replaced with the FOOTER logo across 36 files. This also fixes brand colour: the old
+  nav mark used #15181e/#e1541d, the footer mark uses #404040 + #df3f17 (Primary/600 token).
+  The mobile nav clones `.ax-nav__logo` innerHTML at runtime, so it inherits this automatically.
