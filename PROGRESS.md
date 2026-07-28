@@ -60,3 +60,15 @@ RULE: never guess offsets/colors again — pull the node spec via MCP first.
    safety that force-reveals anything still hidden (sitewide, 36 files). Verified 0 stuck.
 LESSON: "missing" elements were a rendering/visibility bug, not missing markup — always check
 computed opacity/visibility in real Chrome before concluding content is absent.
+
+## ROUND 3 — the REAL cause of "missing buttons/arrows"
+NOT opacity, NOT missing markup: a **broken div nesting bug in `_reapply_home.py`**.
+The mosaic swap did `s.replace(div,canvas)` (div already contained its `</div>`) and THEN
+`re.sub(canvas + r'\s*</div>', canvas)` — deleting one extra `</div>`. That left the mosaic
+clip wrapper unclosed, so the hero RIGHT COLUMN became a CHILD of it instead of a sibling.
+Its `top:23.9583vw` was then measured from the wrapper (already at 23.96) => 53.9vw, pushing
+the arrows + CTAs far below and out of the clipped area.
+FIXED: no longer strip the trailing `</div>`. Verified div open/close = 403/403 and rendered
+positions CTA 44.85/73.30 vs Figma 44.81/73.27, arrows 29.93 vs 29.9.
+LESSON: after ANY post-processing of generated HTML, assert tag balance — a single lost
+closing tag silently re-parents whole sections and looks like "missing content".

@@ -11,7 +11,10 @@ if m and 'id="ax-mosaic"' not in s:
     div=m.group(0); style=re.search(r'style="([^"]*)"',div).group(1)
     box=re.sub(r'background-[^;]*;','',style)
     canvas=f'<canvas id="ax-mosaic" data-ref="aeadd0ab9a9e2c11143c8f2fca3aefc95119b72c" role="img" aria-label="Canvas" style="{box}"></canvas>'
-    s=s.replace(div,canvas,1); s=re.sub(re.escape(canvas)+r'\s*</div>',canvas,s,count=1)
+    # NOTE: `div` already includes its closing </div>; do NOT strip a following
+    # </div> as well or the next sibling gets nested inside the mosaic wrapper
+    # (that silently double-counted the hero right column's top offset).
+    s=s.replace(div,canvas,1)
 
 # 2) partner ring: disc swap + css + overlay
 s=s.replace('/assets/vec/4270-6423.svg','/assets/partners/ring-disc.svg')
