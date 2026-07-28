@@ -138,3 +138,15 @@ Get Started = 16px with 14.1px padding both sides.
   label to one size with `!important`. Both style blocks removed from all 36 files, so button
   labels use the per-element sizes _gen emits from Figma again (verified: computed == inline,
   e.g. Request a proposal 0.7292vw, See AXIOM 1.0417vw, nav buttons 0.625vw).
+
+## !! MOBILE LAYOUT IS WIPED BY ANY REBUILD — the #1 recurring trap
+`_gen.py` / `_build_all.py` rewrite whole page files, which DELETES the `.ax-mob` block and
+`ax-mob-css` toggle that `_mobile.py` injects. Symptom: phones render the DESKTOP layout
+squeezed into 393px (looks nothing like the Figma mobile frames).
+ALWAYS run `python3 _mobile.py` after any regen/rebuild. `_build_all.py` now calls it
+automatically; the homepage path (`_gen.py` + `_reapply_home.py`) still needs it run manually.
+Also re-apply the mobile-nav exception afterwards — `_mobile.py` writes
+`body>*:not(.ax-mob){display:none!important}` which HIDES the `.ax-mnav` mobile nav; it must be
+`body>*:not(.ax-mob):not(.ax-mnav){...}`.
+NOTE: `aeonx-mobile.json` (mobile canvas 5478:4162) is from 2026-07-20 while the desktop dump is
+2026-07-24 — re-pull it before judging mobile-vs-Figma fidelity.

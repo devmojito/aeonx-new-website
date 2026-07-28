@@ -86,3 +86,10 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# Building a page from the desktop canvas REPLACES its whole file, which drops the
+# .ax-mob mobile layout injected by _mobile.py. Re-inject immediately so a rebuild
+# can never leave phones rendering the desktop layout scaled down.
+import subprocess, sys as _sys
+print('\nre-injecting mobile layouts (_mobile.py)...')
+subprocess.run([_sys.executable, '_mobile.py'], check=False)
