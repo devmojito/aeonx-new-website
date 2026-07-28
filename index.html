@@ -1248,7 +1248,7 @@ document.addEventListener('DOMContentLoaded',function(){
     var st=e.getAttribute('style')||'';
     var l=num(st,'left'),t=num(st,'top'),w=num(st,'width')||0,h=num(st,'height')||0;
     if(l===null||t===null)return;
-    if(l<19.5||l>23||t<170||t>201||w>18)return;
+    if(l<19.5||l>23||t<168||t>201||w>18)return;
     var item={el:e,t:t,h:h};
     rail.push(item);
     if(e.classList.contains('g-t')&&l>21&&l<23){labels.push(item);}
