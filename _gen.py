@@ -125,7 +125,9 @@ def emit_text(n, left, top, w, h):
     lh = st.get('lineHeightPx', fs*1.3)
     ls = st.get('letterSpacing', 0)
     align = st.get('textAlignHorizontal', 'LEFT').lower()
-    color = solid_fill(n.get('fills')) or '#15181e'
+    solid = solid_fill(n.get('fills'))
+    grad = None if solid else gradient_fill(n.get('fills'))  # gradient-filled text (e.g. stat numbers)
+    color = solid or '#15181e'
     chars = n.get('characters', '')
     single = h <= lh*1.6
     ws = 'nowrap' if single else 'pre-wrap'
@@ -163,6 +165,9 @@ def emit_text(n, left, top, w, h):
              f"height:{vw(h)};font-family:'{fam}',sans-serif;font-weight:{fw};"
              f"font-size:{vw(fs)};line-height:{vw(lh)};color:{color};"
              f"text-align:{align};white-space:{ws};")
+    if grad:
+        style += (f"background-image:{grad};-webkit-background-clip:text;"
+                  f"background-clip:text;-webkit-text-fill-color:transparent;color:transparent;")
     if ls:
         style += f"letter-spacing:{vw(ls)};"
     op = n.get('opacity', 1)
@@ -483,8 +488,12 @@ def emit_rotated(n, ox, oy):
     out.append('</div>')
     return ''.join(out)
 
+SKIP_NODES = {'5232:15038', '5246:15149'}  # baked navbar + announcement in Home hero (chrome provides these)
+
 def walk(n, ox, oy, out, depth=0):
     if n.get('visible', True) is False:
+        return
+    if n.get('id') in SKIP_NODES:
         return
     name = n.get('name', '')
     # skip shared chrome instances/frames - we reuse our own

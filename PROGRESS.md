@@ -1,0 +1,39 @@
+# AeonX Website — Work Log & State (read this after any context reset)
+
+Static Figma→HTML site. Repo `github.com/devmojito/aeonx-new-website` (push needs `gh auth switch -u devmojito`, switch back to `omlahore` after). Dev server: `python3 -m http.server 8809 --directory <projdir>`. Full build notes in `CLAUDE.md`. Figma file `oskhBYvi1Q7GGPqrqABZQp`, Home node `4046:31781`, canvas `4020:9394`, token in CLAUDE.md.
+
+## CRITICAL: how the homepage is built
+- `index.html` is **hand-managed** but I regenerate it with `python3 _gen.py 4046:31781 ./index.html "<title>"`.
+- **Regen WIPES all homepage-specific enhancements.** After every regen run: `python3 _reapply_home.py` (re-applies mosaic, partner ring, marquee, testimonial tabs, footer links, products-pin). Enhancement source blocks are cached in `/tmp/enh/*.txt` (extracted from a good index.html; re-extract if lost — see the extraction snippet in git history / this session).
+- Sub-pages: `_gen.py` per page + `_build_all.py`; chrome-level scripts live in `_chrome.html` (CTA resolver, socials, scroll-reveal, mobile nav, photo-fit) and are inherited by all pages incl. regenerated homepage.
+- `_gen.py` has `SKIP_NODES={'5232:15038','5246:15149'}` — the baked navbar + announcement in the new Home hero (chrome provides these; skipping stops the duplicate nav).
+
+## Enhancements applied (all live, verified)
+- **Hero mosaic** (Mistral-style sliding tiles): `window.axMosaic` engine; desktop canvas `#ax-mosaic` swaps `aeadd0ab…png`. Mobile mosaic target `75993b49` was REMOVED by the hero redesign — skip.
+- **Partner ring** "Earned where it matters": clean disc `assets/partners/ring-disc.svg` (old template logos were baked into `4270-6423.svg`); overlay `.ax-pt-ring` = 12 badges cycling SAP/AWS/GCP/Anthropic (`assets/partners/logo-*.svg`), rotating 72s with upright counter-spin. Mobile ring `.ax-ptm-ring` (target `5637-48885`, also redesigned — may be gone now, recheck).
+- **Logo marquee** ("And many more"): `.ax-mq` seamless scroll, hover-pause.
+- **Testimonials**: `.ax-tt-tab`; only Sundar Biscuit has a real quote — Ashapura/Konark dimmed (NEED client quotes). 13 "Liveblocks" template tabs hidden.
+- **Products showcase pin**: `/* products showcase: pin */`; geometry constants firstPanel/sectionEnd/rail-range are LAYOUT-DEPENDENT — recompute after hero changes (current: firstPanel=170.4, sectionEnd=405.7, rail band 170–201).
+- **Scroll reveals** (`.ax-rv`/`ax-in`, IntersectionObserver), **buttons** (CTA resolver ~60 routes + orphan-label pass + non-button excludes; audit=0 unresolved over 35 pages/577 pills), **socials** (real LinkedIn/Facebook/Instagram; no X/YouTube exist — icons swapped), **mobile nav** (Figma-matching drill-down; triggered by Figma navbar art `5637-49182`, no duplicate bar), **mobile footer links**, **photo-fit** (portrait cards cover→contain), **GPTW badge** cropped `assets/partners/gptw-certified.png`, **favicon** `assets/favicon/*` from aeonx.digital, **rainbow wash** on final-CTA section (hover-intensify).
+- Placeholder fixes: `support@doss.com`→`sales@aeonx.digital`.
+
+## Latest dump = 2026-07-24 (applied). Changes since prior: Home hero redesigned + hidden "Featured news" placeholder block (Mistral OCR/AI Summit — hidden in Figma, correctly skipped) + label `MANUFACTURING · SAP AMS · AXIOM`→`MANUFACTURING`.
+
+## OPEN / IN PROGRESS (user doing a pixel diff of homepage vs Figma)
+- Hero-gap fix applied: `main.ax-page{margin-top:-8.6vw}` + `header{position:relative;z-index:50;background:#fff}` (closes the ex-baked-nav gap). VERIFY it didn't clip anything.
+- **Stat row colors wrong**: build renders BSE/280+/15+/5/6/4X + labels in dark; Figma has them **colored** (orange/blue numbers). FIX = correct fills.
+- Reported "missing buttons/arrows" — they ARE in source (Request a proposal/Talk to us ×, arrows ×10, most stat labels present); likely reveal-opacity or covered — verify they render.
+- General fidelity: spacing/padding/font-weight/font-size of the regenerated hero not 1:1 with Figma — needs a matching pass.
+
+## Client-input blockers (email drafted earlier)
+WordPress dashboard (separate, user's), Ashapura/Konark testimonial quotes, real leadership bios (cards show `[NEEDS INPUT…]`), extra partner logos.
+
+## Preview note
+Claude_Browser preview pane has a FROZEN animation clock (rotations/transitions don't tick, and async JS returns `{}`). Use **claude-in-chrome** (real Chrome) for visual/animation checks; wrap JS returns in `JSON.stringify(...)` (plain, not async-IIFE) to get values back.
+
+## FIDELITY SOLUTION (systematic, not per-item) — 2026-07 latest
+Root cause of "colors wrong / stat numbers dark": `_gen.py` only handled SOLID text fills; Figma uses **GRADIENT-filled text** (stat numbers) and **variable/token colors**.
+- FIXED in `_gen.emit_text`: gradient text now emits `background-image:<grad>;-webkit-background-clip:text;-webkit-text-fill-color:transparent`. Propagates to ALL pages on rebuild. Verified stats render orange gradient.
+- LIMITATION: variable-bound colors (`fills[].color==None` + `boundVariables`) can't be resolved via REST (token 403 on `/variables/local`). Needs Figma Dev-Mode MCP `get_variable_defs` OR a token with `file_variables:read`. Fallback = literal color in fill (usually close).
+- Baked hero navbar+announcement de-duplicated at source via `_gen SKIP_NODES`. Gap it left closed with `main.ax-page{margin-top:-8.6vw}` homepage-only style `ax-hero-gap-fix`.
+- For remaining pixel-perfection: render each Figma section via REST `/images` and diff vs built (spacing/weight/size). Ongoing.
