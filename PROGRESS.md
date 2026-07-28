@@ -150,3 +150,13 @@ Also re-apply the mobile-nav exception afterwards — `_mobile.py` writes
 `body>*:not(.ax-mob):not(.ax-mnav){...}`.
 NOTE: `aeonx-mobile.json` (mobile canvas 5478:4162) is from 2026-07-20 while the desktop dump is
 2026-07-24 — re-pull it before judging mobile-vs-Figma fidelity.
+
+## _postbuild.py — fixups every rebuild wipes (run automatically now)
+`_gen.py` rewrites whole page files, so any post-generation swap is lost on rebuild. These now
+live in `_postbuild.py`, called by BOTH `_build_all.py` and `_reapply_home.py`:
+1. GPTW badge: Figma ships it as a 1606x663 BANNER (badge + corner art) but the slot is portrait
+   (AR 0.588), so the raw asset renders squashed. Swap the image URL to the cropped
+   `assets/partners/gptw-certified.png` (394x663, AR 0.59). Desktop + mobile.
+2. Mobile-nav toggle exception (`:not(.ax-mnav)`) that `_mobile.py` overwrites.
+Chrome-level things (nav footer-logo, favicon, CTA resolver, reveal sweep, mobile nav, photo-fit)
+live in `_chrome.html` and survive rebuilds on their own — verified 35/35 pages after this run.

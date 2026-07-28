@@ -93,3 +93,5 @@ if __name__ == "__main__":
 import subprocess, sys as _sys
 print('\nre-injecting mobile layouts (_mobile.py)...')
 subprocess.run([_sys.executable, '_mobile.py'], check=False)
+print('applying post-build fixups (_postbuild.py)...')
+subprocess.run([_sys.executable, '_postbuild.py'], check=False)

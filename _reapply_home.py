@@ -44,3 +44,8 @@ if 'products showcase: pin' not in s:
 
 open('index.html','w').write(s)
 print("re-applied home enhancements")
+
+# The homepage regen also drops the cropped GPTW badge swap, so run the shared
+# post-build fixups here too.
+import subprocess, sys as _sys
+subprocess.run([_sys.executable, '_postbuild.py'], check=False)
