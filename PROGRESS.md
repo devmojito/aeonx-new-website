@@ -160,3 +160,13 @@ live in `_postbuild.py`, called by BOTH `_build_all.py` and `_reapply_home.py`:
 2. Mobile-nav toggle exception (`:not(.ax-mnav)`) that `_mobile.py` overwrites.
 Chrome-level things (nav footer-logo, favicon, CTA resolver, reveal sweep, mobile nav, photo-fit)
 live in `_chrome.html` and survive rebuilds on their own — verified 35/35 pages after this run.
+
+## Final-CTA rainbow wash is now SITEWIDE + rebuild-safe
+Was a hand-injected homepage-only block (`#ax-cta-wash`) and got wiped by the regens. Rebuilt as
+`_ctawash.html` (`.ax-ctawash`), injected by `_postbuild.py` into every page:
+- Detects the design's "Gradient Lines" asset by filename (31 rainbow SVGs enumerated from
+  assets/vec by their #FF0000 + #19D8E6 + #6419E6 stops) and lays a blurred pastel wash over the
+  same band, extended upward to cover the CTA copy (top = t - h*0.96, height = h*1.96).
+- 45% opacity by default, 100% while the pointer is inside; `pointer-events:none` so it never
+  blocks the CTA buttons. Verified on /alliances/ (75 x 21.4vw, hover toggles, buttons clickable).
+- Coverage: 29 pages carry a rainbow asset and all 29 render the wash.

@@ -1057,5 +1057,35 @@ document.addEventListener('DOMContentLoaded',function(){
 <div class="g-t" style="position:absolute;left:19.4186vw;top:2.4419vw;width:61.1628vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.2558vw;line-height:4.6512vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">Signup to LlamaParse for 10k free credits!</div>
 <img class="g-vec" src="/assets/vec/5637-74269.svg" data-vec="5637:74269" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:1.8605vw;top:10.4651vw;width:96.2791vw;height:11.8605vw;backdrop-filter:blur(0.2326vw);-webkit-backdrop-filter:blur(0.2326vw);">
 </main></div>
+<style id="ax-ctawash-css">.ax-ctawash{position:absolute;pointer-events:none;opacity:.45;transition:opacity .7s ease;background:radial-gradient(38% 55% at 18% 80%,rgba(244,114,182,.55),transparent 70%),radial-gradient(30% 50% at 42% 90%,rgba(96,165,250,.5),transparent 70%),radial-gradient(28% 45% at 60% 82%,rgba(52,211,153,.45),transparent 70%),radial-gradient(30% 45% at 78% 88%,rgba(251,191,36,.5),transparent 70%),radial-gradient(40% 55% at 30% 25%,rgba(255,237,213,.7),transparent 75%);filter:blur(1.5vw);}.ax-ctawash.is-hot{opacity:1;}@media (prefers-reduced-motion:reduce){.ax-ctawash{transition:none;}}</style>
+<script>
+/* Final-CTA rainbow wash. The design puts a "Gradient Lines" asset in these
+   sections; on its own it renders as thin crisp lines, so lay a soft blurred
+   wash over the same band and intensify it while the pointer is inside. */
+document.addEventListener("DOMContentLoaded",function(){
+  var RAIN=["5131-9944.svg", "5131-9988.svg", "5173-13550.svg", "5173-13592.svg", "5174-13627.svg", "5174-13662.svg", "5174-13800.svg", "5174-13835.svg", "5174-13870.svg", "5174-13905.svg", "5174-13975.svg", "5175-14010.svg", "5175-14045.svg", "5175-14080.svg", "5175-14115.svg", "5175-14150.svg", "5175-14185.svg", "5175-14220.svg", "5175-14255.svg", "5175-14290.svg", "5175-14325.svg", "5175-14360.svg", "5175-14395.svg", "5175-14430.svg", "5175-14465.svg", "5175-14535.svg", "5175-14571.svg", "5175-14607.svg", "5175-14642.svg", "5255-18779.svg", "5323-13302.svg"];
+  var num=function(st,k){var m=(st||"").match(new RegExp(k+":\\s*(-?[0-9.]+)vw"));return m?parseFloat(m[1]):null;};
+  var imgs=[].slice.call(document.querySelectorAll("img.g-vec")).filter(function(e){
+    var src=(e.getAttribute("src")||"").split("/").pop();
+    return RAIN.indexOf(src)>=0;
+  });
+  imgs.forEach(function(img){
+    var p=img.parentElement; if(!p||p.querySelector(".ax-ctawash"))return;
+    var st=img.getAttribute("style")||"";
+    var l=num(st,"left"),t=num(st,"top"),w=num(st,"width"),h=num(st,"height");
+    if(l===null||t===null||!w||!h)return;
+    var top=t-h*0.96, height=h*1.96;              /* extend up over the CTA copy */
+    var d=document.createElement("div");
+    d.className="ax-ctawash";
+    d.style.cssText="left:"+l+"vw;top:"+top+"vw;width:"+w+"vw;height:"+height+"vw;";
+    p.insertBefore(d,img.nextSibling);
+    addEventListener("mousemove",function(ev){
+      var r=d.getBoundingClientRect();
+      var on=ev.clientX>=r.left&&ev.clientX<=r.right&&ev.clientY>=r.top&&ev.clientY<=r.bottom;
+      d.classList.toggle("is-hot",on);
+    },{passive:true});
+  });
+});
+</script>
 </body>
 </html>
