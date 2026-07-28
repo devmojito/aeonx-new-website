@@ -128,6 +128,32 @@ img{border:0}
 <meta name="twitter:description" content="SAP, cloud and AI under one accountable partner. SAP Gold Partner · AWS Advanced Tier · Google Cloud Partner.">
 <meta name="twitter:image" content="https://aeonx.digital/assets/og-cover.png">
 <style id="ax-mm2-css">.ax-mm{background:transparent!important;box-shadow:none!important;padding:0.6vw 4.9vw 1vw!important}.ax-mm.is-open{display:block!important}.ax-mm2__panel{background:#fff;border:1px solid #F0EAE4;border-radius:1vw;box-shadow:0 1.5vw 4vw rgba(35,39,46,.16);padding:1.25vw}.ax-mm2{display:flex;gap:1.25vw;align-items:stretch}.ax-mm2__cols{display:flex;flex:1}.ax-mm2__card{flex:1;padding:0 1.04vw;border-right:1px solid #F0EAE4}.ax-mm2__card:first-child{padding-left:0}.ax-mm2__card:last-child{border-right:none}.ax-mm2__img{display:block;width:100%;max-width:14.1vw;height:auto;border-radius:0.31vw}.ax-mm2__ttl{display:flex;align-items:center;justify-content:space-between;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:1.25vw;color:#23272E;background:#FDF8F4;margin-top:0.4vw;padding:0.63vw 0.5vw 0.63vw 0.3vw;border-radius:0.3vw}.ax-mm2__ttl span{color:#5B6B85;font-weight:400}.ax-mm2__lns{display:flex;flex-direction:column;padding-top:0.4vw}.ax-mm2__ln{display:flex;align-items:center;justify-content:space-between;gap:0.5vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:0.83vw;color:#3A4352;text-decoration:none;padding:0.55vw 0.2vw;border-radius:0.3vw}.ax-mm2__ln svg{width:0.83vw;height:0.83vw;flex:0 0 auto}a.ax-mm2__ln:hover{background:#FDF3EC;color:#DF3F17}.ax-mm2__ln[data-soon]{opacity:.45;cursor:default}.ax-mm2__badge{font-style:normal;font-size:0.57vw;font-weight:700;color:#B45309;background:#FFD8A8;border-radius:0.2vw;padding:0.1vw 0.3vw;margin-left:0.3vw;white-space:nowrap}.ax-mm2__rail{width:20.8vw;flex:0 0 auto}.ax-mm2__feat{background:linear-gradient(120deg,#F0601F,#DF3F17);border-radius:0.73vw;padding:1.25vw;color:#fff}.ax-mm2__feat-ttl{font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:1.67vw;line-height:1.2}.ax-mm2__feat-sub{font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:0.83vw;margin-top:0.4vw;opacity:.95}.ax-mm2__feat-btn{display:inline-block;margin-top:1.04vw;background:#fff;color:#DF3F17;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:0.83vw;padding:0.42vw 0.94vw;border-radius:0.31vw;text-decoration:none}.ax-mm2__api{display:flex;align-items:center;gap:0.83vw;margin-top:1.04vw;padding:1.04vw 0.25vw 0.1vw;border-top:1px solid #F0EAE4}.ax-mm2__api-ico{display:flex;align-items:center;justify-content:center;width:2.3vw;height:2.3vw;border-radius:50%;background:#E8551D;flex:0 0 auto}.ax-mm2__api-ico svg{width:1.15vw;height:1.15vw}.ax-mm2__api-tx{display:flex;flex-direction:column;flex:1}.ax-mm2__api-tx b{font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:1.04vw;color:#23272E}.ax-mm2__api-tx small{font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:0.68vw;color:#5B6B85}.ax-mm2__api-btn{display:flex;align-items:center;gap:0.3vw;background:#fff;border:1px solid #E5DED6;border-radius:0.42vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:0.83vw;color:#23272E;text-decoration:none;padding:0.52vw 1vw;flex:0 0 auto}</style>
+<style id="ax-mm-anim-css">
+/* Mega-menu open/close animation. The panel used to snap in on a display toggle,
+   which cannot be transitioned; drive visibility+opacity instead so both the open
+   and the close are animated, and keep pointer-events off while hidden so the
+   always-rendered fixed panels never swallow clicks. */
+.ax-mm{display:block!important;visibility:hidden;opacity:0;pointer-events:none;
+  transition:opacity .16s ease,visibility 0s linear .16s}
+.ax-mm.is-open{visibility:visible;opacity:1;pointer-events:auto;
+  transition:opacity .16s ease,visibility 0s}
+.ax-mm2__panel{transform-origin:top center;transform:translateY(-0.55vw) scale(.988);opacity:0;
+  transition:transform .24s cubic-bezier(.22,.68,.28,1),opacity .18s ease}
+.ax-mm.is-open .ax-mm2__panel{transform:none;opacity:1}
+.ax-mm2__card,.ax-mm2__rail{opacity:0;transform:translateY(0.45vw);
+  transition:opacity .2s ease,transform .22s cubic-bezier(.22,.68,.28,1)}
+.ax-mm.is-open .ax-mm2__card,.ax-mm.is-open .ax-mm2__rail{opacity:1;transform:none}
+.ax-mm.is-open .ax-mm2__card:nth-child(1){transition-delay:.04s}
+.ax-mm.is-open .ax-mm2__card:nth-child(2){transition-delay:.07s}
+.ax-mm.is-open .ax-mm2__card:nth-child(3){transition-delay:.10s}
+.ax-mm.is-open .ax-mm2__rail{transition-delay:.10s}
+.ax-nav__chev{transition:transform .2s cubic-bezier(.22,.68,.28,1)}
+.ax-nav__link.is-open .ax-nav__chev{transform:rotate(180deg)}
+@media (prefers-reduced-motion:reduce){
+  .ax-mm,.ax-mm2__panel,.ax-mm2__card,.ax-mm2__rail,.ax-nav__chev{transition:none!important}
+}
+@media (max-width:1024px){.ax-mm{display:none!important}}
+</style>
 <style id="ax-fx-css">.ax-svc-card{transition:box-shadow .3s ease,border-color .3s ease;isolation:isolate}.ax-svc-card::after{content:"";position:absolute;inset:-0.42vw;border-radius:0.63vw;background:linear-gradient(90deg,#FF0000 0%,#E3B316 20%,#FFFFFF 41%,#19D8E6 65%,#6419E6 87%,#E619AF 99%);filter:blur(1vw);opacity:0;transition:opacity .3s ease;z-index:-1;pointer-events:none}.ax-svc-card.ax-card-hot{border-color:#DF3F17!important;box-shadow:0 0.6vw 1.8vw rgba(223,63,23,.15)}.ax-svc-card.ax-card-hot::after{opacity:.5}</style>
 <style id="ax-reveal-css">.ax-rv{opacity:0;transform:translateY(1.4vw);transition:opacity .7s cubic-bezier(.22,.61,.36,1),transform .7s cubic-bezier(.22,.61,.36,1);}.ax-rv.ax-in{opacity:1;transform:translateY(0);}.ax-rvo{opacity:0;transition:opacity .7s ease;}.ax-rvo.ax-in{opacity:1;}@media (prefers-reduced-motion: reduce){.ax-rv,.ax-rvo{opacity:1!important;transform:none!important;transition:none!important;}}</style>
 <link rel="icon" href="/assets/favicon/favicon-32.png" sizes="32x32"><link rel="icon" href="/assets/favicon/favicon-192.png" sizes="192x192"><link rel="apple-touch-icon" href="/assets/favicon/apple-touch-icon.png">

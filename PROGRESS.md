@@ -339,3 +339,20 @@ Every raster fill was emitted as `background-size:cover;background-position:cent
 
 `image_sizing_css()` now handles all four. Verified against Figma's render of the section:
 all five cards show their full screenshot inset with the correct margins.
+
+## Mega-menu open/close animation (2026-07-28)
+
+The panel was toggled with `display:none` <-> `display:block`, which cannot be
+transitioned, so it snapped in and out. `<style id="ax-mm-anim-css">` (in BOTH
+`_chrome.html` and `index.html`, per the duplication rule) now keeps `.ax-mm` displayed
+and drives `visibility` + `opacity` instead, so open AND close both animate:
+
+- panel: fade + `translateY(-0.55vw) scale(.988)` -> rest, 240ms `cubic-bezier(.22,.68,.28,1)`
+- cards + right rail: 0.45vw rise with a 40/70/100ms stagger
+- nav chevron rotates 180deg while its menu is open
+- `prefers-reduced-motion: reduce` disables all of it
+
+`pointer-events:none` while hidden (and applied immediately on close, before the fade
+finishes) so the four always-rendered fixed panels never swallow a click. Verified:
+settled-open = opacity 1 / transform none / chevron `matrix(-1,0,0,-1)`; settled-closed =
+visibility hidden; 0 hidden panels with hit-testing enabled; no horizontal overflow.
