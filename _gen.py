@@ -142,7 +142,7 @@ def blend_css(n, fill=None):
         return BLEND_MAP.get(fill.get('blendMode'))
     return None
 
-def blur_css(n):
+def blur_css(n, layer=True):
     """Figma blur effects -> CSS. LAYER_BLUR blurs the node itself (`filter`);
     BACKGROUND_BLUR blurs what's behind it (`backdrop-filter`). Figma's blur
     radius is ~2x the Gaussian std-dev CSS uses, so halve it. Kept in vw so the
@@ -156,7 +156,8 @@ def blur_css(n):
             continue
         t = e.get('type')
         if t == 'LAYER_BLUR':
-            css += f"filter:blur({vw(r/2)});"
+            if layer:
+                css += f"filter:blur({vw(r/2)});"
         elif t == 'BACKGROUND_BLUR':
             b = f"blur({vw(r/2)})"
             css += f"backdrop-filter:{b};-webkit-backdrop-filter:{b};"
@@ -521,7 +522,10 @@ def emit_vec_asset(n, left, top, w, h):
     bl = blend_css(n)
     if bl:
         style += f"mix-blend-mode:{bl};"
-    style += blur_css(n)
+    # The export already HAS the layer blur baked in as an SVG filter -- that is why
+    # its render bounds are bigger than its layout box (a 557x416 ellipse exports at
+    # 1009x1009 under an 800px blur). Re-applying it in CSS blurs the art twice.
+    style += blur_css(n, layer=False)
     return (f'<img class="g-vec" src="/assets/vec/{fn}.svg" data-vec="{nid}" '
             f'alt="" role="presentation" aria-hidden="true" style="{style}">')
 

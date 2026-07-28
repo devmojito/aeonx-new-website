@@ -276,3 +276,19 @@ ours `fbe5df`, which is that colour under a 20% white veil).
 `/assets/partners/gptw-certified.png`, AR 0.588). The broken-image glyph seen next to it
 was one of the 5 new blob SVGs mid-rebuild, before `_vecfetch.py` had pulled them.
 Sitewide check now reports 0 missing assets.
+
+## Layer blur was applied twice on exported art (2026-07-28)
+
+The Google Cloud Partner hero's top-left orb rendered as a small hard orange blob
+instead of a broad soft wash. `Ellipse 1` (`4690:15827`) is a VECTOR with an 800px
+LAYER_BLUR, so it goes out as an exported SVG -- and Figma bakes the blur into that
+export as an `feGaussianBlur` filter (which is exactly why its render bounds, 1009x1009,
+are far larger than its 557x416 layout box). `_gen.py` then ALSO emitted
+`filter:blur(400px)` on the `<img>`, blurring the art a second time.
+
+`blur_css(n, layer=False)` in `emit_vec_asset` now skips LAYER_BLUR for exported assets
+(BACKGROUND_BLUR still applies -- that is a backdrop effect, not part of the export).
+209 nodes carry a layer blur, so this was sitewide. Verified against Figma's own hero
+render: sampled points across the orb now agree within ~25/255 on the worst channel,
+versus a solid `#DF3F17` blob before. The 4 remaining `filter:blur` values on `g-vec`
+images are the deliberate hero-sunburst blur from `_postbuild.py`.
