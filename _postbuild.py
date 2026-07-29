@@ -22,6 +22,8 @@ _HERE = os.path.dirname(os.path.abspath(__file__))
 CTAWASH = open(os.path.join(_HERE, '_ctawash.html'), encoding='utf-8').read()
 CURSOR = open(os.path.join(_HERE, '_cursor.html'), encoding='utf-8').read()
 NAVLOAD = open(os.path.join(_HERE, '_navload.html'), encoding='utf-8').read()
+COUNTERS = open(os.path.join(_HERE, '_counters.html'), encoding='utf-8').read()
+MOBFX = open(os.path.join(_HERE, '_mobfx.html'), encoding='utf-8').read()
 # Preloader is three pieces on purpose: the CSS + opt-in decision must run before first
 # paint (head), the overlay markup must exist in the HTML so there is no flash of
 # content before it appears (top of body), and the driver goes last (end of body).
@@ -60,8 +62,27 @@ def blur_bursts(s, ids):
         return re.sub(r'style="', 'style="' + BURST_BLUR, tag, count=1)
     return re.sub(r'<img class="g-vec"[^>]*data-vec="([^"]+)"[^>]*>', sub, s)
 
+def fix_gptw_sizing(s):
+    """Reset background sizing wherever the GPTW crop is used.
+
+    _gen.py derives background-size/position from the fill's imageTransform, which
+    describes a crop of the ORIGINAL 1606x663 banner. We then swap in a 394x663 file
+    that is already cropped to the badge, so those numbers zoom into a corner of it --
+    the mobile footer showed a blown-up fragment. `contain` is correct for the
+    pre-cropped asset."""
+    def sub(m):
+        st = m.group(1)
+        if GPTW_FIX not in st:
+            return m.group(0)
+        st = re.sub(r'background-size:[^;]+;', 'background-size:contain;', st)
+        st = re.sub(r'background-position:[^;]+;', 'background-position:center;', st)
+        if 'background-size' not in st:
+            st += 'background-size:contain;background-position:center;'
+        return 'style="%s"' % st
+    return re.sub(r'style="([^"]*)"', sub, s)
+
 def main():
-    stats = {'gptw': 0, 'mobnav': 0, 'ctawash': 0, 'burst': 0, 'cursor': 0, 'preload': 0, 'navload': 0}
+    stats = {'gptw': 0, 'mobnav': 0, 'ctawash': 0, 'burst': 0, 'cursor': 0, 'preload': 0, 'navload': 0, 'counters': 0, 'mobfx': 0}
     bids = burst_ids()
     for f in glob.glob('**/index.html', recursive=True) + ['_chrome.html']:
         try:
@@ -75,6 +96,12 @@ def main():
         if 'ax-cursor-css' not in s and '</body>' in s:
             s = s.replace('</body>', CURSOR + '\n</body>', 1)
             stats['cursor'] += 1
+        if 'ax-mobfx-css' not in s and '</body>' in s:
+            s = s.replace('</body>', MOBFX + '\n</body>', 1)
+            stats['mobfx'] += 1
+        if 'STAT COUNTERS' not in s and '</body>' in s:
+            s = s.replace('</body>', COUNTERS + '\n</body>', 1)
+            stats['counters'] += 1
         if 'ax-navload-css' not in s and '</body>' in s:
             s = s.replace('</body>', NAVLOAD + '\n</body>', 1)
             stats['navload'] += 1
@@ -85,6 +112,7 @@ def main():
             stats['preload'] += 1
         if GPTW_RAW in s:
             s = s.replace(GPTW_RAW, GPTW_FIX)
+            s = fix_gptw_sizing(s)
             stats['gptw'] += 1
         if MOB_OLD in s:
             s = s.replace(MOB_OLD, MOB_NEW)
@@ -99,7 +127,8 @@ def main():
     print(f"postbuild: gptw {stats['gptw']}, mobile-nav {stats['mobnav']}, "
           f"cta-wash {stats['ctawash']}, hero-burst-blur {stats['burst']}, "
           f"cursor {stats['cursor']}, preloader {stats['preload']}, "
-          f"nav-loader {stats['navload']} files")
+          f"nav-loader {stats['navload']}, counters {stats['counters']}, "
+          f"mobile-fx {stats['mobfx']} files")
 
 if __name__ == '__main__':
     main()

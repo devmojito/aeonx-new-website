@@ -480,3 +480,75 @@ motion: the panel GROWS from the nav bar while the cards rise in staggered behin
 
 Verified by freezing the timeline at fixed progress values: 0.25 = panel growing, cards
 still hidden; 0.55 = near full height with the four cards visibly staggered; 1 = settled.
+
+## Homepage interactivity sweep — audit + fixes (2026-07-30, UNCOMMITTED)
+
+4-agent read-only audit (desktop marquee, mobile geometry, _mobfx review, desktop page)
+found 12 defects in `_mobfx.html` plus desktop bugs. Fixed:
+
+**_mobfx.html rewritten** (defects, all from the audit):
+- Products band opened on Aeonx IQ with pill on SupplierX: Figma bakes the LAST column
+  at x~0 (others negative). Tabbed bands now open on tab 0 (`i = tabs ? 0 : startIdx`).
+- Per-column headings (T above card top) and CTA pills (below card bottom) never
+  translated -> button read "Explore AeonxIQ" forever. With a tab row, members now span
+  (tabsBottom, ctrlTop) instead of the card edges.
+- ctrl detection required tagName IMG and missed the products strip entirely (search
+  window too short); now IMG or .g-img, window bottom-40..bottom+140, nearest wins.
+  Hit-button/dot x-fractions are viewBox units (vb=431) — the products ctrl is 398 wide.
+- Row grouping: partition by parentElement + chain-cluster (prev-T, 40px) — fixed
+  buckets split the 6 panels into pairs (the 2-dot control bug).
+- Stepped auto-advance killed by IO-on-a-translated-member (never armed on products,
+  self-killed elsewhere) — REPLACED: ctrl-less+tab-less bands (the AXIOM strip) now
+  DRIFT continuously right-to-left (~25px/s, seamless via one clone set), observe the
+  static HOST, pause offscreen, hand over to stepped drag on first touch.
+- marquee(): skips rows with in-band .g-t text (the testimonial chip icons scrolled
+  while their labels stood still — "animating for no reason"), skips .ax-carm rows,
+  reduced-motion check BEFORE cloning, observes host not els[0] (old one froze ~4s in),
+  clone list captured once (no per-frame querySelectorAll).
+- User takeover (tab click / arrows / touch) permanently stops any automatic motion.
+
+**Desktop (index.html + _chrome.html, propagated via _build_all):**
+- "And many more" stuck seal: the marquee enhancer selects `img[src*=id]` only; the
+  seal is an image-fill DIV (.g-b>.g-img, ref bb4a6a09…) so it was neither hidden nor
+  cloned and sat frozen over the track. Enhancer now hides the strip's .g-b children
+  (the track already carries a seal). Fix lives INSIDE the mq block in index.html.
+- Dead pills (hero "Request a proposal", "See AXIOM", "SaaS Suite"): the orphan-label
+  pass bailed on ANY label inside a .g-b. Correct guard = skip only labels inside an
+  already-upgraded pill (`t.closest('[data-cta]')`); the tight best-rect containment
+  search is the real overlink guard. First attempt (size-based) still failed because
+  the label sits in a small actions-row wrapper — measured, then corrected.
+- assets/vec/5420-24353.svg (HubSpot) had the DHS seal crest baked into the stale
+  export; re-exported clean (single #FE4802, wordmark only).
+
+Verified: 6 tabs wired (click Xpense -> transform home−cols[2] on heading+CTA, dot 3/6,
+white active label), dots [3,6], 4 arrow hit-buttons, chips transform:none, AXIOM drift
+moves (headless 2-timestamps differ), seal gone at both timestamps, hero/See AXIOM/SaaS
+Suite each upgraded with data-cta. NOTE: the preview pane reports document.hidden=true —
+transitions/rAF suspend there, so verify motion via style values or headless, not rects.
+
+**Known-left:** footer 'Twitter' label maps to the Facebook URL (extra map ~index.html
+L1349) — no verified X account to point at, left as-is. Testimonial/case-study content is
+Figma placeholder (Character.AI/Intercom chips, ece298d0 checkerboard PNG, Lorem ipsum)
+— needs client content, not code. Desktop testimonial tabs have one real quote only.
+
+### Regression + fix: mobile enhancements all died / subpage mobile nav dead (2026-07-30)
+
+Cause 1 (killed every mobile animation, all pages): `_mobile.py` strips and re-appends
+the `.ax-mob` block at `</body>` on every build -- which lands it AFTER the postbuild
+enhancer scripts already in the file. `_mobfx`/`_counters` resolved `.ax-mob`
+synchronously at script execution, found nothing, and silently bailed.
+Fixes (both): `_mobile.py` now inserts the mob block BEFORE the first postbuild fragment
+(`<style id="ax-ctawash-css"` anchor), AND the enhancers resolve `.ax-mob` lazily at
+DOMContentLoaded. **Rule: any postbuild enhancer must query the DOM lazily, never at
+script-parse time -- fragment order is not guaranteed.**
+
+Cause 2 (subpage logo/burger): the mobile nav trigger is the page's own baked Figma
+navbar art, selected by the HARDCODED homepage id `5637-49182`. Every other page's
+mobile frame bakes its own instance id, so the selector matched nothing there. Fix: a
+geometry fallback -- near-full-width strip, top<25vw, **height<16vw**, preferring the
+one with backdrop-filter. The height cap matters: the first attempt matched a
+full-bleed hero background and made the entire hero a go-home click target.
+
+Verified: homepage mosaic/6 tabs/dots[3,6]/drift/counters all live again; subpage
+(rise-with-sap) wires exactly `5637-75956.svg` (the glass strip), burger edge opens the
+panel, X closes it, logo area -> home.

@@ -90,7 +90,14 @@ def main():
         # _gen.py never rewrites, ended up with two).
         s = re.sub(r'<div class="ax-mob">.*?</main></div>\s*', '', s, flags=re.S)
         s = s.replace('</head>', STYLE + '</head>', 1)
-        s = s.replace('</body>', mob + '\n</body>', 1)
+        # Insert BEFORE the first postbuild fragment, not at </body>: the enhancer
+        # scripts postbuild appends must come AFTER the .ax-mob markup they read,
+        # or every mobile animation dies silently (this happened).
+        anchor = '<style id="ax-ctawash-css"'
+        if anchor in s:
+            s = s.replace(anchor, mob + '\n' + anchor, 1)
+        else:
+            s = s.replace('</body>', mob + '\n</body>', 1)
         open(path, 'w', encoding='utf-8').write(s)
         needs_vec |= set(re.findall(r'data-vec="([^"]+)"', mob))
         needs_img |= set(re.findall(r'data-ref="([^"]+)"', mob))
