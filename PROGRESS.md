@@ -417,3 +417,11 @@ First cut was too faint to see. Three causes, all fixed:
 Verified by rendering both states (idle over the hero, hover over the orange CTA) through
 a temporary same-origin iframe harness — headless Chromium reports `pointer:none`, which
 is exactly why the old gate had to go.
+
+### Preloader legibility + brand colour (2026-07-28)
+- Matrix dots recoloured from `#23272e` to brand `#df3f17`; dot fade shortened 120ms -> 90ms.
+- **The number was an unreadable shimmer** because `show()` ran on every rAF: at 60fps the
+  digits changed faster than the dots could finish fading. The counter now repaints at
+  **~9fps** (`STEP=110`ms, and only when the rounded value actually changes), so each
+  number settles before the next one replaces it. Ramp lengthened to MIN 1.5s / MAX 3.0s
+  to give it room to be read.
