@@ -129,40 +129,95 @@ img{border:0}
 <meta name="twitter:image" content="https://aeonx.digital/assets/og-cover.png">
 <style id="ax-mm2-css">.ax-mm{background:transparent!important;box-shadow:none!important;padding:0.6vw 4.9vw 1vw!important}.ax-mm.is-open{display:block!important}.ax-mm2__panel{background:#fff;border:1px solid #F0EAE4;border-radius:1vw;box-shadow:0 1.5vw 4vw rgba(35,39,46,.16);padding:1.25vw}.ax-mm2{display:flex;gap:1.25vw;align-items:stretch}.ax-mm2__cols{display:flex;flex:1}.ax-mm2__card{flex:1;padding:0 1.04vw;border-right:1px solid #F0EAE4}.ax-mm2__card:first-child{padding-left:0}.ax-mm2__card:last-child{border-right:none}.ax-mm2__img{display:block;width:100%;max-width:14.1vw;height:auto;border-radius:0.31vw}.ax-mm2__ttl{display:flex;align-items:center;justify-content:space-between;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:1.25vw;color:#23272E;background:#FDF8F4;margin-top:0.4vw;padding:0.63vw 0.5vw 0.63vw 0.3vw;border-radius:0.3vw}.ax-mm2__ttl span{color:#5B6B85;font-weight:400}.ax-mm2__lns{display:flex;flex-direction:column;padding-top:0.4vw}.ax-mm2__ln{display:flex;align-items:center;justify-content:space-between;gap:0.5vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:0.83vw;color:#3A4352;text-decoration:none;padding:0.55vw 0.2vw;border-radius:0.3vw}.ax-mm2__ln svg{width:0.83vw;height:0.83vw;flex:0 0 auto}a.ax-mm2__ln:hover{background:#FDF3EC;color:#DF3F17}.ax-mm2__ln[data-soon]{opacity:.45;cursor:default}.ax-mm2__badge{font-style:normal;font-size:0.57vw;font-weight:700;color:#B45309;background:#FFD8A8;border-radius:0.2vw;padding:0.1vw 0.3vw;margin-left:0.3vw;white-space:nowrap}.ax-mm2__rail{width:20.8vw;flex:0 0 auto}.ax-mm2__feat{background:linear-gradient(120deg,#F0601F,#DF3F17);border-radius:0.73vw;padding:1.25vw;color:#fff}.ax-mm2__feat-ttl{font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:1.67vw;line-height:1.2}.ax-mm2__feat-sub{font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:0.83vw;margin-top:0.4vw;opacity:.95}.ax-mm2__feat-btn{display:inline-block;margin-top:1.04vw;background:#fff;color:#DF3F17;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:0.83vw;padding:0.42vw 0.94vw;border-radius:0.31vw;text-decoration:none}.ax-mm2__api{display:flex;align-items:center;gap:0.83vw;margin-top:1.04vw;padding:1.04vw 0.25vw 0.1vw;border-top:1px solid #F0EAE4}.ax-mm2__api-ico{display:flex;align-items:center;justify-content:center;width:2.3vw;height:2.3vw;border-radius:50%;background:#E8551D;flex:0 0 auto}.ax-mm2__api-ico svg{width:1.15vw;height:1.15vw}.ax-mm2__api-tx{display:flex;flex-direction:column;flex:1}.ax-mm2__api-tx b{font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:1.04vw;color:#23272E}.ax-mm2__api-tx small{font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:0.68vw;color:#5B6B85}.ax-mm2__api-btn{display:flex;align-items:center;gap:0.3vw;background:#fff;border:1px solid #E5DED6;border-radius:0.42vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:0.83vw;color:#23272E;text-decoration:none;padding:0.52vw 1vw;flex:0 0 auto}</style>
 <style id="ax-mm-anim-css">
-/* Mega-menu open/close animation. The panel used to snap in on a display toggle,
-   which cannot be transitioned; drive visibility+opacity instead so both the open
-   and the close are animated, and keep pointer-events off while hidden so the
-   always-rendered fixed panels never swallow clicks. */
+/* Mega-menu open/close animation, CardNav-style: the panel GROWS from the nav bar
+   while its cards rise in staggered behind it. Height cannot be transitioned to
+   `auto` in CSS, so GSAP drives it (that is the whole reason gsap is vendored).
+   The wrapper's visibility/opacity stays in CSS so the panel is never hit-testable
+   while hidden -- the four .ax-mm panels are always in the DOM. */
 .ax-mm{display:block!important;visibility:hidden;opacity:0;pointer-events:none;
   transition:opacity .16s ease,visibility 0s linear .16s}
 .ax-mm.is-open{visibility:visible;opacity:1;pointer-events:auto;
-  transition:opacity .16s ease,visibility 0s}
-.ax-mm2__panel{transform-origin:top center;transform:translateY(-0.55vw) scale(.988);opacity:0;
-  transition:transform .24s cubic-bezier(.22,.68,.28,1),opacity .18s ease}
-.ax-mm.is-open .ax-mm2__panel{transform:none;opacity:1}
-.ax-mm2__card,.ax-mm2__rail{opacity:0;transform:translateY(0.45vw);
-  transition:opacity .2s ease,transform .22s cubic-bezier(.22,.68,.28,1)}
-.ax-mm.is-open .ax-mm2__card,.ax-mm.is-open .ax-mm2__rail{opacity:1;transform:none}
-.ax-mm.is-open .ax-mm2__card:nth-child(1){transition-delay:.04s}
-.ax-mm.is-open .ax-mm2__card:nth-child(2){transition-delay:.07s}
-.ax-mm.is-open .ax-mm2__card:nth-child(3){transition-delay:.10s}
-.ax-mm.is-open .ax-mm2__rail{transition-delay:.10s}
+  transition:opacity .12s ease,visibility 0s}
+.ax-mm2__panel{overflow:hidden;will-change:height}
 .ax-nav__chev{transition:transform .2s cubic-bezier(.22,.68,.28,1)}
 .ax-nav__link.is-open .ax-nav__chev{transform:rotate(180deg)}
+/* No-JS / no-GSAP fallback: without the timeline the panel must still be usable. */
+.ax-mm:not(.ax-mm--anim) .ax-mm2__panel{height:auto!important}
 @media (prefers-reduced-motion:reduce){
-  .ax-mm,.ax-mm2__panel,.ax-mm2__card,.ax-mm2__rail,.ax-nav__chev{transition:none!important}
+  .ax-mm,.ax-nav__chev{transition:none!important}
+  .ax-mm2__panel{height:auto!important}
+  .ax-mm2__card,.ax-mm2__rail{opacity:1!important;transform:none!important}
 }
 @media (max-width:1024px){.ax-mm{display:none!important}}
 </style>
+<script src="/assets/vendor/gsap.min.js" defer></script>
+<script>
+/* ---- MEGA-MENU TIMELINE (CardNav-style height grow + card stagger) ---- */
+document.addEventListener('DOMContentLoaded',function(){
+  if(!window.gsap) return;                       /* CSS fallback above keeps it usable */
+  if(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var EASE='power3.out';
+  var panels=[].slice.call(document.querySelectorAll('.ax-mm'));
+  if(!panels.length) return;
+
+  panels.forEach(function(p){
+    var panel=p.querySelector('.ax-mm2__panel');
+    if(!panel) return;
+    var cards=[].slice.call(p.querySelectorAll('.ax-mm2__card,.ax-mm2__rail'));
+    p.classList.add('ax-mm--anim');
+    var tl=null;
+
+    /* Measure at play time, not at build time: the panel's height depends on which
+       category group is active, and the viewport can be resized between opens. */
+    function fullHeight(){
+      var prev=panel.style.height;
+      panel.style.height='auto';
+      var h=panel.scrollHeight;
+      panel.style.height=prev;
+      return h;
+    }
+
+    function build(){
+      gsap.set(panel,{height:0});
+      gsap.set(cards,{y:50,opacity:0});
+      var t=gsap.timeline({paused:true});
+      t.to(panel,{height:fullHeight,duration:0.4,ease:EASE});
+      t.to(cards,{y:0,opacity:1,duration:0.4,ease:EASE,stagger:0.08},'-=0.1');
+      /* let the panel reflow freely once it is fully open */
+      t.eventCallback('onComplete',function(){panel.style.height='auto';});
+      return t;
+    }
+
+    function play(){
+      if(tl) tl.kill();
+      tl=build();
+      tl.play(0);
+    }
+    function reverse(){
+      if(!tl) return;
+      panel.style.height=fullHeight()+'px';   /* from `auto` back to a tweenable value */
+      tl.reverse();
+    }
+
+    /* The existing menu script owns open/close; watch the class it toggles rather than
+       reaching into it, so the nav contract in CLAUDE.md stays untouched. */
+    var was=p.classList.contains('is-open');
+    new MutationObserver(function(){
+      var now=p.classList.contains('is-open');
+      if(now===was) return;
+      was=now;
+      if(now) play(); else reverse();
+    }).observe(p,{attributes:true,attributeFilter:['class']});
+  });
+});
+</script>
 <style id="ax-fx-css">.ax-svc-card{transition:box-shadow .3s ease,border-color .3s ease;isolation:isolate}.ax-svc-card::after{content:"";position:absolute;inset:-0.42vw;border-radius:0.63vw;background:linear-gradient(90deg,#FF0000 0%,#E3B316 20%,#FFFFFF 41%,#19D8E6 65%,#6419E6 87%,#E619AF 99%);filter:blur(1vw);opacity:0;transition:opacity .3s ease;z-index:-1;pointer-events:none}.ax-svc-card.ax-card-hot{border-color:#DF3F17!important;box-shadow:0 0.6vw 1.8vw rgba(223,63,23,.15)}.ax-svc-card.ax-card-hot::after{opacity:.5}</style>
 <style id="ax-reveal-css">.ax-rv{opacity:0;transform:translateY(1.4vw);transition:opacity .7s cubic-bezier(.22,.61,.36,1),transform .7s cubic-bezier(.22,.61,.36,1);}.ax-rv.ax-in{opacity:1;transform:translateY(0);}.ax-rvo{opacity:0;transition:opacity .7s ease;}.ax-rvo.ax-in{opacity:1;}@media (prefers-reduced-motion: reduce){.ax-rv,.ax-rvo{opacity:1!important;transform:none!important;transition:none!important;}}</style>
 <link rel="icon" href="/assets/favicon/favicon-32.png" sizes="32x32"><link rel="icon" href="/assets/favicon/favicon-192.png" sizes="192x192"><link rel="apple-touch-icon" href="/assets/favicon/apple-touch-icon.png">
 
 
 
-<link rel="canonical" href="https://aeonx.digital/services/multi-cloud-cms/">
-<meta property="og:url" content="https://aeonx.digital/services/multi-cloud-cms/">
-<style id="ax-mob-css">.ax-mob{display:none}@media(max-width:768px){body>*:not(.ax-mob):not(.ax-mnav){display:none!important}.ax-mob{display:block!important}}</style><style id="ax-pre-css">
+<style id="ax-pre-css">
 /* Dot-matrix preloader. Hidden unless the head script opts this pageview in, so a
    JS failure or a no-JS visitor can never be left staring at a blank overlay. */
 #ax-pre{display:none}
@@ -217,7 +272,9 @@ html.ax-pre-off #ax-pre{opacity:0;transform:translateY(-2vw);pointer-events:none
 })();
 </script>
 
-</head>
+<link rel="canonical" href="https://aeonx.digital/services/multi-cloud-cms/">
+<meta property="og:url" content="https://aeonx.digital/services/multi-cloud-cms/">
+<style id="ax-mob-css">.ax-mob{display:none}@media(max-width:768px){body>*:not(.ax-mob):not(.ax-mnav){display:none!important}.ax-mob{display:block!important}}</style></head>
 <body>
 <div id="ax-pre" aria-hidden="true"><b>Loading&hellip;</b><div id="ax-pre-cluster"></div><div id="ax-pre-num"></div><div id="ax-pre-credit">AeonX&nbsp;&bull;&nbsp;Digital</div></div>
 
@@ -889,167 +946,6 @@ document.addEventListener("DOMContentLoaded",function(){
 
 
 
-<div class="ax-mob"><main class="ax-page" style="position:relative;height:1608.3721vw">
-<div class="g-b" style="position:absolute;left:0.0000vw;top:949.7674vw;width:100.0000vw;height:658.5060vw;background-color:rgb(255,255,255);"></div>
-<img class="g-vec" src="/assets/vec/5637-71979.svg" data-vec="5637:71979" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:3.7209vw;top:959.0698vw;width:23.2558vw;height:13.2558vw;">
-<div class="g-t" style="position:absolute;left:7.9070vw;top:985.3701vw;width:41.6279vw;height:6.0465vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:4.2706vw;line-height:5.8721vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Sign up to learn more </div>
-<div class="g-t" style="position:absolute;left:7.9070vw;top:996.2210vw;width:84.1860vw;height:6.0465vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:4.2706vw;line-height:5.8721vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">SAP. Cloud. AI. One accountable partner.
-</div>
-<div class="g-b g-clip" style="position:absolute;left:7.9070vw;top:1011.6096vw;width:84.1860vw;height:11.1628vw;background-color:rgb(223,63,23);border-radius:1.8605vw;overflow:hidden;">
-<div class="g-t" style="position:absolute;left:3.7209vw;top:3.2558vw;width:17.4419vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:3.2558vw;line-height:4.6512vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">Get Started</div>
-<img class="g-vec" src="/assets/vec/I5637-72012;4046-29821.svg" data-vec="I5637:72012;4046:29821" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:74.4186vw;top:2.7907vw;width:5.5814vw;height:5.5814vw;">
-</div>
-<div class="g-t" style="position:absolute;left:10.1269vw;top:1035.8512vw;width:22.3256vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:3.7209vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Who we are
-</div>
-<div class="g-t" style="position:absolute;left:10.1269vw;top:1048.9061vw;width:19.7674vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Foundation
-</div>
-<div class="g-t" style="position:absolute;left:10.1269vw;top:1058.7582vw;width:18.3721vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Leadership</div>
-<div class="g-t" style="position:absolute;left:10.1269vw;top:1068.6102vw;width:12.3256vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Culture</div>
-<div class="g-t" style="position:absolute;left:10.1269vw;top:1078.4623vw;width:11.1628vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Career</div>
-<div class="g-t" style="position:absolute;left:10.1269vw;top:1088.3143vw;width:17.9070vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Contact us</div>
-<div class="g-t" style="position:absolute;left:10.1269vw;top:1107.7754vw;width:14.4186vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:3.7209vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Services</div>
-<div class="g-t" style="position:absolute;left:10.1269vw;top:1120.8303vw;width:20.4651vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">All services
-</div>
-<div class="g-t" style="position:absolute;left:10.1269vw;top:1130.6823vw;width:24.6512vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">RISE with SAP</div>
-<div class="g-t" style="position:absolute;left:10.1269vw;top:1140.5344vw;width:29.7674vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">GROW with SAP
-</div>
-<div class="g-t" style="position:absolute;left:10.1269vw;top:1150.3864vw;width:33.0233vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">SAP AMS (AXIOM)
-</div>
-<div class="g-t" style="position:absolute;left:10.1269vw;top:1160.2385vw;width:10.0000vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">AWS
-</div>
-<div class="g-t" style="position:absolute;left:10.1269vw;top:1170.0905vw;width:23.0233vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Google Cloud</div>
-<div class="g-t" style="position:absolute;left:10.1269vw;top:1179.9425vw;width:28.3721vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Multi-cloud CMS</div>
-<div class="g-t" style="position:absolute;left:10.1269vw;top:1199.4035vw;width:15.5814vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:3.7209vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Products</div>
-<div class="g-t" style="position:absolute;left:10.1269vw;top:1212.4584vw;width:21.6279vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">All products
-</div>
-<div class="g-t" style="position:absolute;left:10.1269vw;top:1222.3105vw;width:16.5116vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">SupplierX</div>
-<div class="g-t" style="position:absolute;left:10.1269vw;top:1232.1625vw;width:12.0930vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">OrderX</div>
-<div class="g-t" style="position:absolute;left:10.1269vw;top:1242.0146vw;width:12.5581vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Xpense</div>
-<div class="g-t" style="position:absolute;left:10.1269vw;top:1251.8666vw;width:14.1860vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Logystix</div>
-<div class="g-t" style="position:absolute;left:10.1269vw;top:1261.7186vw;width:15.8140vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">ManuFeX</div>
-<div class="g-t" style="position:absolute;left:10.1269vw;top:1271.5707vw;width:32.3256vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">AXIOM AI Platform</div>
-<div class="g-t" style="position:absolute;left:10.1269vw;top:1291.0316vw;width:17.2093vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:3.7209vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Industries</div>
-<div class="g-t" style="position:absolute;left:10.1269vw;top:1304.0866vw;width:25.1163vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Manufacturing
-</div>
-<div class="g-t" style="position:absolute;left:10.1269vw;top:1313.9386vw;width:36.7442vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Metals &amp; Engineering
-</div>
-<div class="g-t" style="position:absolute;left:10.1269vw;top:1323.7907vw;width:33.0233vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Energy &amp; Oil &amp; Gas
-</div>
-<div class="g-t" style="position:absolute;left:10.1269vw;top:1333.6427vw;width:13.0233vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Textiles</div>
-<div class="g-t" style="position:absolute;left:10.1269vw;top:1343.4947vw;width:35.3488vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">FMCG &amp; Distribution
-</div>
-<div class="g-t" style="position:absolute;left:10.1269vw;top:1353.3468vw;width:42.5581vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Automotive &amp; Aerospace
-</div>
-<div class="g-t" style="position:absolute;left:10.1269vw;top:1363.1988vw;width:15.3488vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Alliances</div>
-<div class="g-t" style="position:absolute;left:10.1269vw;top:1382.6599vw;width:16.5116vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:3.7209vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">About Us</div>
-<div class="g-t" style="position:absolute;left:10.1269vw;top:1395.7148vw;width:21.1628vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Case studies</div>
-<div class="g-t" style="position:absolute;left:10.1269vw;top:1405.5669vw;width:26.9767vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Trust &amp; security
-</div>
-<div class="g-t" style="position:absolute;left:10.1269vw;top:1415.4190vw;width:7.9070vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Blog</div>
-<div class="g-t" style="position:absolute;left:10.1269vw;top:1425.2709vw;width:30.0000vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Investor relations
-</div>
-<div class="g-t" style="position:absolute;left:10.1269vw;top:1435.1231vw;width:26.7442vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">BSE disclosures</div>
-<div class="g-t" style="position:absolute;left:10.1269vw;top:1454.5839vw;width:17.4419vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:3.7209vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Follow Us</div>
-<div class="g-t" style="position:absolute;left:10.1269vw;top:1467.6392vw;width:11.8605vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Twitter</div>
-<div class="g-t" style="position:absolute;left:10.1269vw;top:1477.4911vw;width:14.1860vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">LinkedIn</div>
-<div class="g-img" data-ref="1a6724d5f1b0e3e74c7e42c83b442f552edd6040" role="img" aria-label="4 8" style="position:absolute;left:76.0465vw;top:1473.2558vw;width:20.2326vw;height:34.4186vw;background-image:url(/assets/partners/gptw-certified.png);background-size:84.3987vw 34.6275vw;background-position:-32.1093vw -0.2089vw;background-repeat:no-repeat;"></div>
-<div class="g-b" style="position:absolute;left:3.7209vw;top:1495.5937vw;width:92.5581vw;height:63.6100vw;box-sizing:border-box;border:0.2326vw solid rgb(236,238,242);"></div>
-<div class="g-t" style="position:absolute;left:10.3938vw;top:1501.7326vw;width:32.0930vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">support@doss.com</div>
-<div class="g-t" style="position:absolute;left:10.3938vw;top:1511.5848vw;width:32.5581vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Terms &amp; Conditions</div>
-<div class="g-t" style="position:absolute;left:47.6749vw;top:1511.5484vw;width:23.0233vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Privacy Policy</div>
-<div class="g-t" style="position:absolute;left:10.4656vw;top:1530.6182vw;width:79.0698vw;height:22.3256vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:pre-wrap;">© 2026 AeonX Digital Technology Limited. BSE-listed. |  All rights reserved. · SAP Gold Partner · AWS Advanced Tier · Google Cloud Partner</div>
-<div class="g-t" style="position:absolute;left:10.3938vw;top:1521.4367vw;width:13.0233vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Cookies</div>
-<div class="g-t" style="position:absolute;left:33.0237vw;top:1521.5484vw;width:13.9535vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Sitemap</div>
-<div class="g-b" style="position:absolute;left:3.7209vw;top:1495.5019vw;width:92.5581vw;height:0.2326vw;background:linear-gradient(90deg, rgba(133,128,123,0.180) 0.0%);"></div>
-<div class="g-t" style="position:absolute;left:8.3721vw;top:1571.2968vw;width:49.3023vw;height:6.5116vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:4.1860vw;line-height:6.5116vw;color:rgb(38,15,20);text-align:left;white-space:nowrap;">Get the latest from Aeonx</div>
-<div class="g-b g-clip" style="position:absolute;left:8.3721vw;top:1581.6456vw;width:54.6512vw;height:10.6977vw;border-radius:0.4651vw;box-sizing:border-box;border:0.1860vw solid rgb(255,120,94);overflow:hidden;">
-<div class="g-t" style="position:absolute;left:3.9070vw;top:2.5581vw;width:46.8372vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:3.7209vw;line-height:5.5814vw;color:rgb(134,149,170);text-align:left;white-space:nowrap;">Work email</div>
-</div>
-<div class="g-b g-clip" style="position:absolute;left:65.8140vw;top:1581.6456vw;width:25.7267vw;height:10.6977vw;background-color:rgba(38,15,20,0.050);border-radius:0.4651vw;box-sizing:border-box;border:0.1860vw solid rgba(0,0,0,0.000);overflow:hidden;">
-<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:25.8140vw;height:10.2326vw;background-color:rgb(223,63,23);border-radius:1.8605vw;overflow:hidden;">
-<div class="g-t" style="position:absolute;left:5.5814vw;top:2.7907vw;width:14.6512vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:3.2558vw;line-height:4.6512vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">Subscribe</div>
-</div>
-</div>
-<div class="g-b" style="position:absolute;left:3.7209vw;top:1598.9303vw;width:92.5581vw;height:0.2326vw;background-color:rgb(229,229,229);"></div>
-<div class="g-b" style="position:absolute;left:0.0000vw;top:856.2791vw;width:100.0930vw;height:93.4884vw;background-color:rgb(246,247,249);"></div>
-<h2 class="g-t" style="position:absolute;left:5.5814vw;top:865.5814vw;width:88.8372vw;height:20.4651vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:8.3721vw;line-height:10.2326vw;color:rgb(35,39,46);text-align:left;white-space:pre-wrap;">One operating model. Every cloud.</h2>
-<div class="g-t" style="position:absolute;left:5.9302vw;top:888.8372vw;width:88.1395vw;height:19.5349vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:4.1860vw;line-height:6.5116vw;color:rgb(82,96,119);text-align:left;white-space:pre-wrap;">Bring your cloud bill, your security backlog, or your DR drill schedule. We’ll show you what CloudLedger and a 24×7 NOC could do.</div>
-<div class="g-b g-clip" style="position:absolute;left:5.5814vw;top:915.3488vw;width:88.8372vw;height:11.1628vw;background-color:rgb(223,63,23);border-radius:1.8605vw;overflow:hidden;">
-<div class="g-t" style="position:absolute;left:3.7209vw;top:3.2558vw;width:28.8372vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:3.2558vw;line-height:4.6512vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">Request a Proposal </div>
-<img class="g-vec" src="/assets/vec/I5637-72180;4046-29821.svg" data-vec="I5637:72180;4046:29821" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:79.0698vw;top:2.7907vw;width:5.5814vw;height:5.5814vw;">
-</div>
-<div class="g-b g-clip" style="position:absolute;left:5.5814vw;top:929.3023vw;width:88.8372vw;height:11.1628vw;background-color:rgb(255,255,255);border-radius:1.8605vw;box-sizing:border-box;border:0.2326vw solid rgb(213,218,226);overflow:hidden;">
-<div class="g-t" style="position:absolute;left:3.7209vw;top:3.2558vw;width:38.8372vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:3.2558vw;line-height:4.6512vw;color:rgb(58,67,82);text-align:center;white-space:nowrap;">Book a Cloud Ledger Pilot</div>
-<img class="g-vec" src="/assets/vec/I5637-72181;4046-29893.svg" data-vec="I5637:72181;4046:29893" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:79.0698vw;top:2.7907vw;width:5.5814vw;height:5.5814vw;">
-</div>
-<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:185.1163vw;width:100.0930vw;height:195.1163vw;overflow:hidden;">
-<img class="g-vec" src="/assets/vec/5637-72184.svg" data-vec="5637:72184" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:0.0000vw;top:0.0000vw;width:100.0000vw;height:162.7907vw;">
-<div class="g-t" style="position:absolute;left:6.0476vw;top:9.3023vw;width:33.0233vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:2.7907vw;line-height:4.6512vw;color:rgb(223,63,23);text-align:left;white-space:nowrap;">SIGNATURE CAPABILITY</div>
-<h2 class="g-t" style="position:absolute;left:6.0476vw;top:16.9767vw;width:88.1395vw;height:30.6977vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:8.3721vw;line-height:10.2326vw;color:rgb(35,39,46);text-align:left;white-space:pre-wrap;">CloudLedger - FinOps across every cloud account.<br></h2>
-<div class="g-t" style="position:absolute;left:6.0476vw;top:49.0698vw;width:88.1395vw;height:23.2558vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.2558vw;line-height:4.6512vw;color:rgb(82,96,119);text-align:left;white-space:pre-wrap;">An enterprise running across AWS, GCP, and SAP BTP used to close books on cloud spend 15 days after month-end. CloudLedger rolls out in 2 weeks unified showback, anomaly alerts, 2-day close. Waste becomes visible. FinOps becomes active.<br></div>
-<div class="g-b g-clip" style="position:absolute;left:3.7209vw;top:77.9070vw;width:94.1860vw;height:93.0233vw;background-color:rgb(255,255,255);overflow:hidden;">
-<div class="g-b" style="position:absolute;left:0.0000vw;top:0.0000vw;width:92.3256vw;height:93.0233vw;border-radius:1.8605vw;box-sizing:border-box;border:0.2326vw solid rgb(223,63,23);"></div>
-<div class="g-b" style="position:absolute;left:5.5814vw;top:5.5814vw;width:81.1628vw;height:13.9535vw;box-sizing:border-box;border:0.2326vw solid rgb(223,63,23);"></div>
-<div class="g-t" style="position:absolute;left:8.3721vw;top:5.5814vw;width:23.9535vw;height:13.9535vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:11.1628vw;line-height:13.9535vw;color:rgb(223,63,23);text-align:left;white-space:nowrap;">30%</div>
-<div class="g-t" style="position:absolute;left:5.5814vw;top:62.7907vw;width:81.1628vw;height:11.8605vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:4.6512vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:pre-wrap;">cloud waste cut in 6 months at a listed manufacturing conglomerate.<br></div>
-<img class="g-vec" src="/assets/vec/5637-72287.svg" data-vec="5637:72287" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:63.7210vw;top:0.0000vw;width:30.4651vw;height:30.4697vw;opacity:0.46000000834465027;">
-</div>
-<div class="g-b g-clip" style="position:absolute;left:97.9070vw;top:77.9070vw;width:94.1860vw;height:93.0233vw;background-color:rgb(255,255,255);overflow:hidden;">
-<div class="g-b" style="position:absolute;left:0.0000vw;top:0.0000vw;width:92.3256vw;height:93.0233vw;border-radius:1.8605vw;box-sizing:border-box;border:0.2326vw solid rgb(223,63,23);"></div>
-<div class="g-b" style="position:absolute;left:5.5814vw;top:5.5814vw;width:81.1628vw;height:13.9535vw;box-sizing:border-box;border:0.2326vw solid rgb(223,63,23);"></div>
-<h1 class="g-t" style="position:absolute;left:8.3721vw;top:5.5814vw;width:33.7209vw;height:13.9535vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:11.1628vw;line-height:13.9535vw;color:rgb(223,63,23);text-align:left;white-space:nowrap;">2 days</h1>
-<div class="g-t" style="position:absolute;left:5.5814vw;top:62.7907vw;width:81.1628vw;height:11.8605vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:4.6512vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:pre-wrap;">month-end FinOps close, down from 15.<br></div>
-</div>
-<div class="g-b g-clip" style="position:absolute;left:192.0930vw;top:77.9070vw;width:94.1860vw;height:93.0233vw;background-color:rgb(255,255,255);overflow:hidden;">
-<div class="g-b" style="position:absolute;left:0.0000vw;top:0.0000vw;width:92.3256vw;height:93.0233vw;border-radius:1.8605vw;box-sizing:border-box;border:0.2326vw solid rgb(223,63,23);"></div>
-<div class="g-b" style="position:absolute;left:5.5814vw;top:5.5814vw;width:81.1628vw;height:13.9535vw;box-sizing:border-box;border:0.2326vw solid rgb(223,63,23);"></div>
-<h2 class="g-t" style="position:absolute;left:8.3721vw;top:5.5814vw;width:42.5581vw;height:13.9535vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:11.1628vw;line-height:13.9535vw;color:rgb(223,63,23);text-align:left;white-space:nowrap;">2 weeks</h2>
-<div class="g-t" style="position:absolute;left:5.5814vw;top:62.7907vw;width:81.1628vw;height:11.8605vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:4.6512vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:pre-wrap;">CloudLedger onboarding to first showback report.<br></div>
-</div>
-<div class="g-b g-clip" style="position:absolute;left:286.2791vw;top:77.9070vw;width:94.1860vw;height:93.0233vw;background-color:rgb(255,255,255);overflow:hidden;">
-<div class="g-b" style="position:absolute;left:0.0000vw;top:0.0000vw;width:92.3256vw;height:93.0233vw;border-radius:1.8605vw;box-sizing:border-box;border:0.2326vw solid rgb(223,63,23);"></div>
-<div class="g-b" style="position:absolute;left:5.5814vw;top:5.5814vw;width:81.1628vw;height:13.9535vw;box-sizing:border-box;border:0.2326vw solid rgb(223,63,23);"></div>
-<div class="g-t" style="position:absolute;left:8.3721vw;top:5.5814vw;width:26.9767vw;height:13.9535vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:11.1628vw;line-height:13.9535vw;color:rgb(223,63,23);text-align:left;white-space:nowrap;">24×7</div>
-<div class="g-t" style="position:absolute;left:5.5814vw;top:62.7907vw;width:81.1628vw;height:11.8605vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:4.6512vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:pre-wrap;">cross-cloud NOC. ITIL-aligned incident and change.<br></div>
-</div>
-<img class="g-vec" src="/assets/vec/5637-72410.svg" data-vec="5637:72410" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:0.0000vw;top:176.5116vw;width:100.0930vw;height:9.3023vw;">
-</div>
-<div class="g-b" style="position:absolute;left:0.0000vw;top:22.3256vw;width:100.0000vw;height:162.7907vw;box-sizing:border-box;border:0.2326vw solid rgb(236,238,242);"></div>
-<img class="g-vec" src="/assets/vec/5637-72426.svg" data-vec="5637:72426" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:0.0000vw;top:22.3256vw;width:100.0000vw;height:162.7907vw;">
-<img class="g-vec" src="/assets/vec/5637-72429.svg" data-vec="5637:72429" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:0.0000vw;top:22.3256vw;width:100.0000vw;height:162.7907vw;">
-<h2 class="g-t" style="position:absolute;left:7.4419vw;top:37.2093vw;width:85.1163vw;height:69.7674vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:11.1628vw;line-height:13.9535vw;color:rgb(35,39,46);text-align:left;white-space:pre-wrap;">One operating model. Every cloud. <br>Governed as one.<br></h2>
-<div class="g-t" style="position:absolute;left:7.4419vw;top:114.4186vw;width:85.1163vw;height:11.1628vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:4.6512vw;line-height:5.5814vw;color:rgb(58,67,82);text-align:left;white-space:pre-wrap;">AWS, GCP, and SAP BTP run as one. CloudLedger at the core.</div>
-<div class="g-b g-clip" style="position:absolute;left:7.4419vw;top:140.4651vw;width:35.8140vw;height:10.2326vw;background-color:rgb(223,63,23);border-radius:1.8605vw;overflow:hidden;">
-<div class="g-t" style="position:absolute;left:5.5814vw;top:2.7907vw;width:24.6512vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:2.7907vw;line-height:4.6512vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">Request a proposal</div>
-</div>
-<div class="g-b g-clip" style="position:absolute;left:46.1592vw;top:140.4651vw;width:38.6047vw;height:10.2326vw;background-color:rgb(255,255,255);border-radius:1.8605vw;box-sizing:border-box;border:0.2326vw solid rgb(213,218,226);overflow:hidden;">
-<div class="g-t" style="position:absolute;left:2.6744vw;top:2.7907vw;width:33.2558vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:2.7907vw;line-height:4.6512vw;color:rgb(58,67,82);text-align:center;white-space:nowrap;">Book a Cloud Ledger Pilot</div>
-</div>
-<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:380.2326vw;width:100.0000vw;height:476.0465vw;background:linear-gradient(257deg, rgb(185,45,21) -114.3%, rgb(242,122,69) 193.8%);overflow:hidden;">
-<img class="g-vec" src="/assets/vec/5637-72503.svg" data-vec="5637:72503" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:0.0000vw;top:0.0000vw;width:100.0000vw;height:476.5116vw;">
-<div class="g-t" style="position:absolute;left:6.0011vw;top:9.3023vw;width:27.9070vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:2.7907vw;line-height:4.6512vw;color:rgb(255,255,255);text-align:left;white-space:nowrap;">INSIDE THE SERVICE</div>
-<h2 class="g-t" style="position:absolute;left:6.0011vw;top:16.9767vw;width:88.1395vw;height:10.2326vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:8.3721vw;line-height:10.2326vw;color:rgb(255,255,255);text-align:left;white-space:nowrap;">Four pillars.</h2>
-<div class="g-b" style="position:absolute;left:3.7209vw;top:32.7907vw;width:92.3256vw;height:104.1860vw;background-color:rgba(255,255,255,0.060);border-radius:1.8605vw;"></div>
-<div class="g-b" style="position:absolute;left:9.3023vw;top:43.9535vw;width:81.1628vw;height:27.9070vw;box-sizing:border-box;border:0.2326vw solid rgb(246,247,249);"></div>
-<h2 class="g-t" style="position:absolute;left:13.0233vw;top:43.9535vw;width:75.5814vw;height:27.9070vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:11.1628vw;line-height:13.9535vw;color:rgb(255,255,255);text-align:left;white-space:pre-wrap;">FinOps with Cloud Ledger<br></h2>
-<div class="g-t" style="position:absolute;left:9.3023vw;top:91.6279vw;width:81.1628vw;height:34.1860vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:4.6512vw;line-height:5.5814vw;color:rgb(236,238,242);text-align:left;white-space:pre-wrap;">Unified billing, margin, FX across AWS, GCP, and SAP BTP (Azure / OCI on request). Tagging, showback, chargeback. Budgets, anomaly detection, commit optimisation. Monthly reviews.<br></div>
-<div class="g-b" style="position:absolute;left:3.7209vw;top:142.0930vw;width:92.3256vw;height:104.1860vw;background-color:rgba(255,255,255,0.060);border-radius:1.8605vw;"></div>
-<div class="g-b" style="position:absolute;left:9.3023vw;top:153.2558vw;width:81.1628vw;height:27.9070vw;box-sizing:border-box;border:0.2326vw solid rgb(246,247,249);"></div>
-<h2 class="g-t" style="position:absolute;left:13.0233vw;top:153.2558vw;width:75.5814vw;height:27.9070vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:11.1628vw;line-height:13.9535vw;color:rgb(255,255,255);text-align:left;white-space:pre-wrap;">Unified SecOps</h2>
-<div class="g-t" style="position:absolute;left:9.3023vw;top:210.9302vw;width:81.1628vw;height:24.1860vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:4.6512vw;line-height:5.5814vw;color:rgb(236,238,242);text-align:left;white-space:pre-wrap;">Consolidated security posture, policy-as-code, continuous compliance. CSPM across clouds. ISO 27001 aligned. One pane for the CISO.</div>
-<div class="g-b" style="position:absolute;left:3.7209vw;top:251.3953vw;width:92.3256vw;height:104.1860vw;background-color:rgba(255,255,255,0.060);border-radius:1.8605vw;"></div>
-<div class="g-b" style="position:absolute;left:9.3023vw;top:262.5581vw;width:81.1628vw;height:27.9070vw;box-sizing:border-box;border:0.2326vw solid rgb(246,247,249);"></div>
-<h2 class="g-t" style="position:absolute;left:13.0233vw;top:262.5581vw;width:75.5814vw;height:27.9070vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:11.1628vw;line-height:13.9535vw;color:rgb(255,255,255);text-align:left;white-space:pre-wrap;">24×7 managed ops</h2>
-<div class="g-t" style="position:absolute;left:9.3023vw;top:320.2326vw;width:81.1628vw;height:23.0233vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:4.6512vw;line-height:5.5814vw;color:rgb(236,238,242);text-align:left;white-space:pre-wrap;">Cross-cloud NOC. ITIL-aligned incident and change. Runbook automation. Patching, backup, DR drills on schedule.</div>
-<div class="g-b" style="position:absolute;left:3.7209vw;top:360.6977vw;width:92.3256vw;height:104.1860vw;background-color:rgba(255,255,255,0.060);border-radius:1.8605vw;"></div>
-<div class="g-b" style="position:absolute;left:9.3023vw;top:371.8605vw;width:81.1628vw;height:27.9070vw;box-sizing:border-box;border:0.2326vw solid rgb(246,247,249);"></div>
-<h2 class="g-t" style="position:absolute;left:13.0233vw;top:371.8605vw;width:75.5814vw;height:27.9070vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:11.1628vw;line-height:13.9535vw;color:rgb(255,255,255);text-align:left;white-space:pre-wrap;">Observability &amp; SRE</h2>
-<div class="g-t" style="position:absolute;left:9.3023vw;top:429.5349vw;width:81.1628vw;height:24.1860vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:4.6512vw;line-height:5.5814vw;color:rgb(236,238,242);text-align:left;white-space:pre-wrap;">Unified observability metrics, logs, traces. SRE practices, error budgets, SLO management. Toil cut by automation.</div>
-</div>
-<div class="g-b" style="position:absolute;left:0.0000vw;top:0.0000vw;width:100.0000vw;height:9.5349vw;background:linear-gradient(270deg, rgb(255,135,5) 25.0%, rgba(223,63,23,0.920) 90.0%);"></div>
-<div class="g-t" style="position:absolute;left:19.4186vw;top:2.4419vw;width:61.1628vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.2558vw;line-height:4.6512vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">Signup to LlamaParse for 10k free credits!</div>
-<img class="g-vec" src="/assets/vec/5637-72679.svg" data-vec="5637:72679" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:1.8605vw;top:10.4651vw;width:96.2791vw;height:11.8605vw;backdrop-filter:blur(0.2326vw);-webkit-backdrop-filter:blur(0.2326vw);">
-</main></div>
 <script>
 /* ---- PRELOADER (dot-matrix counter) ---- */
 (function(){
@@ -1143,7 +1039,7 @@ document.addEventListener("DOMContentLoaded",function(){
 <style id="ax-cursor-css">
 /* Cursor accent: a single brand-orange ring that trails the pointer with easing and
    opens up over interactive elements. The NATIVE cursor stays on top -- this is an
-   accent, not a replacement, so no `cursor:none` anywhere and no affordance is lost.
+   accent, not a replacement: the native cursor is never hidden, so no affordance is lost.
    Sized in px, not vw: it tracks a physical pointing device and must not shrink on a
    small laptop. The white halo keeps it legible over the dark navy and deep-red
    sections as well as over white. */
@@ -1316,5 +1212,166 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
 })();
 </script>
 
+<div class="ax-mob"><main class="ax-page" style="position:relative;height:1608.3721vw">
+<div class="g-b" style="position:absolute;left:0.0000vw;top:949.7674vw;width:100.0000vw;height:658.5060vw;background-color:rgb(255,255,255);"></div>
+<img class="g-vec" src="/assets/vec/5637-71979.svg" data-vec="5637:71979" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:3.7209vw;top:959.0698vw;width:23.2558vw;height:13.2558vw;">
+<div class="g-t" style="position:absolute;left:7.9070vw;top:985.3701vw;width:41.6279vw;height:6.0465vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:4.2706vw;line-height:5.8721vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Sign up to learn more </div>
+<div class="g-t" style="position:absolute;left:7.9070vw;top:996.2210vw;width:84.1860vw;height:6.0465vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:4.2706vw;line-height:5.8721vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">SAP. Cloud. AI. One accountable partner.
+</div>
+<div class="g-b g-clip" style="position:absolute;left:7.9070vw;top:1011.6096vw;width:84.1860vw;height:11.1628vw;background-color:rgb(223,63,23);border-radius:1.8605vw;overflow:hidden;">
+<div class="g-t" style="position:absolute;left:3.7209vw;top:3.2558vw;width:17.4419vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:3.2558vw;line-height:4.6512vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">Get Started</div>
+<img class="g-vec" src="/assets/vec/I5637-72012;4046-29821.svg" data-vec="I5637:72012;4046:29821" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:74.4186vw;top:2.7907vw;width:5.5814vw;height:5.5814vw;">
+</div>
+<div class="g-t" style="position:absolute;left:10.1269vw;top:1035.8512vw;width:22.3256vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:3.7209vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Who we are
+</div>
+<div class="g-t" style="position:absolute;left:10.1269vw;top:1048.9061vw;width:19.7674vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Foundation
+</div>
+<div class="g-t" style="position:absolute;left:10.1269vw;top:1058.7582vw;width:18.3721vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Leadership</div>
+<div class="g-t" style="position:absolute;left:10.1269vw;top:1068.6102vw;width:12.3256vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Culture</div>
+<div class="g-t" style="position:absolute;left:10.1269vw;top:1078.4623vw;width:11.1628vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Career</div>
+<div class="g-t" style="position:absolute;left:10.1269vw;top:1088.3143vw;width:17.9070vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Contact us</div>
+<div class="g-t" style="position:absolute;left:10.1269vw;top:1107.7754vw;width:14.4186vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:3.7209vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Services</div>
+<div class="g-t" style="position:absolute;left:10.1269vw;top:1120.8303vw;width:20.4651vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">All services
+</div>
+<div class="g-t" style="position:absolute;left:10.1269vw;top:1130.6823vw;width:24.6512vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">RISE with SAP</div>
+<div class="g-t" style="position:absolute;left:10.1269vw;top:1140.5344vw;width:29.7674vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">GROW with SAP
+</div>
+<div class="g-t" style="position:absolute;left:10.1269vw;top:1150.3864vw;width:33.0233vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">SAP AMS (AXIOM)
+</div>
+<div class="g-t" style="position:absolute;left:10.1269vw;top:1160.2385vw;width:10.0000vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">AWS
+</div>
+<div class="g-t" style="position:absolute;left:10.1269vw;top:1170.0905vw;width:23.0233vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Google Cloud</div>
+<div class="g-t" style="position:absolute;left:10.1269vw;top:1179.9425vw;width:28.3721vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Multi-cloud CMS</div>
+<div class="g-t" style="position:absolute;left:10.1269vw;top:1199.4035vw;width:15.5814vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:3.7209vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Products</div>
+<div class="g-t" style="position:absolute;left:10.1269vw;top:1212.4584vw;width:21.6279vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">All products
+</div>
+<div class="g-t" style="position:absolute;left:10.1269vw;top:1222.3105vw;width:16.5116vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">SupplierX</div>
+<div class="g-t" style="position:absolute;left:10.1269vw;top:1232.1625vw;width:12.0930vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">OrderX</div>
+<div class="g-t" style="position:absolute;left:10.1269vw;top:1242.0146vw;width:12.5581vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Xpense</div>
+<div class="g-t" style="position:absolute;left:10.1269vw;top:1251.8666vw;width:14.1860vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Logystix</div>
+<div class="g-t" style="position:absolute;left:10.1269vw;top:1261.7186vw;width:15.8140vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">ManuFeX</div>
+<div class="g-t" style="position:absolute;left:10.1269vw;top:1271.5707vw;width:32.3256vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">AXIOM AI Platform</div>
+<div class="g-t" style="position:absolute;left:10.1269vw;top:1291.0316vw;width:17.2093vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:3.7209vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Industries</div>
+<div class="g-t" style="position:absolute;left:10.1269vw;top:1304.0866vw;width:25.1163vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Manufacturing
+</div>
+<div class="g-t" style="position:absolute;left:10.1269vw;top:1313.9386vw;width:36.7442vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Metals &amp; Engineering
+</div>
+<div class="g-t" style="position:absolute;left:10.1269vw;top:1323.7907vw;width:33.0233vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Energy &amp; Oil &amp; Gas
+</div>
+<div class="g-t" style="position:absolute;left:10.1269vw;top:1333.6427vw;width:13.0233vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Textiles</div>
+<div class="g-t" style="position:absolute;left:10.1269vw;top:1343.4947vw;width:35.3488vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">FMCG &amp; Distribution
+</div>
+<div class="g-t" style="position:absolute;left:10.1269vw;top:1353.3468vw;width:42.5581vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Automotive &amp; Aerospace
+</div>
+<div class="g-t" style="position:absolute;left:10.1269vw;top:1363.1988vw;width:15.3488vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Alliances</div>
+<div class="g-t" style="position:absolute;left:10.1269vw;top:1382.6599vw;width:16.5116vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:3.7209vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">About Us</div>
+<div class="g-t" style="position:absolute;left:10.1269vw;top:1395.7148vw;width:21.1628vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Case studies</div>
+<div class="g-t" style="position:absolute;left:10.1269vw;top:1405.5669vw;width:26.9767vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Trust &amp; security
+</div>
+<div class="g-t" style="position:absolute;left:10.1269vw;top:1415.4190vw;width:7.9070vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Blog</div>
+<div class="g-t" style="position:absolute;left:10.1269vw;top:1425.2709vw;width:30.0000vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Investor relations
+</div>
+<div class="g-t" style="position:absolute;left:10.1269vw;top:1435.1231vw;width:26.7442vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">BSE disclosures</div>
+<div class="g-t" style="position:absolute;left:10.1269vw;top:1454.5839vw;width:17.4419vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:3.7209vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Follow Us</div>
+<div class="g-t" style="position:absolute;left:10.1269vw;top:1467.6392vw;width:11.8605vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Twitter</div>
+<div class="g-t" style="position:absolute;left:10.1269vw;top:1477.4911vw;width:14.1860vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">LinkedIn</div>
+<div class="g-img" data-ref="1a6724d5f1b0e3e74c7e42c83b442f552edd6040" role="img" aria-label="4 8" style="position:absolute;left:76.0465vw;top:1473.2558vw;width:20.2326vw;height:34.4186vw;background-image:url(/assets/partners/gptw-certified.png);background-size:84.3987vw 34.6275vw;background-position:-32.1093vw -0.2089vw;background-repeat:no-repeat;"></div>
+<div class="g-b" style="position:absolute;left:3.7209vw;top:1495.5937vw;width:92.5581vw;height:63.6100vw;box-sizing:border-box;border:0.2326vw solid rgb(236,238,242);"></div>
+<div class="g-t" style="position:absolute;left:10.3938vw;top:1501.7326vw;width:32.0930vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">support@doss.com</div>
+<div class="g-t" style="position:absolute;left:10.3938vw;top:1511.5848vw;width:32.5581vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Terms &amp; Conditions</div>
+<div class="g-t" style="position:absolute;left:47.6749vw;top:1511.5484vw;width:23.0233vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Privacy Policy</div>
+<div class="g-t" style="position:absolute;left:10.4656vw;top:1530.6182vw;width:79.0698vw;height:22.3256vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:pre-wrap;">© 2026 AeonX Digital Technology Limited. BSE-listed. |  All rights reserved. · SAP Gold Partner · AWS Advanced Tier · Google Cloud Partner</div>
+<div class="g-t" style="position:absolute;left:10.3938vw;top:1521.4367vw;width:13.0233vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Cookies</div>
+<div class="g-t" style="position:absolute;left:33.0237vw;top:1521.5484vw;width:13.9535vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Sitemap</div>
+<div class="g-b" style="position:absolute;left:3.7209vw;top:1495.5019vw;width:92.5581vw;height:0.2326vw;background:linear-gradient(90deg, rgba(133,128,123,0.180) 0.0%);"></div>
+<div class="g-t" style="position:absolute;left:8.3721vw;top:1571.2968vw;width:49.3023vw;height:6.5116vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:4.1860vw;line-height:6.5116vw;color:rgb(38,15,20);text-align:left;white-space:nowrap;">Get the latest from Aeonx</div>
+<div class="g-b g-clip" style="position:absolute;left:8.3721vw;top:1581.6456vw;width:54.6512vw;height:10.6977vw;border-radius:0.4651vw;box-sizing:border-box;border:0.1860vw solid rgb(255,120,94);overflow:hidden;">
+<div class="g-t" style="position:absolute;left:3.9070vw;top:2.5581vw;width:46.8372vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:3.7209vw;line-height:5.5814vw;color:rgb(134,149,170);text-align:left;white-space:nowrap;">Work email</div>
+</div>
+<div class="g-b g-clip" style="position:absolute;left:65.8140vw;top:1581.6456vw;width:25.7267vw;height:10.6977vw;background-color:rgba(38,15,20,0.050);border-radius:0.4651vw;box-sizing:border-box;border:0.1860vw solid rgba(0,0,0,0.000);overflow:hidden;">
+<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:25.8140vw;height:10.2326vw;background-color:rgb(223,63,23);border-radius:1.8605vw;overflow:hidden;">
+<div class="g-t" style="position:absolute;left:5.5814vw;top:2.7907vw;width:14.6512vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:3.2558vw;line-height:4.6512vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">Subscribe</div>
+</div>
+</div>
+<div class="g-b" style="position:absolute;left:3.7209vw;top:1598.9303vw;width:92.5581vw;height:0.2326vw;background-color:rgb(229,229,229);"></div>
+<div class="g-b" style="position:absolute;left:0.0000vw;top:856.2791vw;width:100.0930vw;height:93.4884vw;background-color:rgb(246,247,249);"></div>
+<h2 class="g-t" style="position:absolute;left:5.5814vw;top:865.5814vw;width:88.8372vw;height:20.4651vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:8.3721vw;line-height:10.2326vw;color:rgb(35,39,46);text-align:left;white-space:pre-wrap;">One operating model. Every cloud.</h2>
+<div class="g-t" style="position:absolute;left:5.9302vw;top:888.8372vw;width:88.1395vw;height:19.5349vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:4.1860vw;line-height:6.5116vw;color:rgb(82,96,119);text-align:left;white-space:pre-wrap;">Bring your cloud bill, your security backlog, or your DR drill schedule. We’ll show you what CloudLedger and a 24×7 NOC could do.</div>
+<div class="g-b g-clip" style="position:absolute;left:5.5814vw;top:915.3488vw;width:88.8372vw;height:11.1628vw;background-color:rgb(223,63,23);border-radius:1.8605vw;overflow:hidden;">
+<div class="g-t" style="position:absolute;left:3.7209vw;top:3.2558vw;width:28.8372vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:3.2558vw;line-height:4.6512vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">Request a Proposal </div>
+<img class="g-vec" src="/assets/vec/I5637-72180;4046-29821.svg" data-vec="I5637:72180;4046:29821" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:79.0698vw;top:2.7907vw;width:5.5814vw;height:5.5814vw;">
+</div>
+<div class="g-b g-clip" style="position:absolute;left:5.5814vw;top:929.3023vw;width:88.8372vw;height:11.1628vw;background-color:rgb(255,255,255);border-radius:1.8605vw;box-sizing:border-box;border:0.2326vw solid rgb(213,218,226);overflow:hidden;">
+<div class="g-t" style="position:absolute;left:3.7209vw;top:3.2558vw;width:38.8372vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:3.2558vw;line-height:4.6512vw;color:rgb(58,67,82);text-align:center;white-space:nowrap;">Book a Cloud Ledger Pilot</div>
+<img class="g-vec" src="/assets/vec/I5637-72181;4046-29893.svg" data-vec="I5637:72181;4046:29893" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:79.0698vw;top:2.7907vw;width:5.5814vw;height:5.5814vw;">
+</div>
+<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:185.1163vw;width:100.0930vw;height:195.1163vw;overflow:hidden;">
+<img class="g-vec" src="/assets/vec/5637-72184.svg" data-vec="5637:72184" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:0.0000vw;top:0.0000vw;width:100.0000vw;height:162.7907vw;">
+<div class="g-t" style="position:absolute;left:6.0476vw;top:9.3023vw;width:33.0233vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:2.7907vw;line-height:4.6512vw;color:rgb(223,63,23);text-align:left;white-space:nowrap;">SIGNATURE CAPABILITY</div>
+<h2 class="g-t" style="position:absolute;left:6.0476vw;top:16.9767vw;width:88.1395vw;height:30.6977vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:8.3721vw;line-height:10.2326vw;color:rgb(35,39,46);text-align:left;white-space:pre-wrap;">CloudLedger - FinOps across every cloud account.<br></h2>
+<div class="g-t" style="position:absolute;left:6.0476vw;top:49.0698vw;width:88.1395vw;height:23.2558vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.2558vw;line-height:4.6512vw;color:rgb(82,96,119);text-align:left;white-space:pre-wrap;">An enterprise running across AWS, GCP, and SAP BTP used to close books on cloud spend 15 days after month-end. CloudLedger rolls out in 2 weeks unified showback, anomaly alerts, 2-day close. Waste becomes visible. FinOps becomes active.<br></div>
+<div class="g-b g-clip" style="position:absolute;left:3.7209vw;top:77.9070vw;width:94.1860vw;height:93.0233vw;background-color:rgb(255,255,255);overflow:hidden;">
+<div class="g-b" style="position:absolute;left:0.0000vw;top:0.0000vw;width:92.3256vw;height:93.0233vw;border-radius:1.8605vw;box-sizing:border-box;border:0.2326vw solid rgb(223,63,23);"></div>
+<div class="g-b" style="position:absolute;left:5.5814vw;top:5.5814vw;width:81.1628vw;height:13.9535vw;box-sizing:border-box;border:0.2326vw solid rgb(223,63,23);"></div>
+<div class="g-t" style="position:absolute;left:8.3721vw;top:5.5814vw;width:23.9535vw;height:13.9535vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:11.1628vw;line-height:13.9535vw;color:rgb(223,63,23);text-align:left;white-space:nowrap;">30%</div>
+<div class="g-t" style="position:absolute;left:5.5814vw;top:62.7907vw;width:81.1628vw;height:11.8605vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:4.6512vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:pre-wrap;">cloud waste cut in 6 months at a listed manufacturing conglomerate.<br></div>
+<img class="g-vec" src="/assets/vec/5637-72287.svg" data-vec="5637:72287" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:63.7210vw;top:0.0000vw;width:30.4651vw;height:30.4697vw;opacity:0.46000000834465027;">
+</div>
+<div class="g-b g-clip" style="position:absolute;left:97.9070vw;top:77.9070vw;width:94.1860vw;height:93.0233vw;background-color:rgb(255,255,255);overflow:hidden;">
+<div class="g-b" style="position:absolute;left:0.0000vw;top:0.0000vw;width:92.3256vw;height:93.0233vw;border-radius:1.8605vw;box-sizing:border-box;border:0.2326vw solid rgb(223,63,23);"></div>
+<div class="g-b" style="position:absolute;left:5.5814vw;top:5.5814vw;width:81.1628vw;height:13.9535vw;box-sizing:border-box;border:0.2326vw solid rgb(223,63,23);"></div>
+<h1 class="g-t" style="position:absolute;left:8.3721vw;top:5.5814vw;width:33.7209vw;height:13.9535vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:11.1628vw;line-height:13.9535vw;color:rgb(223,63,23);text-align:left;white-space:nowrap;">2 days</h1>
+<div class="g-t" style="position:absolute;left:5.5814vw;top:62.7907vw;width:81.1628vw;height:11.8605vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:4.6512vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:pre-wrap;">month-end FinOps close, down from 15.<br></div>
+</div>
+<div class="g-b g-clip" style="position:absolute;left:192.0930vw;top:77.9070vw;width:94.1860vw;height:93.0233vw;background-color:rgb(255,255,255);overflow:hidden;">
+<div class="g-b" style="position:absolute;left:0.0000vw;top:0.0000vw;width:92.3256vw;height:93.0233vw;border-radius:1.8605vw;box-sizing:border-box;border:0.2326vw solid rgb(223,63,23);"></div>
+<div class="g-b" style="position:absolute;left:5.5814vw;top:5.5814vw;width:81.1628vw;height:13.9535vw;box-sizing:border-box;border:0.2326vw solid rgb(223,63,23);"></div>
+<h2 class="g-t" style="position:absolute;left:8.3721vw;top:5.5814vw;width:42.5581vw;height:13.9535vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:11.1628vw;line-height:13.9535vw;color:rgb(223,63,23);text-align:left;white-space:nowrap;">2 weeks</h2>
+<div class="g-t" style="position:absolute;left:5.5814vw;top:62.7907vw;width:81.1628vw;height:11.8605vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:4.6512vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:pre-wrap;">CloudLedger onboarding to first showback report.<br></div>
+</div>
+<div class="g-b g-clip" style="position:absolute;left:286.2791vw;top:77.9070vw;width:94.1860vw;height:93.0233vw;background-color:rgb(255,255,255);overflow:hidden;">
+<div class="g-b" style="position:absolute;left:0.0000vw;top:0.0000vw;width:92.3256vw;height:93.0233vw;border-radius:1.8605vw;box-sizing:border-box;border:0.2326vw solid rgb(223,63,23);"></div>
+<div class="g-b" style="position:absolute;left:5.5814vw;top:5.5814vw;width:81.1628vw;height:13.9535vw;box-sizing:border-box;border:0.2326vw solid rgb(223,63,23);"></div>
+<div class="g-t" style="position:absolute;left:8.3721vw;top:5.5814vw;width:26.9767vw;height:13.9535vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:11.1628vw;line-height:13.9535vw;color:rgb(223,63,23);text-align:left;white-space:nowrap;">24×7</div>
+<div class="g-t" style="position:absolute;left:5.5814vw;top:62.7907vw;width:81.1628vw;height:11.8605vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:4.6512vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:pre-wrap;">cross-cloud NOC. ITIL-aligned incident and change.<br></div>
+</div>
+<img class="g-vec" src="/assets/vec/5637-72410.svg" data-vec="5637:72410" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:0.0000vw;top:176.5116vw;width:100.0930vw;height:9.3023vw;">
+</div>
+<div class="g-b" style="position:absolute;left:0.0000vw;top:22.3256vw;width:100.0000vw;height:162.7907vw;box-sizing:border-box;border:0.2326vw solid rgb(236,238,242);"></div>
+<img class="g-vec" src="/assets/vec/5637-72426.svg" data-vec="5637:72426" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:0.0000vw;top:22.3256vw;width:100.0000vw;height:162.7907vw;">
+<img class="g-vec" src="/assets/vec/5637-72429.svg" data-vec="5637:72429" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:0.0000vw;top:22.3256vw;width:100.0000vw;height:162.7907vw;">
+<h2 class="g-t" style="position:absolute;left:7.4419vw;top:37.2093vw;width:85.1163vw;height:69.7674vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:11.1628vw;line-height:13.9535vw;color:rgb(35,39,46);text-align:left;white-space:pre-wrap;">One operating model. Every cloud. <br>Governed as one.<br></h2>
+<div class="g-t" style="position:absolute;left:7.4419vw;top:114.4186vw;width:85.1163vw;height:11.1628vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:4.6512vw;line-height:5.5814vw;color:rgb(58,67,82);text-align:left;white-space:pre-wrap;">AWS, GCP, and SAP BTP run as one. CloudLedger at the core.</div>
+<div class="g-b g-clip" style="position:absolute;left:7.4419vw;top:140.4651vw;width:35.8140vw;height:10.2326vw;background-color:rgb(223,63,23);border-radius:1.8605vw;overflow:hidden;">
+<div class="g-t" style="position:absolute;left:5.5814vw;top:2.7907vw;width:24.6512vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:2.7907vw;line-height:4.6512vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">Request a proposal</div>
+</div>
+<div class="g-b g-clip" style="position:absolute;left:46.1592vw;top:140.4651vw;width:38.6047vw;height:10.2326vw;background-color:rgb(255,255,255);border-radius:1.8605vw;box-sizing:border-box;border:0.2326vw solid rgb(213,218,226);overflow:hidden;">
+<div class="g-t" style="position:absolute;left:2.6744vw;top:2.7907vw;width:33.2558vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:2.7907vw;line-height:4.6512vw;color:rgb(58,67,82);text-align:center;white-space:nowrap;">Book a Cloud Ledger Pilot</div>
+</div>
+<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:380.2326vw;width:100.0000vw;height:476.0465vw;background:linear-gradient(257deg, rgb(185,45,21) -114.3%, rgb(242,122,69) 193.8%);overflow:hidden;">
+<img class="g-vec" src="/assets/vec/5637-72503.svg" data-vec="5637:72503" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:0.0000vw;top:0.0000vw;width:100.0000vw;height:476.5116vw;">
+<div class="g-t" style="position:absolute;left:6.0011vw;top:9.3023vw;width:27.9070vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:2.7907vw;line-height:4.6512vw;color:rgb(255,255,255);text-align:left;white-space:nowrap;">INSIDE THE SERVICE</div>
+<h2 class="g-t" style="position:absolute;left:6.0011vw;top:16.9767vw;width:88.1395vw;height:10.2326vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:8.3721vw;line-height:10.2326vw;color:rgb(255,255,255);text-align:left;white-space:nowrap;">Four pillars.</h2>
+<div class="g-b" style="position:absolute;left:3.7209vw;top:32.7907vw;width:92.3256vw;height:104.1860vw;background-color:rgba(255,255,255,0.060);border-radius:1.8605vw;"></div>
+<div class="g-b" style="position:absolute;left:9.3023vw;top:43.9535vw;width:81.1628vw;height:27.9070vw;box-sizing:border-box;border:0.2326vw solid rgb(246,247,249);"></div>
+<h2 class="g-t" style="position:absolute;left:13.0233vw;top:43.9535vw;width:75.5814vw;height:27.9070vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:11.1628vw;line-height:13.9535vw;color:rgb(255,255,255);text-align:left;white-space:pre-wrap;">FinOps with Cloud Ledger<br></h2>
+<div class="g-t" style="position:absolute;left:9.3023vw;top:91.6279vw;width:81.1628vw;height:34.1860vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:4.6512vw;line-height:5.5814vw;color:rgb(236,238,242);text-align:left;white-space:pre-wrap;">Unified billing, margin, FX across AWS, GCP, and SAP BTP (Azure / OCI on request). Tagging, showback, chargeback. Budgets, anomaly detection, commit optimisation. Monthly reviews.<br></div>
+<div class="g-b" style="position:absolute;left:3.7209vw;top:142.0930vw;width:92.3256vw;height:104.1860vw;background-color:rgba(255,255,255,0.060);border-radius:1.8605vw;"></div>
+<div class="g-b" style="position:absolute;left:9.3023vw;top:153.2558vw;width:81.1628vw;height:27.9070vw;box-sizing:border-box;border:0.2326vw solid rgb(246,247,249);"></div>
+<h2 class="g-t" style="position:absolute;left:13.0233vw;top:153.2558vw;width:75.5814vw;height:27.9070vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:11.1628vw;line-height:13.9535vw;color:rgb(255,255,255);text-align:left;white-space:pre-wrap;">Unified SecOps</h2>
+<div class="g-t" style="position:absolute;left:9.3023vw;top:210.9302vw;width:81.1628vw;height:24.1860vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:4.6512vw;line-height:5.5814vw;color:rgb(236,238,242);text-align:left;white-space:pre-wrap;">Consolidated security posture, policy-as-code, continuous compliance. CSPM across clouds. ISO 27001 aligned. One pane for the CISO.</div>
+<div class="g-b" style="position:absolute;left:3.7209vw;top:251.3953vw;width:92.3256vw;height:104.1860vw;background-color:rgba(255,255,255,0.060);border-radius:1.8605vw;"></div>
+<div class="g-b" style="position:absolute;left:9.3023vw;top:262.5581vw;width:81.1628vw;height:27.9070vw;box-sizing:border-box;border:0.2326vw solid rgb(246,247,249);"></div>
+<h2 class="g-t" style="position:absolute;left:13.0233vw;top:262.5581vw;width:75.5814vw;height:27.9070vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:11.1628vw;line-height:13.9535vw;color:rgb(255,255,255);text-align:left;white-space:pre-wrap;">24×7 managed ops</h2>
+<div class="g-t" style="position:absolute;left:9.3023vw;top:320.2326vw;width:81.1628vw;height:23.0233vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:4.6512vw;line-height:5.5814vw;color:rgb(236,238,242);text-align:left;white-space:pre-wrap;">Cross-cloud NOC. ITIL-aligned incident and change. Runbook automation. Patching, backup, DR drills on schedule.</div>
+<div class="g-b" style="position:absolute;left:3.7209vw;top:360.6977vw;width:92.3256vw;height:104.1860vw;background-color:rgba(255,255,255,0.060);border-radius:1.8605vw;"></div>
+<div class="g-b" style="position:absolute;left:9.3023vw;top:371.8605vw;width:81.1628vw;height:27.9070vw;box-sizing:border-box;border:0.2326vw solid rgb(246,247,249);"></div>
+<h2 class="g-t" style="position:absolute;left:13.0233vw;top:371.8605vw;width:75.5814vw;height:27.9070vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:11.1628vw;line-height:13.9535vw;color:rgb(255,255,255);text-align:left;white-space:pre-wrap;">Observability &amp; SRE</h2>
+<div class="g-t" style="position:absolute;left:9.3023vw;top:429.5349vw;width:81.1628vw;height:24.1860vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:4.6512vw;line-height:5.5814vw;color:rgb(236,238,242);text-align:left;white-space:pre-wrap;">Unified observability metrics, logs, traces. SRE practices, error budgets, SLO management. Toil cut by automation.</div>
+</div>
+<div class="g-b" style="position:absolute;left:0.0000vw;top:0.0000vw;width:100.0000vw;height:9.5349vw;background:linear-gradient(270deg, rgb(255,135,5) 25.0%, rgba(223,63,23,0.920) 90.0%);"></div>
+<div class="g-t" style="position:absolute;left:19.4186vw;top:2.4419vw;width:61.1628vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.2558vw;line-height:4.6512vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">Signup to LlamaParse for 10k free credits!</div>
+<img class="g-vec" src="/assets/vec/5637-72679.svg" data-vec="5637:72679" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:1.8605vw;top:10.4651vw;width:96.2791vw;height:11.8605vw;backdrop-filter:blur(0.2326vw);-webkit-backdrop-filter:blur(0.2326vw);">
+</main></div>
 </body>
 </html>

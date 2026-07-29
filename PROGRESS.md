@@ -451,3 +451,32 @@ Animated with SMIL in the SVG files themselves (works through `<img>`, unlike JS
 external CSS), reusing the exact cascade already on the homepage hero arrows
 (`5889-30993.svg`): opacity 0.18 -> 0.95 plus a 1.5px bob, 1.8s, staggered 0.3s per arrow.
 **Assets are not touched by a rebuild, so this needs no postbuild hook.**
+
+## Mega-menu: CardNav-style GSAP timeline (2026-07-28)
+
+User wanted React Bits' `<CardNav>` animation. **This site is static HTML with no React
+and no bundler**, so the component itself cannot be dropped in — what was ported is its
+motion: the panel GROWS from the nav bar while the cards rise in staggered behind it.
+
+- `npm install gsap` -> **gsap 3.15.0**. A `package.json` was added purely so the install
+  lands in this project (without one, npm walked up and installed into `/home/onyx`).
+  There is no build step: `npm run vendor` copies `dist/gsap.min.js` to
+  `assets/vendor/gsap.min.js` (73KB), which is what the pages actually load.
+  `node_modules` is gitignored; the vendored file is committed.
+- Timeline matches CardNav exactly: `height 0 -> content` (0.4s `power3.out`), then
+  cards `y:50 -> 0, opacity 0 -> 1`, `stagger: 0.08`, overlapped `'-=0.1'`.
+- **Height is the reason GSAP is here** — CSS cannot transition to `height:auto`.
+  `fullHeight()` measures at play time, not build time, because the panel's height depends
+  on which category group is active and on the viewport.
+- The timeline hooks the existing menu via a **MutationObserver on `.is-open`** rather
+  than editing the nav's open/close functions, so the nav contract in CLAUDE.md is
+  untouched.
+- The block lives in `<head>` (with the other menu CSS), so the script is `defer`red and
+  the driver waits for `DOMContentLoaded` — the `.ax-mm` panels do not exist at parse time.
+  **This was a real bug on the first pass:** the IIFE ran immediately, found zero panels,
+  and silently did nothing.
+- Fallbacks: no GSAP -> `.ax-mm:not(.ax-mm--anim) .ax-mm2__panel{height:auto}` keeps the
+  menu usable; reduced-motion -> no timeline, everything static and open.
+
+Verified by freezing the timeline at fixed progress values: 0.25 = panel growing, cards
+still hidden; 0.55 = near full height with the four cards visibly staggered; 1 = settled.

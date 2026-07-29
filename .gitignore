@@ -17,3 +17,4 @@ CLAUDE.md
 __pycache__/
 aeonx-mobile.json
 _audit_expected.json
+node_modules

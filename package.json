@@ -1,0 +1,11 @@
+{
+  "name": "aeonx-new-website",
+  "private": true,
+  "description": "Static AeonX Digital site. No build step: npm is only used to pull vendored browser libraries into assets/vendor/.",
+  "scripts": {
+    "vendor": "cp node_modules/gsap/dist/gsap.min.js assets/vendor/gsap.min.js"
+  },
+  "dependencies": {
+    "gsap": "^3.13.0"
+  }
+}

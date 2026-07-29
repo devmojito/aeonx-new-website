@@ -129,40 +129,95 @@ img{border:0}
 <meta name="twitter:image" content="https://aeonx.digital/assets/og-cover.png">
 <style id="ax-mm2-css">.ax-mm{background:transparent!important;box-shadow:none!important;padding:0.6vw 4.9vw 1vw!important}.ax-mm.is-open{display:block!important}.ax-mm2__panel{background:#fff;border:1px solid #F0EAE4;border-radius:1vw;box-shadow:0 1.5vw 4vw rgba(35,39,46,.16);padding:1.25vw}.ax-mm2{display:flex;gap:1.25vw;align-items:stretch}.ax-mm2__cols{display:flex;flex:1}.ax-mm2__card{flex:1;padding:0 1.04vw;border-right:1px solid #F0EAE4}.ax-mm2__card:first-child{padding-left:0}.ax-mm2__card:last-child{border-right:none}.ax-mm2__img{display:block;width:100%;max-width:14.1vw;height:auto;border-radius:0.31vw}.ax-mm2__ttl{display:flex;align-items:center;justify-content:space-between;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:1.25vw;color:#23272E;background:#FDF8F4;margin-top:0.4vw;padding:0.63vw 0.5vw 0.63vw 0.3vw;border-radius:0.3vw}.ax-mm2__ttl span{color:#5B6B85;font-weight:400}.ax-mm2__lns{display:flex;flex-direction:column;padding-top:0.4vw}.ax-mm2__ln{display:flex;align-items:center;justify-content:space-between;gap:0.5vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:0.83vw;color:#3A4352;text-decoration:none;padding:0.55vw 0.2vw;border-radius:0.3vw}.ax-mm2__ln svg{width:0.83vw;height:0.83vw;flex:0 0 auto}a.ax-mm2__ln:hover{background:#FDF3EC;color:#DF3F17}.ax-mm2__ln[data-soon]{opacity:.45;cursor:default}.ax-mm2__badge{font-style:normal;font-size:0.57vw;font-weight:700;color:#B45309;background:#FFD8A8;border-radius:0.2vw;padding:0.1vw 0.3vw;margin-left:0.3vw;white-space:nowrap}.ax-mm2__rail{width:20.8vw;flex:0 0 auto}.ax-mm2__feat{background:linear-gradient(120deg,#F0601F,#DF3F17);border-radius:0.73vw;padding:1.25vw;color:#fff}.ax-mm2__feat-ttl{font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:1.67vw;line-height:1.2}.ax-mm2__feat-sub{font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:0.83vw;margin-top:0.4vw;opacity:.95}.ax-mm2__feat-btn{display:inline-block;margin-top:1.04vw;background:#fff;color:#DF3F17;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:0.83vw;padding:0.42vw 0.94vw;border-radius:0.31vw;text-decoration:none}.ax-mm2__api{display:flex;align-items:center;gap:0.83vw;margin-top:1.04vw;padding:1.04vw 0.25vw 0.1vw;border-top:1px solid #F0EAE4}.ax-mm2__api-ico{display:flex;align-items:center;justify-content:center;width:2.3vw;height:2.3vw;border-radius:50%;background:#E8551D;flex:0 0 auto}.ax-mm2__api-ico svg{width:1.15vw;height:1.15vw}.ax-mm2__api-tx{display:flex;flex-direction:column;flex:1}.ax-mm2__api-tx b{font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:1.04vw;color:#23272E}.ax-mm2__api-tx small{font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:0.68vw;color:#5B6B85}.ax-mm2__api-btn{display:flex;align-items:center;gap:0.3vw;background:#fff;border:1px solid #E5DED6;border-radius:0.42vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:0.83vw;color:#23272E;text-decoration:none;padding:0.52vw 1vw;flex:0 0 auto}</style>
 <style id="ax-mm-anim-css">
-/* Mega-menu open/close animation. The panel used to snap in on a display toggle,
-   which cannot be transitioned; drive visibility+opacity instead so both the open
-   and the close are animated, and keep pointer-events off while hidden so the
-   always-rendered fixed panels never swallow clicks. */
+/* Mega-menu open/close animation, CardNav-style: the panel GROWS from the nav bar
+   while its cards rise in staggered behind it. Height cannot be transitioned to
+   `auto` in CSS, so GSAP drives it (that is the whole reason gsap is vendored).
+   The wrapper's visibility/opacity stays in CSS so the panel is never hit-testable
+   while hidden -- the four .ax-mm panels are always in the DOM. */
 .ax-mm{display:block!important;visibility:hidden;opacity:0;pointer-events:none;
   transition:opacity .16s ease,visibility 0s linear .16s}
 .ax-mm.is-open{visibility:visible;opacity:1;pointer-events:auto;
-  transition:opacity .16s ease,visibility 0s}
-.ax-mm2__panel{transform-origin:top center;transform:translateY(-0.55vw) scale(.988);opacity:0;
-  transition:transform .24s cubic-bezier(.22,.68,.28,1),opacity .18s ease}
-.ax-mm.is-open .ax-mm2__panel{transform:none;opacity:1}
-.ax-mm2__card,.ax-mm2__rail{opacity:0;transform:translateY(0.45vw);
-  transition:opacity .2s ease,transform .22s cubic-bezier(.22,.68,.28,1)}
-.ax-mm.is-open .ax-mm2__card,.ax-mm.is-open .ax-mm2__rail{opacity:1;transform:none}
-.ax-mm.is-open .ax-mm2__card:nth-child(1){transition-delay:.04s}
-.ax-mm.is-open .ax-mm2__card:nth-child(2){transition-delay:.07s}
-.ax-mm.is-open .ax-mm2__card:nth-child(3){transition-delay:.10s}
-.ax-mm.is-open .ax-mm2__rail{transition-delay:.10s}
+  transition:opacity .12s ease,visibility 0s}
+.ax-mm2__panel{overflow:hidden;will-change:height}
 .ax-nav__chev{transition:transform .2s cubic-bezier(.22,.68,.28,1)}
 .ax-nav__link.is-open .ax-nav__chev{transform:rotate(180deg)}
+/* No-JS / no-GSAP fallback: without the timeline the panel must still be usable. */
+.ax-mm:not(.ax-mm--anim) .ax-mm2__panel{height:auto!important}
 @media (prefers-reduced-motion:reduce){
-  .ax-mm,.ax-mm2__panel,.ax-mm2__card,.ax-mm2__rail,.ax-nav__chev{transition:none!important}
+  .ax-mm,.ax-nav__chev{transition:none!important}
+  .ax-mm2__panel{height:auto!important}
+  .ax-mm2__card,.ax-mm2__rail{opacity:1!important;transform:none!important}
 }
 @media (max-width:1024px){.ax-mm{display:none!important}}
 </style>
+<script src="/assets/vendor/gsap.min.js" defer></script>
+<script>
+/* ---- MEGA-MENU TIMELINE (CardNav-style height grow + card stagger) ---- */
+document.addEventListener('DOMContentLoaded',function(){
+  if(!window.gsap) return;                       /* CSS fallback above keeps it usable */
+  if(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var EASE='power3.out';
+  var panels=[].slice.call(document.querySelectorAll('.ax-mm'));
+  if(!panels.length) return;
+
+  panels.forEach(function(p){
+    var panel=p.querySelector('.ax-mm2__panel');
+    if(!panel) return;
+    var cards=[].slice.call(p.querySelectorAll('.ax-mm2__card,.ax-mm2__rail'));
+    p.classList.add('ax-mm--anim');
+    var tl=null;
+
+    /* Measure at play time, not at build time: the panel's height depends on which
+       category group is active, and the viewport can be resized between opens. */
+    function fullHeight(){
+      var prev=panel.style.height;
+      panel.style.height='auto';
+      var h=panel.scrollHeight;
+      panel.style.height=prev;
+      return h;
+    }
+
+    function build(){
+      gsap.set(panel,{height:0});
+      gsap.set(cards,{y:50,opacity:0});
+      var t=gsap.timeline({paused:true});
+      t.to(panel,{height:fullHeight,duration:0.4,ease:EASE});
+      t.to(cards,{y:0,opacity:1,duration:0.4,ease:EASE,stagger:0.08},'-=0.1');
+      /* let the panel reflow freely once it is fully open */
+      t.eventCallback('onComplete',function(){panel.style.height='auto';});
+      return t;
+    }
+
+    function play(){
+      if(tl) tl.kill();
+      tl=build();
+      tl.play(0);
+    }
+    function reverse(){
+      if(!tl) return;
+      panel.style.height=fullHeight()+'px';   /* from `auto` back to a tweenable value */
+      tl.reverse();
+    }
+
+    /* The existing menu script owns open/close; watch the class it toggles rather than
+       reaching into it, so the nav contract in CLAUDE.md stays untouched. */
+    var was=p.classList.contains('is-open');
+    new MutationObserver(function(){
+      var now=p.classList.contains('is-open');
+      if(now===was) return;
+      was=now;
+      if(now) play(); else reverse();
+    }).observe(p,{attributes:true,attributeFilter:['class']});
+  });
+});
+</script>
 <style id="ax-fx-css">.ax-svc-card{transition:box-shadow .3s ease,border-color .3s ease;isolation:isolate}.ax-svc-card::after{content:"";position:absolute;inset:-0.42vw;border-radius:0.63vw;background:linear-gradient(90deg,#FF0000 0%,#E3B316 20%,#FFFFFF 41%,#19D8E6 65%,#6419E6 87%,#E619AF 99%);filter:blur(1vw);opacity:0;transition:opacity .3s ease;z-index:-1;pointer-events:none}.ax-svc-card.ax-card-hot{border-color:#DF3F17!important;box-shadow:0 0.6vw 1.8vw rgba(223,63,23,.15)}.ax-svc-card.ax-card-hot::after{opacity:.5}</style>
 <style id="ax-reveal-css">.ax-rv{opacity:0;transform:translateY(1.4vw);transition:opacity .7s cubic-bezier(.22,.61,.36,1),transform .7s cubic-bezier(.22,.61,.36,1);}.ax-rv.ax-in{opacity:1;transform:translateY(0);}.ax-rvo{opacity:0;transition:opacity .7s ease;}.ax-rvo.ax-in{opacity:1;}@media (prefers-reduced-motion: reduce){.ax-rv,.ax-rvo{opacity:1!important;transform:none!important;transition:none!important;}}</style>
 <link rel="icon" href="/assets/favicon/favicon-32.png" sizes="32x32"><link rel="icon" href="/assets/favicon/favicon-192.png" sizes="192x192"><link rel="apple-touch-icon" href="/assets/favicon/apple-touch-icon.png">
 
 
 
-<link rel="canonical" href="https://aeonx.digital/insights/">
-<meta property="og:url" content="https://aeonx.digital/insights/">
-<style id="ax-mob-css">.ax-mob{display:none}@media(max-width:768px){body>*:not(.ax-mob):not(.ax-mnav){display:none!important}.ax-mob{display:block!important}}</style><style id="ax-pre-css">
+<style id="ax-pre-css">
 /* Dot-matrix preloader. Hidden unless the head script opts this pageview in, so a
    JS failure or a no-JS visitor can never be left staring at a blank overlay. */
 #ax-pre{display:none}
@@ -217,7 +272,9 @@ html.ax-pre-off #ax-pre{opacity:0;transform:translateY(-2vw);pointer-events:none
 })();
 </script>
 
-</head>
+<link rel="canonical" href="https://aeonx.digital/insights/">
+<meta property="og:url" content="https://aeonx.digital/insights/">
+<style id="ax-mob-css">.ax-mob{display:none}@media(max-width:768px){body>*:not(.ax-mob):not(.ax-mnav){display:none!important}.ax-mob{display:block!important}}</style></head>
 <body>
 <div id="ax-pre" aria-hidden="true"><b>Loading&hellip;</b><div id="ax-pre-cluster"></div><div id="ax-pre-num"></div><div id="ax-pre-credit">AeonX&nbsp;&bull;&nbsp;Digital</div></div>
 
@@ -1436,6 +1493,272 @@ document.addEventListener("DOMContentLoaded",function(){
 
 
 
+<script>
+/* ---- PRELOADER (dot-matrix counter) ---- */
+(function(){
+  var root=document.documentElement;
+  if(!root.classList.contains('ax-pre-on')) return;
+  var wrap=document.getElementById('ax-pre'); if(!wrap) return;
+
+  /* 5x7 dot font, only the glyphs a percentage needs */
+  var F={
+    '0':['01110','10001','10011','10101','11001','10001','01110'],
+    '1':['00100','01100','00100','00100','00100','00100','01110'],
+    '2':['01110','10001','00001','00010','00100','01000','11111'],
+    '3':['11111','00010','00100','00010','00001','10001','01110'],
+    '4':['00010','00110','01010','10010','11111','00010','00010'],
+    '5':['11111','10000','11110','00001','00001','10001','01110'],
+    '6':['00110','01000','10000','11110','10001','10001','01110'],
+    '7':['11111','00001','00010','00100','01000','01000','01000'],
+    '8':['01110','10001','10001','01110','10001','10001','01110'],
+    '9':['01110','10001','10001','01111','00001','00010','01100'],
+    '%':['11001','11010','00010','00100','01000','01011','10011']
+  };
+  function glyph(parent,cls){
+    var g=document.createElement('div'); g.className='gl'+(cls?' '+cls:'');
+    var cells=[];
+    for(var i=0;i<35;i++){var d=document.createElement('i');g.appendChild(d);cells.push(d);}
+    parent.appendChild(g); return cells;
+  }
+  function paint(cells,ch){
+    var m=F[ch]||F['0'];
+    for(var r=0;r<7;r++){var row=m[r];
+      for(var c=0;c<5;c++) cells[r*5+c].classList.toggle('on',row.charAt(c)==='1');}
+  }
+
+  var num=document.getElementById('ax-pre-num');
+  var d1=glyph(num),d2=glyph(num),d3=glyph(num),pc=glyph(num,'pc');
+  paint(pc,'%');
+
+  /* the little morphing cluster, 5x5 frames */
+  var cl=document.getElementById('ax-pre-cluster'),cc=[];
+  for(var i=0;i<25;i++){var d=document.createElement('i');cl.appendChild(d);cc.push(d);}
+  var FR=[
+    '00100'+'00100'+'11111'+'00100'+'00100',
+    '00100'+'01110'+'11111'+'01110'+'00100',
+    '10001'+'01010'+'00100'+'01010'+'10001',
+    '00000'+'01110'+'01110'+'01110'+'00000',
+    '00000'+'00000'+'00100'+'00000'+'00000'
+  ];
+  var fi=0;
+  var clusterTimer=setInterval(function(){
+    var f=FR[fi++%FR.length];
+    for(var i=0;i<25;i++) cc[i].classList.toggle('on',f.charAt(i)==='1');
+  },170);
+
+  function show(v){
+    var s=('00'+Math.round(v)).slice(-3);
+    paint(d1,s.charAt(0)); paint(d2,s.charAt(1)); paint(d3,s.charAt(2));
+  }
+  show(0);
+
+  /* Progress eases to 100. It will not finish before MIN (so the animation is never a
+     flash) and it cannot outlast MAX (so a slow asset never holds the site hostage). */
+  var MIN=1500,MAX=3000,t0=Date.now(),loaded=false,done=false,shown=0;
+  /* Repaint the counter at ~9fps, not every frame. At 60fps the digits changed faster
+     than the dots could finish their fade, so the number was an unreadable shimmer. */
+  var STEP=110,lastPaint=-1e9,lastVal=-1;
+  window.addEventListener('load',function(){loaded=true;});
+  (function step(){
+    if(done) return;
+    var el=Date.now()-t0;
+    var target=Math.min(loaded?100:92,(el/MIN)*100);  /* stall at 92 until load fires */
+    if(el>=MAX) target=100;                            /* hard stop */
+    shown+=(target-shown)*0.18;
+    if(target-shown<0.4) shown=target;
+    var v=Math.round(shown);
+    if(el-lastPaint>=STEP&&v!==lastVal){show(v);lastVal=v;lastPaint=el;}
+    if(shown>=99.6&&el>=MIN){show(100);finish();return;}
+    requestAnimationFrame(step);
+  })();
+
+  function finish(){
+    if(done) return; done=true;
+    clearInterval(clusterTimer);
+    setTimeout(function(){
+      root.classList.add('ax-pre-off');
+      setTimeout(function(){root.classList.remove('ax-pre-on','ax-pre-off');},560);
+    },220);
+  }
+})();
+</script>
+
+<style id="ax-cursor-css">
+/* Cursor accent: a single brand-orange ring that trails the pointer with easing and
+   opens up over interactive elements. The NATIVE cursor stays on top -- this is an
+   accent, not a replacement: the native cursor is never hidden, so no affordance is lost.
+   Sized in px, not vw: it tracks a physical pointing device and must not shrink on a
+   small laptop. The white halo keeps it legible over the dark navy and deep-red
+   sections as well as over white. */
+.ax-cur{position:fixed;top:0;left:0;z-index:2147483000;pointer-events:none;
+  border-radius:50%;opacity:0;will-change:transform;
+  transition:opacity .18s ease,width .22s cubic-bezier(.22,.68,.28,1),
+             height .22s cubic-bezier(.22,.68,.28,1),margin .22s cubic-bezier(.22,.68,.28,1),
+             background-color .22s ease,border-color .22s ease}
+.ax-cur--ring{width:26px;height:26px;margin:-13px 0 0 -13px;
+  border:1.5px solid #df3f17;background:rgba(223,63,23,.06);
+  box-shadow:0 0 0 1.5px rgba(255,255,255,.42),inset 0 0 0 1.5px rgba(255,255,255,.42)}
+html.ax-cur-on .ax-cur{opacity:1}
+/* over something clickable: ring opens up and tints */
+html.ax-cur-hot .ax-cur--ring{width:44px;height:44px;margin:-22px 0 0 -22px;
+  background:rgba(223,63,23,.14);border-color:#df3f17}
+/* press feedback */
+html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
+@media (max-width:1024px){.ax-cur{display:none}}
+@media (prefers-reduced-motion:reduce){.ax-cur{display:none}}
+</style>
+<script>
+/* ---- CURSOR ACCENT RING ---- */
+(function(){
+  if(!window.matchMedia) return;
+  if(!matchMedia('(min-width:1025px)').matches) return;
+  /* Exclude touch, rather than require a fine pointer: some browsers and virtualised
+     desktops report `pointer: none`, and requiring `fine` silently killed the ring
+     for them. */
+  if(matchMedia('(pointer:coarse)').matches) return;
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  var root=document.documentElement;
+  var ring=document.createElement('div'); ring.className='ax-cur ax-cur--ring';
+  ring.setAttribute('aria-hidden','true');
+  (document.body||root).appendChild(ring);
+
+  var HOT='a,button,[role="link"],[role="button"],input[type="submit"],'+
+          '.ax-nav__link,.ax-nav__btn,.ax-nav__soc,.ax-mm__si,.ax-mm2__ln,'+
+          '.ax-mm2__feat-btn,.ax-mm2__api-btn,.ax-tab,[data-cursor="hot"]';
+  var x=0,y=0,rx=0,ry=0,raf=0,seen=false;
+
+  function frame(){
+    rx+=(x-rx)*0.18; ry+=(y-ry)*0.18;
+    ring.style.transform='translate3d('+rx+'px,'+ry+'px,0)';
+    /* stop the loop once it has caught up, so this is not a permanent frame ticker */
+    if(Math.abs(x-rx)>0.1||Math.abs(y-ry)>0.1){raf=requestAnimationFrame(frame);}
+    else{rx=x;ry=y;ring.style.transform='translate3d('+rx+'px,'+ry+'px,0)';raf=0;}
+  }
+  function tick(){ if(!raf) raf=requestAnimationFrame(frame); }
+
+  document.addEventListener('mousemove',function(e){
+    x=e.clientX; y=e.clientY;
+    if(!seen){seen=true;rx=x;ry=y;root.classList.add('ax-cur-on');}
+    tick();
+  },{passive:true});
+
+  document.addEventListener('mouseover',function(e){
+    var t=e.target;
+    if(t&&t.closest&&t.closest(HOT)) root.classList.add('ax-cur-hot');
+  },{passive:true});
+  document.addEventListener('mouseout',function(e){
+    var t=e.relatedTarget;
+    if(!t||!t.closest||!t.closest(HOT)) root.classList.remove('ax-cur-hot');
+  },{passive:true});
+
+  document.addEventListener('mousedown',function(){root.classList.add('ax-cur-down');},{passive:true});
+  document.addEventListener('mouseup',function(){root.classList.remove('ax-cur-down');},{passive:true});
+  document.addEventListener('mouseleave',function(){root.classList.remove('ax-cur-on');},{passive:true});
+  document.addEventListener('mouseenter',function(){if(seen)root.classList.add('ax-cur-on');},{passive:true});
+  // a touch anywhere means this is not really a mouse machine -- stand down
+  window.addEventListener('touchstart',function(){
+    root.classList.remove('ax-cur-on','ax-cur-hot','ax-cur-down');
+  },{passive:true,once:true});
+})();
+</script>
+
+<style id="ax-navload-css">
+/* Page-transition loader: the same morphing dot cluster as the intro preloader, shown
+   while a same-origin navigation is in flight. The full preloader only runs once per
+   session, so without this every page change after the first had no feedback at all. */
+#ax-nl{position:fixed;inset:0;z-index:2147483050;display:none;
+  background:rgba(245,244,242,.82);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);
+  opacity:0;transition:opacity .18s ease}
+#ax-nl.is-armed{display:block}
+#ax-nl.is-on{opacity:1}
+#ax-nl div{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  display:grid;grid-template-columns:repeat(5,0.83vw);grid-auto-rows:0.83vw}
+#ax-nl i{display:block;justify-self:center;align-self:center;border-radius:50%;
+  width:0.55vw;height:0.55vw;background:#df3f17;opacity:0;transform:scale(.45);
+  transition:opacity .09s linear,transform .09s cubic-bezier(.2,.8,.3,1)}
+#ax-nl i.on{opacity:1;transform:scale(1)}
+@media (max-width:1024px){
+  #ax-nl div{grid-template-columns:repeat(5,3vw);grid-auto-rows:3vw}
+  #ax-nl i{width:1.8vw;height:1.8vw}
+}
+@media (prefers-reduced-motion:reduce){#ax-nl{display:none!important}}
+</style>
+<script>
+/* ---- PAGE-TRANSITION LOADER ---- */
+(function(){
+  if(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var root=document.documentElement,wrap,cells,timer,hideTimer,onTimer;
+
+  var FR=[
+    '00100'+'00100'+'11111'+'00100'+'00100',
+    '00100'+'01110'+'11111'+'01110'+'00100',
+    '10001'+'01010'+'00100'+'01010'+'10001',
+    '00000'+'01110'+'01110'+'01110'+'00000',
+    '00000'+'00000'+'00100'+'00000'+'00000'
+  ];
+
+  function build(){
+    wrap=document.createElement('div'); wrap.id='ax-nl';
+    wrap.setAttribute('aria-hidden','true');
+    var g=document.createElement('div'); cells=[];
+    for(var i=0;i<25;i++){var d=document.createElement('i');g.appendChild(d);cells.push(d);}
+    wrap.appendChild(g); document.body.appendChild(wrap);
+  }
+
+  function show(){
+    if(!wrap) build();
+    if(wrap.classList.contains('is-armed')) return;
+    wrap.classList.add('is-armed');
+    /* Delay the fade-in so a cached page that swaps instantly never flashes a loader */
+    onTimer=setTimeout(function(){wrap.classList.add('is-on');},140);
+    var fi=0;
+    timer=setInterval(function(){
+      var f=FR[fi++%FR.length];
+      for(var i=0;i<25;i++) cells[i].classList.toggle('on',f.charAt(i)==='1');
+    },170);
+    /* If the navigation never happens (cancelled download, blocked popup, user aborts),
+       do not leave the site behind a permanent scrim. */
+    hideTimer=setTimeout(hide,6000);
+  }
+  function hide(){
+    if(!wrap) return;
+    clearInterval(timer); clearTimeout(hideTimer); clearTimeout(onTimer);
+    wrap.classList.remove('is-on');
+    setTimeout(function(){wrap.classList.remove('is-armed');},200);
+  }
+
+  function navigates(a){
+    if(!a) return false;
+    var href=a.getAttribute('href')||'';
+    if(!href||href.charAt(0)==='#') return false;
+    if(/^(mailto:|tel:|javascript:)/i.test(href)) return false;
+    if(a.hasAttribute('download')) return false;
+    if(a.target&&a.target!=='_self') return false;
+    if(a.origin&&a.origin!==location.origin) return false;
+    /* same page, only the hash differs -> no navigation */
+    if(a.pathname===location.pathname&&a.search===location.search) return false;
+    return true;
+  }
+
+  document.addEventListener('click',function(e){
+    if(e.defaultPrevented||e.button!==0) return;
+    if(e.metaKey||e.ctrlKey||e.shiftKey||e.altKey) return;
+    var t=e.target; if(!t||!t.closest) return;
+    var a=t.closest('a[href]');
+    if(a){ if(navigates(a)) show(); return; }
+    /* The chrome turns Figma's non-anchor CTA pills into role="link" and navigates them
+       from its own handler, so they never produce an <a> click to hook. */
+    var r=t.closest('[role="link"]');
+    if(r&&r.getAttribute('data-href')!=='#') show();
+  },true);
+
+  /* Coming back via bfcache re-runs no scripts, so clear the scrim explicitly. */
+  window.addEventListener('pageshow',hide);
+  window.addEventListener('pagehide',hide);
+})();
+</script>
+
 <div class="ax-mob"><main class="ax-page" style="position:relative;height:3555.5814vw">
 <div class="g-b" style="position:absolute;left:0.0000vw;top:21.3953vw;width:100.0000vw;height:91.3953vw;box-sizing:border-box;border:0.2326vw solid rgb(228,227,222);"></div>
 <div class="g-b" style="position:absolute;left:3.7209vw;top:21.6279vw;width:92.5581vw;height:81.6279vw;box-sizing:border-box;border:0.2326vw solid rgb(236,238,242);"></div>
@@ -1858,271 +2181,5 @@ document.addEventListener("DOMContentLoaded",function(){
 <div class="g-b" style="position:absolute;left:0.0000vw;top:0.0000vw;width:100.0000vw;height:9.5349vw;background:linear-gradient(270deg, rgb(255,135,5) 25.0%, rgba(223,63,23,0.920) 90.0%);"></div>
 <div class="g-t" style="position:absolute;left:19.4186vw;top:2.4419vw;width:61.1628vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.2558vw;line-height:4.6512vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">Signup to LlamaParse for 10k free credits!</div>
 </main></div>
-<script>
-/* ---- PRELOADER (dot-matrix counter) ---- */
-(function(){
-  var root=document.documentElement;
-  if(!root.classList.contains('ax-pre-on')) return;
-  var wrap=document.getElementById('ax-pre'); if(!wrap) return;
-
-  /* 5x7 dot font, only the glyphs a percentage needs */
-  var F={
-    '0':['01110','10001','10011','10101','11001','10001','01110'],
-    '1':['00100','01100','00100','00100','00100','00100','01110'],
-    '2':['01110','10001','00001','00010','00100','01000','11111'],
-    '3':['11111','00010','00100','00010','00001','10001','01110'],
-    '4':['00010','00110','01010','10010','11111','00010','00010'],
-    '5':['11111','10000','11110','00001','00001','10001','01110'],
-    '6':['00110','01000','10000','11110','10001','10001','01110'],
-    '7':['11111','00001','00010','00100','01000','01000','01000'],
-    '8':['01110','10001','10001','01110','10001','10001','01110'],
-    '9':['01110','10001','10001','01111','00001','00010','01100'],
-    '%':['11001','11010','00010','00100','01000','01011','10011']
-  };
-  function glyph(parent,cls){
-    var g=document.createElement('div'); g.className='gl'+(cls?' '+cls:'');
-    var cells=[];
-    for(var i=0;i<35;i++){var d=document.createElement('i');g.appendChild(d);cells.push(d);}
-    parent.appendChild(g); return cells;
-  }
-  function paint(cells,ch){
-    var m=F[ch]||F['0'];
-    for(var r=0;r<7;r++){var row=m[r];
-      for(var c=0;c<5;c++) cells[r*5+c].classList.toggle('on',row.charAt(c)==='1');}
-  }
-
-  var num=document.getElementById('ax-pre-num');
-  var d1=glyph(num),d2=glyph(num),d3=glyph(num),pc=glyph(num,'pc');
-  paint(pc,'%');
-
-  /* the little morphing cluster, 5x5 frames */
-  var cl=document.getElementById('ax-pre-cluster'),cc=[];
-  for(var i=0;i<25;i++){var d=document.createElement('i');cl.appendChild(d);cc.push(d);}
-  var FR=[
-    '00100'+'00100'+'11111'+'00100'+'00100',
-    '00100'+'01110'+'11111'+'01110'+'00100',
-    '10001'+'01010'+'00100'+'01010'+'10001',
-    '00000'+'01110'+'01110'+'01110'+'00000',
-    '00000'+'00000'+'00100'+'00000'+'00000'
-  ];
-  var fi=0;
-  var clusterTimer=setInterval(function(){
-    var f=FR[fi++%FR.length];
-    for(var i=0;i<25;i++) cc[i].classList.toggle('on',f.charAt(i)==='1');
-  },170);
-
-  function show(v){
-    var s=('00'+Math.round(v)).slice(-3);
-    paint(d1,s.charAt(0)); paint(d2,s.charAt(1)); paint(d3,s.charAt(2));
-  }
-  show(0);
-
-  /* Progress eases to 100. It will not finish before MIN (so the animation is never a
-     flash) and it cannot outlast MAX (so a slow asset never holds the site hostage). */
-  var MIN=1500,MAX=3000,t0=Date.now(),loaded=false,done=false,shown=0;
-  /* Repaint the counter at ~9fps, not every frame. At 60fps the digits changed faster
-     than the dots could finish their fade, so the number was an unreadable shimmer. */
-  var STEP=110,lastPaint=-1e9,lastVal=-1;
-  window.addEventListener('load',function(){loaded=true;});
-  (function step(){
-    if(done) return;
-    var el=Date.now()-t0;
-    var target=Math.min(loaded?100:92,(el/MIN)*100);  /* stall at 92 until load fires */
-    if(el>=MAX) target=100;                            /* hard stop */
-    shown+=(target-shown)*0.18;
-    if(target-shown<0.4) shown=target;
-    var v=Math.round(shown);
-    if(el-lastPaint>=STEP&&v!==lastVal){show(v);lastVal=v;lastPaint=el;}
-    if(shown>=99.6&&el>=MIN){show(100);finish();return;}
-    requestAnimationFrame(step);
-  })();
-
-  function finish(){
-    if(done) return; done=true;
-    clearInterval(clusterTimer);
-    setTimeout(function(){
-      root.classList.add('ax-pre-off');
-      setTimeout(function(){root.classList.remove('ax-pre-on','ax-pre-off');},560);
-    },220);
-  }
-})();
-</script>
-
-<style id="ax-cursor-css">
-/* Cursor accent: a single brand-orange ring that trails the pointer with easing and
-   opens up over interactive elements. The NATIVE cursor stays on top -- this is an
-   accent, not a replacement, so no `cursor:none` anywhere and no affordance is lost.
-   Sized in px, not vw: it tracks a physical pointing device and must not shrink on a
-   small laptop. The white halo keeps it legible over the dark navy and deep-red
-   sections as well as over white. */
-.ax-cur{position:fixed;top:0;left:0;z-index:2147483000;pointer-events:none;
-  border-radius:50%;opacity:0;will-change:transform;
-  transition:opacity .18s ease,width .22s cubic-bezier(.22,.68,.28,1),
-             height .22s cubic-bezier(.22,.68,.28,1),margin .22s cubic-bezier(.22,.68,.28,1),
-             background-color .22s ease,border-color .22s ease}
-.ax-cur--ring{width:26px;height:26px;margin:-13px 0 0 -13px;
-  border:1.5px solid #df3f17;background:rgba(223,63,23,.06);
-  box-shadow:0 0 0 1.5px rgba(255,255,255,.42),inset 0 0 0 1.5px rgba(255,255,255,.42)}
-html.ax-cur-on .ax-cur{opacity:1}
-/* over something clickable: ring opens up and tints */
-html.ax-cur-hot .ax-cur--ring{width:44px;height:44px;margin:-22px 0 0 -22px;
-  background:rgba(223,63,23,.14);border-color:#df3f17}
-/* press feedback */
-html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
-@media (max-width:1024px){.ax-cur{display:none}}
-@media (prefers-reduced-motion:reduce){.ax-cur{display:none}}
-</style>
-<script>
-/* ---- CURSOR ACCENT RING ---- */
-(function(){
-  if(!window.matchMedia) return;
-  if(!matchMedia('(min-width:1025px)').matches) return;
-  /* Exclude touch, rather than require a fine pointer: some browsers and virtualised
-     desktops report `pointer: none`, and requiring `fine` silently killed the ring
-     for them. */
-  if(matchMedia('(pointer:coarse)').matches) return;
-  if(matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-  var root=document.documentElement;
-  var ring=document.createElement('div'); ring.className='ax-cur ax-cur--ring';
-  ring.setAttribute('aria-hidden','true');
-  (document.body||root).appendChild(ring);
-
-  var HOT='a,button,[role="link"],[role="button"],input[type="submit"],'+
-          '.ax-nav__link,.ax-nav__btn,.ax-nav__soc,.ax-mm__si,.ax-mm2__ln,'+
-          '.ax-mm2__feat-btn,.ax-mm2__api-btn,.ax-tab,[data-cursor="hot"]';
-  var x=0,y=0,rx=0,ry=0,raf=0,seen=false;
-
-  function frame(){
-    rx+=(x-rx)*0.18; ry+=(y-ry)*0.18;
-    ring.style.transform='translate3d('+rx+'px,'+ry+'px,0)';
-    /* stop the loop once it has caught up, so this is not a permanent frame ticker */
-    if(Math.abs(x-rx)>0.1||Math.abs(y-ry)>0.1){raf=requestAnimationFrame(frame);}
-    else{rx=x;ry=y;ring.style.transform='translate3d('+rx+'px,'+ry+'px,0)';raf=0;}
-  }
-  function tick(){ if(!raf) raf=requestAnimationFrame(frame); }
-
-  document.addEventListener('mousemove',function(e){
-    x=e.clientX; y=e.clientY;
-    if(!seen){seen=true;rx=x;ry=y;root.classList.add('ax-cur-on');}
-    tick();
-  },{passive:true});
-
-  document.addEventListener('mouseover',function(e){
-    var t=e.target;
-    if(t&&t.closest&&t.closest(HOT)) root.classList.add('ax-cur-hot');
-  },{passive:true});
-  document.addEventListener('mouseout',function(e){
-    var t=e.relatedTarget;
-    if(!t||!t.closest||!t.closest(HOT)) root.classList.remove('ax-cur-hot');
-  },{passive:true});
-
-  document.addEventListener('mousedown',function(){root.classList.add('ax-cur-down');},{passive:true});
-  document.addEventListener('mouseup',function(){root.classList.remove('ax-cur-down');},{passive:true});
-  document.addEventListener('mouseleave',function(){root.classList.remove('ax-cur-on');},{passive:true});
-  document.addEventListener('mouseenter',function(){if(seen)root.classList.add('ax-cur-on');},{passive:true});
-  // a touch anywhere means this is not really a mouse machine -- stand down
-  window.addEventListener('touchstart',function(){
-    root.classList.remove('ax-cur-on','ax-cur-hot','ax-cur-down');
-  },{passive:true,once:true});
-})();
-</script>
-
-<style id="ax-navload-css">
-/* Page-transition loader: the same morphing dot cluster as the intro preloader, shown
-   while a same-origin navigation is in flight. The full preloader only runs once per
-   session, so without this every page change after the first had no feedback at all. */
-#ax-nl{position:fixed;inset:0;z-index:2147483050;display:none;
-  background:rgba(245,244,242,.82);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);
-  opacity:0;transition:opacity .18s ease}
-#ax-nl.is-armed{display:block}
-#ax-nl.is-on{opacity:1}
-#ax-nl div{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
-  display:grid;grid-template-columns:repeat(5,0.83vw);grid-auto-rows:0.83vw}
-#ax-nl i{display:block;justify-self:center;align-self:center;border-radius:50%;
-  width:0.55vw;height:0.55vw;background:#df3f17;opacity:0;transform:scale(.45);
-  transition:opacity .09s linear,transform .09s cubic-bezier(.2,.8,.3,1)}
-#ax-nl i.on{opacity:1;transform:scale(1)}
-@media (max-width:1024px){
-  #ax-nl div{grid-template-columns:repeat(5,3vw);grid-auto-rows:3vw}
-  #ax-nl i{width:1.8vw;height:1.8vw}
-}
-@media (prefers-reduced-motion:reduce){#ax-nl{display:none!important}}
-</style>
-<script>
-/* ---- PAGE-TRANSITION LOADER ---- */
-(function(){
-  if(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  var root=document.documentElement,wrap,cells,timer,hideTimer,onTimer;
-
-  var FR=[
-    '00100'+'00100'+'11111'+'00100'+'00100',
-    '00100'+'01110'+'11111'+'01110'+'00100',
-    '10001'+'01010'+'00100'+'01010'+'10001',
-    '00000'+'01110'+'01110'+'01110'+'00000',
-    '00000'+'00000'+'00100'+'00000'+'00000'
-  ];
-
-  function build(){
-    wrap=document.createElement('div'); wrap.id='ax-nl';
-    wrap.setAttribute('aria-hidden','true');
-    var g=document.createElement('div'); cells=[];
-    for(var i=0;i<25;i++){var d=document.createElement('i');g.appendChild(d);cells.push(d);}
-    wrap.appendChild(g); document.body.appendChild(wrap);
-  }
-
-  function show(){
-    if(!wrap) build();
-    if(wrap.classList.contains('is-armed')) return;
-    wrap.classList.add('is-armed');
-    /* Delay the fade-in so a cached page that swaps instantly never flashes a loader */
-    onTimer=setTimeout(function(){wrap.classList.add('is-on');},140);
-    var fi=0;
-    timer=setInterval(function(){
-      var f=FR[fi++%FR.length];
-      for(var i=0;i<25;i++) cells[i].classList.toggle('on',f.charAt(i)==='1');
-    },170);
-    /* If the navigation never happens (cancelled download, blocked popup, user aborts),
-       do not leave the site behind a permanent scrim. */
-    hideTimer=setTimeout(hide,6000);
-  }
-  function hide(){
-    if(!wrap) return;
-    clearInterval(timer); clearTimeout(hideTimer); clearTimeout(onTimer);
-    wrap.classList.remove('is-on');
-    setTimeout(function(){wrap.classList.remove('is-armed');},200);
-  }
-
-  function navigates(a){
-    if(!a) return false;
-    var href=a.getAttribute('href')||'';
-    if(!href||href.charAt(0)==='#') return false;
-    if(/^(mailto:|tel:|javascript:)/i.test(href)) return false;
-    if(a.hasAttribute('download')) return false;
-    if(a.target&&a.target!=='_self') return false;
-    if(a.origin&&a.origin!==location.origin) return false;
-    /* same page, only the hash differs -> no navigation */
-    if(a.pathname===location.pathname&&a.search===location.search) return false;
-    return true;
-  }
-
-  document.addEventListener('click',function(e){
-    if(e.defaultPrevented||e.button!==0) return;
-    if(e.metaKey||e.ctrlKey||e.shiftKey||e.altKey) return;
-    var t=e.target; if(!t||!t.closest) return;
-    var a=t.closest('a[href]');
-    if(a){ if(navigates(a)) show(); return; }
-    /* The chrome turns Figma's non-anchor CTA pills into role="link" and navigates them
-       from its own handler, so they never produce an <a> click to hook. */
-    var r=t.closest('[role="link"]');
-    if(r&&r.getAttribute('data-href')!=='#') show();
-  },true);
-
-  /* Coming back via bfcache re-runs no scripts, so clear the scrim explicitly. */
-  window.addEventListener('pageshow',hide);
-  window.addEventListener('pagehide',hide);
-})();
-</script>
-
 </body>
 </html>
