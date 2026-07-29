@@ -1280,10 +1280,14 @@ document.addEventListener('DOMContentLoaded',function(){
     var parent=els[0].parentElement;
     if(parent.querySelector('.ax-mq'))return;
     var srcs=els.map(function(e){return e.getAttribute('src');});
-    /* Figma exported the seal logo as an image-fill DIV, not an <img>, so the id
-       selector above can neither hide nor clone it -- it sat frozen on screen while
-       the injected track scrolled past underneath. The track already carries a seal
-       among its six logos, so the DIV copies are duplicates: hide them. */
+    /* The Commerce seal is a REAL member of the logo row, but Figma exported it as
+       an image-fill DIV, not an <img>, so the id selector above can neither hide nor
+       clone it -- it sat frozen on screen while the track scrolled past underneath.
+       Splice its PNG into the cloned sources (design order puts it second), then
+       hide the static DIV copies. */
+    var seal=parent.querySelector('.g-b .g-img');
+    if(seal){var sm=(seal.getAttribute('style')||'').match(/url\(([^)]+)\)/);
+      if(sm) srcs.splice(1,0,sm[1]);}
     Array.prototype.forEach.call(parent.children,function(w){
       if(w.classList&&w.classList.contains('g-b')) w.style.display='none';
     });
