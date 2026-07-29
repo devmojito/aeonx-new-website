@@ -1001,95 +1001,6 @@ document.addEventListener("DOMContentLoaded",function(){
 
 
 
-<style id="ax-cursor-css">
-/* Custom cursor: a brand-orange dot that tracks the pointer exactly, plus a ring
-   that lags behind with easing and wraps interactive elements. Desktop + fine
-   pointer only; reduced-motion users keep the native cursor. */
-/* Sized in px, not vw: a cursor is a physical pointing device, so it must not shrink
-   on a small laptop. Both parts carry a translucent white halo (box-shadow) so they
-   stay legible over the dark navy and deep-red sections as well as over white. */
-.ax-cur{position:fixed;top:0;left:0;z-index:2147483000;pointer-events:none;
-  border-radius:50%;opacity:0;will-change:transform;
-  transition:opacity .18s ease,width .22s cubic-bezier(.22,.68,.28,1),
-             height .22s cubic-bezier(.22,.68,.28,1),margin .22s cubic-bezier(.22,.68,.28,1),
-             background-color .22s ease,border-color .22s ease}
-.ax-cur--dot{width:10px;height:10px;margin:-5px 0 0 -5px;background:#df3f17;
-  box-shadow:0 0 0 2px rgba(255,255,255,.9),0 1px 3px rgba(0,0,0,.28)}
-.ax-cur--ring{width:40px;height:40px;margin:-20px 0 0 -20px;
-  border:2px solid #df3f17;background:rgba(223,63,23,.06);
-  box-shadow:0 0 0 1.5px rgba(255,255,255,.42),inset 0 0 0 1.5px rgba(255,255,255,.42)}
-html.ax-cur-on .ax-cur{opacity:1}
-/* over something clickable: ring opens up and tints, dot recedes into it */
-html.ax-cur-hot .ax-cur--ring{width:64px;height:64px;margin:-32px 0 0 -32px;
-  background:rgba(223,63,23,.14);border-color:#df3f17}
-html.ax-cur-hot .ax-cur--dot{width:6px;height:6px;margin:-3px 0 0 -3px}
-/* press feedback */
-html.ax-cur-down .ax-cur--ring{width:30px;height:30px;margin:-15px 0 0 -15px}
-/* Native cursor is hidden, EXCEPT where text is entered -- losing the I-beam there
-   costs real usability and the dot cannot stand in for a caret position. */
-html.ax-cur-on,html.ax-cur-on *{cursor:none}
-html.ax-cur-on input,html.ax-cur-on textarea,html.ax-cur-on [contenteditable]{cursor:text}
-@media (max-width:1024px){.ax-cur{display:none}}
-@media (prefers-reduced-motion:reduce){.ax-cur{display:none}
-  html.ax-cur-on,html.ax-cur-on *{cursor:auto}}
-</style>
-<script>
-/* ---- CUSTOM CURSOR ---- */
-(function(){
-  if(!window.matchMedia) return;
-  if(!matchMedia('(min-width:1025px)').matches) return;
-  /* Exclude touch, rather than require a fine pointer: some browsers and virtualised
-     desktops report `pointer: none`, and requiring `fine` silently killed the cursor
-     for them. */
-  if(matchMedia('(pointer:coarse)').matches) return;
-  if(matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-  var root=document.documentElement;
-  var dot=document.createElement('div'); dot.className='ax-cur ax-cur--dot';
-  var ring=document.createElement('div'); ring.className='ax-cur ax-cur--ring';
-  dot.setAttribute('aria-hidden','true'); ring.setAttribute('aria-hidden','true');
-  (document.body||root).appendChild(ring); (document.body||root).appendChild(dot);
-
-  var HOT='a,button,[role="link"],[role="button"],input[type="submit"],'+
-          '.ax-nav__link,.ax-nav__btn,.ax-nav__soc,.ax-mm__si,.ax-mm2__ln,'+
-          '.ax-mm2__feat-btn,.ax-mm2__api-btn,.ax-tab,[data-cursor="hot"]';
-  var x=0,y=0,rx=0,ry=0,raf=0,seen=false;
-
-  function frame(){
-    // ring eases toward the pointer; the dot is always exact
-    rx+=(x-rx)*0.18; ry+=(y-ry)*0.18;
-    ring.style.transform='translate3d('+rx+'px,'+ry+'px,0)';
-    if(Math.abs(x-rx)>0.1||Math.abs(y-ry)>0.1){raf=requestAnimationFrame(frame);}
-    else{rx=x;ry=y;ring.style.transform='translate3d('+rx+'px,'+ry+'px,0)';raf=0;}
-  }
-  function tick(){ if(!raf) raf=requestAnimationFrame(frame); }
-
-  document.addEventListener('mousemove',function(e){
-    x=e.clientX; y=e.clientY;
-    dot.style.transform='translate3d('+x+'px,'+y+'px,0)';
-    if(!seen){seen=true;rx=x;ry=y;root.classList.add('ax-cur-on');}
-    tick();
-  },{passive:true});
-
-  document.addEventListener('mouseover',function(e){
-    var t=e.target;
-    if(t&&t.closest&&t.closest(HOT)) root.classList.add('ax-cur-hot');
-  },{passive:true});
-  document.addEventListener('mouseout',function(e){
-    var t=e.relatedTarget;
-    if(!t||!t.closest||!t.closest(HOT)) root.classList.remove('ax-cur-hot');
-  },{passive:true});
-
-  document.addEventListener('mousedown',function(){root.classList.add('ax-cur-down');},{passive:true});
-  document.addEventListener('mouseup',function(){root.classList.remove('ax-cur-down');},{passive:true});
-  document.addEventListener('mouseleave',function(){root.classList.remove('ax-cur-on');},{passive:true});
-  document.addEventListener('mouseenter',function(){if(seen)root.classList.add('ax-cur-on');},{passive:true});
-  // a touch anywhere means this is not really a mouse machine -- stand down
-  window.addEventListener('touchstart',function(){
-    root.classList.remove('ax-cur-on','ax-cur-hot','ax-cur-down');
-  },{passive:true,once:true});
-})();
-</script>
 
 <div class="ax-mob"><main class="ax-page" style="position:relative;height:1891.1628vw">
 <div class="g-b" style="position:absolute;left:0.0000vw;top:1232.5581vw;width:100.0000vw;height:658.5060vw;background-color:rgb(255,255,255);"></div>
@@ -1454,6 +1365,182 @@ html.ax-cur-on input,html.ax-cur-on textarea,html.ax-cur-on [contenteditable]{cu
       setTimeout(function(){root.classList.remove('ax-pre-on','ax-pre-off');},560);
     },220);
   }
+})();
+</script>
+
+<style id="ax-cursor-css">
+/* Cursor accent: a single brand-orange ring that trails the pointer with easing and
+   opens up over interactive elements. The NATIVE cursor stays on top -- this is an
+   accent, not a replacement, so no `cursor:none` anywhere and no affordance is lost.
+   Sized in px, not vw: it tracks a physical pointing device and must not shrink on a
+   small laptop. The white halo keeps it legible over the dark navy and deep-red
+   sections as well as over white. */
+.ax-cur{position:fixed;top:0;left:0;z-index:2147483000;pointer-events:none;
+  border-radius:50%;opacity:0;will-change:transform;
+  transition:opacity .18s ease,width .22s cubic-bezier(.22,.68,.28,1),
+             height .22s cubic-bezier(.22,.68,.28,1),margin .22s cubic-bezier(.22,.68,.28,1),
+             background-color .22s ease,border-color .22s ease}
+.ax-cur--ring{width:26px;height:26px;margin:-13px 0 0 -13px;
+  border:1.5px solid #df3f17;background:rgba(223,63,23,.06);
+  box-shadow:0 0 0 1.5px rgba(255,255,255,.42),inset 0 0 0 1.5px rgba(255,255,255,.42)}
+html.ax-cur-on .ax-cur{opacity:1}
+/* over something clickable: ring opens up and tints */
+html.ax-cur-hot .ax-cur--ring{width:44px;height:44px;margin:-22px 0 0 -22px;
+  background:rgba(223,63,23,.14);border-color:#df3f17}
+/* press feedback */
+html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
+@media (max-width:1024px){.ax-cur{display:none}}
+@media (prefers-reduced-motion:reduce){.ax-cur{display:none}}
+</style>
+<script>
+/* ---- CURSOR ACCENT RING ---- */
+(function(){
+  if(!window.matchMedia) return;
+  if(!matchMedia('(min-width:1025px)').matches) return;
+  /* Exclude touch, rather than require a fine pointer: some browsers and virtualised
+     desktops report `pointer: none`, and requiring `fine` silently killed the ring
+     for them. */
+  if(matchMedia('(pointer:coarse)').matches) return;
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  var root=document.documentElement;
+  var ring=document.createElement('div'); ring.className='ax-cur ax-cur--ring';
+  ring.setAttribute('aria-hidden','true');
+  (document.body||root).appendChild(ring);
+
+  var HOT='a,button,[role="link"],[role="button"],input[type="submit"],'+
+          '.ax-nav__link,.ax-nav__btn,.ax-nav__soc,.ax-mm__si,.ax-mm2__ln,'+
+          '.ax-mm2__feat-btn,.ax-mm2__api-btn,.ax-tab,[data-cursor="hot"]';
+  var x=0,y=0,rx=0,ry=0,raf=0,seen=false;
+
+  function frame(){
+    rx+=(x-rx)*0.18; ry+=(y-ry)*0.18;
+    ring.style.transform='translate3d('+rx+'px,'+ry+'px,0)';
+    /* stop the loop once it has caught up, so this is not a permanent frame ticker */
+    if(Math.abs(x-rx)>0.1||Math.abs(y-ry)>0.1){raf=requestAnimationFrame(frame);}
+    else{rx=x;ry=y;ring.style.transform='translate3d('+rx+'px,'+ry+'px,0)';raf=0;}
+  }
+  function tick(){ if(!raf) raf=requestAnimationFrame(frame); }
+
+  document.addEventListener('mousemove',function(e){
+    x=e.clientX; y=e.clientY;
+    if(!seen){seen=true;rx=x;ry=y;root.classList.add('ax-cur-on');}
+    tick();
+  },{passive:true});
+
+  document.addEventListener('mouseover',function(e){
+    var t=e.target;
+    if(t&&t.closest&&t.closest(HOT)) root.classList.add('ax-cur-hot');
+  },{passive:true});
+  document.addEventListener('mouseout',function(e){
+    var t=e.relatedTarget;
+    if(!t||!t.closest||!t.closest(HOT)) root.classList.remove('ax-cur-hot');
+  },{passive:true});
+
+  document.addEventListener('mousedown',function(){root.classList.add('ax-cur-down');},{passive:true});
+  document.addEventListener('mouseup',function(){root.classList.remove('ax-cur-down');},{passive:true});
+  document.addEventListener('mouseleave',function(){root.classList.remove('ax-cur-on');},{passive:true});
+  document.addEventListener('mouseenter',function(){if(seen)root.classList.add('ax-cur-on');},{passive:true});
+  // a touch anywhere means this is not really a mouse machine -- stand down
+  window.addEventListener('touchstart',function(){
+    root.classList.remove('ax-cur-on','ax-cur-hot','ax-cur-down');
+  },{passive:true,once:true});
+})();
+</script>
+
+<style id="ax-navload-css">
+/* Page-transition loader: the same morphing dot cluster as the intro preloader, shown
+   while a same-origin navigation is in flight. The full preloader only runs once per
+   session, so without this every page change after the first had no feedback at all. */
+#ax-nl{position:fixed;inset:0;z-index:2147483050;display:none;
+  background:rgba(245,244,242,.82);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);
+  opacity:0;transition:opacity .18s ease}
+#ax-nl.is-armed{display:block}
+#ax-nl.is-on{opacity:1}
+#ax-nl div{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  display:grid;grid-template-columns:repeat(5,0.83vw);grid-auto-rows:0.83vw}
+#ax-nl i{display:block;justify-self:center;align-self:center;border-radius:50%;
+  width:0.55vw;height:0.55vw;background:#df3f17;opacity:0;transform:scale(.45);
+  transition:opacity .09s linear,transform .09s cubic-bezier(.2,.8,.3,1)}
+#ax-nl i.on{opacity:1;transform:scale(1)}
+@media (max-width:1024px){
+  #ax-nl div{grid-template-columns:repeat(5,3vw);grid-auto-rows:3vw}
+  #ax-nl i{width:1.8vw;height:1.8vw}
+}
+@media (prefers-reduced-motion:reduce){#ax-nl{display:none!important}}
+</style>
+<script>
+/* ---- PAGE-TRANSITION LOADER ---- */
+(function(){
+  if(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var root=document.documentElement,wrap,cells,timer,hideTimer,onTimer;
+
+  var FR=[
+    '00100'+'00100'+'11111'+'00100'+'00100',
+    '00100'+'01110'+'11111'+'01110'+'00100',
+    '10001'+'01010'+'00100'+'01010'+'10001',
+    '00000'+'01110'+'01110'+'01110'+'00000',
+    '00000'+'00000'+'00100'+'00000'+'00000'
+  ];
+
+  function build(){
+    wrap=document.createElement('div'); wrap.id='ax-nl';
+    wrap.setAttribute('aria-hidden','true');
+    var g=document.createElement('div'); cells=[];
+    for(var i=0;i<25;i++){var d=document.createElement('i');g.appendChild(d);cells.push(d);}
+    wrap.appendChild(g); document.body.appendChild(wrap);
+  }
+
+  function show(){
+    if(!wrap) build();
+    if(wrap.classList.contains('is-armed')) return;
+    wrap.classList.add('is-armed');
+    /* Delay the fade-in so a cached page that swaps instantly never flashes a loader */
+    onTimer=setTimeout(function(){wrap.classList.add('is-on');},140);
+    var fi=0;
+    timer=setInterval(function(){
+      var f=FR[fi++%FR.length];
+      for(var i=0;i<25;i++) cells[i].classList.toggle('on',f.charAt(i)==='1');
+    },170);
+    /* If the navigation never happens (cancelled download, blocked popup, user aborts),
+       do not leave the site behind a permanent scrim. */
+    hideTimer=setTimeout(hide,6000);
+  }
+  function hide(){
+    if(!wrap) return;
+    clearInterval(timer); clearTimeout(hideTimer); clearTimeout(onTimer);
+    wrap.classList.remove('is-on');
+    setTimeout(function(){wrap.classList.remove('is-armed');},200);
+  }
+
+  function navigates(a){
+    if(!a) return false;
+    var href=a.getAttribute('href')||'';
+    if(!href||href.charAt(0)==='#') return false;
+    if(/^(mailto:|tel:|javascript:)/i.test(href)) return false;
+    if(a.hasAttribute('download')) return false;
+    if(a.target&&a.target!=='_self') return false;
+    if(a.origin&&a.origin!==location.origin) return false;
+    /* same page, only the hash differs -> no navigation */
+    if(a.pathname===location.pathname&&a.search===location.search) return false;
+    return true;
+  }
+
+  document.addEventListener('click',function(e){
+    if(e.defaultPrevented||e.button!==0) return;
+    if(e.metaKey||e.ctrlKey||e.shiftKey||e.altKey) return;
+    var t=e.target; if(!t||!t.closest) return;
+    var a=t.closest('a[href]');
+    if(a){ if(navigates(a)) show(); return; }
+    /* The chrome turns Figma's non-anchor CTA pills into role="link" and navigates them
+       from its own handler, so they never produce an <a> click to hook. */
+    var r=t.closest('[role="link"]');
+    if(r&&r.getAttribute('data-href')!=='#') show();
+  },true);
+
+  /* Coming back via bfcache re-runs no scripts, so clear the scrim explicitly. */
+  window.addEventListener('pageshow',hide);
+  window.addEventListener('pagehide',hide);
 })();
 </script>
 

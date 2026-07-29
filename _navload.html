@@ -1,0 +1,95 @@
+<style id="ax-navload-css">
+/* Page-transition loader: the same morphing dot cluster as the intro preloader, shown
+   while a same-origin navigation is in flight. The full preloader only runs once per
+   session, so without this every page change after the first had no feedback at all. */
+#ax-nl{position:fixed;inset:0;z-index:2147483050;display:none;
+  background:rgba(245,244,242,.82);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);
+  opacity:0;transition:opacity .18s ease}
+#ax-nl.is-armed{display:block}
+#ax-nl.is-on{opacity:1}
+#ax-nl div{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  display:grid;grid-template-columns:repeat(5,0.83vw);grid-auto-rows:0.83vw}
+#ax-nl i{display:block;justify-self:center;align-self:center;border-radius:50%;
+  width:0.55vw;height:0.55vw;background:#df3f17;opacity:0;transform:scale(.45);
+  transition:opacity .09s linear,transform .09s cubic-bezier(.2,.8,.3,1)}
+#ax-nl i.on{opacity:1;transform:scale(1)}
+@media (max-width:1024px){
+  #ax-nl div{grid-template-columns:repeat(5,3vw);grid-auto-rows:3vw}
+  #ax-nl i{width:1.8vw;height:1.8vw}
+}
+@media (prefers-reduced-motion:reduce){#ax-nl{display:none!important}}
+</style>
+<script>
+/* ---- PAGE-TRANSITION LOADER ---- */
+(function(){
+  if(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var root=document.documentElement,wrap,cells,timer,hideTimer,onTimer;
+
+  var FR=[
+    '00100'+'00100'+'11111'+'00100'+'00100',
+    '00100'+'01110'+'11111'+'01110'+'00100',
+    '10001'+'01010'+'00100'+'01010'+'10001',
+    '00000'+'01110'+'01110'+'01110'+'00000',
+    '00000'+'00000'+'00100'+'00000'+'00000'
+  ];
+
+  function build(){
+    wrap=document.createElement('div'); wrap.id='ax-nl';
+    wrap.setAttribute('aria-hidden','true');
+    var g=document.createElement('div'); cells=[];
+    for(var i=0;i<25;i++){var d=document.createElement('i');g.appendChild(d);cells.push(d);}
+    wrap.appendChild(g); document.body.appendChild(wrap);
+  }
+
+  function show(){
+    if(!wrap) build();
+    if(wrap.classList.contains('is-armed')) return;
+    wrap.classList.add('is-armed');
+    /* Delay the fade-in so a cached page that swaps instantly never flashes a loader */
+    onTimer=setTimeout(function(){wrap.classList.add('is-on');},140);
+    var fi=0;
+    timer=setInterval(function(){
+      var f=FR[fi++%FR.length];
+      for(var i=0;i<25;i++) cells[i].classList.toggle('on',f.charAt(i)==='1');
+    },170);
+    /* If the navigation never happens (cancelled download, blocked popup, user aborts),
+       do not leave the site behind a permanent scrim. */
+    hideTimer=setTimeout(hide,6000);
+  }
+  function hide(){
+    if(!wrap) return;
+    clearInterval(timer); clearTimeout(hideTimer); clearTimeout(onTimer);
+    wrap.classList.remove('is-on');
+    setTimeout(function(){wrap.classList.remove('is-armed');},200);
+  }
+
+  function navigates(a){
+    if(!a) return false;
+    var href=a.getAttribute('href')||'';
+    if(!href||href.charAt(0)==='#') return false;
+    if(/^(mailto:|tel:|javascript:)/i.test(href)) return false;
+    if(a.hasAttribute('download')) return false;
+    if(a.target&&a.target!=='_self') return false;
+    if(a.origin&&a.origin!==location.origin) return false;
+    /* same page, only the hash differs -> no navigation */
+    if(a.pathname===location.pathname&&a.search===location.search) return false;
+    return true;
+  }
+
+  document.addEventListener('click',function(e){
+    if(e.defaultPrevented||e.button!==0) return;
+    if(e.metaKey||e.ctrlKey||e.shiftKey||e.altKey) return;
+    var t=e.target; if(!t||!t.closest) return;
+    var a=t.closest('a[href]');
+    if(a){ if(navigates(a)) show(); return; }
+    /* The chrome turns Figma's non-anchor CTA pills into role="link" and navigates them
+       from its own handler, so they never produce an <a> click to hook. */
+    var r=t.closest('[role="link"]');
+    if(r&&r.getAttribute('data-href')!=='#') show();
+  },true);
+
+  /* Coming back via bfcache re-runs no scripts, so clear the scrim explicitly. */
+  window.addEventListener('pageshow',hide);
+  window.addEventListener('pagehide',hide);
+})();
+</script>

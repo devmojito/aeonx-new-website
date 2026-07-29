@@ -425,3 +425,18 @@ is exactly why the old gate had to go.
   **~9fps** (`STEP=110`ms, and only when the rounded value actually changes), so each
   number settles before the next one replaces it. Ramp lengthened to MIN 1.5s / MAX 3.0s
   to give it room to be read.
+
+### Cursor v3 + page-transition loader (2026-07-28)
+- **Native cursor is back on top.** All `cursor:none` rules removed — the ring is an
+  accent, not a replacement, so nothing depends on JS for basic affordance.
+- Orange dot removed; only the ring remains.
+- Ring shrunk 40px -> **26px** (hover 64 -> 44, press 30 -> 20), border 2px -> 1.5px.
+
+`_navload.html` (injected by `_postbuild.py`): the intro preloader's morphing dot cluster,
+reused as a **page-transition loader**. The intro runs once per session, so every later
+navigation previously had no feedback at all. Capture-phase click delegation catches both
+real `<a>` navigations and the chrome's `role="link"` CTA pills (which navigate from their
+own handler and never produce an anchor click). Skips modifier-clicks, `target=_blank`,
+`#`/`mailto:`/`tel:`, downloads, cross-origin and same-page links. Fade-in is delayed
+140ms so an instant page swap never flashes it, and a 6s failsafe plus `pageshow`/`pagehide`
+hooks guarantee it never strands the site behind a scrim.
