@@ -1,17 +1,17 @@
 <svg width="783" height="64" viewBox="0 0 783 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-<g opacity="0.2">
+<g opacity="0.2"><animate attributeName="opacity" values="0.18;0.95;0.18;0.18" keyTimes="0;0.18;0.5;1" dur="1.8s" begin="0.0s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.2 1;0.4 0 0.2 1;0 0 1 1"/><animateTransform attributeName="transform" type="translate" values="0 -1.5;0 1.5;0 -1.5" keyTimes="0;0.35;1" dur="1.8s" begin="0.0s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.2 1;0.4 0 0.2 1"/>
 <path d="M6.93373 1.59973H9.06691V10.1322H11.1966V12.2656H9.06344V10.1322H6.93789V12.2656H4.80469V10.1322H6.93373V1.59973Z" fill="#23272E"/>
 <path d="M11.1992 7.99939H13.3324V10.1328H11.1992V7.99939Z" fill="#23272E"/>
 <path d="M2.66797 7.99939H4.80116V10.1328H2.66797V7.99939Z" fill="#23272E"/>
 <path d="M6.93359 12.2663H9.06677V14.3997H6.93359V12.2663Z" fill="#23272E"/>
 </g>
-<g opacity="0.2">
+<g opacity="0.2"><animate attributeName="opacity" values="0.18;0.95;0.18;0.18" keyTimes="0;0.18;0.5;1" dur="1.8s" begin="0.3s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.2 1;0.4 0 0.2 1;0 0 1 1"/><animateTransform attributeName="transform" type="translate" values="0 -1.5;0 1.5;0 -1.5" keyTimes="0;0.35;1" dur="1.8s" begin="0.3s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.2 1;0.4 0 0.2 1"/>
 <path d="M6.93373 25.5997H9.06691V34.1322H11.1966V36.2656H9.06344V34.1322H6.93789V36.2656H4.80469V34.1322H6.93373V25.5997Z" fill="#23272E"/>
 <path d="M11.1992 31.9994H13.3324V34.1328H11.1992V31.9994Z" fill="#23272E"/>
 <path d="M2.66797 31.9994H4.80116V34.1328H2.66797V31.9994Z" fill="#23272E"/>
 <path d="M6.93359 36.2663H9.06677V38.3997H6.93359V36.2663Z" fill="#23272E"/>
 </g>
-<g opacity="0.266908">
+<g opacity="0.266908"><animate attributeName="opacity" values="0.18;0.95;0.18;0.18" keyTimes="0;0.18;0.5;1" dur="1.8s" begin="0.6s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.2 1;0.4 0 0.2 1;0 0 1 1"/><animateTransform attributeName="transform" type="translate" values="0 -1.5;0 1.5;0 -1.5" keyTimes="0;0.35;1" dur="1.8s" begin="0.6s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.2 1;0.4 0 0.2 1"/>
 <path d="M6.93373 49.5997H9.06691V58.1322H11.1966V60.2656H9.06344V58.1322H6.93789V60.2656H4.80469V58.1322H6.93373V49.5997Z" fill="#23272E"/>
 <path d="M11.1992 55.9994H13.3324V58.1328H11.1992V55.9994Z" fill="#23272E"/>
 <path d="M2.66797 55.9994H4.80116V58.1328H2.66797V55.9994Z" fill="#23272E"/>

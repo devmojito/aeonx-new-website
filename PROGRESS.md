@@ -440,3 +440,14 @@ own handler and never produce an anchor click). Skips modifier-clicks, `target=_
 `#`/`mailto:`/`tel:`, downloads, cross-origin and same-page links. Fade-in is delayed
 140ms so an instant page swap never flashes it, and a 6s failsafe plus `pageshow`/`pagehide`
 hooks guarantee it never strands the site behind a scrim.
+
+### Scroll arrows on the Who-we-are pages (2026-07-28)
+The three stacked down-arrows under the headline on foundation / leadership / career were
+static. They live INSIDE the exported SVGs (`5259-20716`, `5259-20986`, `5259-21026`), one
+`<g opacity>` per arrow, not as three separate DOM nodes -- which is why looking for a trio
+of small elements in the DOM found nothing.
+
+Animated with SMIL in the SVG files themselves (works through `<img>`, unlike JS or
+external CSS), reusing the exact cascade already on the homepage hero arrows
+(`5889-30993.svg`): opacity 0.18 -> 0.95 plus a 1.5px bob, 1.8s, staggered 0.3s per arrow.
+**Assets are not touched by a rebuild, so this needs no postbuild hook.**
