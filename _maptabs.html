@@ -1,0 +1,239 @@
+<style id="ax-maptabs-css">
+/* COME VISIT city tabs. _gen.py flattens the Figma "Location" component set to the
+   pinned Mumbai variant, so the six tab cells exist but nothing drives them. This
+   fragment reparents each cell + its label into one absolutely positioned strip
+   (so the mobile row, which runs to 244vw inside a 92.5581vw clip, can be slid into
+   view by moving ONE element) and swaps the panel copy/geometry/map per city.
+   The strip slides with `left`, not `transform`: the scroll-reveal fragment ships
+   `.ax-rv{transform:none!important}` under prefers-reduced-motion, which would
+   silently pin the row and hide tabs 3..6 again. */
+.ax-mt-strip{position:absolute;transition:left .35s cubic-bezier(.22,.61,.36,1);}
+.ax-mt-tab{cursor:pointer;transition:background-color .25s ease;}
+.ax-mt-tab>.g-t{transition:color .25s ease;}
+.ax-mt-tab:focus-visible{outline:3px solid rgb(35,39,46);outline-offset:-4px;}
+.ax-mt-tab[aria-selected="true"]:focus-visible{outline-color:rgb(255,255,255);}
+@media (prefers-reduced-motion:reduce){
+  .ax-mt-strip,.ax-mt-tab,.ax-mt-tab>.g-t{transition:none;}
+}
+</style>
+<script>
+/* ---- COME VISIT / LOCATION TABS ---- */
+(function(){
+  var F_D = 100/1920, F_M = 100/430;
+
+  /* Accepted spellings per tab index. Figma says "Ahmedabad" on desktop and
+     "Ahmadabad" on mobile; both are matched, neither is rewritten. */
+  var KEYS = [['mumbai'],['ahmedabad','ahmadabad'],['delhi (noida)'],
+              ['kolkata'],['bhuj'],['dehradun']];
+
+  /* Verbatim from the Figma component set "Location" 4541:8166 (desktop) /
+     "Component 34" 5598:24680 (mobile) -- copy is identical between the two.
+     d/m are [heading height, address top, address height] in DESIGN PX, converted
+     with that breakpoint's vw factor; the rest of the panel geometry is shared by
+     all six variants. Mumbai's heading wraps to two lines, which is why its
+     address sits lower. */
+  var CITY = [
+    {tag:'HQ · MUMBAI',
+     head:'Mumbai - Corporate Headquarters',
+     addr:'AeonX Digital, 278, Jeevan Udyog Building, DN Road, Fort, Mumbai. 400001',
+     tel:'+91 22 6622 1640', mail:'sales@aeonx.digital',
+     map:'ea986a4bc8590f0c2db7c349c0de60e9221969d0',
+     d:[72,150,72], m:[72,126,72]},
+    {tag:'REGIONAL',
+     head:'Ahmedabad',
+     addr:'AeonX Digital, Shyamal Unicus, B-1103, Shyamal Cross Road, Balgayatri Society Part-2, Satellite, Shyamal, Ahmedabad, Gujara. 380015',
+     tel:'+91 22 6622 1640', mail:'sales@aeonx.digital',
+     map:'2d0641b41145494927df05803af516abd740714a',
+     d:[36,114,120], m:[36,90,120]},
+    {tag:'REGIONAL . NCR',
+     head:'Delhi (Noida)',
+     addr:'AeonX Digital, Plot No. A41, Iconic Corenthum, Office No. 1205B, 12th Floor, Sector 62, near Electronic City Metro Station, Uttar Pradesh. 201301',
+     tel:'+91 22 6622 1640', mail:'sales@aeonx.digital',
+     map:'1c798dc8adf393dbaf90aab0209e68e947cac819',
+     d:[36,114,120], m:[36,90,96]},
+    {tag:'REGIONAL',
+     head:'Kolkata',
+     addr:'Aeonx Digital, Unit 7WS8A, 7th Floor, Mani Casadona, Plot No. II F/04, Action Area II-F, Rajarhat Newtown, Kolkata. 700156. Landmark: opposite ECO Space.',
+     tel:'+91 22 6622 1640', mail:'sales@aeonx.digital',
+     map:'88704a28e74896f328593d0ef5e000ddc11c910c',
+     d:[36,114,120], m:[36,90,120]},
+    {tag:'DELIVERY CENTRE',
+     head:'Bhuj',
+     addr:'AeonX Digital, 24/7 Delivery Center, C-203/206 JV Business Park 1, Opposite Smrutivan Memorial, Bhuj. 370001',
+     tel:'+91 99099 86118', mail:'sales@aeonx.digital',
+     map:'ea0b25cb5e3ef7acc52c5072d8289809d779c54f',
+     d:[36,114,96], m:[36,90,96]},
+    {tag:'DELIVERY CENTRE',
+     head:'Dehradun',
+     addr:'AeonX Digital, K K Tower, Above HDFC Bank, Doiwala, Dehradun. 248140, Uttarakhand, India',
+     tel:'+91 22 6622 1640', mail:'sales@aeonx.digital',
+     map:'2d1d02733211dfcc9a06fc787e50530304c99a74',
+     d:[36,114,96], m:[36,90,72]}
+  ];
+
+  var seq = 0;
+  function norm(s){ return (s||'').replace(/\s+/g,' ').trim().toLowerCase(); }
+  function vw(designPx, fac){ return (designPx*fac).toFixed(4)+'vw'; }
+  /* read a vw number back out of the inline style the generator wrote */
+  function num(el, k){
+    var m = (el.getAttribute('style')||'').match(new RegExp(k+':\\s*(-?[0-9.]+)vw'));
+    return m ? parseFloat(m[1]) : 0;
+  }
+  function pick(scope, test){
+    var n = scope.querySelectorAll('.g-t');
+    for (var i=0;i<n.length;i++) if (test(norm(n[i].textContent))) return n[i];
+    return null;
+  }
+  /* The panel is identified by the Mumbai copy that _gen.py flattened into it. If any
+     field is missing the section is not what we think it is -- leave it alone. */
+  function fields(scope){
+    if (!scope) return null;
+    var f = {
+      tag:  pick(scope, function(t){ return t === 'hq · mumbai'; }),
+      head: pick(scope, function(t){ return t === 'mumbai - corporate headquarters'; }),
+      addr: pick(scope, function(t){ return t.indexOf('aeonx digital, 278') === 0; }),
+      tel:  pick(scope, function(t){ return t === '+91 22 6622 1640'; }),
+      mail: pick(scope, function(t){ return t === 'sales@aeonx.digital'; }),
+      map:  scope.querySelector('.g-img[data-ref="'+CITY[0].map+'"]')
+    };
+    for (var k in f) if (!f[k]) return null;
+    return f;
+  }
+
+  function build(row){
+    if (row.getAttribute('data-axmt')) return;          /* idempotent */
+
+    /* the six labels are DIRECT children of the strip container; on mobile the panel
+       is a child too, so only direct .g-t children may be considered */
+    var labs = [], i, c = row.children;
+    for (i=0;i<c.length;i++) if (c[i].classList.contains('g-t')) labs.push(c[i]);
+    if (labs.length !== 6) return;
+    for (i=0;i<6;i++) if (KEYS[i].indexOf(norm(labs[i].textContent)) < 0) return;
+
+    /* each label is preceded by its own fill rect -- that rect IS the cell */
+    var tabs = [];
+    for (i=0;i<6;i++){
+      var fl = labs[i].previousElementSibling;
+      if (!fl || !fl.classList.contains('g-b')) return;
+      tabs.push(fl);
+    }
+    /* desktop: panel is the next sibling. mobile: panel is nested inside the row. */
+    var f = fields(row) || fields(row.nextElementSibling);
+    if (!f) return;
+
+    var mob = !!row.closest('.ax-mob');
+    var FAC = mob ? F_M : F_D;
+    var panel = f.tag.closest('.g-b.g-clip') || row;
+    var view = num(row, 'width'), total = 0, id = ++seq;
+
+    var strip = document.createElement('div');
+    strip.className = 'ax-mt-strip';
+    strip.style.cssText = 'left:0vw;top:0vw;width:100%;height:'+num(tabs[0],'height')+'vw;';
+    row.insertBefore(strip, tabs[0]);
+
+    /* tablist goes on the strip, not the row: on mobile the row also holds the
+       panel, and a tablist must contain nothing but its tabs */
+    strip.setAttribute('role','tablist');
+    panel.setAttribute('role','tabpanel');
+    panel.setAttribute('tabindex','0');
+    panel.id = 'ax-mt-p' + id;
+
+    for (i=0;i<6;i++){
+      var t = tabs[i], l = labs[i];
+      var tl = num(t,'left'), tt = num(t,'top');
+      total = Math.max(total, tl + num(t,'width'));
+      /* Nesting the label inside its cell gives the tab its accessible name for free
+         and stops the label swallowing clicks. The label's left/top become
+         cell-relative -- and must also lose the cell's BORDER, because an absolute
+         child resolves against the padding box, not the border box. Skipping this
+         drifts every label 1px right and down. */
+      var bd = num(t,'border');
+      l.style.left = (num(l,'left') - tl - bd).toFixed(4)+'vw';
+      l.style.top  = (num(l,'top')  - tt - bd).toFixed(4)+'vw';
+      t.appendChild(l);
+      strip.appendChild(t);
+      t.className += ' ax-mt-tab';
+      t.id = 'ax-mt-t'+id+'-'+i;
+      t.setAttribute('role','tab');
+      t.setAttribute('aria-controls', 'ax-mt-p' + id);   /* APG: point the tab at its panel */
+      t.setAttribute('data-cursor','hot');           /* opens the _cursor.html ring */
+      arm(t, i);
+    }
+
+    var cur = 0, warmed = {};
+
+    function paint(sel){
+      for (var i=0;i<6;i++){
+        var on = i === sel;
+        tabs[i].style.backgroundColor = on ? 'rgb(223,63,23)' : 'rgb(236,238,242)';
+        labs[i].style.color = on ? 'rgb(255,255,255)' : 'rgb(35,39,46)';
+        tabs[i].setAttribute('aria-selected', on ? 'true' : 'false');
+        tabs[i].tabIndex = on ? 0 : -1;
+      }
+      panel.setAttribute('aria-labelledby', tabs[sel].id);
+    }
+    function apply(city){
+      var g = mob ? city.m : city.d;
+      f.tag.textContent  = city.tag;
+      f.head.textContent = city.head;
+      f.head.style.height = vw(g[0], FAC);
+      f.addr.textContent = city.addr;
+      f.addr.style.top    = vw(g[1], FAC);
+      f.addr.style.height = vw(g[2], FAC);
+      f.tel.textContent  = city.tel;
+      f.mail.textContent = city.mail;
+      f.map.style.backgroundImage = 'url(/assets/gen/'+city.map+'.png)';
+      f.map.setAttribute('data-ref', city.map);
+    }
+    /* centre the cell in the clip, clamped to the ends of the row. On desktop the six
+       cells exactly fill the strip so this always resolves to 0. */
+    function bring(sel){
+      var x = num(tabs[sel],'left') + num(tabs[sel],'width')/2 - view/2;
+      x = Math.max(0, Math.min(x, Math.max(0, total - view)));
+      /* the generator's 4-decimal vw rounding leaves the desktop row a ten-thousandth
+         of a vw wider than its clip -- snap that away instead of nudging the row */
+      if (x < 0.01) x = 0;
+      strip.style.left = (-x).toFixed(4)+'vw';
+    }
+    function warm(sel){
+      var r = CITY[sel].map;
+      if (warmed[r]) return;
+      warmed[r] = 1;
+      (new Image()).src = '/assets/gen/'+r+'.png';    /* maps are ~1.5MB: on demand */
+    }
+    function select(sel, focus){
+      if (sel !== cur){
+        cur = sel;
+        paint(sel); apply(CITY[sel]); bring(sel);
+      }
+      if (focus) tabs[sel].focus();
+    }
+    function arm(t, sel){
+      t.addEventListener('click', function(e){ e.preventDefault(); select(sel, false); });
+      t.addEventListener('mouseenter', function(){ warm(sel); });
+      t.addEventListener('focus', function(){ warm(sel); });
+      t.addEventListener('keydown', function(e){
+        var k = e.key;
+        if (k === 'Enter' || k === ' ' || k === 'Spacebar'){ e.preventDefault(); select(sel, true); }
+        else if (k === 'ArrowRight' || k === 'Right'){ e.preventDefault(); select((sel+1)%6, true); }
+        else if (k === 'ArrowLeft'  || k === 'Left') { e.preventDefault(); select((sel+5)%6, true); }
+        else if (k === 'Home'){ e.preventDefault(); select(0, true); }
+        else if (k === 'End') { e.preventDefault(); select(5, true); }
+      });
+    }
+
+    /* Mumbai is already in the DOM verbatim from Figma -- only add the semantics,
+       never re-render it, so the initial paint stays byte-exact. */
+    paint(0); bring(0);
+    row.setAttribute('data-axmt','1');
+  }
+
+  function init(){
+    var n = document.querySelectorAll('.g-b.g-clip');
+    for (var i=0;i<n.length;i++) build(n[i]);
+  }
+  /* the .ax-mob block may sit AFTER this script in the document */
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>

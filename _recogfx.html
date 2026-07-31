@@ -1,0 +1,242 @@
+<style id="ax-recogfx-css">
+/* RECOGNITIONS ("Earned, not bought.") client-logo row -> continuous right-to-left
+   marquee. Figma ships six white cards with a brand mark on each and NO row wrapper,
+   and the strip (64.58vw on desktop) is narrower than the viewport, so the clipped
+   window and the repeat are built here: the card+logo pairs are copied into the window
+   and the whole set is repeated at the CARD PITCH (6 x card stride), which is what
+   makes the wrap invisible -- the seam gap is the same 1.04vw that sits between any
+   two cards. The baked row itself is then hidden in place. */
+.ax-recog__win{position:absolute;overflow:hidden}
+.ax-recog__track{position:absolute;left:0;top:0;width:0;height:0;will-change:transform}
+/* _mobfx.html's marquee() bails on any member carrying .ax-carm ("already owned by a
+   carousel"); that is how this row is claimed from it, since it only ever picked up 4
+   of the 6 logos and left the six white cards standing still. .ax-carm also ships a
+   bare transition:transform, which would drop the scroll-reveal's opacity transition
+   on those six -- restore it (two classes, so it wins on specificity, not on order). */
+.ax-recog__pause{position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;
+  overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;background:#fff;
+  color:#23272E;font:inherit;cursor:pointer}
+.ax-recog__pause:focus-visible{position:static;width:auto;height:auto;margin:0;
+  padding:0.3vw 0.6vw;clip:auto;clip-path:none;overflow:visible;z-index:5;
+  outline:0.1042vw solid rgb(223,63,23);border-radius:0.2vw}
+.ax-recog__item.ax-carm{transition:opacity .7s cubic-bezier(.22,.61,.36,1),transform .7s cubic-bezier(.22,.61,.36,1)}
+@media (prefers-reduced-motion:reduce){.ax-recog__track{transform:none!important}}
+</style>
+<script>
+/* ---- RECOGNITIONS LOGO MARQUEE ---- */
+(function(){
+  var REFS = [
+    'c0802d56987353256ffafeae2a33e63a0b7e7667',
+    'ccd1d63087fa9a4757a653bb2b061b5ec4711f64',
+    '06cd2f7d70f9773233ef229ad325a8fdcfe41d22',
+    'db429dafe9531041d50b09052018c7880870da69',
+    'ec4e870ac8e2fa9c57fb6b3c0da99033e12cc759',
+    '8d29eb071421987237b78c06a8b1dc37f2419bbc'
+  ];
+  /* All six Figma layers are named "Ashapura" (designer copy-paste) and _gen.py turns
+     the layer name into aria-label, so five of the six were wrong. These names are read
+     off the artwork itself. REFS[3] is a circled DT/ID monogram beside the word "Cem",
+     not identifiable with confidence, so it deliberately keeps the label it ships with
+     rather than getting a guess. */
+  var LABEL = {};
+  LABEL[REFS[0]] = 'Ashapura Group of Industries';
+  LABEL[REFS[1]] = 'Ambuja Neotia';
+  LABEL[REFS[2]] = 'Raymond';
+  /* REFS[3] renders a circled monogram + the word "Cem" + "Commitment, Reliability &
+     Quality". The brand could not be identified with confidence, and the label it ships
+     with ("Ashapura") names the WRONG company -- a knowingly-false name is worse for a
+     screen-reader user than a generic one, so it gets a neutral truthful label until the
+     designer confirms the brand. */
+  LABEL[REFS[3]] = 'Client logo';
+  LABEL[REFS[4]] = 'Sunder Biscuits & Namkeen';
+  LABEL[REFS[5]] = 'Khanna Paper';
+
+  var SEC = 30;      /* one full pitch per 30s -- same cadence as the home-page marquee */
+  var REDUCED = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* the six logos, in design order, or null if this page does not carry the row */
+  function logosIn(scope){
+    var out = [], i, e;
+    for (i = 0; i < REFS.length; i++){
+      e = scope.querySelector('.g-img[data-ref="' + REFS[i] + '"]');
+      if (!e) return null;
+      out.push(e);
+    }
+    return out;
+  }
+
+  /* Claim the row from _mobfx.html. Its start() resolves the DOM at DOMContentLoaded
+     and its listener is registered earlier in the document, so it runs first -- hence
+     this runs at PARSE time, while _mobfx is still only a listener. Belt and braces:
+     the baked row is display:none once the marquee is built, so even if _mobfx did get
+     hold of these six it would only be translating hidden boxes. */
+  function claim(){
+    var mob = document.querySelector('.ax-mob');
+    var g = mob && logosIn(mob);
+    if (!g) return false;
+    for (var i = 0; i < g.length; i++){
+      g[i].classList.add('ax-carm');
+      g[i].classList.add('ax-recog__item');
+    }
+    return true;
+  }
+  /* D1 fix: the .ax-mob block is NOT guaranteed to be in the document when this script
+     parses -- _mobile.py has moved it before now, and that ordering change silently killed
+     every mobile enhancer once already. Claiming at DOMContentLoaded is too late (_mobfx
+     is injected earlier, so its listener runs first), so watch for the block instead and
+     claim it the moment it appears, which is still during parsing. */
+  if (!claim()) {
+    var mo = new MutationObserver(function(){ if (claim()) mo.disconnect(); });
+    mo.observe(document.documentElement, { childList: true, subtree: true });
+    document.addEventListener('DOMContentLoaded', function(){ mo.disconnect(); });
+  }
+
+  function labels(scope){
+    var g = scope && logosIn(scope);
+    if (!g) return;
+    for (var i = 0; i < g.length; i++){
+      var lb = LABEL[g[i].getAttribute('data-ref')];
+      if (lb) g[i].setAttribute('aria-label', lb);
+    }
+  }
+
+  function num(el, k){ return parseFloat(el.style[k]); }
+
+  function build(scope){
+    if (scope.querySelector('.ax-recog__win')) return;     /* idempotent */
+    var logos = logosIn(scope), i;
+    if (!logos) return;
+    var host = logos[0].parentElement;
+
+    /* Card = the .g-b immediately before each logo (Figma emits card,logo,card,logo).
+       Copying them as a pair is what keeps a mark from drifting off its white card. */
+    var cards = [];
+    for (i = 0; i < logos.length; i++){
+      if (logos[i].parentElement !== host) return;
+      var c = logos[i].previousElementSibling;
+      if (!c || !/(^|\s)g-b(\s|$)/.test(c.className || '')) return;
+      cards.push(c);
+    }
+
+    var all = [], L = [], top = 1e9, bot = -1e9;
+    for (i = 0; i < cards.length; i++){ all.push(cards[i]); all.push(logos[i]); }
+    for (i = 0; i < all.length; i++){
+      var t = num(all[i], 'top'), h = num(all[i], 'height');
+      if (t !== t || h !== h) return;                      /* NaN: not the vw layout */
+      if (t < top) top = t;
+      if (t + h > bot) bot = t + h;
+    }
+    for (i = 0; i < cards.length; i++) L.push(num(cards[i], 'left'));
+    var stride = L[1] - L[0];
+    if (!(stride > 0)) return;
+    for (i = 2; i < L.length; i++) if (Math.abs(L[i] - L[i-1] - stride) > 0.01) return;
+    var pitch = stride * L.length;
+    var span = (L[L.length-1] + num(cards[cards.length-1], 'width')) - L[0];
+
+    var win = document.createElement('div');
+    win.className = 'ax-recog__win';
+    /* width:100% == the row's own coordinate origin: on desktop the clipping ancestor
+       is main.ax-page, on mobile the section .g-clip -- both 100vw wide. */
+    win.style.cssText = 'left:0;top:' + top + 'vw;width:100%;height:' + (bot - top) + 'vw;';
+    var track = document.createElement('div');
+    track.className = 'ax-recog__track';
+    win.appendChild(track);
+    /* directly after the baked row, so the strip keeps the row's paint order */
+    host.insertBefore(win, logos[logos.length-1].nextSibling);
+
+    /* Enough repeats to cover the 100vw window at every phase of the wrap: one set to
+       the left so there is no empty flank at rest, and sets to the right until the
+       strip still reaches x=100 after a full pitch of travel. */
+    var kmin = 0, kmax = 0, k;
+    while (L[0] + kmin * pitch > 0) kmin--;
+    while (L[0] + span + kmax * pitch < 100 + pitch) kmax++;
+    for (k = kmin; k <= kmax; k++){
+      for (i = 0; i < all.length; i++){
+        /* Copies, not the originals: a node MOVED out of main.ax-page into the track
+           lays out and hit-tests correctly but never repaints (reproduced in headless
+           Chromium: a moved card given background:#00f stayed invisible while a clone
+           of it at the same coordinates painted). Cloning sidesteps it, and leaves the
+           baked row's own reveal/observer state untouched. */
+        var d = all[i].cloneNode(true);
+        d.removeAttribute('id');
+        d.classList.add('ax-recog__item');
+        /* the scroll-reveal has already tagged the originals opacity:0 pending an
+           intersection; a copy carrying .ax-rv without .ax-in would never be seen */
+        d.classList.remove('ax-rv'); d.classList.remove('ax-rvo'); d.classList.remove('ax-in');
+        d.style.left = (num(all[i], 'left') + k * pitch) + 'vw';
+        d.style.top = (num(all[i], 'top') - top) + 'vw';
+        /* one row for a screen reader: the set that sits where Figma put it keeps the
+           role/label, every repeat is decorative */
+        if (k !== 0) d.setAttribute('aria-hidden', 'true');
+        track.appendChild(d);
+      }
+    }
+    for (i = 0; i < all.length; i++) all[i].style.display = 'none';   /* replaced */
+
+    /* rAF rather than a keyframe: hover has to pause it mid-flight, and translating in
+       vw keeps the wrap correct across a resize. */
+    var x = 0, last = 0, raf = 0, vis = false, hover = false, stopped = false;
+    function paint(){ track.style.transform = 'translateX(' + x + 'vw)'; }
+    function frame(t){
+      raf = 0;
+      if (!vis) return;                                    /* off-screen: stop the loop */
+      raf = requestAnimationFrame(frame);
+      if (!last){ last = t; return; }
+      var dt = t - last; last = t;
+      if (hover || stopped) return;
+      x -= dt * pitch / (SEC * 1000);
+      if (x <= -pitch) x += pitch;
+      paint();
+    }
+    if ('IntersectionObserver' in window){
+      new IntersectionObserver(function(es){
+        vis = es[es.length-1].isIntersecting;
+        last = 0;
+        if (vis && !raf) raf = requestAnimationFrame(frame);
+      }, { threshold: 0 }).observe(win);
+    } else {
+      vis = true; raf = requestAnimationFrame(frame);
+    }
+    /* pause so the logos can actually be read */
+    win.addEventListener('mouseenter', function(){ hover = true; });
+    win.addEventListener('mouseleave', function(){ hover = false; });
+    /* WCAG 2.2.2: content that moves for more than five seconds needs a pause mechanism,
+       and mouseenter is mouse-only. Figma authors no control here and the layout is
+       pixel-locked, so the control is screen-reader/keyboard-only: it takes no space and
+       is invisible until focused, which changes nothing visually but makes stopping the
+       motion reachable without a pointer. */
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'ax-recog__pause';
+    btn.setAttribute('aria-pressed', 'false');
+    btn.textContent = 'Pause the scrolling client logos';
+    btn.addEventListener('click', function(){
+      stopped = !stopped;
+      last = 0;
+      btn.setAttribute('aria-pressed', stopped ? 'true' : 'false');
+      btn.textContent = (stopped ? 'Resume' : 'Pause') + ' the scrolling client logos';
+      if (!stopped && vis && !raf) raf = requestAnimationFrame(frame);
+    });
+    win.parentNode.insertBefore(btn, win);
+    /* keyboard focus anywhere in the band pauses too, same as hover */
+    win.addEventListener('focusin', function(){ hover = true; });
+    win.addEventListener('focusout', function(){ hover = false; last = 0; });
+  }
+
+  function init(){
+    /* resolve lazily: the .ax-mob block is not guaranteed to precede this script */
+    var d = document.querySelector('main.ax-page');
+    if (d && d.closest && d.closest('.ax-mob')) d = null;  /* that one IS the mobile row */
+    var m = document.querySelector('.ax-mob');
+    labels(d); labels(m);                                  /* the wrong labels get fixed
+                                                              even when motion is off */
+    if (REDUCED) return;
+    if ((innerWidth || 1024) > 768) { if (d) build(d); }
+    else { if (m) build(m); }
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+  addEventListener('resize', init);                        /* build() is idempotent */
+})();
+</script>

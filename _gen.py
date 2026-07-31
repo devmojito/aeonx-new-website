@@ -48,7 +48,14 @@ def gradient_fill(fills, w=None, h_px=None):
         t = f.get('type', '')
         if t.startswith('GRADIENT'):
             stops = f.get('gradientStops', [])
-            sl = ', '.join(f"{col(s['color'])} {s['position']*100:.1f}%" for s in stops)
+            # Figma multiplies the PAINT's own opacity into every stop. Dropping it
+            # rendered a 0.1-opacity wash at full stop alpha -- the manufacturing
+            # product cards came out 10x too saturated (solid teal/orange instead of
+            # a near-white tint). Multiply, don't override: the stops carry alpha too.
+            po = f.get('opacity')
+            po = 1.0 if po is None else po
+            gcol = lambda c: col(c, c.get('a', 1) * po)
+            sl = ', '.join(f"{gcol(s['color'])} {s['position']*100:.1f}%" for s in stops)
             # handles are normalised to the node box: [0] = center/start,
             # [1] = end of the first axis, [2] = end of the second axis.
             h = f.get('gradientHandlePositions') or []
@@ -73,7 +80,7 @@ def gradient_fill(fills, w=None, h_px=None):
                 if ccw:
                     # conic-gradient only sweeps clockwise; mirror the stops
                     seq = [dict(s, position=1-s['position']) for s in reversed(seq)]
-                sl = ', '.join(f"{col(s['color'])} {s['position']*100:.1f}%" for s in seq)
+                sl = ', '.join(f"{gcol(s['color'])} {s['position']*100:.1f}%" for s in seq)
                 return f"conic-gradient(from {ang:.0f}deg at {cx:.1f}% {cy:.1f}%, {sl})"
             if t in ('GRADIENT_RADIAL', 'GRADIENT_DIAMOND'):
                 if len(h) >= 3:
@@ -107,7 +114,7 @@ def gradient_fill(fills, w=None, h_px=None):
                         off = ((p0[0]-sx)*ux + (p0[1]-sy)*uy) / css_len
                         span = seg / css_len
                         sl = ', '.join(
-                            f"{col(s['color'])} {(off + s['position']*span)*100:.1f}%"
+                            f"{gcol(s['color'])} {(off + s['position']*span)*100:.1f}%"
                             for s in stops)
             return f"linear-gradient({ang:.0f}deg, {sl})"
     return None
@@ -313,6 +320,37 @@ def heading_tag(chars, fs):
         return 'h2'
     return 'div'
 
+def radius_css(n):
+    """Figma corner radius -> CSS. Every emit path needs this, including the
+    clipping-frame wrapper: a rounded frame with no fill of its own used to lose
+    its radius entirely and clip its children with square corners (the product
+    screenshots on the manufacturing page)."""
+    if n.get('type') == 'ELLIPSE':
+        return "border-radius:50%;"
+    rcr = n.get('rectangleCornerRadii')
+    if rcr:
+        return f"border-radius:{vw(rcr[0])} {vw(rcr[1])} {vw(rcr[2])} {vw(rcr[3])};"
+    cr = n.get('cornerRadius')
+    return f"border-radius:{vw(cr)};" if cr else ''
+
+def shadow_css(n):
+    """DROP_SHADOW -> box-shadow, INNER_SHADOW -> inset box-shadow. The inset one is
+    not decoration: the design's secondary/ghost buttons have no visible stroke and
+    rely on a 2px inner shadow for their entire outline."""
+    shadows = []
+    for e in n.get('effects', []):
+        if not e.get('visible', True):
+            continue
+        t = e.get('type')
+        if t not in ('DROP_SHADOW', 'INNER_SHADOW'):
+            continue
+        o = e.get('offset', {'x': 0, 'y': 0})
+        parts = f"{vw(o['x'])} {vw(o['y'])} {vw(e.get('radius', 0))}"
+        if e.get('spread'):
+            parts += f" {vw(e['spread'])}"
+        shadows.append(('inset ' if t == 'INNER_SHADOW' else '') + parts + ' ' + col(e['color']))
+    return "box-shadow:" + ','.join(shadows) + ";" if shadows else ''
+
 def box_style(n, left, top, w, h):
     """Return (klass, extra, style) for a box/image node, or None if nothing visible."""
     fills = n.get('fills')
@@ -328,11 +366,8 @@ def box_style(n, left, top, w, h):
         sizing = image_sizing_css(ifill, w, h)
         style0 = (f"position:absolute;left:{vw(left)};top:{vw(top)};width:{vw(w)};height:{vw(h)};"
                   f"background-image:url(/assets/gen/{imgref}.png);{sizing}")
-        cr = n.get('cornerRadius')
-        if n.get('type') == 'ELLIPSE':
-            style0 += "border-radius:50%;"
-        elif cr:
-            style0 += f"border-radius:{vw(cr)};"
+        style0 += radius_css(n)
+        style0 += shadow_css(n)
         bl = blend_css(n, ifill)
         if bl:
             style0 += f"mix-blend-mode:{bl};"
@@ -355,37 +390,13 @@ def box_style(n, left, top, w, h):
         # any gradient must go on `background`; background-color only takes a colour
         prop = 'background' if 'gradient(' in bg else 'background-color'
         style += f"{prop}:{bg};"
-    if n.get('type') == 'ELLIPSE':
-        style += "border-radius:50%;"
-    else:
-        rcr = n.get('rectangleCornerRadii')
-        cr = n.get('cornerRadius')
-        if rcr:
-            style += f"border-radius:{vw(rcr[0])} {vw(rcr[1])} {vw(rcr[2])} {vw(rcr[3])};"
-        elif cr:
-            style += f"border-radius:{vw(cr)};"
+    style += radius_css(n)
     strokes = n.get('strokes')
     sc = solid_fill(strokes)
     if sc:
         sw = n.get('strokeWeight', 1)
         style += f"box-sizing:border-box;border:{vw(sw)} solid {sc};"
-    # DROP_SHADOW -> box-shadow, INNER_SHADOW -> inset box-shadow. The inset one is
-    # not decoration: the design's secondary/ghost buttons have no visible stroke and
-    # rely on a 2px inner shadow for their entire outline.
-    shadows = []
-    for e in n.get('effects', []):
-        if not e.get('visible', True):
-            continue
-        t = e.get('type')
-        if t not in ('DROP_SHADOW', 'INNER_SHADOW'):
-            continue
-        o = e.get('offset', {'x': 0, 'y': 0})
-        parts = f"{vw(o['x'])} {vw(o['y'])} {vw(e.get('radius', 0))}"
-        if e.get('spread'):
-            parts += f" {vw(e['spread'])}"
-        shadows.append(('inset ' if t == 'INNER_SHADOW' else '') + parts + ' ' + col(e['color']))
-    if shadows:
-        style += "box-shadow:" + ','.join(shadows) + ";"
+    style += shadow_css(n)
     bl = blend_css(n)
     if bl:
         style += f"mix-blend-mode:{bl};"
@@ -724,9 +735,10 @@ def walk(n, ox, oy, out, depth=0):
         if r:
             klass, extra, style = r
         else:
+            # No paint of its own, but a rounded clip still has to round its clip.
             klass, extra, style = 'g-b', '', (
                 f"position:absolute;left:{vw(bb['x']-ox)};top:{vw(bb['y']-oy)};"
-                f"width:{vw(bb['width'])};height:{vw(bb['height'])};")
+                f"width:{vw(bb['width'])};height:{vw(bb['height'])};" + radius_css(n))
         out.append(f'<div class="{klass} g-clip"{extra} style="{style}overflow:hidden;">')
         walk_children(n, bb['x'], bb['y'], out, depth)
         out.append('</div>')

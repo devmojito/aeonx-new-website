@@ -1,0 +1,84 @@
+<style id="ax-footalign-css">
+/* no styling of its own -- the alignment is applied to inline `left` values, because the
+   footer is flattened Figma output where every box carries its own absolute left. */
+</style>
+<script>
+/* ---- FOOTER NEWSLETTER: ALIGN TO THE "WHO WE ARE / ABOUT US" COLUMN ----
+   Requested deviation from Figma. In the design the newsletter heading sits ~26px to the
+   right of the footer link columns (and in the flattened page, ~86px), so it reads as
+   almost-but-not-quite aligned. This pulls the heading, the email field and the Subscribe
+   button left as one group until the heading's left edge matches that column.
+
+   Geometry-driven rather than hardcoded: the footer is regenerated from Figma, which
+   renumbers ids and shifts values, so anchoring on the column's measured left keeps
+   working across a re-pull. Applied per layout scope, so the desktop page and the mobile
+   .ax-mob block are each aligned against their own column. */
+(function(){
+  var COL = /^(who we are|about us)$/i;
+  var HEAD = /^get the latest from aeonx/i;
+
+  function num(el, k){
+    var m = (el.getAttribute('style') || '').match(new RegExp(k + ':(-?[0-9.]+)vw'));
+    return m ? parseFloat(m[1]) : null;
+  }
+  function setLeft(el, v){
+    var s = el.getAttribute('style') || '';
+    el.setAttribute('style', s.replace(/left:-?[0-9.]+vw/, 'left:' + v.toFixed(4) + 'vw'));
+  }
+
+  function align(scope){
+    if (!scope || scope.dataset.axFootalign) return;
+    var texts = [].slice.call(scope.querySelectorAll('.g-t'));
+    var head = null, i;
+    for (i = 0; i < texts.length; i++){
+      if (HEAD.test((texts[i].textContent || '').trim())) { head = texts[i]; break; }
+    }
+    if (!head) return;
+    var hL = num(head, 'left'), hT = num(head, 'top');
+    if (hL === null || hT === null) return;
+
+    /* the column heading is the nearest "Who we are"/"About us" ABOVE the newsletter row */
+    var col = null, best = Infinity;
+    for (i = 0; i < texts.length; i++){
+      var t = texts[i];
+      if (!COL.test((t.textContent || '').trim())) continue;
+      var cT = num(t, 'top'), cL = num(t, 'left');
+      if (cT === null || cL === null || cT >= hT) continue;
+      if (hT - cT < best) { best = hT - cT; col = cL; }
+    }
+    if (col === null) return;
+
+    var shift = col - hL;
+    if (Math.abs(shift) < 0.01) { scope.dataset.axFootalign = '1'; return; }
+
+    /* the group = the heading plus every SIBLING on the same row to its right (the email
+       field and the Subscribe pill). The enclosing band sits ~2vw higher, so a tight row
+       tolerance keeps it out -- moving the band would drag the whole strip. */
+    var group = [head];
+    var sibs = head.parentElement ? head.parentElement.children : [];
+    for (i = 0; i < sibs.length; i++){
+      var e = sibs[i];
+      if (e === head) continue;
+      var eT = num(e, 'top'), eL = num(e, 'left');
+      if (eT === null || eL === null) continue;
+      if (Math.abs(eT - hT) <= 1.5 && eL >= hL - 0.01) group.push(e);
+    }
+    for (i = 0; i < group.length; i++){
+      var g = group[i], gl = num(g, 'left');
+      if (gl !== null) setLeft(g, gl + shift);
+    }
+    scope.dataset.axFootalign = '1';
+  }
+
+  function init(){
+    /* the .ax-mob block is not guaranteed to precede this script -- resolve lazily */
+    var d = document.querySelector('main.ax-page');
+    if (d && d.closest && d.closest('.ax-mob')) d = null;
+    var m = document.querySelector('.ax-mob');
+    if (d) align(d);
+    if (m) align(m.querySelector('main.ax-page') || m);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>

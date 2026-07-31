@@ -1,0 +1,518 @@
+<style id="ax-hover-css">
+/* ---- HOVER / FOCUS AFFORDANCES ----------------------------------------------
+   The layout is absolutely positioned and pixel-locked, and Figma exports a card
+   as a FLAT run of siblings (the bordered box, then its heading, body and pill,
+   all separate absolutely-positioned nodes). So :hover on the box cannot reach
+   the text, and CSS alone cannot lift a "card" that does not exist as an element.
+   The script below groups the siblings geometrically and toggles .ax-hv-on on
+   every member at once, which is why the whole tile appears to move together.
+
+   HARD RULE: nothing in here may change box metrics. transform / box-shadow /
+   filter / colour / background only -- no width, height, margin, padding,
+   border-width or font-size, so a hover can never reflow a neighbour.
+   (background-size counts as paint: it sizes the background image inside the box,
+   not the box.) */
+
+.ax-hv-m{transition:transform .22s cubic-bezier(.22,.61,.36,1),
+                    box-shadow .22s ease, filter .22s ease,
+                    border-color .22s ease, opacity .22s ease,
+                    color .18s ease,
+                    background-size .38s cubic-bezier(.22,.61,.36,1)}
+
+/* --ax-bt preserves any transform the element already carried (set by the
+   script) so the lift composes with it instead of wiping it. */
+.ax-hv-tile.ax-hv-on{transform:translateY(-0.2083vw) var(--ax-bt,translateZ(0))}
+/* A CTA inside a card is a member of the card group AND its own button group. Letting
+   both lifts apply made the pill drift 2px out of its own card on card hover. The card
+   owns the lift; the pill only moves when it is itself hovered. */
+.ax-hv-tile.ax-hv-btn.ax-hv-on:not(.ax-hv-selfon){transform:var(--ax-bt,translateZ(0))}
+.ax-hv-btn.ax-hv-selfon {transform:translateY(-0.1042vw) var(--ax-bt,translateZ(0))}
+
+/* tile: soft lift + brand-tinted hairline drawn as a shadow ring, so it shows
+   even when a coincident white fill box paints over the real border */
+.ax-hv-tileskin.ax-hv-on{
+  box-shadow:0 0 0 0.0521vw rgba(223,63,23,.45),
+             0 0.4167vw 1.0417vw rgba(35,39,46,.10);
+  border-color:rgba(223,63,23,.45)}
+
+/* ---- BUTTONS -------------------------------------------------------------
+   Both pill styles share one gesture: a wash sweeps in from the LEFT EDGE, the
+   pill lifts 2px, and a trailing arrow leans the way the button leads. The wash
+   is background-size 0 -> 100% on a flat gradient, i.e. pure paint inside the
+   border box: it cannot reflow anything and it is clipped by the pill's own
+   border-radius, so nothing bleeds out (which is why the old 20vw inset-shadow
+   tint needed a radius guard -- that hack is gone).
+   Filled pills lighten and warm; outlined pills fill with a brand wash and take
+   a brand hairline. */
+.ax-hv-fill,.ax-hv-out{background-repeat:no-repeat;background-position:left center;
+  background-size:0 100%}
+.ax-hv-fill{background-image:linear-gradient(90deg,rgba(255,255,255,.20),rgba(255,255,255,.20))}
+.ax-hv-out {background-image:linear-gradient(90deg,rgba(223,63,23,.10),rgba(223,63,23,.10))}
+
+.ax-hv-fill.ax-hv-selfon{background-size:100% 100%;
+  box-shadow:0 0.2083vw 0.5729vw rgba(176,45,12,.28)}
+/* the hairline is drawn as a shadow ring, not border-color: Figma writes the border
+   into the element's INLINE style shorthand, which a class can never outrank */
+.ax-hv-out.ax-hv-selfon{background-size:100% 100%;
+  box-shadow:0 0 0 0.0521vw rgba(223,63,23,.55),
+             0 0.1042vw 0.3125vw rgba(35,39,46,.10)}
+/* bare text link: no box to wash, so the label itself goes brand */
+.ax-hv-txt.ax-hv-selfon{color:rgb(223,63,23)!important}
+/* A trailing chevron/arrow leans the way the button leads. Figma places it either as
+   a flat SIBLING of the pill or as a CHILD of a g-clip pill, and the two need
+   different rules: a sibling is a group member and carries the 2px lift itself, a
+   child already inherits the lift from the pill it sits in. */
+.ax-hv-arrow{--ax-ar:0.1823vw;transition:transform .26s cubic-bezier(.22,.61,.36,1)}
+.ax-hv-btn.ax-hv-arrow.ax-hv-selfon{           /* sibling: slide + its own lift */
+  transform:translate(var(--ax-ar),-0.1042vw) var(--ax-bt,translateZ(0))}
+.ax-hv-selfon .ax-hv-arrow{                    /* child: slide only */
+  transform:translateX(var(--ax-ar)) var(--ax-bt,translateZ(0))}
+/* Grey step badges (01 / 02 / 03) take the brand colour with their tile. */
+.ax-hv-badge.ax-hv-on{background-color:rgb(223,63,23)!important}
+.ax-hv-badgetx.ax-hv-on{color:rgb(255,255,255)!important}
+
+/* Only a group whose skin really navigates gets the hand. An Explore pill with no
+   destination still lifts with its card, but must not claim to be clickable. */
+.ax-hv-clk{cursor:pointer}
+
+/* keyboard parity. Not inside the reduced-motion or hover guards -- a focus ring
+   is an accessibility requirement, not decoration. */
+.ax-hv-f:focus-visible,[data-cta]:focus-visible{
+  outline:0.1042vw solid rgb(223,63,23);outline-offset:0.1563vw}
+
+/* Motion is dropped; the colour/wash state change stays, because it is the only
+   thing telling a reduced-motion user which control is under the pointer. */
+@media (prefers-reduced-motion: reduce){
+  .ax-hv-m{transition:none!important}
+  /* zero the slide distance rather than forcing transform:none -- a child arrow can
+     carry a baked rotation in its inline transform, and !important would strip it */
+  .ax-hv-arrow{--ax-ar:0;transition:none!important}
+  .ax-hv-tile.ax-hv-on,.ax-hv-btn.ax-hv-selfon{transform:none!important}
+}
+</style>
+<script>
+/* ---- CONTEXTUAL "EXPLORE" PILLS + SITE-WIDE TILE/BUTTON HOVER ---- */
+(function(){
+  if (window.__axHover) return; window.__axHover = 1;
+
+  /* ---------- tuning ---------- */
+  var TILE_MIN_W = 12, TILE_MAX_W = 46;      /* vw -- below: chips, above: bands */
+  var TILE_MIN_H = 8,  TILE_MAX_H = 36;
+  var TOL = 3;                               /* px slack: offset* is integer-rounded */
+  var STOP = {and:1,the:1,our:1,for:1,with:1,you:1,your:1,all:1,more:1,new:1,see:1,
+              view:1,read:1,learn:1,open:1,meet:1,book:1,explore:1,home:1,page:1,
+              tier:1,aeonx:1,digital:1,here:1,now:1,how:1,why:1,what:1,who:1};
+
+  function qsa(s, r){ return [].slice.call((r || document).querySelectorAll(s)); }
+  function norm(s){ return (s || '').replace(/[→ ]/g,' ').replace(/\s+/g,' ').trim(); }
+  function toks(s){
+    var o = {};
+    (s || '').toLowerCase().split(/[^a-z0-9]+/).forEach(function(w){
+      if (w.length >= 3 && !STOP[w]) o[w] = 1;
+    });
+    return o;
+  }
+
+  /* Measure with offset*, NOT getBoundingClientRect: the scroll-reveal starts
+     elements at translateY(1.4vw) and this very script adds a hover transform,
+     both of which corrupt a rect-based containment test. offset* ignores
+     transforms and scroll entirely. Hidden blocks (the desktop page on a phone,
+     .ax-mob on desktop) measure 0 and drop out on their own. */
+  function box(el){
+    var x = 0, y = 0, n = el;
+    while (n) { x += n.offsetLeft; y += n.offsetTop; n = n.offsetParent; }
+    return { el:el, l:x, t:y, w:el.offsetWidth, h:el.offsetHeight,
+             r:x + el.offsetWidth, b:y + el.offsetHeight,
+             a:el.offsetWidth * el.offsetHeight };
+  }
+  function inside(outer, inner){
+    return inner.l >= outer.l - TOL && inner.r <= outer.r + TOL &&
+           inner.t >= outer.t - TOL && inner.b <= outer.b + TOL;
+  }
+  function chrome(el){    /* nav, footer, mobile nav, search overlay: already styled */
+    return !!(el.closest('header') || el.closest('footer') || el.closest('.ax-footer') ||
+              el.closest('.ax-mnav') || el.closest('.ax-search'));
+  }
+  function styled(el){ return el.getAttribute('style') || ''; }
+
+  /* =========================================================================
+     PART 1 -- a bare "Explore" has no destination of its own. Resolve it from
+     the card it sits in.
+     ========================================================================= */
+
+  /* Route table = every same-origin anchor already on the page (the chrome
+     builds the site's whole nav from real <a href="/...">, so this covers every
+     page _build_all.py emits without duplicating that list here). Tokens come
+     from the URL slug AND the link text, so both "textiles-apparel" and
+     "Textiles & Apparel" match a heading that says TEXTILES. */
+  function buildRoutes(){
+    var by = {}, out = [];
+    qsa('a[href^="/"]').forEach(function(a){
+      var h = a.getAttribute('href');
+      if (!h || /\.(png|jpe?g|svg|ico|webp|pdf|css|js)$/i.test(h)) return;
+      var seg = h.replace(/[?#].*$/,'').replace(/\/+$/,'').split('/').pop();
+      if (!seg) return;                                     /* "/" -- home */
+      var key = h.replace(/\/+$/,'');
+      var r = by[key];
+      if (!r) { r = by[key] = { href:h, t:{} }; out.push(r); }
+      var add = function(s){ var o = toks(s); for (var k in o) r.t[k] = 1; };
+      add(seg.replace(/-/g,' '));
+      var txt = norm(a.textContent);
+      if (txt && txt.length <= 40) add(txt);
+    });
+    return out;
+  }
+
+  /* Best route by shared-token count. A tie means we genuinely do not know, and
+     a wrong destination is worse than an inert pill -- so return null. */
+  function matchRoute(routes, heading){
+    var h = toks(heading), best = null, tie = false;
+    routes.forEach(function(r){
+      var n = 0, k;
+      for (k in h) if (r.t[k]) n++;
+      if (!n) return;
+      if (!best || n > best.n) { best = { r:r, n:n }; tie = false; }
+      else if (n === best.n) tie = true;
+    });
+    return (best && !tie) ? best.r.href : null;
+  }
+
+  function fsize(el){ return parseFloat(getComputedStyle(el).fontSize) || 0; }
+  function fweight(el){ return parseInt(getComputedStyle(el).fontWeight, 10) || 400; }
+
+  /* The card is the smallest box that contains the pill AND some other text.
+     Heading = the biggest type in that card (ties broken by weight), which
+     skips the small orange eyebrow ("SAP AMS · AXIOM") and lands on
+     "MANUFACTURING" / "TEXTILES · MANUFEX". */
+  function headingFor(pill, boxes, texts, pills){
+    var cards = boxes.filter(function(b){
+      if (b.el === pill.el || !b.w || !inside(b, pill)) return false;
+      if (!(b.a > pill.a * 2 && b.a < pill.a * 600)) return false;
+      /* A box that swallows MORE THAN ONE "Explore" is a section, not a card. Without
+         this the homepage industries strip (six cards, six pills) resolved all six to
+         whichever heading happened to be biggest in the shared container, so every card
+         pointed at the same page. */
+      if (pills && pills.length > 1) {
+        var n = 0;
+        for (var k = 0; k < pills.length; k++) if (inside(b, pills[k])) n++;
+        if (n > 1) return false;
+      }
+      return true;
+    }).sort(function(x, y){ return x.a - y.a; });
+
+    for (var i = 0; i < cards.length; i++) {
+      var own = texts.filter(function(t){
+        return inside(cards[i], t) && !inside(pill, t) && norm(t.el.textContent);
+      });
+      if (!own.length) continue;
+      own.sort(function(x, y){
+        var d = fsize(y.el) - fsize(x.el);
+        return d || (fweight(y.el) - fweight(x.el));
+      });
+      return { card:cards[i], head:own[0].el };
+    }
+
+    /* Fallback: some cards (the homepage industries strip) have no box of their own, so
+       there is nothing to search inside. Take the biggest text sitting directly ABOVE the
+       pill in its own column -- that is the card heading as a reader sees it. Bounded so
+       it cannot reach up into a section title, and rejected if another Explore is nearer
+       to it than we are, which would mean we are stealing a neighbour's heading. */
+    var UP = 260, best = null;
+    texts.forEach(function(t){
+      if (!t.w || t.el === pill.el) return;
+      if (t.b > pill.t + 2) return;                       /* must sit ABOVE the pill */
+      if (t.b < pill.t - UP) return;                      /* but not a section away */
+      if (t.l > pill.r - 4 || t.r < pill.l + 4) return;   /* same column as the pill */
+      /* A CARD heading is as narrow as its column; a SECTION title spans the page. */
+      if (t.w > (window.innerWidth || 1920) * 0.4) return;
+      if (fsize(t.el) < 15) return;                       /* body copy is not a heading */
+      if (!norm(t.el.textContent)) return;
+      if (!best || fsize(t.el) > fsize(best.el) ||
+          (fsize(t.el) === fsize(best.el) && t.t > best.t)) best = t;
+    });
+    /* if another Explore sits between our candidate and us, that heading is its card */
+    if (best && pills && pills.length > 1) {
+      for (var j2 = 0; j2 < pills.length; j2++) {
+        var q = pills[j2];
+        if (q.el === pill.el) continue;
+        if (q.t > best.b && q.b < pill.t && q.l < best.r && q.r > best.l) return null;
+      }
+    }
+    return best ? { card:pill, head:best.el } : null;
+  }
+
+  function makeLink(el, href){
+    if (el.dataset.axcta) return;
+    el.dataset.axcta = '1';
+    el.setAttribute('role', 'link');
+    el.setAttribute('tabindex', '0');
+    el.classList.add('ax-hv-f');
+    var go = function(){ location.href = href; };
+    el.addEventListener('click', go);
+    el.addEventListener('keydown', function(e){
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') { e.preventDefault(); go(); }
+    });
+  }
+
+  var report = [];
+  function wireExplore(boxes, texts){
+    /* every bare "Explore" on the page, so headingFor can reject shared containers */
+    var pills = texts.filter(function(t){
+      return norm(t.el.textContent).toLowerCase() === 'explore';
+    });
+    texts.forEach(function(t){
+      var n = norm(t.el.textContent).toLowerCase();
+      if (n !== 'explore') return;
+      /* the chrome's CTA linkifier marks whatever it already owns */
+      if (t.el.dataset.cta || t.el.closest('[data-cta]') || t.el.closest('a')) return;
+
+      /* the clickable thing is the pill the label sits in, not the label */
+      var pill = null;
+      boxes.forEach(function(b){
+        if (!b.w || !inside(b, t) || b.a > t.a * 12) return;
+        if (!pill || b.a < pill.a) pill = b;
+      });
+      if (!pill) return;
+      if (pill.el.dataset.cta) return;
+      /* Mark it BEFORE we know whether a route exists. buildButtons only looks at
+         things that are already linkified, so an Explore pill with no destination
+         (INDUSTRIAL · SUPPLIERX -- there is no /industries/industrial/) used to be
+         the one pill in its row with no hover at all. Hover affordance must not
+         depend on having somewhere to go. */
+      pill.el.dataset.axpill = '1';
+
+      var found = headingFor(pill, boxes, texts, pills);
+      var head  = found ? norm(found.head.textContent) : '';
+      var href  = found ? matchRoute(ROUTES, head) : null;
+      report.push({ heading: head || '(no heading found)', href: href });
+      if (!href) return;                    /* inert beats silently going nowhere */
+      makeLink(pill.el, href);
+      makeLink(t.el, href);
+      t.el.style.cursor = 'pointer';
+    });
+  }
+
+  /* =========================================================================
+     PART 2 -- hover groups
+     ========================================================================= */
+
+  /* Members of a group = everything drawn inside its rect. Descendants of
+     another member are dropped, or a nested element would get the lift twice. */
+  function membersOf(rect, all, skip){
+    var m = all.filter(function(e){
+      return e.w && e.el !== skip && inside(rect, e);
+    });
+    return m.filter(function(e){
+      return !m.some(function(o){ return o !== e && o.el.contains(e.el); });
+    });
+  }
+
+  function arm(g){
+    g.members.forEach(function(e){
+      e.el.classList.add('ax-hv-m', g.kind === 'tile' ? 'ax-hv-tile' : 'ax-hv-btn');
+      if (g.clk) e.el.classList.add('ax-hv-clk');
+      var tf = e.el.style.transform;
+      if (tf) e.el.style.setProperty('--ax-bt', tf);
+      MAP.set(e.el, g);
+    });
+    g.skin.el.classList.add(g.skinClass);
+    MAP.set(g.skin.el, g);
+  }
+  function setOn(g, on){
+    if (!g || g.on === on) return;
+    g.on = on;
+    if (g.parent) setOn(g.parent, on);   /* a pill inside a tile keeps the tile lifted */
+    /* `ax-hv-on` = this group or a child of it is hovered (the card lift).
+       `ax-hv-selfon` = THIS button is the thing under the pointer. Button skins key off
+       the latter, so hovering anywhere on a card no longer fires its CTA's full
+       treatment (wash, ring, arrow slide). */
+    g.members.forEach(function(e){
+      e.el.classList.toggle('ax-hv-on', on);
+      if (g.kind === 'btn') e.el.classList.toggle('ax-hv-selfon', on);
+    });
+    g.skin.el.classList.toggle('ax-hv-on', on);
+    if (g.kind === 'btn') g.skin.el.classList.toggle('ax-hv-selfon', on);
+  }
+
+  var MAP = new WeakMap(), GROUPS = [], ROUTES = [], current = null;
+
+  function groupFor(node){
+    while (node && node.nodeType === 1) {
+      var g = MAP.get(node);
+      if (g) return g;
+      node = node.parentElement;
+    }
+    return null;
+  }
+
+  function buildTiles(root, boxes, texts){
+    var U = (root.clientWidth || innerWidth) / 100;
+    var cand = boxes.filter(function(b){
+      var el = b.el, st = styled(el);
+      if (!b.w || chrome(el) || el.closest('a') || el.dataset.cta) return false;
+      if (!(/(^|;)\s*border:/.test(st) || /background-color:/.test(st))) return false;
+      if (b.w < TILE_MIN_W * U || b.w > TILE_MAX_W * U) return false;
+      if (b.h < TILE_MIN_H * U || b.h > TILE_MAX_H * U) return false;
+      var tin = texts.filter(function(t){ return t.w && inside(b, t); });
+      if (tin.length < 2) return false;
+      return tin.some(function(t){ return fweight(t.el) >= 600; });   /* has a heading */
+    });
+    /* a wrapper that swallows another candidate is a band, not a card */
+    cand = cand.filter(function(b){
+      return !cand.some(function(o){
+        return o !== b && inside(b, o) && o.a < b.a * 0.9;
+      });
+    });
+    /* Figma stacks a fill box and a border box on the identical rect: one tile */
+    var seen = {};
+    cand.forEach(function(b){
+      var k = [b.l, b.t, b.w, b.h].map(Math.round).join(':');
+      (seen[k] || (seen[k] = [])).push(b);
+    });
+    Object.keys(seen).forEach(function(k){
+      var stack = seen[k];
+      var skin = stack[stack.length - 1];          /* topmost paints the ring */
+      var mem = membersOf(skin, boxes.concat(texts, OTHER), null);
+      /* a step badge: a small grey chip holding a 1-3 char number, e.g. 01 / 02 / 03 */
+      mem.forEach(function(m){
+        var ms = styled(m.el);
+        if (!/background-color:\s*rgb\(2[01][0-9]/.test(ms)) return;
+        var LIM = (window.innerWidth || 1920) * 0.04;   /* box() is in PX, not vw */
+        if (m.w > LIM || m.h > LIM) return;                 /* chips only */
+        var tx = (m.el.textContent || '').trim();
+        if (tx && !/^\d{1,3}$/.test(tx)) return;
+        m.el.classList.add('ax-hv-badge');
+        mem.forEach(function(t){
+          if (t.el === m.el) return;
+          if (!inside(m, t)) return;
+          if (/^\d{1,3}$/.test((t.el.textContent || '').trim())) t.el.classList.add('ax-hv-badgetx');
+        });
+      });
+      GROUPS.push({ kind:'tile', skin:skin, skinClass:'ax-hv-tileskin',
+                    members:mem, on:false });
+    });
+  }
+
+  function buildButtons(root, boxes, texts){
+    var U = (root.clientWidth || innerWidth) / 100;
+    var hits = qsa('[data-cta],[data-axcta],[data-axpill],[role="link"],a,button', root)
+      .filter(function(el){ return !chrome(el) && el.offsetWidth; })
+      .map(box)
+      .sort(function(x, y){ return y.a - x.a; });     /* skins first */
+
+    var skins = [];
+    hits.forEach(function(h){
+      var host = skins.filter(function(s){
+        return inside(s, h) && s.a <= h.a * 10;
+      })[0];
+      if (host) return;                               /* label of an existing pill */
+      skins.push(h);
+    });
+
+    skins.forEach(function(s){
+      var st = styled(s.el);
+      /* Read the radius from the COMPUTED style. The old test regexed the style
+         attribute for [1-9.] straight after "border-radius:", which rejected every
+         real pill in this design -- they are all 0.4167vw, and "0" is not in that
+         class -- so the outlined branch was unreachable and every pill fell through
+         to the bare-text one. */
+      var rad = parseFloat(getComputedStyle(s.el).borderTopLeftRadius) || 0;
+      /* A CAPSULE that is wider than it is tall -- corner radius at least half its own
+         height -- is Figma's BADGE component, not a CTA: "SAP AMS · AXIOM",
+         "Why we exist", "SAP Gold Partner". The chrome's linkifier still turns some of
+         them into links (LINKMAP matches the mega-menu entry of the same name), and
+         this fragment then dressed them as filled buttons -- which is exactly where the
+         drop shadow on "SAP AMS · AXIOM" came from. Measured across all 36 pages: every
+         real CTA here is a rounded rect (radius <= h/3); every badge is a capsule. The
+         wider-than-tall test keeps round icon buttons (prev/next) on the button path. */
+      if (rad >= s.h / 2 - 1 && s.w > s.h * 1.6) return;
+      var filled = /background-color:\s*rgb\((?!255,\s*255,\s*255)/.test(st);
+      /* The wash is clipped to the border box, so it is only safe on the element that IS
+         the visible pill: on a square-cornered wrapper it paints a full rectangle that
+         reads as colour bleeding out of the button. */
+      var boxy = (/(^|;)\s*border:/.test(st) || /background-color:/.test(st)) && rad > 0;
+      var cls = filled ? 'ax-hv-fill' : (boxy ? 'ax-hv-out' : 'ax-hv-txt');
+      var mem = membersOf(s, boxes.concat(texts, OTHER), null);
+      /* A small vector in the right half of the pill is its trailing arrow. It can be a
+         flat sibling OR a child of a g-clip pill, and membersOf drops descendants of
+         other members, so the children have to be collected separately. */
+      mem.concat(qsa('.g-vec', s.el).map(box)).forEach(function(m){
+        if (m.el === s.el || !m.el.classList.contains('g-vec')) return;
+        if (m.w > 2 * U || m.h > 2 * U || m.l < s.l + s.w * 0.5) return;
+        m.el.classList.add('ax-hv-arrow');
+      });
+      s.el.classList.add('ax-hv-f');
+      GROUPS.push({ kind:'btn', skin:s, skinClass:cls, members:mem, on:false,
+                    clk:!!(s.el.dataset.cta || s.el.dataset.axcta ||
+                           s.el.getAttribute('role') === 'link' ||
+                           s.el.tagName === 'A' || s.el.tagName === 'BUTTON') });
+    });
+  }
+
+  var OTHER = [];
+
+  function scan(){
+    GROUPS.forEach(function(g){ setOn(g, false); });
+    GROUPS = []; MAP = new WeakMap(); current = null;
+    ROUTES = buildRoutes();
+    report = [];
+
+    /* Part 1 runs over EVERY page block including .ax-mob -- a phone still has
+       to be able to tap Explore. Only one block is measurable at a time
+       (the other is display:none), so a resize re-scan picks up the other. */
+    var allBoxes = qsa('.g-b').filter(function(e){ return e.offsetWidth; }).map(box);
+    var allTexts = qsa('.g-t').filter(function(e){ return e.offsetWidth; }).map(box);
+    wireExplore(allBoxes, allTexts);
+
+    /* Part 2 is desktop-only: .ax-mob is a touch layout, there is no hover. */
+    var roots = qsa('main.ax-page').filter(function(m){ return !m.closest('.ax-mob') && m.offsetWidth; });
+    roots.forEach(function(root){
+      var boxes = qsa('.g-b', root).filter(function(e){ return e.offsetWidth; }).map(box);
+      var texts = qsa('.g-t', root).filter(function(e){ return e.offsetWidth; }).map(box);
+      OTHER = qsa('.g-img,.g-vec,img', root).filter(function(e){ return e.offsetWidth; }).map(box);
+      buildTiles(root, boxes, texts);
+      buildButtons(root, boxes, texts);
+      OTHER = [];
+    });
+    /* a button sitting inside a tile inherits it, so hovering the pill does not
+       drop the card back down */
+    GROUPS.forEach(function(g){
+      if (g.kind !== 'btn') return;
+      GROUPS.forEach(function(t){
+        if (t.kind === 'tile' && inside(t.skin, g.skin) &&
+            (!g.parent || t.skin.a < g.parent.skin.a)) g.parent = t;
+      });
+    });
+    GROUPS.forEach(arm);
+    window.__axhv = { tiles:GROUPS.filter(function(g){ return g.kind === 'tile'; }).length,
+                      buttons:GROUPS.filter(function(g){ return g.kind === 'btn'; }).length,
+                      explore:report };
+  }
+
+  function listen(){
+    if (matchMedia('(hover:hover) and (pointer:fine)').matches) {
+      document.addEventListener('mouseover', function(e){
+        var g = groupFor(e.target);
+        if (g === current) return;
+        setOn(current, false); current = g; setOn(g, true);
+      });
+      document.addEventListener('mouseleave', function(){ setOn(current, false); current = null; }, true);
+    }
+    document.addEventListener('focusin',  function(e){ setOn(groupFor(e.target), true); });
+    document.addEventListener('focusout', function(e){ setOn(groupFor(e.target), false); });
+
+    var w = innerWidth, t;
+    addEventListener('resize', function(){
+      if (innerWidth === w) return;
+      w = innerWidth;
+      clearTimeout(t); t = setTimeout(scan, 250);
+    });
+  }
+
+  function boot(){ scan(); listen(); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+  /* the .ax-mob block and the chrome's own CTA pass can land after us */
+  addEventListener('load', function(){ setTimeout(scan, 60); });
+})();
+</script>

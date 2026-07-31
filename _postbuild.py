@@ -23,7 +23,24 @@ CTAWASH = open(os.path.join(_HERE, '_ctawash.html'), encoding='utf-8').read()
 CURSOR = open(os.path.join(_HERE, '_cursor.html'), encoding='utf-8').read()
 NAVLOAD = open(os.path.join(_HERE, '_navload.html'), encoding='utf-8').read()
 COUNTERS = open(os.path.join(_HERE, '_counters.html'), encoding='utf-8').read()
+FOOTALIGN = open(os.path.join(_HERE, '_footalign.html'), encoding='utf-8').read()
+HOVER = open(os.path.join(_HERE, '_hover.html'), encoding='utf-8').read()
+SCROLLROW = open(os.path.join(_HERE, '_scrollrow.html'), encoding='utf-8').read()
 MOBFX = open(os.path.join(_HERE, '_mobfx.html'), encoding='utf-8').read()
+
+# Page-scoped fragments. These are big (the contact-form one carries two inert <template>
+# panels) and each matches exactly ONE page, so injecting them site-wide would bloat 30+
+# files with markup that can never fire. Injected after the site-wide fragments, which is
+# also after the .ax-mob block _mobile.py anchors on -- but every one of them still
+# resolves its DOM lazily, because that ordering has broken before.
+SCOPED = [
+    # (path suffix, sentinel already-injected marker, fragment file)
+    ('who-we-are/culture/index.html', 'ax-recogfx-css', '_recogfx.html'),
+    ('contact-us/index.html',         'ax-maptabs-css', '_maptabs.html'),
+    ('contact-us/index.html',         'ax-ftabs-css',   '_formtabs.html'),
+]
+SCOPED = [(sfx, sent, open(os.path.join(_HERE, fn), encoding='utf-8').read())
+          for sfx, sent, fn in SCOPED]
 # Preloader is three pieces on purpose: the CSS + opt-in decision must run before first
 # paint (head), the overlay markup must exist in the HTML so there is no flash of
 # content before it appears (top of body), and the driver goes last (end of body).
@@ -82,7 +99,7 @@ def fix_gptw_sizing(s):
     return re.sub(r'style="([^"]*)"', sub, s)
 
 def main():
-    stats = {'gptw': 0, 'mobnav': 0, 'ctawash': 0, 'burst': 0, 'cursor': 0, 'preload': 0, 'navload': 0, 'counters': 0, 'mobfx': 0}
+    stats = {'gptw': 0, 'mobnav': 0, 'ctawash': 0, 'burst': 0, 'cursor': 0, 'preload': 0, 'navload': 0, 'counters': 0, 'mobfx': 0, 'scoped': 0, 'footalign': 0, 'hover': 0, 'scrollrow': 0}
     bids = burst_ids()
     for f in glob.glob('**/index.html', recursive=True) + ['_chrome.html']:
         try:
@@ -99,6 +116,15 @@ def main():
         if 'ax-mobfx-css' not in s and '</body>' in s:
             s = s.replace('</body>', MOBFX + '\n</body>', 1)
             stats['mobfx'] += 1
+        if 'ax-scrollrow-css' not in s and '</body>' in s:
+            s = s.replace('</body>', SCROLLROW + '\n</body>', 1)
+            stats['scrollrow'] = stats.get('scrollrow', 0) + 1
+        if 'ax-hover-css' not in s and '</body>' in s:
+            s = s.replace('</body>', HOVER + '\n</body>', 1)
+            stats['hover'] = stats.get('hover', 0) + 1
+        if 'ax-footalign-css' not in s and '</body>' in s:
+            s = s.replace('</body>', FOOTALIGN + '\n</body>', 1)
+            stats['footalign'] = stats.get('footalign', 0) + 1
         if 'STAT COUNTERS' not in s and '</body>' in s:
             s = s.replace('</body>', COUNTERS + '\n</body>', 1)
             stats['counters'] += 1
@@ -110,6 +136,10 @@ def main():
             s = s.replace('<body>', '<body>\n' + PRE_BODY, 1)
             s = s.replace('</body>', PRE_JS + '\n</body>', 1)
             stats['preload'] += 1
+        for sfx, sent, frag in SCOPED:
+            if f.replace(os.sep, '/').endswith(sfx) and sent not in s and '</body>' in s:
+                s = s.replace('</body>', frag + '\n</body>', 1)
+                stats['scoped'] += 1
         if GPTW_RAW in s:
             s = s.replace(GPTW_RAW, GPTW_FIX)
             s = fix_gptw_sizing(s)
@@ -128,7 +158,9 @@ def main():
           f"cta-wash {stats['ctawash']}, hero-burst-blur {stats['burst']}, "
           f"cursor {stats['cursor']}, preloader {stats['preload']}, "
           f"nav-loader {stats['navload']}, counters {stats['counters']}, "
-          f"mobile-fx {stats['mobfx']} files")
+          f"mobile-fx {stats['mobfx']}, page-scoped {stats['scoped']}, "
+          f"footer-align {stats['footalign']}, hover {stats['hover']}, "
+          f"scroll-rows {stats['scrollrow']} files")
 
 if __name__ == '__main__':
     main()

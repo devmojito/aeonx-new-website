@@ -138,7 +138,15 @@ img{border:0}
   transition:opacity .16s ease,visibility 0s linear .16s}
 .ax-mm.is-open{visibility:visible;opacity:1;pointer-events:auto;
   transition:opacity .12s ease,visibility 0s}
+/* overflow:hidden does double duty: it clips the height morph AND it clips the swap
+   slide, so content translated sideways can never widen the document or flash a
+   horizontal scrollbar mid-tween. Do not remove it. */
 .ax-mm2__panel{overflow:hidden;will-change:height}
+/* During a swap the two panels overlap full-bleed, so cross-fading them leaves ~0.16s of
+   two half-opaque menus stacked -- which reads as a flash, not a transition. Kill the
+   opacity tween for the swap: the outgoing panel is replaced instantly and the only motion
+   is the incoming panel's height morph plus its directional slide-in. */
+html.ax-mm-swapping .ax-mm{transition:none!important}
 .ax-nav__chev{transition:transform .2s cubic-bezier(.22,.68,.28,1)}
 .ax-nav__link.is-open .ax-nav__chev{transform:rotate(180deg)}
 /* No-JS / no-GSAP fallback: without the timeline the panel must still be usable. */
@@ -160,12 +168,50 @@ document.addEventListener('DOMContentLoaded',function(){
   var panels=[].slice.call(document.querySelectorAll('.ax-mm'));
   if(!panels.length) return;
 
+  /* DIRECTION is taken from the nav link ORDER, never from the pointer, so a keyboard
+     tab from "Who we are" to "What we do" reads exactly like a mouse sweep: moving
+     rightwards along the nav brings the incoming content in from the right, moving back
+     brings it in from the left. */
+  var ORDER={};
+  [].slice.call(document.querySelectorAll('.ax-nav__link[data-menu]')).forEach(function(a,i){
+    ORDER[a.getAttribute('data-menu')]=i;
+  });
+  function navIndex(el){
+    var k=el.getAttribute('data-menu');
+    return (k&&ORDER[k]!=null)?ORDER[k]:panels.indexOf(el);
+  }
+  /* Slide distance in px. Clipped by .ax-mm2__panel{overflow:hidden} (see the CSS above),
+     so it cannot overflow the viewport however wide the panel is. */
+  function slideDist(){
+    return Math.max(32,Math.round(Math.min(window.innerWidth,1920)*0.035));
+  }
+
+  /* The panel that currently owns the open state.
+     WHY A SHARED POINTER AND NOT CALLBACK ORDER: the nav's open() strips `is-open` from
+     the old panel and puts it on the new one inside ONE task, so both MutationObserver
+     callbacks land in the same microtask checkpoint -- and they are delivered in observer
+     CREATION order, i.e. DOM order, not outgoing-then-incoming. Verified in this browser:
+     going forwards you get `a:off | b:on`, going backwards you get `a:on | b:off`. The
+     previous version read the outgoing panel's height in the outgoing callback, so every
+     RIGHT-TO-LEFT swap ran before that height existed, fell back to 0, and replayed the
+     whole grow-from-nav open -- which is the collapse that kept reading as abrupt.
+     Resolving the swap from this pointer instead works in either callback order: whoever
+     opens finds its predecessor here, measures it, and takes over. */
+  var CUR=null, swapClr=null;
+  function markSwapping(){
+    document.documentElement.classList.add('ax-mm-swapping');
+    clearTimeout(swapClr);
+    swapClr=setTimeout(function(){
+      document.documentElement.classList.remove('ax-mm-swapping');
+    },460);
+  }
+
   panels.forEach(function(p){
     var panel=p.querySelector('.ax-mm2__panel');
     if(!panel) return;
     var cards=[].slice.call(p.querySelectorAll('.ax-mm2__card,.ax-mm2__rail'));
     p.classList.add('ax-mm--anim');
-    var tl=null;
+    var tl=null, self;
 
     /* Measure at play time, not at build time: the panel's height depends on which
        category group is active, and the viewport can be resized between opens. */
@@ -177,26 +223,52 @@ document.addEventListener('DOMContentLoaded',function(){
       return h;
     }
 
-    function build(){
-      gsap.set(panel,{height:0});
-      gsap.set(cards,{y:50,opacity:0});
+    /* `from` > 0 means this is a swap from another panel: the box starts at that panel's
+       height and MORPHS to ours (that is what stops the box jumping), while the content
+       slides in from `dir` -- +1 = from the right, -1 = from the left -- leading edge
+       first. Transform and opacity only: the layout is pixel-locked, so nothing here may
+       touch width/height/padding/margin/font-size of the content itself. */
+    function build(from,dir){
+      var swap = from > 0;
+      gsap.set(panel,{height:from||0});
+      gsap.set(cards,{x: swap?slideDist()*dir:0, y: swap?0:50, opacity:0});
       var t=gsap.timeline({paused:true});
-      t.to(panel,{height:fullHeight,duration:0.4,ease:EASE});
-      t.to(cards,{y:0,opacity:1,duration:0.4,ease:EASE,stagger:0.08},'-=0.1');
+      t.to(panel,{height:fullHeight,duration: swap?0.34:0.4,ease:EASE});
+      t.to(cards,{x:0,y:0,opacity:1,duration: swap?0.26:0.4,ease:EASE,
+                  stagger: swap?{each:0.03,from:(dir>0?'end':'start')}:0.08},
+           swap?'-=0.30':'-=0.1');
       /* let the panel reflow freely once it is fully open */
       t.eventCallback('onComplete',function(){panel.style.height='auto';});
       return t;
     }
 
-    function play(){
-      if(tl) tl.kill();
-      tl=build();
-      tl.play(0);
-    }
+    self={
+      el:p,
+      /* CURRENT rendered height, not fullHeight(): if this panel is still mid-tween when
+         the next one takes over (a fast A->B->C sweep) the incoming box must continue
+         from where this one actually is. Settled panels sit at height:auto, where
+         offsetHeight is the full height anyway. */
+      height:function(){ return panel.offsetHeight; },
+      /* Hand off: stop tweening, drop back to natural height, clear transforms. */
+      quiet:function(){
+        if(tl){ tl.kill(); tl=null; }
+        panel.style.height='auto';
+        gsap.set(cards,{x:0,y:0,opacity:1});
+      }
+    };
+
     function reverse(){
       if(!tl) return;
       panel.style.height=fullHeight()+'px';   /* from `auto` back to a tweenable value */
       tl.reverse();
+    }
+    /* Is a DIFFERENT panel open right now? If so this close is half of a swap and the
+       incoming panel owns the animation -- in whichever order the callbacks arrive. */
+    function otherOpen(){
+      for(var i=0;i<panels.length;i++){
+        if(panels[i]!==p&&panels[i].classList.contains('is-open')) return true;
+      }
+      return false;
     }
 
     /* The existing menu script owns open/close; watch the class it toggles rather than
@@ -206,7 +278,29 @@ document.addEventListener('DOMContentLoaded',function(){
       var now=p.classList.contains('is-open');
       if(now===was) return;
       was=now;
-      if(now) play(); else reverse();
+      if(now){
+        var from=0, dir=1;
+        /* CUR still points at the panel we are replacing: `is-open` was already stripped
+           from it synchronously, whether or not its own callback has run yet. */
+        if(CUR&&CUR.el!==p&&!CUR.el.classList.contains('is-open')){
+          from=CUR.height();                                  /* measure before resetting */
+          dir=navIndex(p)>navIndex(CUR.el)?1:-1;
+          CUR.quiet();
+          markSwapping();          /* suppress the CSS cross-fade: never two stacked menus */
+        }
+        CUR=self;
+        if(tl) tl.kill();
+        tl=build(from,dir);
+        tl.play(0);
+      } else if(!otherOpen()){
+        if(CUR===self) CUR=null;   /* a real close, so the next open grows from the nav bar */
+        /* drop the swap flag early: a close landing inside the 460ms window would
+           otherwise inherit transition:none and snap out instead of fading. */
+        clearTimeout(swapClr);
+        document.documentElement.classList.remove('ax-mm-swapping');
+        reverse();
+      }
+      /* else: the other half of a swap -- the incoming panel measures and resets us. */
     }).observe(p,{attributes:true,attributeFilter:['class']});
   });
 });
@@ -307,96 +401,175 @@ html.ax-pre-off #ax-pre{opacity:0;transform:translateY(-2vw);pointer-events:none
 <div class="ax-mm" id="ax-mm-insights" data-menu="insights" aria-label="Insights menu"><div class="ax-mm2__panel"><div class="ax-mm2"><div class="ax-mm2__cols"><div class="ax-mm2__card"><img class="ax-mm2__img" src="/assets/gen/94af8984aa7c4c7d711ab10b054f1ed866d84b48.png" alt=""><div class="ax-mm2__ttl">Customer outcomes<span>&rsaquo;</span></div><div class="ax-mm2__lns"><a class="ax-mm2__ln" href="/insights">Case Studies<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 17L17 7M9 7h8v8" stroke="#5B6B85" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a><span class="ax-mm2__ln" data-soon="1">Customer references<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 17L17 7M9 7h8v8" stroke="#5B6B85" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><a class="ax-mm2__ln" href="/insights/trust-security">Trust &amp; Security<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 17L17 7M9 7h8v8" stroke="#5B6B85" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a></div></div><div class="ax-mm2__card"><img class="ax-mm2__img" src="/assets/gen/36fcbba7967042e86336762bd58e913a0cc80993.png" alt=""><div class="ax-mm2__ttl">Editorial<span>&rsaquo;</span></div><div class="ax-mm2__lns"><a class="ax-mm2__ln" href="/insights/blog">Blog<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 17L17 7M9 7h8v8" stroke="#5B6B85" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a><span class="ax-mm2__ln" data-soon="1">Research reports<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 17L17 7M9 7h8v8" stroke="#5B6B85" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><a class="ax-mm2__ln" href="/insights/newsletter">Newsletter<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 17L17 7M9 7h8v8" stroke="#5B6B85" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a></div></div></div><aside class="ax-mm2__rail"><div class="ax-mm2__feat"><div class="ax-mm2__feat-ttl">About Aeonx Digital</div><div class="ax-mm2__feat-sub">Our vision, mission, and impact.</div><a class="ax-mm2__feat-btn" href="/who-we-are/foundation">Learn More &rarr;</a></div></aside></div><div class="ax-mm2__api"><span class="ax-mm2__api-ico"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H12v15H6.5A2.5 2.5 0 0 0 4 20.5V5.5ZM20 5.5A2.5 2.5 0 0 0 17.5 3H12v15h5.5a2.5 2.5 0 0 1 2.5 2.5V5.5Z" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg></span><span class="ax-mm2__api-tx"><b>API Documentation</b><small>Everything you need to interact with AeonX Digital via API.</small></span><a class="ax-mm2__api-btn" href="#">Read Us <span>&rsaquo;</span></a></div></div></div>
 <div class="ax-mm" id="ax-mm-investor" data-menu="investor" aria-label="Investor menu"><div class="ax-mm2__panel"><div class="ax-mm2"><div class="ax-mm2__cols"><div class="ax-mm2__card"><img class="ax-mm2__img" src="/assets/gen/94af8984aa7c4c7d711ab10b054f1ed866d84b48.png" alt=""><div class="ax-mm2__ttl">Disclosures<span>&rsaquo;</span></div><div class="ax-mm2__lns"><a class="ax-mm2__ln" href="/investor-relations">Investor Relations<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 17L17 7M9 7h8v8" stroke="#5B6B85" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a><span class="ax-mm2__ln" data-soon="1">Annual reports<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 17L17 7M9 7h8v8" stroke="#5B6B85" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="ax-mm2__ln" data-soon="1">Quarterly results<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 17L17 7M9 7h8v8" stroke="#5B6B85" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="ax-mm2__ln" data-soon="1">BSE disclosures<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 17L17 7M9 7h8v8" stroke="#5B6B85" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div></div><div class="ax-mm2__card"><img class="ax-mm2__img" src="/assets/gen/36fcbba7967042e86336762bd58e913a0cc80993.png" alt=""><div class="ax-mm2__ttl">Governance<span>&rsaquo;</span></div><div class="ax-mm2__lns"><a class="ax-mm2__ln" href="/investor-relations/board-of-directors">Board of Directors<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 17L17 7M9 7h8v8" stroke="#5B6B85" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a><a class="ax-mm2__ln" href="/investor-relations/shareholding-pattern">Shareholding Pattern<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 17L17 7M9 7h8v8" stroke="#5B6B85" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a><span class="ax-mm2__ln" data-soon="1">BRSR<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 17L17 7M9 7h8v8" stroke="#5B6B85" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="ax-mm2__ln" data-soon="1">Investor grievances<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 17L17 7M9 7h8v8" stroke="#5B6B85" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div></div></div><aside class="ax-mm2__rail"><div class="ax-mm2__feat"><div class="ax-mm2__feat-ttl">About Aeonx Digital</div><div class="ax-mm2__feat-sub">Our vision, mission, and impact.</div><a class="ax-mm2__feat-btn" href="/who-we-are/foundation">Learn More &rarr;</a></div></aside></div><div class="ax-mm2__api"><span class="ax-mm2__api-ico"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H12v15H6.5A2.5 2.5 0 0 0 4 20.5V5.5ZM20 5.5A2.5 2.5 0 0 0 17.5 3H12v15h5.5a2.5 2.5 0 0 1 2.5 2.5V5.5Z" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg></span><span class="ax-mm2__api-tx"><b>API Documentation</b><small>Everything you need to interact with AeonX Digital via API.</small></span><a class="ax-mm2__api-btn" href="#">Read Us <span>&rsaquo;</span></a></div></div></div>
 </header>
-<main class="ax-page" style="height:242.5521vw">
-<div class="g-b" style="position:absolute;left:0.0000vw;top:198.2812vw;width:100.0000vw;height:44.2708vw;background-color:rgb(255,255,255);"></div>
-<div class="g-b" style="position:absolute;left:7.9167vw;top:198.2812vw;width:84.1667vw;height:44.2708vw;box-sizing:border-box;border:0.0521vw solid rgb(236,238,242);"></div>
-<img class="g-vec" src="/assets/vec/I5323-17649;5290-9193.svg" data-vec="I5323:17649;5290:9193" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:14.5833vw;top:198.2812vw;width:12.6042vw;height:3.6206vw;">
-<div class="g-t" style="position:absolute;left:14.5833vw;top:206.1206vw;width:12.0833vw;height:1.8750vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:1.2500vw;line-height:1.8750vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Sign up to learn more </div>
-<div class="g-t" style="position:absolute;left:14.5833vw;top:208.7248vw;width:15.3125vw;height:2.9167vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.9375vw;line-height:1.4583vw;color:rgb(82,96,119);text-align:left;white-space:pre-wrap;">SAP. Cloud. AI. One accountable partner.<br></div>
-<div class="g-b g-clip" style="position:absolute;left:14.5833vw;top:213.3081vw;width:6.9271vw;height:2.5000vw;background-color:rgb(223,63,23);border-radius:0.4167vw;overflow:hidden;">
-<div class="g-t" style="position:absolute;left:1.4583vw;top:0.7292vw;width:4.0104vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:0.7292vw;line-height:1.0417vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">Get Started</div>
+<main class="ax-page" style="height:242.8646vw">
+<div class="g-b" style="position:absolute;left:0.0000vw;top:198.5938vw;width:100.0000vw;height:44.2708vw;background-color:rgb(255,255,255);"></div>
+<div class="g-b" style="position:absolute;left:7.9167vw;top:198.5938vw;width:84.1667vw;height:44.2708vw;box-sizing:border-box;border:0.0521vw solid rgb(236,238,242);"></div>
+<img class="g-vec" src="/assets/vec/I5323-17649;5290-9193.svg" data-vec="I5323:17649;5290:9193" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:14.5833vw;top:198.5938vw;width:12.6042vw;height:3.6206vw;">
+<div class="g-t" style="position:absolute;left:14.5833vw;top:206.4331vw;width:12.0833vw;height:1.8750vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:1.2500vw;line-height:1.8750vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Sign up to learn more </div>
+<div class="g-t" style="position:absolute;left:14.5833vw;top:209.0373vw;width:15.3125vw;height:2.9167vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.9375vw;line-height:1.4583vw;color:rgb(82,96,119);text-align:left;white-space:pre-wrap;">SAP. Cloud. AI. One accountable partner.<br></div>
+<div class="g-b g-clip" style="position:absolute;left:14.5833vw;top:213.6206vw;width:6.8750vw;height:2.5000vw;background-color:rgb(223,63,23);border-radius:0.4167vw;overflow:hidden;">
+<div class="g-t" style="position:absolute;left:1.4583vw;top:0.7292vw;width:3.9583vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:0.7292vw;line-height:1.0417vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">Get Started</div>
 </div>
-<img class="g-vec" src="/assets/vec/I5323-17649;5290-9221.svg" data-vec="I5323:17649;5290:9221" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:14.5833vw;top:218.0998vw;width:0.8333vw;height:0.8333vw;opacity:0.6000000238418579;">
-<div class="g-t" style="position:absolute;left:15.7292vw;top:217.4748vw;width:16.1979vw;height:2.0833vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:pre-wrap;">Ahmedabad · Mumbai · Bhuj<br>· Dehradun · Delhi NCR · Kolkata · Dubai</div>
-<img class="g-vec" src="/assets/vec/I5323-17649;5290-9227.svg" data-vec="I5323:17649;5290:9227" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:14.5833vw;top:220.0789vw;width:0.8333vw;height:0.8333vw;opacity:0.6000000238418579;">
-<div class="g-t" style="position:absolute;left:15.7292vw;top:219.9748vw;width:6.0938vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:center;white-space:nowrap;">+91 93219 87561</div>
-<img class="g-vec" src="/assets/vec/I5323-17649;5290-9231.svg" data-vec="I5323:17649;5290:9231" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:14.5833vw;top:221.5373vw;width:0.8333vw;height:0.8333vw;opacity:0.6000000238418579;">
-<div class="g-t" style="position:absolute;left:15.7292vw;top:221.4331vw;width:6.6667vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:center;white-space:nowrap;">sales@aeonx.digital</div>
-<div class="g-b" style="position:absolute;left:34.0104vw;top:198.2812vw;width:53.4896vw;height:35.1042vw;box-sizing:border-box;border:0.0521vw solid rgb(236,238,242);"></div>
-<div class="g-t" style="position:absolute;left:35.5208vw;top:200.5208vw;width:4.8958vw;height:0.9375vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:0.8333vw;line-height:0.9375vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;letter-spacing:-0.0083vw;">Who we are
+<img class="g-vec" src="/assets/vec/I5323-17649;5290-9221.svg" data-vec="I5323:17649;5290:9221" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:14.5833vw;top:218.4123vw;width:0.8333vw;height:0.8333vw;opacity:0.6000000238418579;">
+<div class="g-t" style="position:absolute;left:15.7292vw;top:217.7873vw;width:16.1979vw;height:2.0833vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:pre-wrap;">Ahmedabad · Mumbai · Bhuj<br>· Dehradun · Delhi NCR · Kolkata · Dubai</div>
+<img class="g-vec" src="/assets/vec/I5323-17649;5290-9227.svg" data-vec="I5323:17649;5290:9227" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:14.5833vw;top:220.3914vw;width:0.8333vw;height:0.8333vw;opacity:0.6000000238418579;">
+<div class="g-t" style="position:absolute;left:15.7292vw;top:220.2873vw;width:6.0938vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:center;white-space:nowrap;">+91 93219 87561</div>
+<img class="g-vec" src="/assets/vec/I5323-17649;5290-9231.svg" data-vec="I5323:17649;5290:9231" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:14.5833vw;top:221.8498vw;width:0.8333vw;height:0.8333vw;opacity:0.6000000238418579;">
+<div class="g-t" style="position:absolute;left:15.7292vw;top:221.7456vw;width:6.6667vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:center;white-space:nowrap;">sales@aeonx.digital</div>
+<div class="g-b" style="position:absolute;left:34.0104vw;top:198.5938vw;width:53.4896vw;height:35.1042vw;box-sizing:border-box;border:0.0521vw solid rgb(236,238,242);"></div>
+<div class="g-t" style="position:absolute;left:35.5208vw;top:200.8333vw;width:4.8958vw;height:0.9375vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:0.8333vw;line-height:0.9375vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;letter-spacing:-0.0083vw;">Who we are
 </div>
-<div class="g-t" style="position:absolute;left:35.5208vw;top:202.6042vw;width:3.9062vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Foundation
+<div class="g-t" style="position:absolute;left:35.5208vw;top:202.9167vw;width:3.9062vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Foundation
 </div>
-<div class="g-t" style="position:absolute;left:35.5208vw;top:204.2708vw;width:3.6458vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Leadership</div>
-<div class="g-t" style="position:absolute;left:35.5208vw;top:205.9375vw;width:2.6562vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Culture
+<div class="g-t" style="position:absolute;left:35.5208vw;top:204.5833vw;width:3.6458vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Leadership</div>
+<div class="g-t" style="position:absolute;left:35.5208vw;top:206.2500vw;width:2.6562vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Culture
 </div>
-<div class="g-t" style="position:absolute;left:35.5208vw;top:207.6042vw;width:2.3958vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Career
+<div class="g-t" style="position:absolute;left:35.5208vw;top:207.9167vw;width:2.3958vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Career
 </div>
-<div class="g-t" style="position:absolute;left:35.5208vw;top:209.2708vw;width:10.1042vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Contact us</div>
-<div class="g-t" style="position:absolute;left:48.5417vw;top:200.5208vw;width:3.1771vw;height:0.9375vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:0.8333vw;line-height:0.9375vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;letter-spacing:-0.0083vw;">Services</div>
-<div class="g-t" style="position:absolute;left:48.5417vw;top:202.6042vw;width:4.0104vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">All services
+<div class="g-t" style="position:absolute;left:35.5208vw;top:209.5833vw;width:10.1042vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Contact us</div>
+<div class="g-t" style="position:absolute;left:48.5417vw;top:200.8333vw;width:3.1771vw;height:0.9375vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:0.8333vw;line-height:0.9375vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;letter-spacing:-0.0083vw;">Services</div>
+<div class="g-t" style="position:absolute;left:48.5417vw;top:202.9167vw;width:4.0104vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">All services
 </div>
-<div class="g-t" style="position:absolute;left:48.5417vw;top:204.2188vw;width:4.8958vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">RISE with SAP</div>
-<div class="g-t" style="position:absolute;left:48.5417vw;top:205.8333vw;width:5.8854vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">GROW with SAP
+<div class="g-t" style="position:absolute;left:48.5417vw;top:204.5312vw;width:4.8958vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">RISE with SAP</div>
+<div class="g-t" style="position:absolute;left:48.5417vw;top:206.1458vw;width:5.8854vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">GROW with SAP
 </div>
-<div class="g-t" style="position:absolute;left:48.5417vw;top:207.4479vw;width:6.5104vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">SAP AMS (AXIOM)
+<div class="g-t" style="position:absolute;left:48.5417vw;top:207.7604vw;width:6.5104vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">SAP AMS (AXIOM)
 </div>
-<div class="g-t" style="position:absolute;left:48.5417vw;top:209.0625vw;width:10.1042vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">AWS
+<div class="g-t" style="position:absolute;left:48.5417vw;top:209.3750vw;width:10.1042vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">AWS
 </div>
-<div class="g-t" style="position:absolute;left:48.5417vw;top:210.6771vw;width:10.1042vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Google Cloud</div>
-<div class="g-t" style="position:absolute;left:48.5417vw;top:212.2917vw;width:10.1042vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Multi-cloud CMS</div>
-<div class="g-t" style="position:absolute;left:61.5625vw;top:200.5208vw;width:3.3854vw;height:0.9375vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:0.8333vw;line-height:0.9375vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;letter-spacing:-0.0083vw;">Products</div>
-<div class="g-t" style="position:absolute;left:61.5625vw;top:202.6042vw;width:4.2708vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">All products
+<div class="g-t" style="position:absolute;left:48.5417vw;top:210.9896vw;width:10.1042vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Google Cloud</div>
+<div class="g-t" style="position:absolute;left:48.5417vw;top:212.6042vw;width:10.1042vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Multi-cloud CMS</div>
+<div class="g-t" style="position:absolute;left:61.5625vw;top:200.8333vw;width:3.3854vw;height:0.9375vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:0.8333vw;line-height:0.9375vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;letter-spacing:-0.0083vw;">Products</div>
+<div class="g-t" style="position:absolute;left:61.5625vw;top:202.9167vw;width:4.2708vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">All products
 </div>
-<div class="g-t" style="position:absolute;left:61.5625vw;top:204.2708vw;width:3.2812vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">SupplierX</div>
-<div class="g-t" style="position:absolute;left:61.5625vw;top:205.9375vw;width:2.6042vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">OrderX
+<div class="g-t" style="position:absolute;left:61.5625vw;top:204.5833vw;width:3.2812vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">SupplierX</div>
+<div class="g-t" style="position:absolute;left:61.5625vw;top:206.2500vw;width:2.6042vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">OrderX
 </div>
-<div class="g-t" style="position:absolute;left:61.5625vw;top:207.6042vw;width:2.5000vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Xpense</div>
-<div class="g-t" style="position:absolute;left:61.5625vw;top:209.2708vw;width:10.1042vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Logystix</div>
-<div class="g-t" style="position:absolute;left:61.5625vw;top:210.9375vw;width:10.1042vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">ManuFex</div>
-<div class="g-t" style="position:absolute;left:61.5625vw;top:212.6042vw;width:10.1042vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">AXIOM AI Platform</div>
-<div class="g-t" style="position:absolute;left:74.5833vw;top:200.5208vw;width:3.7500vw;height:0.9375vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:0.8333vw;line-height:0.9375vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;letter-spacing:-0.0083vw;">Industries</div>
-<div class="g-t" style="position:absolute;left:74.5833vw;top:202.6042vw;width:5.0000vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Manufacturing
+<div class="g-t" style="position:absolute;left:61.5625vw;top:207.9167vw;width:2.5000vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Xpense</div>
+<div class="g-t" style="position:absolute;left:61.5625vw;top:209.5833vw;width:10.1042vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Logystix</div>
+<div class="g-t" style="position:absolute;left:61.5625vw;top:211.2500vw;width:10.1042vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">ManuFex</div>
+<div class="g-t" style="position:absolute;left:61.5625vw;top:212.9167vw;width:10.1042vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">AXIOM AI Platform</div>
+<div class="g-t" style="position:absolute;left:74.5833vw;top:200.8333vw;width:3.7500vw;height:0.9375vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:0.8333vw;line-height:0.9375vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;letter-spacing:-0.0083vw;">Industries</div>
+<div class="g-t" style="position:absolute;left:74.5833vw;top:202.9167vw;width:5.0000vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Manufacturing
 </div>
-<div class="g-t" style="position:absolute;left:74.5833vw;top:204.2708vw;width:7.2917vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Metals &amp; Engineering
+<div class="g-t" style="position:absolute;left:74.5833vw;top:204.5833vw;width:7.2917vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Metals &amp; Engineering
 </div>
-<div class="g-t" style="position:absolute;left:74.5833vw;top:205.9375vw;width:6.5104vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Energy &amp; Oil &amp; Gas
+<div class="g-t" style="position:absolute;left:74.5833vw;top:206.2500vw;width:6.5104vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Energy &amp; Oil &amp; Gas
 </div>
-<div class="g-t" style="position:absolute;left:74.5833vw;top:207.6042vw;width:2.7604vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Textiles
+<div class="g-t" style="position:absolute;left:74.5833vw;top:207.9167vw;width:2.7604vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Textiles
 </div>
-<div class="g-t" style="position:absolute;left:74.5833vw;top:209.2708vw;width:10.1042vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">FMCG &amp; Distribution
+<div class="g-t" style="position:absolute;left:74.5833vw;top:209.5833vw;width:10.1042vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">FMCG &amp; Distribution
 </div>
-<div class="g-t" style="position:absolute;left:74.5833vw;top:210.9375vw;width:10.1042vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Automotive &amp; Aerospace
+<div class="g-t" style="position:absolute;left:74.5833vw;top:211.2500vw;width:10.1042vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Automotive &amp; Aerospace
 </div>
-<div class="g-t" style="position:absolute;left:74.5833vw;top:212.6042vw;width:10.1042vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Alliances</div>
-<div class="g-t" style="position:absolute;left:35.5208vw;top:218.0729vw;width:3.5938vw;height:0.9375vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:0.8333vw;line-height:0.9375vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;letter-spacing:-0.0083vw;">About Us </div>
-<div class="g-t" style="position:absolute;left:35.5208vw;top:220.1562vw;width:4.1667vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Case studies</div>
-<div class="g-t" style="position:absolute;left:35.5208vw;top:221.8229vw;width:5.3646vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Trust &amp; security
+<div class="g-t" style="position:absolute;left:74.5833vw;top:212.9167vw;width:10.1042vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Alliances</div>
+<div class="g-t" style="position:absolute;left:35.5208vw;top:218.3854vw;width:3.5938vw;height:0.9375vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:0.8333vw;line-height:0.9375vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;letter-spacing:-0.0083vw;">About Us </div>
+<div class="g-t" style="position:absolute;left:35.5208vw;top:220.4688vw;width:4.1667vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Case studies</div>
+<div class="g-t" style="position:absolute;left:35.5208vw;top:222.1354vw;width:5.3646vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Trust &amp; security
 </div>
-<div class="g-t" style="position:absolute;left:35.5208vw;top:223.4896vw;width:1.5625vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Blog</div>
-<div class="g-t" style="position:absolute;left:35.5208vw;top:225.1562vw;width:10.1042vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Investor relations
+<div class="g-t" style="position:absolute;left:35.5208vw;top:223.8021vw;width:1.5625vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Blog</div>
+<div class="g-t" style="position:absolute;left:35.5208vw;top:225.4688vw;width:10.1042vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Investor relations
 </div>
-<div class="g-t" style="position:absolute;left:35.5208vw;top:226.8229vw;width:10.1042vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">BSE disclosures</div>
-<div class="g-t" style="position:absolute;left:48.5417vw;top:218.0729vw;width:3.8542vw;height:0.9375vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:0.8333vw;line-height:0.9375vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;letter-spacing:-0.0083vw;">Follow Us </div>
-<div class="g-t" style="position:absolute;left:48.5417vw;top:220.1562vw;width:2.3958vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Twitter </div>
-<div class="g-t" style="position:absolute;left:48.5417vw;top:221.8229vw;width:2.8125vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">LinkedIn </div>
-<div class="g-img" data-ref="1a6724d5f1b0e3e74c7e42c83b442f552edd6040" role="img" aria-label="4 8" style="position:absolute;left:82.9688vw;top:225.6771vw;width:4.5312vw;height:7.7083vw;background-image:url(/assets/partners/gptw-certified.png);background-size:contain;background-position:center;background-repeat:no-repeat;"></div>
-<div class="g-b" style="position:absolute;left:7.9688vw;top:233.3854vw;width:84.0625vw;height:5.6250vw;box-sizing:border-box;border:0.0521vw solid rgb(236,238,242);"></div>
-<div class="g-t" style="position:absolute;left:40.0000vw;top:235.4688vw;width:11.2500vw;height:1.4583vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:0.9375vw;line-height:1.4583vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Get the latest from AeonX</div>
-<div class="g-b g-clip" style="position:absolute;left:58.1250vw;top:234.9479vw;width:16.7383vw;height:2.3958vw;border-radius:0.1042vw;box-sizing:border-box;border:0.0417vw solid rgb(255,120,94);overflow:hidden;">
+<div class="g-t" style="position:absolute;left:35.5208vw;top:227.1354vw;width:10.1042vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">BSE disclosures</div>
+<div class="g-t" style="position:absolute;left:48.5417vw;top:218.3854vw;width:3.8542vw;height:0.9375vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:0.8333vw;line-height:0.9375vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;letter-spacing:-0.0083vw;">Follow Us </div>
+<div class="g-t" style="position:absolute;left:48.5417vw;top:220.4688vw;width:2.3958vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Twitter </div>
+<div class="g-t" style="position:absolute;left:48.5417vw;top:222.1354vw;width:2.8125vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">LinkedIn </div>
+<div class="g-img" data-ref="9eb08a9ddab314e538d8d079612a05d15204b1c3" role="img" aria-label="4 8" style="position:absolute;left:67.0312vw;top:225.9896vw;width:7.7083vw;height:7.7083vw;background-image:url(/assets/gen/9eb08a9ddab314e538d8d079612a05d15204b1c3.png);background-size:12.8472vw 7.7083vw;background-position:-2.3872vw -0.0000vw;background-repeat:no-repeat;"></div>
+<div class="g-img" data-ref="f098495ead3741a8d723bd5d9f56e3a681293a2d" role="img" aria-label="4 9" style="position:absolute;left:75.1562vw;top:225.9896vw;width:7.3958vw;height:7.7083vw;background-image:url(/assets/gen/f098495ead3741a8d723bd5d9f56e3a681293a2d.png);background-size:7.6929vw 7.7083vw;background-position:-0.0704vw -0.0000vw;background-repeat:no-repeat;"></div>
+<div class="g-img" data-ref="1a6724d5f1b0e3e74c7e42c83b442f552edd6040" role="img" aria-label="4 10" style="position:absolute;left:82.9688vw;top:225.9896vw;width:4.5312vw;height:7.7083vw;background-image:url(/assets/partners/gptw-certified.png);background-size:contain;background-position:center;background-repeat:no-repeat;"></div>
+<div class="g-b" style="position:absolute;left:7.9688vw;top:233.6979vw;width:84.0625vw;height:5.6250vw;box-sizing:border-box;border:0.0521vw solid rgb(236,238,242);"></div>
+<div class="g-t" style="position:absolute;left:36.8750vw;top:235.7812vw;width:11.2500vw;height:1.4583vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:0.9375vw;line-height:1.4583vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Get the latest from AeonX</div>
+<div class="g-b g-clip" style="position:absolute;left:55.0000vw;top:235.2604vw;width:16.7383vw;height:2.3958vw;border-radius:0.1042vw;box-sizing:border-box;border:0.0417vw solid rgb(223,63,23);overflow:hidden;">
 <div class="g-t" style="position:absolute;left:0.8750vw;top:0.5729vw;width:14.9883vw;height:1.2500vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:0.8333vw;line-height:1.2500vw;color:rgb(134,149,170);text-align:left;white-space:nowrap;">Work email</div>
 </div>
-<div class="g-b g-clip" style="position:absolute;left:75.4883vw;top:234.9479vw;width:6.2500vw;height:2.5000vw;background-color:rgb(223,63,23);border-radius:0.4167vw;overflow:hidden;">
+<div class="g-b g-clip" style="position:absolute;left:72.3633vw;top:235.2604vw;width:6.2500vw;height:2.5000vw;background-color:rgb(223,63,23);border-radius:0.4167vw;overflow:hidden;">
 <div class="g-t" style="position:absolute;left:1.4583vw;top:0.7292vw;width:3.3333vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:0.7292vw;line-height:1.0417vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">Subscribe</div>
 </div>
-<div class="g-b" style="position:absolute;left:14.0625vw;top:238.9583vw;width:71.8750vw;height:0.0521vw;background-color:rgb(229,229,229);"></div>
-<div class="g-t" style="position:absolute;left:9.7917vw;top:240.2604vw;width:53.2292vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">© 2026 AeonX Digital Technology Limited. BSE-listed. |  All rights reserved. · SAP Gold Partner · AWS Advanced Tier · Google Cloud Partner</div>
-<div class="g-t" style="position:absolute;left:70.0521vw;top:240.2604vw;width:6.4583vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:center;white-space:nowrap;">Terms &amp; Conditions</div>
-<div class="g-t" style="position:absolute;left:77.7604vw;top:240.2604vw;width:4.5833vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:center;white-space:nowrap;">Privacy Policy</div>
-<div class="g-t" style="position:absolute;left:83.5938vw;top:240.2604vw;width:2.6042vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:center;white-space:nowrap;">Cookies</div>
-<div class="g-t" style="position:absolute;left:87.4479vw;top:240.2604vw;width:2.7604vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:center;white-space:nowrap;">Sitemap</div>
-<div class="g-b" style="position:absolute;left:0.0000vw;top:239.0104vw;width:100.0000vw;height:0.0521vw;background:linear-gradient(90deg, rgb(236,238,242) 0.0%);"></div>
-<div class="g-b" style="position:absolute;left:0.0000vw;top:49.7396vw;width:100.0000vw;height:40.7292vw;box-sizing:border-box;border:0.0521vw solid rgb(213,218,226);"></div>
+<div class="g-b" style="position:absolute;left:14.0625vw;top:239.2708vw;width:71.8750vw;height:0.0521vw;background-color:rgb(236,238,242);"></div>
+<div class="g-t" style="position:absolute;left:9.7917vw;top:240.5729vw;width:53.2292vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">© 2026 AeonX Digital Technology Limited. BSE-listed. |  All rights reserved. · SAP Gold Partner · AWS Advanced Tier · Google Cloud Partner</div>
+<div class="g-t" style="position:absolute;left:70.0521vw;top:240.5729vw;width:6.4583vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:center;white-space:nowrap;">Terms &amp; Conditions</div>
+<div class="g-t" style="position:absolute;left:77.7604vw;top:240.5729vw;width:4.5833vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:center;white-space:nowrap;">Privacy Policy</div>
+<div class="g-t" style="position:absolute;left:83.5938vw;top:240.5729vw;width:2.6042vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:center;white-space:nowrap;">Cookies</div>
+<div class="g-t" style="position:absolute;left:87.4479vw;top:240.5729vw;width:2.7604vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:center;white-space:nowrap;">Sitemap</div>
+<div class="g-b" style="position:absolute;left:0.0000vw;top:239.3229vw;width:100.0000vw;height:0.0521vw;background-color:rgb(236,238,242);"></div>
+<div class="g-b" style="position:absolute;left:0.0000vw;top:177.1354vw;width:100.0000vw;height:21.4583vw;background-color:rgb(255,255,255);box-sizing:border-box;border:0.0521vw solid rgb(236,238,242);"></div>
+<img class="g-vec" src="/assets/vec/5175-14346.svg" data-vec="5175:14346" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:0.0000vw;top:177.1354vw;width:100.0000vw;height:21.4583vw;">
+<img class="g-vec" src="/assets/vec/5175-14360.svg" data-vec="5175:14360" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:12.5000vw;top:187.6823vw;width:75.0000vw;height:10.9375vw;">
+<div class="g-b g-clip" style="position:absolute;left:12.5000vw;top:177.1354vw;width:75.0000vw;height:21.4583vw;overflow:hidden;">
+<div class="g-b" style="position:absolute;left:0.0000vw;top:0.0000vw;width:75.0000vw;height:21.4583vw;background-color:rgba(255,255,255,0.060);backdrop-filter:blur(2.6042vw);-webkit-backdrop-filter:blur(2.6042vw);"></div>
+</div>
+<div class="g-b" style="position:absolute;left:12.5000vw;top:177.1354vw;width:75.0000vw;height:21.4583vw;box-sizing:border-box;border:0.0521vw solid rgb(236,238,242);"></div>
+<div class="g-t" style="position:absolute;left:14.4010vw;top:179.9219vw;width:44.0104vw;height:15.8854vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:3.3333vw;line-height:3.7500vw;color:rgb(35,39,46);text-align:left;white-space:pre-wrap;">If this sounds like the kind of place you’d build something at,<br>we should talk.<br></div>
+<div class="g-b" style="position:absolute;left:72.6042vw;top:186.4062vw;width:13.0208vw;height:2.9167vw;background-color:rgb(223,63,23);border-radius:0.4167vw;box-shadow:inset 0.0000vw 0.0000vw 0.1042vw rgb(147,38,25);"></div>
+<div class="g-t" style="position:absolute;left:75.4948vw;top:187.2396vw;width:7.2396vw;height:1.2500vw;font-family:'Roboto',sans-serif;font-weight:600;font-size:1.0417vw;line-height:1.2500vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;letter-spacing:0.0078vw;">Open Positions</div>
+<div class="g-b" style="position:absolute;left:0.0000vw;top:109.4271vw;width:100.0000vw;height:67.7083vw;box-sizing:border-box;border:0.0521vw solid rgb(236,238,242);"></div>
+<div class="g-t" style="position:absolute;left:44.9219vw;top:113.0208vw;width:10.1562vw;height:1.8750vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:1.2500vw;line-height:1.8750vw;color:rgb(223,63,23);text-align:center;white-space:nowrap;">OFFICE GALLERY</div>
+<h2 class="g-t" style="position:absolute;left:4.1667vw;top:116.1979vw;width:91.6667vw;height:3.1250vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:2.5000vw;line-height:3.1250vw;color:rgb(35,39,46);text-align:center;white-space:nowrap;">Real spaces. Real people.</h2>
+<div class="g-b g-clip" style="position:absolute;left:6.9271vw;top:120.9896vw;width:86.1458vw;height:53.0208vw;backdrop-filter:blur(0.5208vw);-webkit-backdrop-filter:blur(0.5208vw);overflow:hidden;">
+<img class="g-vec" src="/assets/vec/6018-28358.svg" data-vec="6018:28358" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:81.8750vw;top:1.8750vw;width:2.5000vw;height:2.5000vw;">
+<div class="g-b g-clip" style="position:absolute;left:3.1250vw;top:3.1250vw;width:79.8958vw;height:46.7708vw;overflow:hidden;">
+<div class="g-b g-clip" style="position:absolute;left:1.6667vw;top:1.6667vw;width:76.5625vw;height:21.4583vw;overflow:hidden;">
+<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:25.1042vw;height:21.4583vw;overflow:hidden;">
+<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:25.1042vw;height:21.4583vw;overflow:hidden;">
+<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:25.1042vw;height:21.4583vw;box-shadow:0.0000vw 0.2083vw 0.2083vw rgba(0,0,0,0.250);overflow:hidden;">
+<div class="g-img" data-ref="5f75dd2966d9c969e6a111f461f1f0f669b4d86a" role="presentation" aria-hidden="true" style="position:absolute;left:-4.4554vw;top:-0.1095vw;width:32.6440vw;height:21.5678vw;background-image:url(/assets/gen/5f75dd2966d9c969e6a111f461f1f0f669b4d86a.png);background-size:cover;background-position:center;background-repeat:no-repeat;"></div>
+</div>
+<div class="g-b" style="position:absolute;left:0.0000vw;top:0.0000vw;width:25.1042vw;height:21.4583vw;background:linear-gradient(180deg, rgba(0,0,0,0.000) 0.0%, rgba(0,0,0,0.700) 100.0%);"></div>
+</div>
+</div>
+<div class="g-b g-clip" style="position:absolute;left:25.6250vw;top:0.0000vw;width:25.1042vw;height:21.4583vw;overflow:hidden;">
+<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:25.1042vw;height:21.4583vw;overflow:hidden;">
+<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:25.1042vw;height:21.4583vw;box-shadow:0.0000vw 0.2083vw 0.2083vw rgba(0,0,0,0.250);overflow:hidden;">
+<div class="g-img" data-ref="1f2b9ef9cb595ce0d3b13d0a706d04bf24188a3b" role="presentation" aria-hidden="true" style="position:absolute;left:-4.4554vw;top:-0.1095vw;width:32.6440vw;height:21.5678vw;background-image:url(/assets/gen/1f2b9ef9cb595ce0d3b13d0a706d04bf24188a3b.png);background-size:cover;background-position:center;background-repeat:no-repeat;"></div>
+</div>
+<div class="g-b" style="position:absolute;left:0.0000vw;top:0.0000vw;width:25.1042vw;height:21.4583vw;background:linear-gradient(180deg, rgba(0,0,0,0.000) 0.0%, rgba(0,0,0,0.700) 100.0%);"></div>
+</div>
+</div>
+<div class="g-b g-clip" style="position:absolute;left:51.2500vw;top:0.0000vw;width:25.1042vw;height:21.4583vw;overflow:hidden;">
+<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:25.1042vw;height:21.4583vw;overflow:hidden;">
+<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:25.1042vw;height:21.4583vw;box-shadow:0.0000vw 0.2083vw 0.2083vw rgba(0,0,0,0.250);overflow:hidden;">
+<div class="g-img" data-ref="b4282af68662e3ba7b9defe89d21d050d4d50659" role="presentation" aria-hidden="true" style="position:absolute;left:-4.4554vw;top:-0.1095vw;width:32.6440vw;height:21.5678vw;background-image:url(/assets/gen/b4282af68662e3ba7b9defe89d21d050d4d50659.png);background-size:cover;background-position:center;background-repeat:no-repeat;"></div>
+</div>
+<div class="g-b" style="position:absolute;left:0.0000vw;top:0.0000vw;width:25.1042vw;height:21.4583vw;background:linear-gradient(180deg, rgba(0,0,0,0.000) 0.0%, rgba(0,0,0,0.700) 100.0%);"></div>
+</div>
+</div>
+</div>
+<div class="g-b g-clip" style="position:absolute;left:1.6667vw;top:23.6458vw;width:76.5625vw;height:21.4583vw;overflow:hidden;">
+<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:41.9792vw;height:21.4583vw;overflow:hidden;">
+<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:41.9792vw;height:21.4583vw;overflow:hidden;">
+<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:41.9792vw;height:21.4583vw;box-shadow:0.0000vw 0.2083vw 0.2083vw rgba(0,0,0,0.250);overflow:hidden;">
+<div class="g-img" data-ref="9c8f55fdf15bd26dc3a8691339dc7dcf944a43d1" role="presentation" aria-hidden="true" style="position:absolute;left:-7.4502vw;top:-0.1095vw;width:54.5872vw;height:21.5678vw;background-image:url(/assets/gen/9c8f55fdf15bd26dc3a8691339dc7dcf944a43d1.png);background-size:cover;background-position:center;background-repeat:no-repeat;"></div>
+</div>
+<div class="g-b" style="position:absolute;left:0.0000vw;top:0.0000vw;width:41.9792vw;height:21.4583vw;background:linear-gradient(180deg, rgba(0,0,0,0.000) 0.0%, rgba(0,0,0,0.700) 100.0%);"></div>
+</div>
+</div>
+<div class="g-b g-clip" style="position:absolute;left:42.5000vw;top:0.0000vw;width:34.0625vw;height:21.4583vw;overflow:hidden;">
+<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:34.0625vw;height:21.4583vw;overflow:hidden;">
+<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:34.0625vw;height:21.4583vw;box-shadow:0.0000vw 0.2083vw 0.2083vw rgba(0,0,0,0.250);overflow:hidden;">
+<div class="g-img" data-ref="d846529cf567dd55f5583ace4e9333011c732eb4" role="presentation" aria-hidden="true" style="position:absolute;left:-6.0451vw;top:-0.1095vw;width:44.2929vw;height:21.5678vw;background-image:url(/assets/gen/d846529cf567dd55f5583ace4e9333011c732eb4.png);background-size:cover;background-position:center;background-repeat:no-repeat;"></div>
+</div>
+<div class="g-b" style="position:absolute;left:0.0000vw;top:0.0000vw;width:34.0625vw;height:21.4583vw;background:linear-gradient(180deg, rgba(0,0,0,0.000) 0.0%, rgba(0,0,0,0.700) 100.0%);"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="g-b" style="position:absolute;left:0.0000vw;top:90.4688vw;width:100.0000vw;height:18.9583vw;box-sizing:border-box;border:0.0521vw solid rgb(213,218,226);"></div>
+<div class="g-t" style="position:absolute;left:45.3385vw;top:94.0625vw;width:9.3229vw;height:1.8750vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:1.2500vw;line-height:1.8750vw;color:rgb(223,63,23);text-align:center;white-space:nowrap;">RECOGNITIONS</div>
+<h2 class="g-t" style="position:absolute;left:4.1667vw;top:97.2396vw;width:91.6667vw;height:3.1250vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:2.5000vw;line-height:3.1250vw;color:rgb(35,39,46);text-align:center;white-space:nowrap;">Earned, not bought.</h2>
+<div class="g-b" style="position:absolute;left:17.7083vw;top:102.0312vw;width:9.8958vw;height:4.2708vw;background-color:rgb(255,255,255);border-radius:0.3125vw;"></div>
+<div class="g-img" data-ref="c0802d56987353256ffafeae2a33e63a0b7e7667" role="img" aria-label="Ashapura" style="position:absolute;left:20.9375vw;top:102.4479vw;width:3.4375vw;height:3.4375vw;background-image:url(/assets/gen/c0802d56987353256ffafeae2a33e63a0b7e7667.png);background-size:cover;background-position:center;background-repeat:no-repeat;opacity:0.800000011920929;"></div>
+<div class="g-b" style="position:absolute;left:28.6458vw;top:102.0312vw;width:9.8958vw;height:4.2708vw;background-color:rgb(255,255,255);border-radius:0.3125vw;"></div>
+<div class="g-img" data-ref="ccd1d63087fa9a4757a653bb2b061b5ec4711f64" role="img" aria-label="Ashapura" style="position:absolute;left:29.2708vw;top:103.1771vw;width:8.6458vw;height:1.9792vw;background-image:url(/assets/gen/ccd1d63087fa9a4757a653bb2b061b5ec4711f64.png);background-size:cover;background-position:center;background-repeat:no-repeat;"></div>
+<div class="g-b" style="position:absolute;left:39.5833vw;top:102.0312vw;width:9.8958vw;height:4.2708vw;background-color:rgb(255,255,255);border-radius:0.3125vw;"></div>
+<div class="g-img" data-ref="06cd2f7d70f9773233ef229ad325a8fdcfe41d22" role="img" aria-label="Ashapura" style="position:absolute;left:40.2083vw;top:102.6562vw;width:8.6458vw;height:3.0208vw;background-image:url(/assets/gen/06cd2f7d70f9773233ef229ad325a8fdcfe41d22.png);background-size:5.2907vw 1.8917vw;background-position:1.6639vw 0.5444vw;background-repeat:no-repeat;"></div>
+<div class="g-b" style="position:absolute;left:50.5208vw;top:102.0312vw;width:9.8958vw;height:4.2708vw;background-color:rgb(255,255,255);border-radius:0.3125vw;"></div>
+<div class="g-img" data-ref="db429dafe9531041d50b09052018c7880870da69" role="img" aria-label="Ashapura" style="position:absolute;left:52.8125vw;top:102.6562vw;width:5.3125vw;height:3.0208vw;background-image:url(/assets/gen/db429dafe9531041d50b09052018c7880870da69.png);background-size:cover;background-position:center;background-repeat:no-repeat;"></div>
+<div class="g-b" style="position:absolute;left:61.4583vw;top:102.0312vw;width:9.8958vw;height:4.2708vw;background-color:rgb(255,255,255);border-radius:0.3125vw;"></div>
+<div class="g-img" data-ref="ec4e870ac8e2fa9c57fb6b3c0da99033e12cc759" role="img" aria-label="Ashapura" style="position:absolute;left:63.9062vw;top:102.8125vw;width:5.0000vw;height:2.7083vw;background-image:url(/assets/gen/ec4e870ac8e2fa9c57fb6b3c0da99033e12cc759.png);background-size:4.5243vw 2.3753vw;background-position:0.2289vw 0.1665vw;background-repeat:no-repeat;"></div>
+<div class="g-b" style="position:absolute;left:72.3958vw;top:102.0312vw;width:9.8958vw;height:4.2708vw;background-color:rgb(255,255,255);border-radius:0.3125vw;"></div>
+<div class="g-img" data-ref="8d29eb071421987237b78c06a8b1dc37f2419bbc" role="img" aria-label="Ashapura" style="position:absolute;left:75.2604vw;top:102.6042vw;width:4.1667vw;height:3.1250vw;background-image:url(/assets/gen/8d29eb071421987237b78c06a8b1dc37f2419bbc.png);background-size:cover;background-position:center;background-repeat:no-repeat;"></div>
+<div class="g-b" style="position:absolute;left:0.0000vw;top:49.7396vw;width:100.0000vw;height:40.7292vw;box-sizing:border-box;border:0.0521vw solid rgb(236,238,242);"></div>
 <div class="g-t" style="position:absolute;left:44.1667vw;top:55.4167vw;width:11.6667vw;height:1.8750vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:1.2500vw;line-height:1.8750vw;color:rgb(223,63,23);text-align:center;white-space:nowrap;">WHAT WE BELIEVE</div>
 <h2 class="g-t" style="position:absolute;left:6.2500vw;top:58.5938vw;width:87.5000vw;height:3.5417vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:2.9167vw;line-height:3.5417vw;color:rgb(35,39,46);text-align:center;white-space:nowrap;">Four pillars.</h2>
 <div class="g-b g-clip" style="position:absolute;left:17.1354vw;top:65.3125vw;width:32.8125vw;height:9.8958vw;background-color:rgb(255,255,255);box-sizing:border-box;border:0.0521vw solid rgb(236,238,242);overflow:hidden;">
@@ -423,90 +596,12 @@ html.ax-pre-off #ax-pre{opacity:0;transform:translateY(-2vw);pointer-events:none
 <div class="g-t" style="position:absolute;left:1.2500vw;top:4.3750vw;width:30.3125vw;height:1.8750vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:1.4583vw;line-height:1.8750vw;color:rgb(223,63,23);text-align:left;white-space:nowrap;">Diversity that works the floor</div>
 <div class="g-t" style="position:absolute;left:1.2500vw;top:6.5625vw;width:30.3125vw;height:2.0833vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(82,96,119);text-align:left;white-space:pre-wrap;">Our six offices  Mumbai, Ahmedabad, Delhi, Kolkata, Bhuj, Dehradun  look different from each other on purpose. Different cities, different talent, different problems.</div>
 </div>
-<div class="g-b" style="position:absolute;left:87.5000vw;top:49.7396vw;width:0.0000vw;height:38.8542vw;box-sizing:border-box;border:0.0521vw solid rgb(236,238,242);"></div>
-<div class="g-b" style="position:absolute;left:12.5521vw;top:49.7396vw;width:0.0000vw;height:38.8542vw;box-sizing:border-box;border:0.0521vw solid rgb(236,238,242);"></div>
-<div class="g-b" style="position:absolute;left:87.5000vw;top:49.7396vw;width:0.0000vw;height:122.2396vw;box-sizing:border-box;border:0.0521vw solid rgb(213,218,226);"></div>
-<div class="g-b" style="position:absolute;left:12.5521vw;top:49.7396vw;width:0.0000vw;height:122.2396vw;box-sizing:border-box;border:0.0521vw solid rgb(213,218,226);"></div>
-<div class="g-b" style="position:absolute;left:0.0000vw;top:90.4688vw;width:100.0000vw;height:18.9583vw;box-sizing:border-box;border:0.0521vw solid rgb(213,218,226);"></div>
-<div class="g-t" style="position:absolute;left:45.3385vw;top:94.0625vw;width:9.3229vw;height:1.8750vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:1.2500vw;line-height:1.8750vw;color:rgb(223,63,23);text-align:center;white-space:nowrap;">RECOGNITIONS</div>
-<h2 class="g-t" style="position:absolute;left:4.1667vw;top:97.2396vw;width:91.6667vw;height:3.1250vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:2.5000vw;line-height:3.1250vw;color:rgb(35,39,46);text-align:center;white-space:nowrap;">Earned, not bought.</h2>
-<div class="g-b" style="position:absolute;left:17.7083vw;top:102.0312vw;width:9.8958vw;height:4.2708vw;background-color:rgb(255,255,255);border-radius:0.3125vw;"></div>
-<div class="g-img" data-ref="c0802d56987353256ffafeae2a33e63a0b7e7667" role="img" aria-label="Ashapura" style="position:absolute;left:20.9375vw;top:102.4479vw;width:3.4375vw;height:3.4375vw;background-image:url(/assets/gen/c0802d56987353256ffafeae2a33e63a0b7e7667.png);background-size:cover;background-position:center;background-repeat:no-repeat;mix-blend-mode:luminosity;opacity:0.800000011920929;"></div>
-<div class="g-b" style="position:absolute;left:28.6458vw;top:102.0312vw;width:9.8958vw;height:4.2708vw;background-color:rgb(255,255,255);border-radius:0.3125vw;"></div>
-<div class="g-img" data-ref="ccd1d63087fa9a4757a653bb2b061b5ec4711f64" role="img" aria-label="Ashapura" style="position:absolute;left:29.2708vw;top:103.1771vw;width:8.6458vw;height:1.9792vw;background-image:url(/assets/gen/ccd1d63087fa9a4757a653bb2b061b5ec4711f64.png);background-size:cover;background-position:center;background-repeat:no-repeat;mix-blend-mode:luminosity;"></div>
-<div class="g-b" style="position:absolute;left:39.5833vw;top:102.0312vw;width:9.8958vw;height:4.2708vw;background-color:rgb(255,255,255);border-radius:0.3125vw;"></div>
-<div class="g-img" data-ref="06cd2f7d70f9773233ef229ad325a8fdcfe41d22" role="img" aria-label="Ashapura" style="position:absolute;left:40.2083vw;top:102.6562vw;width:8.6458vw;height:3.0208vw;background-image:url(/assets/gen/06cd2f7d70f9773233ef229ad325a8fdcfe41d22.png);background-size:5.2907vw 1.8917vw;background-position:1.6639vw 0.5444vw;background-repeat:no-repeat;mix-blend-mode:luminosity;"></div>
-<div class="g-b" style="position:absolute;left:50.5208vw;top:102.0312vw;width:9.8958vw;height:4.2708vw;background-color:rgb(255,255,255);border-radius:0.3125vw;"></div>
-<div class="g-img" data-ref="db429dafe9531041d50b09052018c7880870da69" role="img" aria-label="Ashapura" style="position:absolute;left:52.8125vw;top:102.6562vw;width:5.3125vw;height:3.0208vw;background-image:url(/assets/gen/db429dafe9531041d50b09052018c7880870da69.png);background-size:cover;background-position:center;background-repeat:no-repeat;mix-blend-mode:luminosity;"></div>
-<div class="g-b" style="position:absolute;left:61.4583vw;top:102.0312vw;width:9.8958vw;height:4.2708vw;background-color:rgb(255,255,255);border-radius:0.3125vw;"></div>
-<div class="g-img" data-ref="ec4e870ac8e2fa9c57fb6b3c0da99033e12cc759" role="img" aria-label="Ashapura" style="position:absolute;left:63.9062vw;top:102.8125vw;width:5.0000vw;height:2.7083vw;background-image:url(/assets/gen/ec4e870ac8e2fa9c57fb6b3c0da99033e12cc759.png);background-size:4.5243vw 2.3753vw;background-position:0.2289vw 0.1665vw;background-repeat:no-repeat;mix-blend-mode:luminosity;"></div>
-<div class="g-b" style="position:absolute;left:72.3958vw;top:102.0312vw;width:9.8958vw;height:4.2708vw;background-color:rgb(255,255,255);border-radius:0.3125vw;"></div>
-<div class="g-img" data-ref="8d29eb071421987237b78c06a8b1dc37f2419bbc" role="img" aria-label="Ashapura" style="position:absolute;left:75.2604vw;top:102.6042vw;width:4.1667vw;height:3.1250vw;background-image:url(/assets/gen/8d29eb071421987237b78c06a8b1dc37f2419bbc.png);background-size:cover;background-position:center;background-repeat:no-repeat;mix-blend-mode:luminosity;"></div>
-<div class="g-b" style="position:absolute;left:0.0000vw;top:109.4271vw;width:100.0000vw;height:67.3958vw;box-sizing:border-box;border:0.0521vw solid rgb(236,238,242);"></div>
-<div class="g-t" style="position:absolute;left:44.9219vw;top:113.0208vw;width:10.1562vw;height:1.8750vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:1.2500vw;line-height:1.8750vw;color:rgb(223,63,23);text-align:center;white-space:nowrap;">OFFICE GALLERY</div>
-<h2 class="g-t" style="position:absolute;left:4.1667vw;top:116.1979vw;width:91.6667vw;height:3.1250vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:2.5000vw;line-height:3.1250vw;color:rgb(35,39,46);text-align:center;white-space:nowrap;">Real spaces. Real people.</h2>
-<div class="g-b g-clip" style="position:absolute;left:6.9271vw;top:120.9896vw;width:86.1458vw;height:52.7083vw;overflow:hidden;">
-<div class="g-b g-clip" style="position:absolute;left:6.6146vw;top:1.2500vw;width:72.9167vw;height:50.2083vw;background-color:rgb(255,255,255);overflow:hidden;">
-<div class="g-b g-clip" style="position:absolute;left:1.6667vw;top:1.6667vw;width:69.5833vw;height:21.4583vw;overflow:hidden;">
-<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:34.4792vw;height:21.4583vw;background-color:rgb(233,233,233);border-radius:2.0833vw;overflow:hidden;">
-<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:34.4792vw;height:21.4583vw;overflow:hidden;">
-<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:34.4792vw;height:21.4583vw;box-shadow:0.0000vw 0.2083vw 0.2083vw rgba(0,0,0,0.250);overflow:hidden;">
-<div class="g-img" data-ref="5f75dd2966d9c969e6a111f461f1f0f669b4d86a" role="presentation" aria-hidden="true" style="position:absolute;left:-6.1192vw;top:-0.1095vw;width:44.8347vw;height:21.5678vw;background-image:url(/assets/gen/5f75dd2966d9c969e6a111f461f1f0f669b4d86a.png);background-size:cover;background-position:center;background-repeat:no-repeat;"></div>
-</div>
-<div class="g-b" style="position:absolute;left:0.0000vw;top:0.0000vw;width:34.4792vw;height:21.4583vw;background:linear-gradient(180deg, rgba(0,0,0,0.000) 0.0%, rgba(0,0,0,0.700) 100.0%);"></div>
-<img class="g-vec" src="/assets/vec/I4502-6214;4500-5879.svg" data-vec="I4502:6214;4500:5879" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:30.7292vw;top:2.0833vw;width:1.8750vw;height:1.8750vw;">
-<div class="g-t" style="position:absolute;left:1.8750vw;top:17.5000vw;width:30.7292vw;height:1.8750vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:1.2500vw;line-height:1.8750vw;color:rgb(255,255,255);text-align:left;white-space:nowrap;">Mumbai · HQ</div>
-</div>
-</div>
-<div class="g-b g-clip" style="position:absolute;left:36.1458vw;top:0.0000vw;width:33.4375vw;height:21.4583vw;background-color:rgb(233,233,233);border-radius:2.0833vw;overflow:hidden;">
-<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:33.4375vw;height:21.4583vw;overflow:hidden;">
-<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:33.4375vw;height:21.4583vw;box-shadow:0.0000vw 0.2083vw 0.2083vw rgba(0,0,0,0.250);overflow:hidden;">
-<div class="g-img" data-ref="5f75dd2966d9c969e6a111f461f1f0f669b4d86a" role="presentation" aria-hidden="true" style="position:absolute;left:-5.9342vw;top:-0.1095vw;width:43.4802vw;height:21.5678vw;background-image:url(/assets/gen/5f75dd2966d9c969e6a111f461f1f0f669b4d86a.png);background-size:cover;background-position:center;background-repeat:no-repeat;"></div>
-</div>
-<div class="g-b" style="position:absolute;left:0.0000vw;top:0.0000vw;width:33.4375vw;height:21.4583vw;background:linear-gradient(180deg, rgba(0,0,0,0.000) 0.0%, rgba(0,0,0,0.700) 100.0%);"></div>
-<img class="g-vec" src="/assets/vec/I4502-6216;4500-5879.svg" data-vec="I4502:6216;4500:5879" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:29.6875vw;top:2.0833vw;width:1.8750vw;height:1.8750vw;">
-<div class="g-t" style="position:absolute;left:1.8750vw;top:17.5000vw;width:29.6875vw;height:1.8750vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:1.2500vw;line-height:1.8750vw;color:rgb(255,255,255);text-align:left;white-space:nowrap;">Ahmedabad</div>
-</div>
-</div>
-</div>
-<div class="g-b g-clip" style="position:absolute;left:1.6667vw;top:24.7917vw;width:69.5833vw;height:23.7500vw;overflow:hidden;">
-<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:20.4167vw;height:23.7500vw;background-color:rgb(233,233,233);border-radius:2.0833vw;overflow:hidden;">
-<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:20.4167vw;height:23.7500vw;overflow:hidden;">
-<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:20.4167vw;height:23.7500vw;box-shadow:0.0000vw 0.2083vw 0.2083vw rgba(0,0,0,0.250);overflow:hidden;">
-<div class="g-img" data-ref="5f75dd2966d9c969e6a111f461f1f0f669b4d86a" role="presentation" aria-hidden="true" style="position:absolute;left:-3.6235vw;top:-0.1212vw;width:26.5486vw;height:23.8712vw;background-image:url(/assets/gen/5f75dd2966d9c969e6a111f461f1f0f669b4d86a.png);background-size:cover;background-position:center;background-repeat:no-repeat;"></div>
-</div>
-<div class="g-b" style="position:absolute;left:0.0000vw;top:0.0000vw;width:20.4167vw;height:23.7500vw;background:linear-gradient(180deg, rgba(0,0,0,0.000) 0.0%, rgba(0,0,0,0.700) 100.0%);"></div>
-<img class="g-vec" src="/assets/vec/I4502-6219;4500-5879.svg" data-vec="I4502:6219;4500:5879" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:16.6667vw;top:2.0833vw;width:1.8750vw;height:1.8750vw;">
-<div class="g-t" style="position:absolute;left:1.8750vw;top:19.7917vw;width:16.6667vw;height:1.8750vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:1.2500vw;line-height:1.8750vw;color:rgb(255,255,255);text-align:left;white-space:nowrap;">Delhi (Noida)</div>
-</div>
-</div>
-<div class="g-b g-clip" style="position:absolute;left:22.0833vw;top:0.0000vw;width:47.5000vw;height:23.7500vw;background-color:rgb(233,233,233);border-radius:2.0833vw;overflow:hidden;">
-<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:47.5000vw;height:23.7500vw;overflow:hidden;">
-<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:47.5000vw;height:23.7500vw;box-shadow:0.0000vw 0.2083vw 0.2083vw rgba(0,0,0,0.250);overflow:hidden;">
-<div class="g-img" data-ref="5f75dd2966d9c969e6a111f461f1f0f669b4d86a" role="presentation" aria-hidden="true" style="position:absolute;left:-8.4300vw;top:-0.1212vw;width:61.7662vw;height:23.8712vw;background-image:url(/assets/gen/5f75dd2966d9c969e6a111f461f1f0f669b4d86a.png);background-size:cover;background-position:center;background-repeat:no-repeat;"></div>
-</div>
-<div class="g-b" style="position:absolute;left:0.0000vw;top:0.0000vw;width:47.5000vw;height:23.7500vw;background:linear-gradient(180deg, rgba(0,0,0,0.000) 0.0%, rgba(0,0,0,0.700) 100.0%);"></div>
-<img class="g-vec" src="/assets/vec/I4502-6221;4500-5879.svg" data-vec="I4502:6221;4500:5879" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:43.7500vw;top:2.0833vw;width:1.8750vw;height:1.8750vw;">
-<div class="g-t" style="position:absolute;left:1.8750vw;top:19.7917vw;width:43.7500vw;height:1.8750vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:1.2500vw;line-height:1.8750vw;color:rgb(255,255,255);text-align:left;white-space:nowrap;">Kolkata · Bhuj · Dehradun</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="g-b" style="position:absolute;left:0.0000vw;top:176.8229vw;width:100.0000vw;height:21.4583vw;background-color:rgb(255,255,255);box-sizing:border-box;border:0.0521vw solid rgb(236,238,242);"></div>
-<img class="g-vec" src="/assets/vec/5175-14346.svg" data-vec="5175:14346" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:0.0000vw;top:176.8229vw;width:100.0000vw;height:21.4583vw;">
-<img class="g-vec" src="/assets/vec/5175-14360.svg" data-vec="5175:14360" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:12.5000vw;top:187.3698vw;width:75.0000vw;height:10.9375vw;">
-<div class="g-b g-clip" style="position:absolute;left:12.5000vw;top:176.8229vw;width:75.0000vw;height:21.4583vw;overflow:hidden;">
-<div class="g-b" style="position:absolute;left:0.0000vw;top:0.0000vw;width:75.0000vw;height:21.4583vw;background-color:rgba(255,255,255,0.060);backdrop-filter:blur(2.6042vw);-webkit-backdrop-filter:blur(2.6042vw);"></div>
-</div>
-<div class="g-b" style="position:absolute;left:12.5000vw;top:176.8229vw;width:75.0000vw;height:21.4583vw;box-sizing:border-box;border:0.0521vw solid rgb(236,238,242);"></div>
-<div class="g-t" style="position:absolute;left:14.4010vw;top:179.6094vw;width:44.0104vw;height:15.8854vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:3.3333vw;line-height:3.7500vw;color:rgb(35,39,46);text-align:left;white-space:pre-wrap;">If this sounds like the kind of place you’d build something at we should talk.<br></div>
-<div class="g-b" style="position:absolute;left:72.6042vw;top:186.0938vw;width:13.0208vw;height:2.9167vw;background-color:rgb(223,63,23);border-radius:0.4167vw;box-shadow:inset 0.0000vw 0.0000vw 0.1042vw rgb(147,38,25);"></div>
-<div class="g-t" style="position:absolute;left:75.4948vw;top:186.9271vw;width:7.2396vw;height:1.2500vw;font-family:'Roboto',sans-serif;font-weight:600;font-size:1.0417vw;line-height:1.2500vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;letter-spacing:0.0078vw;">Open Positions</div>
-<div class="g-b g-clip" style="position:absolute;left:5.0000vw;top:2.2917vw;width:90.0000vw;height:47.4479vw;box-sizing:border-box;border:0.0521vw solid rgb(228,227,222);overflow:hidden;">
+<div class="g-b" style="position:absolute;left:87.5000vw;top:49.7396vw;width:0.0000vw;height:40.7292vw;box-sizing:border-box;border:0.0521vw solid rgb(236,238,242);"></div>
+<div class="g-b" style="position:absolute;left:12.5521vw;top:49.7396vw;width:0.0000vw;height:40.7292vw;box-sizing:border-box;border:0.0521vw solid rgb(236,238,242);"></div>
+<div class="g-b g-clip" style="position:absolute;left:5.0000vw;top:2.2917vw;width:90.0000vw;height:47.4479vw;box-sizing:border-box;border:0.0521vw solid rgb(236,238,242);overflow:hidden;">
 <div class="g-t" style="position:absolute;left:1.9531vw;top:13.3333vw;width:4.2188vw;height:1.4583vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:0.9375vw;line-height:1.4583vw;color:rgb(223,63,23);text-align:center;white-space:nowrap;">CULTURE</div>
 <h1 class="g-t" style="position:absolute;left:2.1354vw;top:15.7812vw;width:60.8333vw;height:11.2500vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:3.7500vw;line-height:3.7500vw;color:rgb(35,39,46);text-align:left;white-space:pre-wrap;">Great Place to Work, certified. <br>More importantly: work that doesn&#x27;t bury you.</h1>
-<div class="g-b" style="position:absolute;left:62.9688vw;top:0.0000vw;width:26.9792vw;height:28.4684vw;background-color:rgb(255,255,255);box-sizing:border-box;border:0.0521vw solid rgb(213,218,226);"></div>
+<div class="g-b" style="position:absolute;left:62.9688vw;top:0.0000vw;width:26.9792vw;height:28.4684vw;background-color:rgb(255,255,255);box-sizing:border-box;border:0.0521vw solid rgb(236,238,242);"></div>
 <div class="g-b" style="position:absolute;left:63.0208vw;top:0.0000vw;width:26.9271vw;height:28.4163vw;background-color:rgb(255,255,255);"></div>
 <div class="g-t" style="position:absolute;left:65.2869vw;top:21.1217vw;width:22.4479vw;height:5.1042vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:1.5873vw;line-height:1.7006vw;color:rgb(35,39,46);text-align:left;white-space:pre-wrap;letter-spacing:-0.0159vw;">Production-grade work. People who go home for dinner. The combination scales.</div>
 <div class="g-b g-clip" style="position:absolute;left:0.0521vw;top:28.4684vw;width:62.9167vw;height:18.9583vw;overflow:hidden;">
@@ -516,8 +611,7 @@ html.ax-pre-off #ax-pre{opacity:0;transform:translateY(-2vw);pointer-events:none
 <div class="g-b g-clip" style="position:absolute;left:62.9688vw;top:28.4684vw;width:26.9686vw;height:18.9787vw;overflow:hidden;">
 <img class="g-vec" src="/assets/vec/5259-20885.svg" data-vec="5259:20885" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:0.0000vw;top:0.0000vw;width:26.9686vw;height:7.5000vw;">
 <div class="g-b" style="position:absolute;left:11.8644vw;top:13.9787vw;width:13.0208vw;height:2.9167vw;background-color:rgb(223,63,23);border-radius:0.4167vw;box-shadow:inset 0.0000vw 0.0000vw 0.1042vw rgb(147,38,25);"></div>
-<div class="g-t" style="position:absolute;left:14.7550vw;top:14.8120vw;width:7.2396vw;height:1.2500vw;font-family:'Roboto',sans-serif;font-weight:600;font-size:1.0417vw;line-height:1.2500vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;letter-spacing:0.0078vw;">Open Positions</div>
-<div class="g-b" style="position:absolute;left:-0.0055vw;top:11.9084vw;width:0.0000vw;height:0.2083vw;background-color:rgb(255,175,1);"></div>
+<div class="g-t" style="position:absolute;left:15.1457vw;top:14.7078vw;width:6.4583vw;height:1.4583vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:0.9375vw;line-height:1.4583vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">Open Positions</div>
 </div>
 </div>
 <div class="g-b" style="position:absolute;left:1.3021vw;top:2.7604vw;width:97.3958vw;height:3.1250vw;background-color:rgba(255,255,255,0.670);box-sizing:border-box;border:0.0521vw solid rgb(213,218,226);backdrop-filter:blur(0.5208vw);-webkit-backdrop-filter:blur(0.5208vw);"></div>
@@ -973,7 +1067,7 @@ document.addEventListener('DOMContentLoaded',function(){
 });
 </script>
 
-<div class="ax-mob"><main class="ax-page" style="position:relative;height:1863.0233vw">
+<div class="ax-mob"><main class="ax-page" style="position:relative;height:1551.8605vw">
 <div class="g-b" style="position:absolute;left:0.0000vw;top:21.3953vw;width:100.0000vw;height:199.3023vw;box-sizing:border-box;border:0.2326vw solid rgb(228,227,222);"></div>
 <div class="g-b" style="position:absolute;left:3.7209vw;top:21.6279vw;width:92.5581vw;height:189.5349vw;box-sizing:border-box;border:0.2326vw solid rgb(228,227,222);"></div>
 <div class="g-t" style="position:absolute;left:5.8140vw;top:32.7907vw;width:88.6047vw;height:5.1163vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:3.0233vw;line-height:5.1163vw;color:rgb(223,63,23);text-align:left;white-space:nowrap;">CULTURE</div>
@@ -983,93 +1077,93 @@ document.addEventListener('DOMContentLoaded',function(){
 <div class="g-img g-clip" data-ref="97d1a40195c8851b20f141a49f48eea65f332c27" role="presentation" aria-hidden="true" style="position:absolute;left:0.0000vw;top:0.0000vw;width:92.3256vw;height:89.0698vw;background-image:url(/assets/gen/97d1a40195c8851b20f141a49f48eea65f332c27.png);background-size:cover;background-position:center;background-repeat:no-repeat;overflow:hidden;">
 </div>
 </div>
-<div class="g-b" style="position:absolute;left:0.0000vw;top:1125.3488vw;width:100.0930vw;height:79.0698vw;background-color:rgb(246,247,249);"></div>
-<div class="g-t" style="position:absolute;left:5.5814vw;top:1136.0465vw;width:88.8372vw;height:40.9302vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:8.3721vw;line-height:10.2326vw;color:rgb(35,39,46);text-align:left;white-space:pre-wrap;">If this sounds like the kind of place you’d build something at we should talk.<br></div>
-<div class="g-b g-clip" style="position:absolute;left:5.5814vw;top:1183.9535vw;width:88.8372vw;height:11.1628vw;background-color:rgb(223,63,23);border-radius:1.8605vw;overflow:hidden;">
+<div class="g-b" style="position:absolute;left:0.0000vw;top:814.1860vw;width:100.0930vw;height:79.0698vw;background-color:rgb(246,247,249);"></div>
+<div class="g-t" style="position:absolute;left:5.5814vw;top:824.8837vw;width:88.8372vw;height:40.9302vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:8.3721vw;line-height:10.2326vw;color:rgb(35,39,46);text-align:left;white-space:pre-wrap;">If this sounds like the kind of place you’d build something at we should talk.<br></div>
+<div class="g-b g-clip" style="position:absolute;left:5.5814vw;top:872.7907vw;width:88.8372vw;height:11.1628vw;background-color:rgb(223,63,23);border-radius:1.8605vw;overflow:hidden;">
 <div class="g-t" style="position:absolute;left:3.7209vw;top:3.2558vw;width:22.5581vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:3.2558vw;line-height:4.6512vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">Open Positions</div>
 <img class="g-vec" src="/assets/vec/I5637-51017;4046-29821.svg" data-vec="I5637:51017;4046:29821" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:79.0698vw;top:2.7907vw;width:5.5814vw;height:5.5814vw;">
 </div>
-<div class="g-b" style="position:absolute;left:0.0000vw;top:1204.4186vw;width:100.0000vw;height:658.5060vw;background-color:rgb(255,255,255);"></div>
-<img class="g-vec" src="/assets/vec/5637-51026.svg" data-vec="5637:51026" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:3.7209vw;top:1213.7209vw;width:23.2558vw;height:13.2558vw;">
-<div class="g-t" style="position:absolute;left:7.9070vw;top:1240.0212vw;width:41.6279vw;height:6.0465vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:4.2706vw;line-height:5.8721vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Sign up to learn more </div>
-<div class="g-t" style="position:absolute;left:7.9070vw;top:1250.8722vw;width:84.1860vw;height:6.0465vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:4.2706vw;line-height:5.8721vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">SAP. Cloud. AI. One accountable partner.
+<div class="g-b" style="position:absolute;left:0.0000vw;top:893.2558vw;width:100.0000vw;height:658.5060vw;background-color:rgb(255,255,255);"></div>
+<img class="g-vec" src="/assets/vec/5637-51026.svg" data-vec="5637:51026" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:3.7209vw;top:902.5581vw;width:23.2558vw;height:13.2558vw;">
+<div class="g-t" style="position:absolute;left:7.9070vw;top:928.8584vw;width:41.6279vw;height:6.0465vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:4.2706vw;line-height:5.8721vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Sign up to learn more </div>
+<div class="g-t" style="position:absolute;left:7.9070vw;top:939.7094vw;width:84.1860vw;height:6.0465vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:4.2706vw;line-height:5.8721vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">SAP. Cloud. AI. One accountable partner.
 </div>
-<div class="g-b g-clip" style="position:absolute;left:7.9070vw;top:1266.2608vw;width:84.1860vw;height:11.1628vw;background-color:rgb(223,63,23);border-radius:1.8605vw;overflow:hidden;">
+<div class="g-b g-clip" style="position:absolute;left:7.9070vw;top:955.0980vw;width:84.1860vw;height:11.1628vw;background-color:rgb(223,63,23);border-radius:1.8605vw;overflow:hidden;">
 <div class="g-t" style="position:absolute;left:3.7209vw;top:3.2558vw;width:17.4419vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:3.2558vw;line-height:4.6512vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">Get Started</div>
 <img class="g-vec" src="/assets/vec/I5637-51059;4046-29821.svg" data-vec="I5637:51059;4046:29821" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:74.4186vw;top:2.7907vw;width:5.5814vw;height:5.5814vw;">
 </div>
-<div class="g-t" style="position:absolute;left:10.1270vw;top:1290.5024vw;width:22.3256vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:3.7209vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Who we are
+<div class="g-t" style="position:absolute;left:10.1270vw;top:979.3396vw;width:22.3256vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:3.7209vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Who we are
 </div>
-<div class="g-t" style="position:absolute;left:10.1270vw;top:1303.5573vw;width:19.7674vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Foundation
+<div class="g-t" style="position:absolute;left:10.1270vw;top:992.3945vw;width:19.7674vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Foundation
 </div>
-<div class="g-t" style="position:absolute;left:10.1270vw;top:1313.4093vw;width:18.3721vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Leadership</div>
-<div class="g-t" style="position:absolute;left:10.1270vw;top:1323.2614vw;width:12.3256vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Culture</div>
-<div class="g-t" style="position:absolute;left:10.1270vw;top:1333.1134vw;width:11.1628vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Career</div>
-<div class="g-t" style="position:absolute;left:10.1270vw;top:1342.9655vw;width:17.9070vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Contact us</div>
-<div class="g-t" style="position:absolute;left:10.1270vw;top:1362.4265vw;width:14.4186vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:3.7209vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Services</div>
-<div class="g-t" style="position:absolute;left:10.1270vw;top:1375.4815vw;width:20.4651vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">All services
+<div class="g-t" style="position:absolute;left:10.1270vw;top:1002.2465vw;width:18.3721vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Leadership</div>
+<div class="g-t" style="position:absolute;left:10.1270vw;top:1012.0986vw;width:12.3256vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Culture</div>
+<div class="g-t" style="position:absolute;left:10.1270vw;top:1021.9506vw;width:11.1628vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Career</div>
+<div class="g-t" style="position:absolute;left:10.1270vw;top:1031.8027vw;width:17.9070vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Contact us</div>
+<div class="g-t" style="position:absolute;left:10.1270vw;top:1051.2637vw;width:14.4186vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:3.7209vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Services</div>
+<div class="g-t" style="position:absolute;left:10.1270vw;top:1064.3187vw;width:20.4651vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">All services
 </div>
-<div class="g-t" style="position:absolute;left:10.1270vw;top:1385.3335vw;width:24.6512vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">RISE with SAP</div>
-<div class="g-t" style="position:absolute;left:10.1270vw;top:1395.1855vw;width:29.7674vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">GROW with SAP
+<div class="g-t" style="position:absolute;left:10.1270vw;top:1074.1707vw;width:24.6512vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">RISE with SAP</div>
+<div class="g-t" style="position:absolute;left:10.1270vw;top:1084.0228vw;width:29.7674vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">GROW with SAP
 </div>
-<div class="g-t" style="position:absolute;left:10.1270vw;top:1405.0377vw;width:33.0233vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">SAP AMS (AXIOM)
+<div class="g-t" style="position:absolute;left:10.1270vw;top:1093.8748vw;width:33.0233vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">SAP AMS (AXIOM)
 </div>
-<div class="g-t" style="position:absolute;left:10.1270vw;top:1414.8896vw;width:10.0000vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">AWS
+<div class="g-t" style="position:absolute;left:10.1270vw;top:1103.7268vw;width:10.0000vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">AWS
 </div>
-<div class="g-t" style="position:absolute;left:10.1270vw;top:1424.7418vw;width:23.0233vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Google Cloud</div>
-<div class="g-t" style="position:absolute;left:10.1270vw;top:1434.5937vw;width:28.3721vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Multi-cloud CMS</div>
-<div class="g-t" style="position:absolute;left:10.1270vw;top:1454.0546vw;width:15.5814vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:3.7209vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Products</div>
-<div class="g-t" style="position:absolute;left:10.1270vw;top:1467.1098vw;width:21.6279vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">All products
+<div class="g-t" style="position:absolute;left:10.1270vw;top:1113.5789vw;width:23.0233vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Google Cloud</div>
+<div class="g-t" style="position:absolute;left:10.1270vw;top:1123.4309vw;width:28.3721vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Multi-cloud CMS</div>
+<div class="g-t" style="position:absolute;left:10.1270vw;top:1142.8919vw;width:15.5814vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:3.7209vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Products</div>
+<div class="g-t" style="position:absolute;left:10.1270vw;top:1155.9468vw;width:21.6279vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">All products
 </div>
-<div class="g-t" style="position:absolute;left:10.1270vw;top:1476.9618vw;width:16.5116vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">SupplierX</div>
-<div class="g-t" style="position:absolute;left:10.1270vw;top:1486.8139vw;width:12.0930vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">OrderX</div>
-<div class="g-t" style="position:absolute;left:10.1270vw;top:1496.6658vw;width:12.5581vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Xpense</div>
-<div class="g-t" style="position:absolute;left:10.1270vw;top:1506.5180vw;width:14.1860vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Logystix</div>
-<div class="g-t" style="position:absolute;left:10.1270vw;top:1516.3699vw;width:15.8140vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">ManuFeX</div>
-<div class="g-t" style="position:absolute;left:10.1270vw;top:1526.2221vw;width:32.3256vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">AXIOM AI Platform</div>
-<div class="g-t" style="position:absolute;left:10.1270vw;top:1545.6827vw;width:17.2093vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:3.7209vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Industries</div>
-<div class="g-t" style="position:absolute;left:10.1270vw;top:1558.7380vw;width:25.1163vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Manufacturing
+<div class="g-t" style="position:absolute;left:10.1270vw;top:1165.7989vw;width:16.5116vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">SupplierX</div>
+<div class="g-t" style="position:absolute;left:10.1270vw;top:1175.6509vw;width:12.0930vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">OrderX</div>
+<div class="g-t" style="position:absolute;left:10.1270vw;top:1185.5029vw;width:12.5581vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Xpense</div>
+<div class="g-t" style="position:absolute;left:10.1270vw;top:1195.3550vw;width:14.1860vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Logystix</div>
+<div class="g-t" style="position:absolute;left:10.1270vw;top:1205.2070vw;width:15.8140vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">ManuFeX</div>
+<div class="g-t" style="position:absolute;left:10.1270vw;top:1215.0590vw;width:32.3256vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">AXIOM AI Platform</div>
+<div class="g-t" style="position:absolute;left:10.1270vw;top:1234.5200vw;width:17.2093vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:3.7209vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Industries</div>
+<div class="g-t" style="position:absolute;left:10.1270vw;top:1247.5749vw;width:25.1163vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Manufacturing
 </div>
-<div class="g-t" style="position:absolute;left:10.1270vw;top:1568.5899vw;width:36.7442vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Metals &amp; Engineering
+<div class="g-t" style="position:absolute;left:10.1270vw;top:1257.4270vw;width:36.7442vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Metals &amp; Engineering
 </div>
-<div class="g-t" style="position:absolute;left:10.1270vw;top:1578.4420vw;width:33.0233vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Energy &amp; Oil &amp; Gas
+<div class="g-t" style="position:absolute;left:10.1270vw;top:1267.2790vw;width:33.0233vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Energy &amp; Oil &amp; Gas
 </div>
-<div class="g-t" style="position:absolute;left:10.1270vw;top:1588.2940vw;width:13.0233vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Textiles</div>
-<div class="g-t" style="position:absolute;left:10.1270vw;top:1598.1461vw;width:35.3488vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">FMCG &amp; Distribution
+<div class="g-t" style="position:absolute;left:10.1270vw;top:1277.1311vw;width:13.0233vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Textiles</div>
+<div class="g-t" style="position:absolute;left:10.1270vw;top:1286.9831vw;width:35.3488vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">FMCG &amp; Distribution
 </div>
-<div class="g-t" style="position:absolute;left:10.1270vw;top:1607.9980vw;width:42.5581vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Automotive &amp; Aerospace
+<div class="g-t" style="position:absolute;left:10.1270vw;top:1296.8351vw;width:42.5581vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Automotive &amp; Aerospace
 </div>
-<div class="g-t" style="position:absolute;left:10.1270vw;top:1617.8502vw;width:15.3488vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Alliances</div>
-<div class="g-t" style="position:absolute;left:10.1270vw;top:1637.3108vw;width:16.5116vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:3.7209vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">About Us</div>
-<div class="g-t" style="position:absolute;left:10.1270vw;top:1650.3661vw;width:21.1628vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Case studies</div>
-<div class="g-t" style="position:absolute;left:10.1270vw;top:1660.2180vw;width:26.9767vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Trust &amp; security
+<div class="g-t" style="position:absolute;left:10.1270vw;top:1306.6872vw;width:15.3488vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Alliances</div>
+<div class="g-t" style="position:absolute;left:10.1270vw;top:1326.1483vw;width:16.5116vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:3.7209vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">About Us</div>
+<div class="g-t" style="position:absolute;left:10.1270vw;top:1339.2032vw;width:21.1628vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Case studies</div>
+<div class="g-t" style="position:absolute;left:10.1270vw;top:1349.0552vw;width:26.9767vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Trust &amp; security
 </div>
-<div class="g-t" style="position:absolute;left:10.1270vw;top:1670.0702vw;width:7.9070vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Blog</div>
-<div class="g-t" style="position:absolute;left:10.1270vw;top:1679.9221vw;width:30.0000vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Investor relations
+<div class="g-t" style="position:absolute;left:10.1270vw;top:1358.9073vw;width:7.9070vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Blog</div>
+<div class="g-t" style="position:absolute;left:10.1270vw;top:1368.7593vw;width:30.0000vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Investor relations
 </div>
-<div class="g-t" style="position:absolute;left:10.1270vw;top:1689.7743vw;width:26.7442vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">BSE disclosures</div>
-<div class="g-t" style="position:absolute;left:10.1270vw;top:1709.2351vw;width:17.4419vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:3.7209vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Follow Us</div>
-<div class="g-t" style="position:absolute;left:10.1270vw;top:1722.2904vw;width:11.8605vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Twitter</div>
-<div class="g-t" style="position:absolute;left:10.1270vw;top:1732.1423vw;width:14.1860vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">LinkedIn</div>
-<div class="g-img" data-ref="1a6724d5f1b0e3e74c7e42c83b442f552edd6040" role="img" aria-label="4 8" style="position:absolute;left:76.0465vw;top:1727.9070vw;width:20.2326vw;height:34.4186vw;background-image:url(/assets/partners/gptw-certified.png);background-size:contain;background-position:center;background-repeat:no-repeat;"></div>
-<div class="g-b" style="position:absolute;left:3.7209vw;top:1750.2448vw;width:92.5581vw;height:63.6100vw;box-sizing:border-box;border:0.2326vw solid rgb(236,238,242);"></div>
-<div class="g-t" style="position:absolute;left:10.3938vw;top:1756.3838vw;width:32.0930vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">support@doss.com</div>
-<div class="g-t" style="position:absolute;left:10.3938vw;top:1766.2359vw;width:32.5581vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Terms &amp; Conditions</div>
-<div class="g-t" style="position:absolute;left:47.6749vw;top:1766.1996vw;width:23.0233vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Privacy Policy</div>
-<div class="g-t" style="position:absolute;left:10.4656vw;top:1785.2693vw;width:79.0698vw;height:22.3256vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:pre-wrap;">© 2026 AeonX Digital Technology Limited. BSE-listed. |  All rights reserved. · SAP Gold Partner · AWS Advanced Tier · Google Cloud Partner</div>
-<div class="g-t" style="position:absolute;left:10.3938vw;top:1776.0878vw;width:13.0233vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Cookies</div>
-<div class="g-t" style="position:absolute;left:33.0237vw;top:1776.1996vw;width:13.9535vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Sitemap</div>
-<div class="g-b" style="position:absolute;left:3.7209vw;top:1750.1531vw;width:92.5581vw;height:0.2326vw;background:linear-gradient(90deg, rgba(133,128,123,0.180) 0.0%);"></div>
-<div class="g-t" style="position:absolute;left:8.3721vw;top:1825.9479vw;width:49.3023vw;height:6.5116vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:4.1860vw;line-height:6.5116vw;color:rgb(38,15,20);text-align:left;white-space:nowrap;">Get the latest from Aeonx</div>
-<div class="g-b g-clip" style="position:absolute;left:8.3721vw;top:1836.2968vw;width:54.6512vw;height:10.6977vw;border-radius:0.4651vw;box-sizing:border-box;border:0.1860vw solid rgb(255,120,94);overflow:hidden;">
+<div class="g-t" style="position:absolute;left:10.1270vw;top:1378.6114vw;width:26.7442vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">BSE disclosures</div>
+<div class="g-t" style="position:absolute;left:10.1270vw;top:1398.0724vw;width:17.4419vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:3.7209vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Follow Us</div>
+<div class="g-t" style="position:absolute;left:10.1270vw;top:1411.1276vw;width:11.8605vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Twitter</div>
+<div class="g-t" style="position:absolute;left:10.1270vw;top:1420.9795vw;width:14.1860vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">LinkedIn</div>
+<div class="g-img" data-ref="1a6724d5f1b0e3e74c7e42c83b442f552edd6040" role="img" aria-label="4 8" style="position:absolute;left:76.0465vw;top:1416.7442vw;width:20.2326vw;height:34.4186vw;background-image:url(/assets/partners/gptw-certified.png);background-size:contain;background-position:center;background-repeat:no-repeat;"></div>
+<div class="g-b" style="position:absolute;left:3.7209vw;top:1439.0820vw;width:92.5581vw;height:63.6100vw;box-sizing:border-box;border:0.2326vw solid rgb(236,238,242);"></div>
+<div class="g-t" style="position:absolute;left:10.3938vw;top:1445.2210vw;width:32.0930vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">support@doss.com</div>
+<div class="g-t" style="position:absolute;left:10.3938vw;top:1455.0731vw;width:32.5581vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Terms &amp; Conditions</div>
+<div class="g-t" style="position:absolute;left:47.6749vw;top:1455.0368vw;width:23.0233vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Privacy Policy</div>
+<div class="g-t" style="position:absolute;left:10.4656vw;top:1474.1066vw;width:79.0698vw;height:22.3256vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:pre-wrap;">© 2026 AeonX Digital Technology Limited. BSE-listed. |  All rights reserved. · SAP Gold Partner · AWS Advanced Tier · Google Cloud Partner</div>
+<div class="g-t" style="position:absolute;left:10.3938vw;top:1464.9251vw;width:13.0233vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Cookies</div>
+<div class="g-t" style="position:absolute;left:33.0237vw;top:1465.0368vw;width:13.9535vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Sitemap</div>
+<div class="g-b" style="position:absolute;left:3.7209vw;top:1438.9903vw;width:92.5581vw;height:0.2326vw;background:linear-gradient(90deg, rgba(133,128,123,0.180) 0.0%);"></div>
+<div class="g-t" style="position:absolute;left:8.3721vw;top:1514.7852vw;width:49.3023vw;height:6.5116vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:4.1860vw;line-height:6.5116vw;color:rgb(38,15,20);text-align:left;white-space:nowrap;">Get the latest from Aeonx</div>
+<div class="g-b g-clip" style="position:absolute;left:8.3721vw;top:1525.1340vw;width:54.6512vw;height:10.6977vw;border-radius:0.4651vw;box-sizing:border-box;border:0.1860vw solid rgb(255,120,94);overflow:hidden;">
 <div class="g-t" style="position:absolute;left:3.9069vw;top:2.5581vw;width:46.8372vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:3.7209vw;line-height:5.5814vw;color:rgb(134,149,170);text-align:left;white-space:nowrap;">Work email</div>
 </div>
-<div class="g-b g-clip" style="position:absolute;left:65.8140vw;top:1836.2968vw;width:25.7267vw;height:10.6977vw;background-color:rgba(38,15,20,0.050);border-radius:0.4651vw;box-sizing:border-box;border:0.1860vw solid rgba(0,0,0,0.000);overflow:hidden;">
+<div class="g-b g-clip" style="position:absolute;left:65.8140vw;top:1525.1340vw;width:25.7267vw;height:10.6977vw;background-color:rgba(38,15,20,0.050);border-radius:0.4651vw;box-sizing:border-box;border:0.1860vw solid rgba(0,0,0,0.000);overflow:hidden;">
 <div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:25.8140vw;height:10.2326vw;background-color:rgb(223,63,23);border-radius:1.8605vw;overflow:hidden;">
 <div class="g-t" style="position:absolute;left:5.5814vw;top:2.7907vw;width:14.6512vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:3.2558vw;line-height:4.6512vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">Subscribe</div>
 </div>
 </div>
-<div class="g-b" style="position:absolute;left:3.7209vw;top:1853.5815vw;width:92.5581vw;height:0.2326vw;background-color:rgb(229,229,229);"></div>
+<div class="g-b" style="position:absolute;left:3.7209vw;top:1542.4187vw;width:92.5581vw;height:0.2326vw;background-color:rgb(229,229,229);"></div>
 <div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:220.6977vw;width:100.0930vw;height:372.0930vw;background-color:rgb(255,255,255);box-sizing:border-box;border:0.2326vw solid rgb(236,238,242);overflow:hidden;">
 <div class="g-t" style="position:absolute;left:6.0476vw;top:9.3023vw;width:26.5116vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:2.7907vw;line-height:4.6512vw;color:rgb(223,63,23);text-align:left;white-space:nowrap;">WHAT WE BELIEVE</div>
 <h2 class="g-t" style="position:absolute;left:6.0476vw;top:16.9767vw;width:88.1395vw;height:10.2326vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:8.3721vw;line-height:10.2326vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Four pillars.</h2>
@@ -1114,52 +1208,42 @@ document.addEventListener('DOMContentLoaded',function(){
 <div class="g-b" style="position:absolute;left:150.0000vw;top:32.7907vw;width:44.1860vw;height:19.0698vw;background-color:rgb(255,255,255);border-radius:1.3953vw;"></div>
 <div class="g-img" data-ref="8d29eb071421987237b78c06a8b1dc37f2419bbc" role="img" aria-label="Ashapura" style="position:absolute;left:162.7907vw;top:35.3488vw;width:18.6047vw;height:13.9535vw;background-image:url(/assets/gen/8d29eb071421987237b78c06a8b1dc37f2419bbc.png);background-size:cover;background-position:center;background-repeat:no-repeat;mix-blend-mode:luminosity;"></div>
 </div>
-<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:654.1860vw;width:100.0000vw;height:471.1628vw;background-color:rgb(255,255,255);box-sizing:border-box;border:0.2326vw solid rgb(236,238,242);overflow:hidden;">
+<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:654.1860vw;width:100.0000vw;height:160.0000vw;background-color:rgb(255,255,255);box-sizing:border-box;border:0.2326vw solid rgb(236,238,242);overflow:hidden;">
 <div class="g-t" style="position:absolute;left:6.0011vw;top:9.3023vw;width:23.0233vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:2.7907vw;line-height:4.6512vw;color:rgb(223,63,23);text-align:left;white-space:nowrap;">OFFICE GALLERY</div>
 <h2 class="g-t" style="position:absolute;left:6.0011vw;top:16.9767vw;width:88.1395vw;height:20.4651vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:8.3721vw;line-height:10.2326vw;color:rgb(35,39,46);text-align:left;white-space:pre-wrap;">Real spaces. Real people.</h2>
-<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:43.0233vw;width:100.0000vw;height:418.6047vw;overflow:hidden;">
-<div class="g-b g-clip" style="position:absolute;left:3.7209vw;top:0.0000vw;width:92.5581vw;height:418.6047vw;background-color:rgb(255,255,255);overflow:hidden;">
-<div class="g-b g-clip" style="position:absolute;left:3.7209vw;top:5.5814vw;width:85.1163vw;height:200.0000vw;overflow:hidden;">
-<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:85.1163vw;height:96.2791vw;background-color:rgb(233,233,233);border-radius:9.3023vw;overflow:hidden;">
-<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:85.1163vw;height:95.8140vw;overflow:hidden;">
-<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:85.1163vw;height:95.8140vw;box-shadow:0.0000vw 0.9302vw 0.9302vw rgba(0,0,0,0.250);overflow:hidden;">
-<div class="g-img" data-ref="5f75dd2966d9c969e6a111f461f1f0f669b4d86a" role="presentation" aria-hidden="true" style="position:absolute;left:-15.1061vw;top:-0.4888vw;width:110.6802vw;height:96.3028vw;background-image:url(/assets/gen/5f75dd2966d9c969e6a111f461f1f0f669b4d86a.png);background-size:cover;background-position:center;background-repeat:no-repeat;"></div>
-</div>
-<div class="g-b" style="position:absolute;left:0.0000vw;top:0.0000vw;width:85.1163vw;height:95.8140vw;background:linear-gradient(180deg, rgba(0,0,0,0.000) 0.0%, rgba(0,0,0,0.700) 100.0%);"></div>
-<img class="g-vec" src="/assets/vec/I5637-51432;4500-5879.svg" data-vec="I5637:51432;4500:5879" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:68.3721vw;top:9.3023vw;width:8.3721vw;height:8.3721vw;">
-<h2 class="g-t" style="position:absolute;left:8.3721vw;top:78.1395vw;width:68.3721vw;height:8.3721vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:5.5814vw;line-height:8.3721vw;color:rgb(255,255,255);text-align:left;white-space:nowrap;">Mumbai · HQ</h2>
-</div>
-</div>
-<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:103.7209vw;width:85.1163vw;height:96.2791vw;background-color:rgb(233,233,233);border-radius:9.3023vw;overflow:hidden;">
-<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:85.1163vw;height:95.8140vw;overflow:hidden;">
-<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:85.1163vw;height:95.8140vw;box-shadow:0.0000vw 0.9302vw 0.9302vw rgba(0,0,0,0.250);overflow:hidden;">
-<div class="g-img" data-ref="5f75dd2966d9c969e6a111f461f1f0f669b4d86a" role="presentation" aria-hidden="true" style="position:absolute;left:-15.1061vw;top:-0.4888vw;width:110.6802vw;height:96.3028vw;background-image:url(/assets/gen/5f75dd2966d9c969e6a111f461f1f0f669b4d86a.png);background-size:cover;background-position:center;background-repeat:no-repeat;"></div>
-</div>
-<div class="g-b" style="position:absolute;left:0.0000vw;top:0.0000vw;width:85.1163vw;height:95.8140vw;background:linear-gradient(180deg, rgba(0,0,0,0.000) 0.0%, rgba(0,0,0,0.700) 100.0%);"></div>
-<img class="g-vec" src="/assets/vec/I5637-51434;4500-5879.svg" data-vec="I5637:51434;4500:5879" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:68.3721vw;top:9.3023vw;width:8.3721vw;height:8.3721vw;">
-<div class="g-t" style="position:absolute;left:8.3721vw;top:78.1395vw;width:68.3721vw;height:8.3721vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:5.5814vw;line-height:8.3721vw;color:rgb(255,255,255);text-align:left;white-space:nowrap;">Ahmedabad</div>
-</div>
-</div>
-</div>
-<div class="g-b g-clip" style="position:absolute;left:3.7209vw;top:213.0233vw;width:85.1163vw;height:200.0000vw;overflow:hidden;">
-<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:85.1163vw;height:96.2791vw;background-color:rgb(233,233,233);border-radius:9.3023vw;overflow:hidden;">
+<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:43.0233vw;width:100.0000vw;height:107.4419vw;border-radius:5.5814vw;overflow:hidden;">
+<div class="g-b g-clip" style="position:absolute;left:3.7209vw;top:0.0000vw;width:92.5581vw;height:107.4419vw;background-color:rgb(255,255,255);overflow:hidden;">
+<div class="g-b g-clip" style="position:absolute;left:3.7209vw;top:5.5814vw;width:360.2326vw;height:96.2791vw;overflow:hidden;">
+<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:85.1163vw;height:96.2791vw;background-color:rgb(233,233,233);overflow:hidden;">
 <div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:85.1163vw;height:96.2791vw;overflow:hidden;">
 <div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:85.1163vw;height:96.2791vw;box-shadow:0.0000vw 0.9302vw 0.9302vw rgba(0,0,0,0.250);overflow:hidden;">
 <div class="g-img" data-ref="5f75dd2966d9c969e6a111f461f1f0f669b4d86a" role="presentation" aria-hidden="true" style="position:absolute;left:-15.1061vw;top:-0.4912vw;width:110.6802vw;height:96.7703vw;background-image:url(/assets/gen/5f75dd2966d9c969e6a111f461f1f0f669b4d86a.png);background-size:cover;background-position:center;background-repeat:no-repeat;"></div>
 </div>
 <div class="g-b" style="position:absolute;left:0.0000vw;top:0.0000vw;width:85.1163vw;height:96.2791vw;background:linear-gradient(180deg, rgba(0,0,0,0.000) 0.0%, rgba(0,0,0,0.700) 100.0%);"></div>
-<img class="g-vec" src="/assets/vec/I5637-51437;4500-5879.svg" data-vec="I5637:51437;4500:5879" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:68.3721vw;top:9.3023vw;width:8.3721vw;height:8.3721vw;">
-<h2 class="g-t" style="position:absolute;left:8.3721vw;top:78.6047vw;width:68.3721vw;height:8.3721vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:5.5814vw;line-height:8.3721vw;color:rgb(255,255,255);text-align:left;white-space:nowrap;">Delhi (Noida)</h2>
 </div>
 </div>
-<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:103.7209vw;width:85.1163vw;height:96.2791vw;background-color:rgb(233,233,233);border-radius:9.3023vw;overflow:hidden;">
+<div class="g-b g-clip" style="position:absolute;left:87.4419vw;top:0.0000vw;width:85.1163vw;height:96.2791vw;background-color:rgb(233,233,233);overflow:hidden;">
 <div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:84.4186vw;height:96.2791vw;overflow:hidden;">
 <div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:84.4186vw;height:96.2791vw;box-shadow:0.0000vw 0.9302vw 0.9302vw rgba(0,0,0,0.250);overflow:hidden;">
 <div class="g-img" data-ref="5f75dd2966d9c969e6a111f461f1f0f669b4d86a" role="presentation" aria-hidden="true" style="position:absolute;left:-14.9821vw;top:-0.4912vw;width:109.7730vw;height:96.7703vw;background-image:url(/assets/gen/5f75dd2966d9c969e6a111f461f1f0f669b4d86a.png);background-size:cover;background-position:center;background-repeat:no-repeat;"></div>
 </div>
 <div class="g-b" style="position:absolute;left:0.0000vw;top:0.0000vw;width:84.4186vw;height:96.2791vw;background:linear-gradient(180deg, rgba(0,0,0,0.000) 0.0%, rgba(0,0,0,0.700) 100.0%);"></div>
-<img class="g-vec" src="/assets/vec/I5637-51439;4500-5879.svg" data-vec="I5637:51439;4500:5879" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:67.6744vw;top:9.3023vw;width:8.3721vw;height:8.3721vw;">
-<h2 class="g-t" style="position:absolute;left:8.3721vw;top:78.6047vw;width:67.6744vw;height:8.3721vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:5.5814vw;line-height:8.3721vw;color:rgb(255,255,255);text-align:left;white-space:nowrap;">Kolkata · Bhuj · Dehradun</h2>
+</div>
+</div>
+<div class="g-b g-clip" style="position:absolute;left:174.8837vw;top:0.0000vw;width:85.1163vw;height:96.2791vw;background-color:rgb(233,233,233);overflow:hidden;">
+<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:85.1163vw;height:95.8140vw;overflow:hidden;">
+<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:85.1163vw;height:95.8140vw;box-shadow:0.0000vw 0.9302vw 0.9302vw rgba(0,0,0,0.250);overflow:hidden;">
+<div class="g-img" data-ref="5f75dd2966d9c969e6a111f461f1f0f669b4d86a" role="presentation" aria-hidden="true" style="position:absolute;left:-15.1061vw;top:-0.4888vw;width:110.6802vw;height:96.3028vw;background-image:url(/assets/gen/5f75dd2966d9c969e6a111f461f1f0f669b4d86a.png);background-size:cover;background-position:center;background-repeat:no-repeat;"></div>
+</div>
+<div class="g-b" style="position:absolute;left:0.0000vw;top:0.0000vw;width:85.1163vw;height:95.8140vw;background:linear-gradient(180deg, rgba(0,0,0,0.000) 0.0%, rgba(0,0,0,0.700) 100.0%);"></div>
+</div>
+</div>
+<div class="g-b g-clip" style="position:absolute;left:262.3256vw;top:0.0000vw;width:85.1163vw;height:96.2791vw;background-color:rgb(233,233,233);overflow:hidden;">
+<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:85.1163vw;height:95.8140vw;overflow:hidden;">
+<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:85.1163vw;height:95.8140vw;box-shadow:0.0000vw 0.9302vw 0.9302vw rgba(0,0,0,0.250);overflow:hidden;">
+<div class="g-img" data-ref="5f75dd2966d9c969e6a111f461f1f0f669b4d86a" role="presentation" aria-hidden="true" style="position:absolute;left:-15.1061vw;top:-0.4888vw;width:110.6802vw;height:96.3028vw;background-image:url(/assets/gen/5f75dd2966d9c969e6a111f461f1f0f669b4d86a.png);background-size:cover;background-position:center;background-repeat:no-repeat;"></div>
+</div>
+<div class="g-b" style="position:absolute;left:0.0000vw;top:0.0000vw;width:85.1163vw;height:95.8140vw;background:linear-gradient(180deg, rgba(0,0,0,0.000) 0.0%, rgba(0,0,0,0.700) 100.0%);"></div>
 </div>
 </div>
 </div>
@@ -1940,6 +2024,974 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
   /* the .ax-mob block may sit AFTER this script in the document */
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
+})();
+</script>
+
+<style id="ax-footalign-css">
+/* no styling of its own -- the alignment is applied to inline `left` values, because the
+   footer is flattened Figma output where every box carries its own absolute left. */
+</style>
+<script>
+/* ---- FOOTER NEWSLETTER: ALIGN TO THE "WHO WE ARE / ABOUT US" COLUMN ----
+   Requested deviation from Figma. In the design the newsletter heading sits ~26px to the
+   right of the footer link columns (and in the flattened page, ~86px), so it reads as
+   almost-but-not-quite aligned. This pulls the heading, the email field and the Subscribe
+   button left as one group until the heading's left edge matches that column.
+
+   Geometry-driven rather than hardcoded: the footer is regenerated from Figma, which
+   renumbers ids and shifts values, so anchoring on the column's measured left keeps
+   working across a re-pull. Applied per layout scope, so the desktop page and the mobile
+   .ax-mob block are each aligned against their own column. */
+(function(){
+  var COL = /^(who we are|about us)$/i;
+  var HEAD = /^get the latest from aeonx/i;
+
+  function num(el, k){
+    var m = (el.getAttribute('style') || '').match(new RegExp(k + ':(-?[0-9.]+)vw'));
+    return m ? parseFloat(m[1]) : null;
+  }
+  function setLeft(el, v){
+    var s = el.getAttribute('style') || '';
+    el.setAttribute('style', s.replace(/left:-?[0-9.]+vw/, 'left:' + v.toFixed(4) + 'vw'));
+  }
+
+  function align(scope){
+    if (!scope || scope.dataset.axFootalign) return;
+    var texts = [].slice.call(scope.querySelectorAll('.g-t'));
+    var head = null, i;
+    for (i = 0; i < texts.length; i++){
+      if (HEAD.test((texts[i].textContent || '').trim())) { head = texts[i]; break; }
+    }
+    if (!head) return;
+    var hL = num(head, 'left'), hT = num(head, 'top');
+    if (hL === null || hT === null) return;
+
+    /* the column heading is the nearest "Who we are"/"About us" ABOVE the newsletter row */
+    var col = null, best = Infinity;
+    for (i = 0; i < texts.length; i++){
+      var t = texts[i];
+      if (!COL.test((t.textContent || '').trim())) continue;
+      var cT = num(t, 'top'), cL = num(t, 'left');
+      if (cT === null || cL === null || cT >= hT) continue;
+      if (hT - cT < best) { best = hT - cT; col = cL; }
+    }
+    if (col === null) return;
+
+    var shift = col - hL;
+    if (Math.abs(shift) < 0.01) { scope.dataset.axFootalign = '1'; return; }
+
+    /* the group = the heading plus every SIBLING on the same row to its right (the email
+       field and the Subscribe pill). The enclosing band sits ~2vw higher, so a tight row
+       tolerance keeps it out -- moving the band would drag the whole strip. */
+    var group = [head];
+    var sibs = head.parentElement ? head.parentElement.children : [];
+    for (i = 0; i < sibs.length; i++){
+      var e = sibs[i];
+      if (e === head) continue;
+      var eT = num(e, 'top'), eL = num(e, 'left');
+      if (eT === null || eL === null) continue;
+      if (Math.abs(eT - hT) <= 1.5 && eL >= hL - 0.01) group.push(e);
+    }
+    for (i = 0; i < group.length; i++){
+      var g = group[i], gl = num(g, 'left');
+      if (gl !== null) setLeft(g, gl + shift);
+    }
+    scope.dataset.axFootalign = '1';
+  }
+
+  function init(){
+    /* the .ax-mob block is not guaranteed to precede this script -- resolve lazily */
+    var d = document.querySelector('main.ax-page');
+    if (d && d.closest && d.closest('.ax-mob')) d = null;
+    var m = document.querySelector('.ax-mob');
+    if (d) align(d);
+    if (m) align(m.querySelector('main.ax-page') || m);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
+
+<style id="ax-hover-css">
+/* ---- HOVER / FOCUS AFFORDANCES ----------------------------------------------
+   The layout is absolutely positioned and pixel-locked, and Figma exports a card
+   as a FLAT run of siblings (the bordered box, then its heading, body and pill,
+   all separate absolutely-positioned nodes). So :hover on the box cannot reach
+   the text, and CSS alone cannot lift a "card" that does not exist as an element.
+   The script below groups the siblings geometrically and toggles .ax-hv-on on
+   every member at once, which is why the whole tile appears to move together.
+
+   HARD RULE: nothing in here may change box metrics. transform / box-shadow /
+   filter / colour / background only -- no width, height, margin, padding,
+   border-width or font-size, so a hover can never reflow a neighbour.
+   (background-size counts as paint: it sizes the background image inside the box,
+   not the box.) */
+
+.ax-hv-m{transition:transform .22s cubic-bezier(.22,.61,.36,1),
+                    box-shadow .22s ease, filter .22s ease,
+                    border-color .22s ease, opacity .22s ease,
+                    color .18s ease,
+                    background-size .38s cubic-bezier(.22,.61,.36,1)}
+
+/* --ax-bt preserves any transform the element already carried (set by the
+   script) so the lift composes with it instead of wiping it. */
+.ax-hv-tile.ax-hv-on{transform:translateY(-0.2083vw) var(--ax-bt,translateZ(0))}
+/* A CTA inside a card is a member of the card group AND its own button group. Letting
+   both lifts apply made the pill drift 2px out of its own card on card hover. The card
+   owns the lift; the pill only moves when it is itself hovered. */
+.ax-hv-tile.ax-hv-btn.ax-hv-on:not(.ax-hv-selfon){transform:var(--ax-bt,translateZ(0))}
+.ax-hv-btn.ax-hv-selfon {transform:translateY(-0.1042vw) var(--ax-bt,translateZ(0))}
+
+/* tile: soft lift + brand-tinted hairline drawn as a shadow ring, so it shows
+   even when a coincident white fill box paints over the real border */
+.ax-hv-tileskin.ax-hv-on{
+  box-shadow:0 0 0 0.0521vw rgba(223,63,23,.45),
+             0 0.4167vw 1.0417vw rgba(35,39,46,.10);
+  border-color:rgba(223,63,23,.45)}
+
+/* ---- BUTTONS -------------------------------------------------------------
+   Both pill styles share one gesture: a wash sweeps in from the LEFT EDGE, the
+   pill lifts 2px, and a trailing arrow leans the way the button leads. The wash
+   is background-size 0 -> 100% on a flat gradient, i.e. pure paint inside the
+   border box: it cannot reflow anything and it is clipped by the pill's own
+   border-radius, so nothing bleeds out (which is why the old 20vw inset-shadow
+   tint needed a radius guard -- that hack is gone).
+   Filled pills lighten and warm; outlined pills fill with a brand wash and take
+   a brand hairline. */
+.ax-hv-fill,.ax-hv-out{background-repeat:no-repeat;background-position:left center;
+  background-size:0 100%}
+.ax-hv-fill{background-image:linear-gradient(90deg,rgba(255,255,255,.20),rgba(255,255,255,.20))}
+.ax-hv-out {background-image:linear-gradient(90deg,rgba(223,63,23,.10),rgba(223,63,23,.10))}
+
+.ax-hv-fill.ax-hv-selfon{background-size:100% 100%;
+  box-shadow:0 0.2083vw 0.5729vw rgba(176,45,12,.28)}
+/* the hairline is drawn as a shadow ring, not border-color: Figma writes the border
+   into the element's INLINE style shorthand, which a class can never outrank */
+.ax-hv-out.ax-hv-selfon{background-size:100% 100%;
+  box-shadow:0 0 0 0.0521vw rgba(223,63,23,.55),
+             0 0.1042vw 0.3125vw rgba(35,39,46,.10)}
+/* bare text link: no box to wash, so the label itself goes brand */
+.ax-hv-txt.ax-hv-selfon{color:rgb(223,63,23)!important}
+/* A trailing chevron/arrow leans the way the button leads. Figma places it either as
+   a flat SIBLING of the pill or as a CHILD of a g-clip pill, and the two need
+   different rules: a sibling is a group member and carries the 2px lift itself, a
+   child already inherits the lift from the pill it sits in. */
+.ax-hv-arrow{--ax-ar:0.1823vw;transition:transform .26s cubic-bezier(.22,.61,.36,1)}
+.ax-hv-btn.ax-hv-arrow.ax-hv-selfon{           /* sibling: slide + its own lift */
+  transform:translate(var(--ax-ar),-0.1042vw) var(--ax-bt,translateZ(0))}
+.ax-hv-selfon .ax-hv-arrow{                    /* child: slide only */
+  transform:translateX(var(--ax-ar)) var(--ax-bt,translateZ(0))}
+/* Grey step badges (01 / 02 / 03) take the brand colour with their tile. */
+.ax-hv-badge.ax-hv-on{background-color:rgb(223,63,23)!important}
+.ax-hv-badgetx.ax-hv-on{color:rgb(255,255,255)!important}
+
+/* Only a group whose skin really navigates gets the hand. An Explore pill with no
+   destination still lifts with its card, but must not claim to be clickable. */
+.ax-hv-clk{cursor:pointer}
+
+/* keyboard parity. Not inside the reduced-motion or hover guards -- a focus ring
+   is an accessibility requirement, not decoration. */
+.ax-hv-f:focus-visible,[data-cta]:focus-visible{
+  outline:0.1042vw solid rgb(223,63,23);outline-offset:0.1563vw}
+
+/* Motion is dropped; the colour/wash state change stays, because it is the only
+   thing telling a reduced-motion user which control is under the pointer. */
+@media (prefers-reduced-motion: reduce){
+  .ax-hv-m{transition:none!important}
+  /* zero the slide distance rather than forcing transform:none -- a child arrow can
+     carry a baked rotation in its inline transform, and !important would strip it */
+  .ax-hv-arrow{--ax-ar:0;transition:none!important}
+  .ax-hv-tile.ax-hv-on,.ax-hv-btn.ax-hv-selfon{transform:none!important}
+}
+</style>
+<script>
+/* ---- CONTEXTUAL "EXPLORE" PILLS + SITE-WIDE TILE/BUTTON HOVER ---- */
+(function(){
+  if (window.__axHover) return; window.__axHover = 1;
+
+  /* ---------- tuning ---------- */
+  var TILE_MIN_W = 12, TILE_MAX_W = 46;      /* vw -- below: chips, above: bands */
+  var TILE_MIN_H = 8,  TILE_MAX_H = 36;
+  var TOL = 3;                               /* px slack: offset* is integer-rounded */
+  var STOP = {and:1,the:1,our:1,for:1,with:1,you:1,your:1,all:1,more:1,new:1,see:1,
+              view:1,read:1,learn:1,open:1,meet:1,book:1,explore:1,home:1,page:1,
+              tier:1,aeonx:1,digital:1,here:1,now:1,how:1,why:1,what:1,who:1};
+
+  function qsa(s, r){ return [].slice.call((r || document).querySelectorAll(s)); }
+  function norm(s){ return (s || '').replace(/[→ ]/g,' ').replace(/\s+/g,' ').trim(); }
+  function toks(s){
+    var o = {};
+    (s || '').toLowerCase().split(/[^a-z0-9]+/).forEach(function(w){
+      if (w.length >= 3 && !STOP[w]) o[w] = 1;
+    });
+    return o;
+  }
+
+  /* Measure with offset*, NOT getBoundingClientRect: the scroll-reveal starts
+     elements at translateY(1.4vw) and this very script adds a hover transform,
+     both of which corrupt a rect-based containment test. offset* ignores
+     transforms and scroll entirely. Hidden blocks (the desktop page on a phone,
+     .ax-mob on desktop) measure 0 and drop out on their own. */
+  function box(el){
+    var x = 0, y = 0, n = el;
+    while (n) { x += n.offsetLeft; y += n.offsetTop; n = n.offsetParent; }
+    return { el:el, l:x, t:y, w:el.offsetWidth, h:el.offsetHeight,
+             r:x + el.offsetWidth, b:y + el.offsetHeight,
+             a:el.offsetWidth * el.offsetHeight };
+  }
+  function inside(outer, inner){
+    return inner.l >= outer.l - TOL && inner.r <= outer.r + TOL &&
+           inner.t >= outer.t - TOL && inner.b <= outer.b + TOL;
+  }
+  function chrome(el){    /* nav, footer, mobile nav, search overlay: already styled */
+    return !!(el.closest('header') || el.closest('footer') || el.closest('.ax-footer') ||
+              el.closest('.ax-mnav') || el.closest('.ax-search'));
+  }
+  function styled(el){ return el.getAttribute('style') || ''; }
+
+  /* =========================================================================
+     PART 1 -- a bare "Explore" has no destination of its own. Resolve it from
+     the card it sits in.
+     ========================================================================= */
+
+  /* Route table = every same-origin anchor already on the page (the chrome
+     builds the site's whole nav from real <a href="/...">, so this covers every
+     page _build_all.py emits without duplicating that list here). Tokens come
+     from the URL slug AND the link text, so both "textiles-apparel" and
+     "Textiles & Apparel" match a heading that says TEXTILES. */
+  function buildRoutes(){
+    var by = {}, out = [];
+    qsa('a[href^="/"]').forEach(function(a){
+      var h = a.getAttribute('href');
+      if (!h || /\.(png|jpe?g|svg|ico|webp|pdf|css|js)$/i.test(h)) return;
+      var seg = h.replace(/[?#].*$/,'').replace(/\/+$/,'').split('/').pop();
+      if (!seg) return;                                     /* "/" -- home */
+      var key = h.replace(/\/+$/,'');
+      var r = by[key];
+      if (!r) { r = by[key] = { href:h, t:{} }; out.push(r); }
+      var add = function(s){ var o = toks(s); for (var k in o) r.t[k] = 1; };
+      add(seg.replace(/-/g,' '));
+      var txt = norm(a.textContent);
+      if (txt && txt.length <= 40) add(txt);
+    });
+    return out;
+  }
+
+  /* Best route by shared-token count. A tie means we genuinely do not know, and
+     a wrong destination is worse than an inert pill -- so return null. */
+  function matchRoute(routes, heading){
+    var h = toks(heading), best = null, tie = false;
+    routes.forEach(function(r){
+      var n = 0, k;
+      for (k in h) if (r.t[k]) n++;
+      if (!n) return;
+      if (!best || n > best.n) { best = { r:r, n:n }; tie = false; }
+      else if (n === best.n) tie = true;
+    });
+    return (best && !tie) ? best.r.href : null;
+  }
+
+  function fsize(el){ return parseFloat(getComputedStyle(el).fontSize) || 0; }
+  function fweight(el){ return parseInt(getComputedStyle(el).fontWeight, 10) || 400; }
+
+  /* The card is the smallest box that contains the pill AND some other text.
+     Heading = the biggest type in that card (ties broken by weight), which
+     skips the small orange eyebrow ("SAP AMS · AXIOM") and lands on
+     "MANUFACTURING" / "TEXTILES · MANUFEX". */
+  function headingFor(pill, boxes, texts, pills){
+    var cards = boxes.filter(function(b){
+      if (b.el === pill.el || !b.w || !inside(b, pill)) return false;
+      if (!(b.a > pill.a * 2 && b.a < pill.a * 600)) return false;
+      /* A box that swallows MORE THAN ONE "Explore" is a section, not a card. Without
+         this the homepage industries strip (six cards, six pills) resolved all six to
+         whichever heading happened to be biggest in the shared container, so every card
+         pointed at the same page. */
+      if (pills && pills.length > 1) {
+        var n = 0;
+        for (var k = 0; k < pills.length; k++) if (inside(b, pills[k])) n++;
+        if (n > 1) return false;
+      }
+      return true;
+    }).sort(function(x, y){ return x.a - y.a; });
+
+    for (var i = 0; i < cards.length; i++) {
+      var own = texts.filter(function(t){
+        return inside(cards[i], t) && !inside(pill, t) && norm(t.el.textContent);
+      });
+      if (!own.length) continue;
+      own.sort(function(x, y){
+        var d = fsize(y.el) - fsize(x.el);
+        return d || (fweight(y.el) - fweight(x.el));
+      });
+      return { card:cards[i], head:own[0].el };
+    }
+
+    /* Fallback: some cards (the homepage industries strip) have no box of their own, so
+       there is nothing to search inside. Take the biggest text sitting directly ABOVE the
+       pill in its own column -- that is the card heading as a reader sees it. Bounded so
+       it cannot reach up into a section title, and rejected if another Explore is nearer
+       to it than we are, which would mean we are stealing a neighbour's heading. */
+    var UP = 260, best = null;
+    texts.forEach(function(t){
+      if (!t.w || t.el === pill.el) return;
+      if (t.b > pill.t + 2) return;                       /* must sit ABOVE the pill */
+      if (t.b < pill.t - UP) return;                      /* but not a section away */
+      if (t.l > pill.r - 4 || t.r < pill.l + 4) return;   /* same column as the pill */
+      /* A CARD heading is as narrow as its column; a SECTION title spans the page. */
+      if (t.w > (window.innerWidth || 1920) * 0.4) return;
+      if (fsize(t.el) < 15) return;                       /* body copy is not a heading */
+      if (!norm(t.el.textContent)) return;
+      if (!best || fsize(t.el) > fsize(best.el) ||
+          (fsize(t.el) === fsize(best.el) && t.t > best.t)) best = t;
+    });
+    /* if another Explore sits between our candidate and us, that heading is its card */
+    if (best && pills && pills.length > 1) {
+      for (var j2 = 0; j2 < pills.length; j2++) {
+        var q = pills[j2];
+        if (q.el === pill.el) continue;
+        if (q.t > best.b && q.b < pill.t && q.l < best.r && q.r > best.l) return null;
+      }
+    }
+    return best ? { card:pill, head:best.el } : null;
+  }
+
+  function makeLink(el, href){
+    if (el.dataset.axcta) return;
+    el.dataset.axcta = '1';
+    el.setAttribute('role', 'link');
+    el.setAttribute('tabindex', '0');
+    el.classList.add('ax-hv-f');
+    var go = function(){ location.href = href; };
+    el.addEventListener('click', go);
+    el.addEventListener('keydown', function(e){
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') { e.preventDefault(); go(); }
+    });
+  }
+
+  var report = [];
+  function wireExplore(boxes, texts){
+    /* every bare "Explore" on the page, so headingFor can reject shared containers */
+    var pills = texts.filter(function(t){
+      return norm(t.el.textContent).toLowerCase() === 'explore';
+    });
+    texts.forEach(function(t){
+      var n = norm(t.el.textContent).toLowerCase();
+      if (n !== 'explore') return;
+      /* the chrome's CTA linkifier marks whatever it already owns */
+      if (t.el.dataset.cta || t.el.closest('[data-cta]') || t.el.closest('a')) return;
+
+      /* the clickable thing is the pill the label sits in, not the label */
+      var pill = null;
+      boxes.forEach(function(b){
+        if (!b.w || !inside(b, t) || b.a > t.a * 12) return;
+        if (!pill || b.a < pill.a) pill = b;
+      });
+      if (!pill) return;
+      if (pill.el.dataset.cta) return;
+      /* Mark it BEFORE we know whether a route exists. buildButtons only looks at
+         things that are already linkified, so an Explore pill with no destination
+         (INDUSTRIAL · SUPPLIERX -- there is no /industries/industrial/) used to be
+         the one pill in its row with no hover at all. Hover affordance must not
+         depend on having somewhere to go. */
+      pill.el.dataset.axpill = '1';
+
+      var found = headingFor(pill, boxes, texts, pills);
+      var head  = found ? norm(found.head.textContent) : '';
+      var href  = found ? matchRoute(ROUTES, head) : null;
+      report.push({ heading: head || '(no heading found)', href: href });
+      if (!href) return;                    /* inert beats silently going nowhere */
+      makeLink(pill.el, href);
+      makeLink(t.el, href);
+      t.el.style.cursor = 'pointer';
+    });
+  }
+
+  /* =========================================================================
+     PART 2 -- hover groups
+     ========================================================================= */
+
+  /* Members of a group = everything drawn inside its rect. Descendants of
+     another member are dropped, or a nested element would get the lift twice. */
+  function membersOf(rect, all, skip){
+    var m = all.filter(function(e){
+      return e.w && e.el !== skip && inside(rect, e);
+    });
+    return m.filter(function(e){
+      return !m.some(function(o){ return o !== e && o.el.contains(e.el); });
+    });
+  }
+
+  function arm(g){
+    g.members.forEach(function(e){
+      e.el.classList.add('ax-hv-m', g.kind === 'tile' ? 'ax-hv-tile' : 'ax-hv-btn');
+      if (g.clk) e.el.classList.add('ax-hv-clk');
+      var tf = e.el.style.transform;
+      if (tf) e.el.style.setProperty('--ax-bt', tf);
+      MAP.set(e.el, g);
+    });
+    g.skin.el.classList.add(g.skinClass);
+    MAP.set(g.skin.el, g);
+  }
+  function setOn(g, on){
+    if (!g || g.on === on) return;
+    g.on = on;
+    if (g.parent) setOn(g.parent, on);   /* a pill inside a tile keeps the tile lifted */
+    /* `ax-hv-on` = this group or a child of it is hovered (the card lift).
+       `ax-hv-selfon` = THIS button is the thing under the pointer. Button skins key off
+       the latter, so hovering anywhere on a card no longer fires its CTA's full
+       treatment (wash, ring, arrow slide). */
+    g.members.forEach(function(e){
+      e.el.classList.toggle('ax-hv-on', on);
+      if (g.kind === 'btn') e.el.classList.toggle('ax-hv-selfon', on);
+    });
+    g.skin.el.classList.toggle('ax-hv-on', on);
+    if (g.kind === 'btn') g.skin.el.classList.toggle('ax-hv-selfon', on);
+  }
+
+  var MAP = new WeakMap(), GROUPS = [], ROUTES = [], current = null;
+
+  function groupFor(node){
+    while (node && node.nodeType === 1) {
+      var g = MAP.get(node);
+      if (g) return g;
+      node = node.parentElement;
+    }
+    return null;
+  }
+
+  function buildTiles(root, boxes, texts){
+    var U = (root.clientWidth || innerWidth) / 100;
+    var cand = boxes.filter(function(b){
+      var el = b.el, st = styled(el);
+      if (!b.w || chrome(el) || el.closest('a') || el.dataset.cta) return false;
+      if (!(/(^|;)\s*border:/.test(st) || /background-color:/.test(st))) return false;
+      if (b.w < TILE_MIN_W * U || b.w > TILE_MAX_W * U) return false;
+      if (b.h < TILE_MIN_H * U || b.h > TILE_MAX_H * U) return false;
+      var tin = texts.filter(function(t){ return t.w && inside(b, t); });
+      if (tin.length < 2) return false;
+      return tin.some(function(t){ return fweight(t.el) >= 600; });   /* has a heading */
+    });
+    /* a wrapper that swallows another candidate is a band, not a card */
+    cand = cand.filter(function(b){
+      return !cand.some(function(o){
+        return o !== b && inside(b, o) && o.a < b.a * 0.9;
+      });
+    });
+    /* Figma stacks a fill box and a border box on the identical rect: one tile */
+    var seen = {};
+    cand.forEach(function(b){
+      var k = [b.l, b.t, b.w, b.h].map(Math.round).join(':');
+      (seen[k] || (seen[k] = [])).push(b);
+    });
+    Object.keys(seen).forEach(function(k){
+      var stack = seen[k];
+      var skin = stack[stack.length - 1];          /* topmost paints the ring */
+      var mem = membersOf(skin, boxes.concat(texts, OTHER), null);
+      /* a step badge: a small grey chip holding a 1-3 char number, e.g. 01 / 02 / 03 */
+      mem.forEach(function(m){
+        var ms = styled(m.el);
+        if (!/background-color:\s*rgb\(2[01][0-9]/.test(ms)) return;
+        var LIM = (window.innerWidth || 1920) * 0.04;   /* box() is in PX, not vw */
+        if (m.w > LIM || m.h > LIM) return;                 /* chips only */
+        var tx = (m.el.textContent || '').trim();
+        if (tx && !/^\d{1,3}$/.test(tx)) return;
+        m.el.classList.add('ax-hv-badge');
+        mem.forEach(function(t){
+          if (t.el === m.el) return;
+          if (!inside(m, t)) return;
+          if (/^\d{1,3}$/.test((t.el.textContent || '').trim())) t.el.classList.add('ax-hv-badgetx');
+        });
+      });
+      GROUPS.push({ kind:'tile', skin:skin, skinClass:'ax-hv-tileskin',
+                    members:mem, on:false });
+    });
+  }
+
+  function buildButtons(root, boxes, texts){
+    var U = (root.clientWidth || innerWidth) / 100;
+    var hits = qsa('[data-cta],[data-axcta],[data-axpill],[role="link"],a,button', root)
+      .filter(function(el){ return !chrome(el) && el.offsetWidth; })
+      .map(box)
+      .sort(function(x, y){ return y.a - x.a; });     /* skins first */
+
+    var skins = [];
+    hits.forEach(function(h){
+      var host = skins.filter(function(s){
+        return inside(s, h) && s.a <= h.a * 10;
+      })[0];
+      if (host) return;                               /* label of an existing pill */
+      skins.push(h);
+    });
+
+    skins.forEach(function(s){
+      var st = styled(s.el);
+      /* Read the radius from the COMPUTED style. The old test regexed the style
+         attribute for [1-9.] straight after "border-radius:", which rejected every
+         real pill in this design -- they are all 0.4167vw, and "0" is not in that
+         class -- so the outlined branch was unreachable and every pill fell through
+         to the bare-text one. */
+      var rad = parseFloat(getComputedStyle(s.el).borderTopLeftRadius) || 0;
+      /* A CAPSULE that is wider than it is tall -- corner radius at least half its own
+         height -- is Figma's BADGE component, not a CTA: "SAP AMS · AXIOM",
+         "Why we exist", "SAP Gold Partner". The chrome's linkifier still turns some of
+         them into links (LINKMAP matches the mega-menu entry of the same name), and
+         this fragment then dressed them as filled buttons -- which is exactly where the
+         drop shadow on "SAP AMS · AXIOM" came from. Measured across all 36 pages: every
+         real CTA here is a rounded rect (radius <= h/3); every badge is a capsule. The
+         wider-than-tall test keeps round icon buttons (prev/next) on the button path. */
+      if (rad >= s.h / 2 - 1 && s.w > s.h * 1.6) return;
+      var filled = /background-color:\s*rgb\((?!255,\s*255,\s*255)/.test(st);
+      /* The wash is clipped to the border box, so it is only safe on the element that IS
+         the visible pill: on a square-cornered wrapper it paints a full rectangle that
+         reads as colour bleeding out of the button. */
+      var boxy = (/(^|;)\s*border:/.test(st) || /background-color:/.test(st)) && rad > 0;
+      var cls = filled ? 'ax-hv-fill' : (boxy ? 'ax-hv-out' : 'ax-hv-txt');
+      var mem = membersOf(s, boxes.concat(texts, OTHER), null);
+      /* A small vector in the right half of the pill is its trailing arrow. It can be a
+         flat sibling OR a child of a g-clip pill, and membersOf drops descendants of
+         other members, so the children have to be collected separately. */
+      mem.concat(qsa('.g-vec', s.el).map(box)).forEach(function(m){
+        if (m.el === s.el || !m.el.classList.contains('g-vec')) return;
+        if (m.w > 2 * U || m.h > 2 * U || m.l < s.l + s.w * 0.5) return;
+        m.el.classList.add('ax-hv-arrow');
+      });
+      s.el.classList.add('ax-hv-f');
+      GROUPS.push({ kind:'btn', skin:s, skinClass:cls, members:mem, on:false,
+                    clk:!!(s.el.dataset.cta || s.el.dataset.axcta ||
+                           s.el.getAttribute('role') === 'link' ||
+                           s.el.tagName === 'A' || s.el.tagName === 'BUTTON') });
+    });
+  }
+
+  var OTHER = [];
+
+  function scan(){
+    GROUPS.forEach(function(g){ setOn(g, false); });
+    GROUPS = []; MAP = new WeakMap(); current = null;
+    ROUTES = buildRoutes();
+    report = [];
+
+    /* Part 1 runs over EVERY page block including .ax-mob -- a phone still has
+       to be able to tap Explore. Only one block is measurable at a time
+       (the other is display:none), so a resize re-scan picks up the other. */
+    var allBoxes = qsa('.g-b').filter(function(e){ return e.offsetWidth; }).map(box);
+    var allTexts = qsa('.g-t').filter(function(e){ return e.offsetWidth; }).map(box);
+    wireExplore(allBoxes, allTexts);
+
+    /* Part 2 is desktop-only: .ax-mob is a touch layout, there is no hover. */
+    var roots = qsa('main.ax-page').filter(function(m){ return !m.closest('.ax-mob') && m.offsetWidth; });
+    roots.forEach(function(root){
+      var boxes = qsa('.g-b', root).filter(function(e){ return e.offsetWidth; }).map(box);
+      var texts = qsa('.g-t', root).filter(function(e){ return e.offsetWidth; }).map(box);
+      OTHER = qsa('.g-img,.g-vec,img', root).filter(function(e){ return e.offsetWidth; }).map(box);
+      buildTiles(root, boxes, texts);
+      buildButtons(root, boxes, texts);
+      OTHER = [];
+    });
+    /* a button sitting inside a tile inherits it, so hovering the pill does not
+       drop the card back down */
+    GROUPS.forEach(function(g){
+      if (g.kind !== 'btn') return;
+      GROUPS.forEach(function(t){
+        if (t.kind === 'tile' && inside(t.skin, g.skin) &&
+            (!g.parent || t.skin.a < g.parent.skin.a)) g.parent = t;
+      });
+    });
+    GROUPS.forEach(arm);
+    window.__axhv = { tiles:GROUPS.filter(function(g){ return g.kind === 'tile'; }).length,
+                      buttons:GROUPS.filter(function(g){ return g.kind === 'btn'; }).length,
+                      explore:report };
+  }
+
+  function listen(){
+    if (matchMedia('(hover:hover) and (pointer:fine)').matches) {
+      document.addEventListener('mouseover', function(e){
+        var g = groupFor(e.target);
+        if (g === current) return;
+        setOn(current, false); current = g; setOn(g, true);
+      });
+      document.addEventListener('mouseleave', function(){ setOn(current, false); current = null; }, true);
+    }
+    document.addEventListener('focusin',  function(e){ setOn(groupFor(e.target), true); });
+    document.addEventListener('focusout', function(e){ setOn(groupFor(e.target), false); });
+
+    var w = innerWidth, t;
+    addEventListener('resize', function(){
+      if (innerWidth === w) return;
+      w = innerWidth;
+      clearTimeout(t); t = setTimeout(scan, 250);
+    });
+  }
+
+  function boot(){ scan(); listen(); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+  /* the .ax-mob block and the chrome's own CTA pass can land after us */
+  addEventListener('load', function(){ setTimeout(scan, 60); });
+})();
+</script>
+
+<style id="ax-scrollrow-css">
+/* Figma exports an over-wide row inside a clipped box and ships NO scroller, so every
+   card past the clip edge is simply unreachable (the leadership page hides 5 of its 8
+   people this way). Turning the existing clip into a real scroller costs no layout
+   change: the children are absolutely positioned, so the box already reports the full
+   scrollWidth -- it just was not allowed to scroll. */
+.ax-srow{overflow-x:auto!important;overflow-y:hidden!important;
+  scrollbar-width:thin;scroll-behavior:smooth;overscroll-behavior-x:contain;
+  -webkit-overflow-scrolling:touch;cursor:grab}
+.ax-srow.is-drag{cursor:grabbing;scroll-behavior:auto}
+.ax-srow::-webkit-scrollbar{height:6px}
+.ax-srow::-webkit-scrollbar-thumb{background:rgba(35,39,46,.22);border-radius:99px}
+.ax-srow::-webkit-scrollbar-track{background:transparent}
+/* edge fades hint that there is more to the right */
+.ax-srow-wrap{position:relative}
+.ax-srow-fade{position:absolute;top:0;bottom:0;width:3vw;pointer-events:none;z-index:3;
+  opacity:0;transition:opacity .2s ease}
+.ax-srow-fade--l{left:0;background:linear-gradient(90deg,#fff,rgba(255,255,255,0))}
+.ax-srow-fade--r{right:0;background:linear-gradient(270deg,#fff,rgba(255,255,255,0))}
+.ax-srow-fade.on{opacity:1}
+@media (prefers-reduced-motion:reduce){.ax-srow{scroll-behavior:auto}}
+</style>
+<script>
+/* ---- OVER-WIDE FIGMA ROWS -> REAL SCROLLERS ---- */
+(function(){
+  var MIN_OVERFLOW = 1.15;      /* content must exceed the box by 15% to be worth it */
+
+  function arm(box){
+    if (box.dataset.axSrow) return;
+    box.dataset.axSrow = '1';
+    box.classList.add('ax-srow');
+
+    /* keyboard: the box itself becomes focusable and arrow-scrollable, because the cards
+       inside are plain divs with nothing tabbable of their own */
+    if (!box.hasAttribute('tabindex')) box.setAttribute('tabindex', '0');
+    box.setAttribute('role', 'group');
+    if (!box.getAttribute('aria-label')) box.setAttribute('aria-label', 'Scrollable row, use the arrow keys');
+    box.addEventListener('keydown', function(e){
+      var step = box.clientWidth * 0.8;
+      if (e.key === 'ArrowRight'){ e.preventDefault(); box.scrollLeft += step; }
+      else if (e.key === 'ArrowLeft'){ e.preventDefault(); box.scrollLeft -= step; }
+      else if (e.key === 'Home'){ e.preventDefault(); box.scrollLeft = 0; }
+      else if (e.key === 'End'){ e.preventDefault(); box.scrollLeft = box.scrollWidth; }
+    });
+
+    /* pointer drag, so it feels like the carousel it looks like */
+    var down = null;
+    box.addEventListener('pointerdown', function(e){
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      down = { x:e.clientX, l:box.scrollLeft, moved:false };
+      box.classList.add('is-drag');
+    });
+    box.addEventListener('pointermove', function(e){
+      if (!down) return;
+      var d = e.clientX - down.x;
+      if (Math.abs(d) > 3) down.moved = true;
+      box.scrollLeft = down.l - d;
+    });
+    function up(){ if (down) { down = null; box.classList.remove('is-drag'); } }
+    ['pointerup','pointercancel','pointerleave'].forEach(function(ev){
+      box.addEventListener(ev, up);
+    });
+    /* a drag must not fire the click of whatever card it ended on */
+    box.addEventListener('click', function(e){
+      if (down && down.moved) { e.preventDefault(); e.stopPropagation(); }
+    }, true);
+
+    /* edge fades. The wrapper is the clip's own parent when we can use it, otherwise the
+       fades are skipped -- never restructure the DOM, the layout is pixel-locked. */
+    var host = box.parentElement;
+    if (host && !host.dataset.axSrowWrap) {
+      host.dataset.axSrowWrap = '1';
+      var cs = getComputedStyle(host);
+      if (cs.position !== 'static') {
+        host.classList.add('ax-srow-wrap');
+        var l = document.createElement('div'), r = document.createElement('div');
+        l.className = 'ax-srow-fade ax-srow-fade--l';
+        r.className = 'ax-srow-fade ax-srow-fade--r';
+        /* sit the fades exactly over the scroller, not the whole host */
+        [l, r].forEach(function(f){
+          f.style.top = box.offsetTop + 'px';
+          f.style.height = box.offsetHeight + 'px';
+          f.style.bottom = 'auto';
+          host.appendChild(f);
+        });
+        var paint = function(){
+          var max = box.scrollWidth - box.clientWidth;
+          l.classList.toggle('on', box.scrollLeft > 4);
+          r.classList.toggle('on', box.scrollLeft < max - 4);
+        };
+        box.addEventListener('scroll', paint);
+        addEventListener('resize', paint);
+        paint();
+      }
+    }
+  }
+
+  function scan(){
+    var boxes = [].slice.call(document.querySelectorAll('.g-clip'));
+    boxes.forEach(function(b){
+      if (b.closest('header') || b.closest('footer') || b.closest('.ax-footer')) return;
+      var cw = b.clientWidth;
+      if (!cw || b.scrollWidth <= cw * MIN_OVERFLOW) return;
+      /* only rows: a tall clipped block is a masked graphic, not a carousel */
+      if (b.clientHeight > cw) return;
+      /* it must actually hold several sibling blocks, not one wide image */
+      var kids = [].slice.call(b.children).filter(function(k){ return k.offsetWidth; });
+      if (kids.length < 3) return;
+      /* leave anything another enhancer already drives */
+      if (b.querySelector('.ax-mq,.ax-recog__win,.ax-carm') || b.classList.contains('ax-carm')) return;
+      arm(b);
+    });
+  }
+
+  function init(){ scan(); addEventListener('resize', function(){ setTimeout(scan, 200); }); }
+  /* lazily: the .ax-mob block is not guaranteed to precede this script */
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
+
+<style id="ax-recogfx-css">
+/* RECOGNITIONS ("Earned, not bought.") client-logo row -> continuous right-to-left
+   marquee. Figma ships six white cards with a brand mark on each and NO row wrapper,
+   and the strip (64.58vw on desktop) is narrower than the viewport, so the clipped
+   window and the repeat are built here: the card+logo pairs are copied into the window
+   and the whole set is repeated at the CARD PITCH (6 x card stride), which is what
+   makes the wrap invisible -- the seam gap is the same 1.04vw that sits between any
+   two cards. The baked row itself is then hidden in place. */
+.ax-recog__win{position:absolute;overflow:hidden}
+.ax-recog__track{position:absolute;left:0;top:0;width:0;height:0;will-change:transform}
+/* _mobfx.html's marquee() bails on any member carrying .ax-carm ("already owned by a
+   carousel"); that is how this row is claimed from it, since it only ever picked up 4
+   of the 6 logos and left the six white cards standing still. .ax-carm also ships a
+   bare transition:transform, which would drop the scroll-reveal's opacity transition
+   on those six -- restore it (two classes, so it wins on specificity, not on order). */
+.ax-recog__pause{position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;
+  overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;background:#fff;
+  color:#23272E;font:inherit;cursor:pointer}
+.ax-recog__pause:focus-visible{position:static;width:auto;height:auto;margin:0;
+  padding:0.3vw 0.6vw;clip:auto;clip-path:none;overflow:visible;z-index:5;
+  outline:0.1042vw solid rgb(223,63,23);border-radius:0.2vw}
+.ax-recog__item.ax-carm{transition:opacity .7s cubic-bezier(.22,.61,.36,1),transform .7s cubic-bezier(.22,.61,.36,1)}
+@media (prefers-reduced-motion:reduce){.ax-recog__track{transform:none!important}}
+</style>
+<script>
+/* ---- RECOGNITIONS LOGO MARQUEE ---- */
+(function(){
+  var REFS = [
+    'c0802d56987353256ffafeae2a33e63a0b7e7667',
+    'ccd1d63087fa9a4757a653bb2b061b5ec4711f64',
+    '06cd2f7d70f9773233ef229ad325a8fdcfe41d22',
+    'db429dafe9531041d50b09052018c7880870da69',
+    'ec4e870ac8e2fa9c57fb6b3c0da99033e12cc759',
+    '8d29eb071421987237b78c06a8b1dc37f2419bbc'
+  ];
+  /* All six Figma layers are named "Ashapura" (designer copy-paste) and _gen.py turns
+     the layer name into aria-label, so five of the six were wrong. These names are read
+     off the artwork itself. REFS[3] is a circled DT/ID monogram beside the word "Cem",
+     not identifiable with confidence, so it deliberately keeps the label it ships with
+     rather than getting a guess. */
+  var LABEL = {};
+  LABEL[REFS[0]] = 'Ashapura Group of Industries';
+  LABEL[REFS[1]] = 'Ambuja Neotia';
+  LABEL[REFS[2]] = 'Raymond';
+  /* REFS[3] renders a circled monogram + the word "Cem" + "Commitment, Reliability &
+     Quality". The brand could not be identified with confidence, and the label it ships
+     with ("Ashapura") names the WRONG company -- a knowingly-false name is worse for a
+     screen-reader user than a generic one, so it gets a neutral truthful label until the
+     designer confirms the brand. */
+  LABEL[REFS[3]] = 'Client logo';
+  LABEL[REFS[4]] = 'Sunder Biscuits & Namkeen';
+  LABEL[REFS[5]] = 'Khanna Paper';
+
+  var SEC = 30;      /* one full pitch per 30s -- same cadence as the home-page marquee */
+  var REDUCED = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* the six logos, in design order, or null if this page does not carry the row */
+  function logosIn(scope){
+    var out = [], i, e;
+    for (i = 0; i < REFS.length; i++){
+      e = scope.querySelector('.g-img[data-ref="' + REFS[i] + '"]');
+      if (!e) return null;
+      out.push(e);
+    }
+    return out;
+  }
+
+  /* Claim the row from _mobfx.html. Its start() resolves the DOM at DOMContentLoaded
+     and its listener is registered earlier in the document, so it runs first -- hence
+     this runs at PARSE time, while _mobfx is still only a listener. Belt and braces:
+     the baked row is display:none once the marquee is built, so even if _mobfx did get
+     hold of these six it would only be translating hidden boxes. */
+  function claim(){
+    var mob = document.querySelector('.ax-mob');
+    var g = mob && logosIn(mob);
+    if (!g) return false;
+    for (var i = 0; i < g.length; i++){
+      g[i].classList.add('ax-carm');
+      g[i].classList.add('ax-recog__item');
+    }
+    return true;
+  }
+  /* D1 fix: the .ax-mob block is NOT guaranteed to be in the document when this script
+     parses -- _mobile.py has moved it before now, and that ordering change silently killed
+     every mobile enhancer once already. Claiming at DOMContentLoaded is too late (_mobfx
+     is injected earlier, so its listener runs first), so watch for the block instead and
+     claim it the moment it appears, which is still during parsing. */
+  if (!claim()) {
+    var mo = new MutationObserver(function(){ if (claim()) mo.disconnect(); });
+    mo.observe(document.documentElement, { childList: true, subtree: true });
+    document.addEventListener('DOMContentLoaded', function(){ mo.disconnect(); });
+  }
+
+  function labels(scope){
+    var g = scope && logosIn(scope);
+    if (!g) return;
+    for (var i = 0; i < g.length; i++){
+      var lb = LABEL[g[i].getAttribute('data-ref')];
+      if (lb) g[i].setAttribute('aria-label', lb);
+    }
+  }
+
+  function num(el, k){ return parseFloat(el.style[k]); }
+
+  function build(scope){
+    if (scope.querySelector('.ax-recog__win')) return;     /* idempotent */
+    var logos = logosIn(scope), i;
+    if (!logos) return;
+    var host = logos[0].parentElement;
+
+    /* Card = the .g-b immediately before each logo (Figma emits card,logo,card,logo).
+       Copying them as a pair is what keeps a mark from drifting off its white card. */
+    var cards = [];
+    for (i = 0; i < logos.length; i++){
+      if (logos[i].parentElement !== host) return;
+      var c = logos[i].previousElementSibling;
+      if (!c || !/(^|\s)g-b(\s|$)/.test(c.className || '')) return;
+      cards.push(c);
+    }
+
+    var all = [], L = [], top = 1e9, bot = -1e9;
+    for (i = 0; i < cards.length; i++){ all.push(cards[i]); all.push(logos[i]); }
+    for (i = 0; i < all.length; i++){
+      var t = num(all[i], 'top'), h = num(all[i], 'height');
+      if (t !== t || h !== h) return;                      /* NaN: not the vw layout */
+      if (t < top) top = t;
+      if (t + h > bot) bot = t + h;
+    }
+    for (i = 0; i < cards.length; i++) L.push(num(cards[i], 'left'));
+    var stride = L[1] - L[0];
+    if (!(stride > 0)) return;
+    for (i = 2; i < L.length; i++) if (Math.abs(L[i] - L[i-1] - stride) > 0.01) return;
+    var pitch = stride * L.length;
+    var span = (L[L.length-1] + num(cards[cards.length-1], 'width')) - L[0];
+
+    var win = document.createElement('div');
+    win.className = 'ax-recog__win';
+    /* width:100% == the row's own coordinate origin: on desktop the clipping ancestor
+       is main.ax-page, on mobile the section .g-clip -- both 100vw wide. */
+    win.style.cssText = 'left:0;top:' + top + 'vw;width:100%;height:' + (bot - top) + 'vw;';
+    var track = document.createElement('div');
+    track.className = 'ax-recog__track';
+    win.appendChild(track);
+    /* directly after the baked row, so the strip keeps the row's paint order */
+    host.insertBefore(win, logos[logos.length-1].nextSibling);
+
+    /* Enough repeats to cover the 100vw window at every phase of the wrap: one set to
+       the left so there is no empty flank at rest, and sets to the right until the
+       strip still reaches x=100 after a full pitch of travel. */
+    var kmin = 0, kmax = 0, k;
+    while (L[0] + kmin * pitch > 0) kmin--;
+    while (L[0] + span + kmax * pitch < 100 + pitch) kmax++;
+    for (k = kmin; k <= kmax; k++){
+      for (i = 0; i < all.length; i++){
+        /* Copies, not the originals: a node MOVED out of main.ax-page into the track
+           lays out and hit-tests correctly but never repaints (reproduced in headless
+           Chromium: a moved card given background:#00f stayed invisible while a clone
+           of it at the same coordinates painted). Cloning sidesteps it, and leaves the
+           baked row's own reveal/observer state untouched. */
+        var d = all[i].cloneNode(true);
+        d.removeAttribute('id');
+        d.classList.add('ax-recog__item');
+        /* the scroll-reveal has already tagged the originals opacity:0 pending an
+           intersection; a copy carrying .ax-rv without .ax-in would never be seen */
+        d.classList.remove('ax-rv'); d.classList.remove('ax-rvo'); d.classList.remove('ax-in');
+        d.style.left = (num(all[i], 'left') + k * pitch) + 'vw';
+        d.style.top = (num(all[i], 'top') - top) + 'vw';
+        /* one row for a screen reader: the set that sits where Figma put it keeps the
+           role/label, every repeat is decorative */
+        if (k !== 0) d.setAttribute('aria-hidden', 'true');
+        track.appendChild(d);
+      }
+    }
+    for (i = 0; i < all.length; i++) all[i].style.display = 'none';   /* replaced */
+
+    /* rAF rather than a keyframe: hover has to pause it mid-flight, and translating in
+       vw keeps the wrap correct across a resize. */
+    var x = 0, last = 0, raf = 0, vis = false, hover = false, stopped = false;
+    function paint(){ track.style.transform = 'translateX(' + x + 'vw)'; }
+    function frame(t){
+      raf = 0;
+      if (!vis) return;                                    /* off-screen: stop the loop */
+      raf = requestAnimationFrame(frame);
+      if (!last){ last = t; return; }
+      var dt = t - last; last = t;
+      if (hover || stopped) return;
+      x -= dt * pitch / (SEC * 1000);
+      if (x <= -pitch) x += pitch;
+      paint();
+    }
+    if ('IntersectionObserver' in window){
+      new IntersectionObserver(function(es){
+        vis = es[es.length-1].isIntersecting;
+        last = 0;
+        if (vis && !raf) raf = requestAnimationFrame(frame);
+      }, { threshold: 0 }).observe(win);
+    } else {
+      vis = true; raf = requestAnimationFrame(frame);
+    }
+    /* pause so the logos can actually be read */
+    win.addEventListener('mouseenter', function(){ hover = true; });
+    win.addEventListener('mouseleave', function(){ hover = false; });
+    /* WCAG 2.2.2: content that moves for more than five seconds needs a pause mechanism,
+       and mouseenter is mouse-only. Figma authors no control here and the layout is
+       pixel-locked, so the control is screen-reader/keyboard-only: it takes no space and
+       is invisible until focused, which changes nothing visually but makes stopping the
+       motion reachable without a pointer. */
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'ax-recog__pause';
+    btn.setAttribute('aria-pressed', 'false');
+    btn.textContent = 'Pause the scrolling client logos';
+    btn.addEventListener('click', function(){
+      stopped = !stopped;
+      last = 0;
+      btn.setAttribute('aria-pressed', stopped ? 'true' : 'false');
+      btn.textContent = (stopped ? 'Resume' : 'Pause') + ' the scrolling client logos';
+      if (!stopped && vis && !raf) raf = requestAnimationFrame(frame);
+    });
+    win.parentNode.insertBefore(btn, win);
+    /* keyboard focus anywhere in the band pauses too, same as hover */
+    win.addEventListener('focusin', function(){ hover = true; });
+    win.addEventListener('focusout', function(){ hover = false; last = 0; });
+  }
+
+  function init(){
+    /* resolve lazily: the .ax-mob block is not guaranteed to precede this script */
+    var d = document.querySelector('main.ax-page');
+    if (d && d.closest && d.closest('.ax-mob')) d = null;  /* that one IS the mobile row */
+    var m = document.querySelector('.ax-mob');
+    labels(d); labels(m);                                  /* the wrong labels get fixed
+                                                              even when motion is off */
+    if (REDUCED) return;
+    if ((innerWidth || 1024) > 768) { if (d) build(d); }
+    else { if (m) build(m); }
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+  addEventListener('resize', init);                        /* build() is idempotent */
 })();
 </script>
 

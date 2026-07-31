@@ -552,3 +552,119 @@ full-bleed hero background and made the entire hero a go-home click target.
 Verified: homepage mosaic/6 tabs/dots[3,6]/drift/counters all live again; subpage
 (rise-with-sap) wires exactly `5637-75956.svg` (the glass strip), burger edge opens the
 panel, X closes it, logo area -> home.
+
+### Figma redesign pulled in: homepage customer-story card (2026-07-30)
+
+**The Figma changed under us.** Under section `5420:21755` > `5420:23750`, the widget the
+site was rendering (`5420:23751`, the blue->orange gradient card) is now
+`hidden="true"`, and a NEW instance `6051:21222` sits in its place. `aeonx-node.json`
+(Jul 28) predates this and does not contain it -- the REST token had also expired
+(`403 Token expired`), so this was read via a fresh pull with a rotated token.
+**Lesson: when a section "looks different from Figma", check for a hidden old node plus a
+new sibling instance before assuming the generator is wrong.**
+
+New design = white 1200x480 card, 1px `#DF3F17` border, r=8; browser-chrome bar (76px)
+with three linear-gradient orange dots; a 16-cell strip of REAL client logos as tabs; and
+a quote box at 81,150,1038,256 whose fill is black at **opacity 0.004** (a 0.4% tint that
+reads as white -- do not mistake the raw fill for a black card) with a 1px **dashed**
+orange stroke, `strokeAlign: OUTSIDE` -> emitted as `outline`, not `border`.
+
+Replaced `index.html` lines 705-793 only. Line 704 opens container `5420:23750` and 794 is
+`And many more...`, so that span is exactly the widget: nothing else on the page moves.
+Generator kept at `/tmp/.../build_tt.py`; it asserts its anchors before writing.
+
+The tab strip is 2117px of content in a 1097px clip and Figma ships a (hidden)
+`Button - Pause customer story and logo rotation` -- i.e. the strip is MEANT to rotate.
+Implemented as a right-to-left rAF marquee (one cloned set, wrap on half `scrollWidth`),
+pausing on hover/focus so a logo can be clicked, stopping when off-screen.
+
+**Content reality: only 2 of 16 tabs have a story.** Component set `6051:21219` has exactly
+two authored variants -- `6051:21218` "Garden Vareli" and `6051:21217` "general"
+(= O GENERAL). The other 14 logos have a tab image and nothing else. Both variants also
+carry the SAME author line and the SAME headshot, whose node is literally named
+`Image (John Doe)` -- placeholder data. Tabs without a story stay visibly inert
+(`aria-disabled`, "story coming soon") rather than re-attributing someone else's quote.
+Adding a brand to `STORIES` in the tail script is all it takes to turn its tab on.
+
+Variant 2's quote is 141px in a 140px frame -- **Figma itself clips it mid-sentence**.
+Truncating a customer testimonial is worse than a slightly smaller pull-quote, so the
+enhancer steps the font down (28px floor 19px, line-height locked to the 36/28 ratio)
+until it fits. Quotes that already fit keep the exact Figma type.
+
+**Mobile is NOT stale.** The mobile Figma (`5637:47936`) still has the OLD gradient card:
+`5904:1977` visible, `5902:4277` hidden, both still "Rahul Mehta, Head of FMCG". The
+designer redesigned desktop only, so mobile matches its Figma and was left alone. The
+desktop/mobile mismatch is a design decision to raise, not a bug to fix.
+
+### Three dead Figma "tab"/strip sections wired up (2026-07-30)
+
+Same root pattern each time: Figma flattens a component-set VARIANT SWAP into static divs,
+so only the pinned variant reaches the HTML and the other tabs have nothing to reveal.
+Fixed as three page-scoped postbuild fragments; `_postbuild.py` gained a `SCOPED` list so a
+fragment lands on the ONE page that needs it instead of all 30+ (`_formtabs.html` alone is
+~30KB of inert `<template>` panels).
+
+- `_recogfx.html` -> who-we-are/culture. "RECOGNITIONS / Earned, not bought." six-logo row
+  becomes a seamless right-to-left marquee. The row is only 64.58vw inside a 100vw clip, so
+  it tiles at the 10.9375vw card pitch (2x duplication leaves a 34vw gap). Cards and logos
+  are CLONED as pairs, never moved: **an element moved out of `main.ax-page` into a new
+  track lays out and hit-tests correctly but NEVER PAINTS** -- proven with a blue test
+  background, not blend-mode/stacking/reveal related. Do not "optimise" this into a move.
+- `_maptabs.html` -> contact-us. Six city tabs now switch tag/heading/address/phone/email/
+  map, each with its own per-city geometry (heading and address heights differ per city, so
+  swapping text alone overlaps). Component set `4541:8166` has all six variants authored;
+  the page instance `4541:8731` is pinned to `Mumbai HQ`, which is why only Mumbai shipped.
+  Pulled the other five from REST + downloaded 5 missing map PNGs (~7MB, not downscaled).
+- `_formtabs.html` -> contact-us. "Got a project in mind?" panel did not exist anywhere --
+  variant `4541:8056` was never instantiated, so it is not in `aeonx-node.json` and not
+  hidden either. Built from a fresh REST pull: Region/Type of engagement/Timeline dropdowns
+  replace Role, Email moves up a row, Brief Description textarea, no consent footnote.
+
+**Verification gotcha that cost real time:** headless chromium with `--virtual-time-budget`
+does NOT advance the animation clock. `getComputedStyle` mid-`transition` returns the START
+value, so a working tab looked broken (Mumbai still orange, `aria-selected=false`), and rAF
+only ever gets ~6 frames so marquee motion measures ~0.7px. **Inject
+`*{transition:none!important;animation:none!important}` before asserting computed styles**,
+and prove motion with a two-timepoint `compare -metric AE` rather than a measured distance.
+
+Adversarial verify caught and fixed before shipping: `_recogfx`'s `_mobfx` stand-down ran
+at PARSE time only (the known `.ax-mob`-injected-later outage) -> now retries via
+MutationObserver; a WCAG 2.2.2 pause mechanism was missing and hover-only -> added an
+sr-only keyboard/AT pause button (no visual change, layout is pixel-locked); `_formtabs`
+pointed the panel's `aria-labelledby` at a tab with no text content, giving the panel an
+EMPTY accessible name (`aria-labelledby` does not recurse) -> now points at the label div,
+which is `aria-hidden` so the tablist owns only tabs and names announce once.
+
+### Figma redesigned the testimonial section AGAIN, same day (2026-07-30, file mtime 13:20Z)
+
+`5420:21755` (the section rebuilt hours earlier) is now `visible:false` and a NEW sibling
+`6064:23841` "Testimonials Section" replaces it. **Check the section list for a hidden node
+plus a new visible sibling before assuming anything is wrong with the generator** -- this is
+the second time in one day the designer swapped the whole section rather than editing it.
+
+What changed: eyebrow -> "OUR COLLABORATIONS" (24px w700); the old headline is hidden and a
+new centred "Their experience with us..." (48px w600) sits INSIDE the container; the 16-logo
+tab strip and the dot row are HIDDEN and paging is now two chevron buttons in the card
+gutters (`;6064:23757` / `;6064:23760`, 40x40 r=4); the collaborations logo marquee moved
+from BELOW the card to ABOVE the heading; "And many more..." is gone; the headshot is hidden
+(brand mark only); the section band is `#ECEEF2`, not white; height 947px -> 795px.
+
+The 152px height drop meant a real reflow: every desktop `top:` at or below the next
+full-bleed band (514.9479vw) shifted up 7.9167vw and `.ax-page` height followed (214 values).
+The logo strip subtree was MOVED byte-identical so the existing `ax-mq` marquee enhancer
+(which keys on `5420-*` svg filenames) keeps working -- only its container top changed.
+
+The tab enhancer was replaced with prev/next. The placeholder-story machinery went with it:
+it existed to make 16 tabs demoable, and there are no tabs any more.
+
+### Footer newsletter aligned to the link column (`_footalign.html`, 2026-07-30)
+
+Requested deviation: Figma puts "Get the latest from AeonX" 26px right of the
+"Who we are"/"About Us" column (86px in the flattened page), which reads as almost-aligned.
+`_footalign.html` measures the column and pulls the heading + email field + Subscribe pill
+left as one group. Geometry-driven, not hardcoded, so it survives a Figma re-pull; injected
+site-wide (36 files) because the footer is flattened into every page.
+
+**Also pending, NOT done:** the footer itself is redesigned in Figma too -- the old
+`4046:31862` (580px) is hidden and a new instance `5323:14151` "Footer ( AeonX)" (850px) is
+live. The whole footer needs rebuilding; only the alignment was in scope here.

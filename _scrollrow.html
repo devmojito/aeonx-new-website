@@ -1,0 +1,120 @@
+<style id="ax-scrollrow-css">
+/* Figma exports an over-wide row inside a clipped box and ships NO scroller, so every
+   card past the clip edge is simply unreachable (the leadership page hides 5 of its 8
+   people this way). Turning the existing clip into a real scroller costs no layout
+   change: the children are absolutely positioned, so the box already reports the full
+   scrollWidth -- it just was not allowed to scroll. */
+.ax-srow{overflow-x:auto!important;overflow-y:hidden!important;
+  scrollbar-width:thin;scroll-behavior:smooth;overscroll-behavior-x:contain;
+  -webkit-overflow-scrolling:touch;cursor:grab}
+.ax-srow.is-drag{cursor:grabbing;scroll-behavior:auto}
+.ax-srow::-webkit-scrollbar{height:6px}
+.ax-srow::-webkit-scrollbar-thumb{background:rgba(35,39,46,.22);border-radius:99px}
+.ax-srow::-webkit-scrollbar-track{background:transparent}
+/* edge fades hint that there is more to the right */
+.ax-srow-wrap{position:relative}
+.ax-srow-fade{position:absolute;top:0;bottom:0;width:3vw;pointer-events:none;z-index:3;
+  opacity:0;transition:opacity .2s ease}
+.ax-srow-fade--l{left:0;background:linear-gradient(90deg,#fff,rgba(255,255,255,0))}
+.ax-srow-fade--r{right:0;background:linear-gradient(270deg,#fff,rgba(255,255,255,0))}
+.ax-srow-fade.on{opacity:1}
+@media (prefers-reduced-motion:reduce){.ax-srow{scroll-behavior:auto}}
+</style>
+<script>
+/* ---- OVER-WIDE FIGMA ROWS -> REAL SCROLLERS ---- */
+(function(){
+  var MIN_OVERFLOW = 1.15;      /* content must exceed the box by 15% to be worth it */
+
+  function arm(box){
+    if (box.dataset.axSrow) return;
+    box.dataset.axSrow = '1';
+    box.classList.add('ax-srow');
+
+    /* keyboard: the box itself becomes focusable and arrow-scrollable, because the cards
+       inside are plain divs with nothing tabbable of their own */
+    if (!box.hasAttribute('tabindex')) box.setAttribute('tabindex', '0');
+    box.setAttribute('role', 'group');
+    if (!box.getAttribute('aria-label')) box.setAttribute('aria-label', 'Scrollable row, use the arrow keys');
+    box.addEventListener('keydown', function(e){
+      var step = box.clientWidth * 0.8;
+      if (e.key === 'ArrowRight'){ e.preventDefault(); box.scrollLeft += step; }
+      else if (e.key === 'ArrowLeft'){ e.preventDefault(); box.scrollLeft -= step; }
+      else if (e.key === 'Home'){ e.preventDefault(); box.scrollLeft = 0; }
+      else if (e.key === 'End'){ e.preventDefault(); box.scrollLeft = box.scrollWidth; }
+    });
+
+    /* pointer drag, so it feels like the carousel it looks like */
+    var down = null;
+    box.addEventListener('pointerdown', function(e){
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      down = { x:e.clientX, l:box.scrollLeft, moved:false };
+      box.classList.add('is-drag');
+    });
+    box.addEventListener('pointermove', function(e){
+      if (!down) return;
+      var d = e.clientX - down.x;
+      if (Math.abs(d) > 3) down.moved = true;
+      box.scrollLeft = down.l - d;
+    });
+    function up(){ if (down) { down = null; box.classList.remove('is-drag'); } }
+    ['pointerup','pointercancel','pointerleave'].forEach(function(ev){
+      box.addEventListener(ev, up);
+    });
+    /* a drag must not fire the click of whatever card it ended on */
+    box.addEventListener('click', function(e){
+      if (down && down.moved) { e.preventDefault(); e.stopPropagation(); }
+    }, true);
+
+    /* edge fades. The wrapper is the clip's own parent when we can use it, otherwise the
+       fades are skipped -- never restructure the DOM, the layout is pixel-locked. */
+    var host = box.parentElement;
+    if (host && !host.dataset.axSrowWrap) {
+      host.dataset.axSrowWrap = '1';
+      var cs = getComputedStyle(host);
+      if (cs.position !== 'static') {
+        host.classList.add('ax-srow-wrap');
+        var l = document.createElement('div'), r = document.createElement('div');
+        l.className = 'ax-srow-fade ax-srow-fade--l';
+        r.className = 'ax-srow-fade ax-srow-fade--r';
+        /* sit the fades exactly over the scroller, not the whole host */
+        [l, r].forEach(function(f){
+          f.style.top = box.offsetTop + 'px';
+          f.style.height = box.offsetHeight + 'px';
+          f.style.bottom = 'auto';
+          host.appendChild(f);
+        });
+        var paint = function(){
+          var max = box.scrollWidth - box.clientWidth;
+          l.classList.toggle('on', box.scrollLeft > 4);
+          r.classList.toggle('on', box.scrollLeft < max - 4);
+        };
+        box.addEventListener('scroll', paint);
+        addEventListener('resize', paint);
+        paint();
+      }
+    }
+  }
+
+  function scan(){
+    var boxes = [].slice.call(document.querySelectorAll('.g-clip'));
+    boxes.forEach(function(b){
+      if (b.closest('header') || b.closest('footer') || b.closest('.ax-footer')) return;
+      var cw = b.clientWidth;
+      if (!cw || b.scrollWidth <= cw * MIN_OVERFLOW) return;
+      /* only rows: a tall clipped block is a masked graphic, not a carousel */
+      if (b.clientHeight > cw) return;
+      /* it must actually hold several sibling blocks, not one wide image */
+      var kids = [].slice.call(b.children).filter(function(k){ return k.offsetWidth; });
+      if (kids.length < 3) return;
+      /* leave anything another enhancer already drives */
+      if (b.querySelector('.ax-mq,.ax-recog__win,.ax-carm') || b.classList.contains('ax-carm')) return;
+      arm(b);
+    });
+  }
+
+  function init(){ scan(); addEventListener('resize', function(){ setTimeout(scan, 200); }); }
+  /* lazily: the .ax-mob block is not guaranteed to precede this script */
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
