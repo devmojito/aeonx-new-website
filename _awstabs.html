@@ -5,12 +5,20 @@
    description swap -- no geometry moves. */
 .ax-awt-pill{cursor:pointer;transition:background-color .25s ease}
 .ax-awt-pill>.g-t{pointer-events:none;transition:color .25s ease}
-.ax-awt-desc{transition:opacity .15s ease}
-.ax-awt-desc.ax-awt-fade{opacity:0}
+/* shared tab motion language: copy slips out toward the old tab, slides in from
+   the direction of travel; --axd = +1/-1 from the index delta */
+.ax-awt-desc{transition:opacity .16s ease,transform .16s ease}
+.ax-awt-desc.ax-awt-fade{opacity:0;transform:translateX(calc(var(--axd,1)*-0.5208vw))}
+.ax-awt-in{animation:ax-awt-in .34s cubic-bezier(.22,.61,.36,1) both}
+@keyframes ax-awt-in{
+  from{opacity:0;transform:translateX(calc(var(--axd,1)*0.9375vw))}
+  to{opacity:1;transform:none}
+}
 .ax-awt-pill:focus-visible{outline:2px solid rgb(35,39,46);outline-offset:-3px}
 .ax-awt-pill:focus:not(:focus-visible){outline:none}
 @media (prefers-reduced-motion:reduce){
   .ax-awt-pill,.ax-awt-pill>.g-t,.ax-awt-desc{transition:none}
+  .ax-awt-in{animation:none}
 }
 </style>
 <script>
@@ -108,6 +116,7 @@
     })(i);
 
     function select(k, focus){
+      var dir = k > cur ? 1 : -1;
       cur = k;
       for (var i = 0; i < 6; i++){
         var on = i === k;
@@ -116,13 +125,17 @@
         pills[i].setAttribute('aria-selected', on ? 'true' : 'false');
         pills[i].setAttribute('tabindex', on ? '0' : '-1');
       }
-      /* fade the paragraph out, swap the copy, fade back in */
+      /* copy slips out toward the old tab, swaps, slides in from the travel side */
       if (timer) clearTimeout(timer);
+      desc.classList.remove('ax-awt-in');
+      desc.style.setProperty('--axd', dir);
       desc.classList.add('ax-awt-fade');
       timer = setTimeout(function(){
         desc.textContent = DESCS[k];
         desc.classList.remove('ax-awt-fade');
-      }, 160);
+        void desc.offsetWidth;
+        desc.classList.add('ax-awt-in');
+      }, 170);
       if (focus) pills[k].focus();
     }
 

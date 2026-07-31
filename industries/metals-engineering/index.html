@@ -2776,5 +2776,33 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
 })();
 </script>
 
+<style id="ax-gearspin-css">
+/* Industries hero gears. Each industries page decorates its hero with two big
+   radial gear/fan vectors (top-left and bottom-right corner, one pair per page,
+   all ~square exports so they rotate about their own centre without wobble).
+   Selector-gated by asset id: nothing else on the site matches. The top-left
+   gear turns clockwise, the bottom-right counter-clockwise and slightly slower,
+   like a meshed pair. transform is free on these imgs (the generator writes
+   only position + blur), and the hero clip keeps the swing inside the section. */
+img.g-vec[src*="4690-13422"],
+img.g-vec[src*="6131-22640"],
+img.g-vec[src*="6138-25615"],
+img.g-vec[src*="6138-25921"],
+img.g-vec[src*="6138-26092"],
+img.g-vec[src*="6138-26187"]{animation:ax-gear-cw 80s linear infinite}
+img.g-vec[src*="4690-13425"],
+img.g-vec[src*="6138-25456"],
+img.g-vec[src*="6138-25767"],
+img.g-vec[src*="6138-25985"],
+img.g-vec[src*="6138-26117"],
+img.g-vec[src*="6138-26173"]{animation:ax-gear-ccw 104s linear infinite}
+@keyframes ax-gear-cw{to{transform:rotate(360deg)}}
+@keyframes ax-gear-ccw{to{transform:rotate(-360deg)}}
+@media (prefers-reduced-motion:reduce){
+  img.g-vec[src*="4690-134"],img.g-vec[src*="6131-22640"],img.g-vec[src*="6138-25"],
+  img.g-vec[src*="6138-26"]{animation:none}
+}
+</style>
+
 </body>
 </html>

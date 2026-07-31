@@ -2663,8 +2663,23 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
 .ax-mt-tab>.g-t{transition:color .25s ease;}
 .ax-mt-tab:focus-visible{outline:3px solid rgb(35,39,46);outline-offset:-4px;}
 .ax-mt-tab[aria-selected="true"]:focus-visible{outline-color:rgb(255,255,255);}
+/* City switch choreography (shared tab motion language): the panel fields slip out
+   toward the old city (10px, fast), the new copy slides in from the direction of
+   travel (18px, eased) with a light stagger -- tag, then heading, then map, then
+   the rest. --axd is +1/-1, set by JS from the index delta. */
+.ax-mt-out{opacity:0!important;transform:translateX(calc(var(--axd,1)*-0.5208vw));
+  transition:opacity .16s ease,transform .16s ease;}
+.ax-mt-in{animation:ax-mt-in .34s cubic-bezier(.22,.61,.36,1) both;}
+.ax-mt-in.ax-mt-d1{animation-delay:.05s}
+.ax-mt-in.ax-mt-d2{animation-delay:.09s}
+.ax-mt-in.ax-mt-d3{animation-delay:.13s}
+@keyframes ax-mt-in{
+  from{opacity:0;transform:translateX(calc(var(--axd,1)*0.9375vw))}
+  to{opacity:1;transform:none}
+}
 @media (prefers-reduced-motion:reduce){
-  .ax-mt-strip,.ax-mt-tab,.ax-mt-tab>.g-t{transition:none;}
+  .ax-mt-strip,.ax-mt-tab,.ax-mt-tab>.g-t,.ax-mt-out{transition:none;}
+  .ax-mt-in{animation:none;}
 }
 </style>
 <script>
@@ -2852,10 +2867,35 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
       warmed[r] = 1;
       (new Image()).src = '/assets/gen/'+r+'.png';    /* maps are ~1.5MB: on demand */
     }
+    /* fields in stagger order: tag leads, heading next, map with it, details last */
+    var flow = [[f.tag,0],[f.head,1],[f.map,1],[f.addr,2],[f.tel,3],[f.mail,3]];
+    var swapTimer = null;
+    var noMotion = window.matchMedia && matchMedia('(prefers-reduced-motion:reduce)').matches;
+
     function select(sel, focus){
       if (sel !== cur){
+        var dir = sel > cur ? 1 : -1;
         cur = sel;
-        paint(sel); apply(CITY[sel]); bring(sel);
+        paint(sel); bring(sel); warm(sel);
+        if (noMotion){
+          apply(CITY[sel]);
+        } else {
+          if (swapTimer) clearTimeout(swapTimer);       /* rapid clicks: restart cleanly */
+          flow.forEach(function(p){
+            p[0].classList.remove('ax-mt-in','ax-mt-d1','ax-mt-d2','ax-mt-d3');
+            p[0].style.setProperty('--axd', dir);
+            p[0].classList.add('ax-mt-out');
+          });
+          swapTimer = setTimeout(function(){
+            apply(CITY[sel]);
+            flow.forEach(function(p){
+              p[0].classList.remove('ax-mt-out');
+              void p[0].offsetWidth;                    /* restart the enter animation */
+              p[0].classList.add('ax-mt-in');
+              if (p[1]) p[0].classList.add('ax-mt-d' + p[1]);
+            });
+          }, 170);
+        }
       }
       if (focus) tabs[sel].focus();
     }
@@ -2896,9 +2936,16 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
    display kills the transition. The visibility flip is delayed until the fade ends
    on the way out and immediate on the way in (standard crossfade choreography), so
    a hidden panel is never focusable or hit-testable mid-fade. */
-.ax-ftabs-panel{transition:opacity .3s ease,transform .3s cubic-bezier(.22,.61,.36,1),visibility 0s 0s}
-.ax-ftabs-off{visibility:hidden;opacity:0;transform:translateY(0.4167vw);pointer-events:none;
-  transition:opacity .3s ease,transform .3s cubic-bezier(.22,.61,.36,1),visibility 0s .3s}
+.ax-ftabs-panel{transition:opacity .16s ease,transform .16s ease,visibility 0s 0s}
+.ax-ftabs-off{visibility:hidden;opacity:0;transform:translateX(calc(var(--axd,0)*-0.5208vw));
+  pointer-events:none;
+  transition:opacity .16s ease,transform .16s ease,visibility 0s .16s}
+/* the entering panel slides in from the direction of travel with the shared curve */
+.ax-ftabs-in{animation:ax-ft-in .34s cubic-bezier(.22,.61,.36,1) both}
+@keyframes ax-ft-in{
+  from{opacity:0;transform:translateX(calc(var(--axd,1)*0.9375vw))}
+  to{opacity:1;transform:none}
+}
 /* Active-tab pill and label colours ease over instead of snapping (same timing as
    the contact map tabs). */
 .ax-ftabs-hit{cursor:pointer;transition:background-color .25s ease}
@@ -2908,6 +2955,7 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
 .ax-ftabs-mv{transition:top .3s ease,height .3s ease}
 @media (prefers-reduced-motion:reduce){
   .ax-ftabs-panel,.ax-ftabs-off,.ax-ftabs-hit,.ax-ftabs-lbl,.ax-ftabs-mv{transition:none}
+  .ax-ftabs-in{animation:none}
 }
 /* The strip is a .g-clip, so an outset ring gets cut off top and bottom -- draw it
    inset instead. 23272E is the design's own dark and clears 3:1 against both the
@@ -3139,15 +3187,31 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
       tabs[i].setAttribute('aria-labelledby', 'ax-ftabs-l' + n + i);
     }
 
+    var prev = 0;
     function select(k, focus){
+      var dir = k > prev ? 1 : (k < prev ? -1 : 0);
       for (var i = 0; i < 2; i++){
         var on = i === k;
         tabs[i].style.backgroundColor = FILL[on ? 1 : 0];
         labels[i].style.color = LBL[on ? 1 : 0];
         tabs[i].setAttribute('aria-selected', on ? 'true' : 'false');
         tabs[i].setAttribute('tabindex', on ? '0' : '-1');
-        panels[i].classList.toggle('ax-ftabs-off', !on);
+        if (on && dir){
+          /* entering: start from the travel side, run the slide-in once */
+          panels[i].style.setProperty('--axd', dir);
+          panels[i].classList.remove('ax-ftabs-off', 'ax-ftabs-in');
+          void panels[i].offsetWidth;
+          panels[i].classList.add('ax-ftabs-in');
+        } else if (on){
+          panels[i].classList.remove('ax-ftabs-off');   /* initial arm: no animation */
+        } else {
+          /* leaving: slip out toward where the old tab sits */
+          if (dir) panels[i].style.setProperty('--axd', -dir);
+          panels[i].classList.remove('ax-ftabs-in');
+          panels[i].classList.add('ax-ftabs-off');
+        }
       }
+      prev = k;
       if (shift) shift(k === 1);
       if (focus) tabs[k].focus();
     }

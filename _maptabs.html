@@ -12,8 +12,23 @@
 .ax-mt-tab>.g-t{transition:color .25s ease;}
 .ax-mt-tab:focus-visible{outline:3px solid rgb(35,39,46);outline-offset:-4px;}
 .ax-mt-tab[aria-selected="true"]:focus-visible{outline-color:rgb(255,255,255);}
+/* City switch choreography (shared tab motion language): the panel fields slip out
+   toward the old city (10px, fast), the new copy slides in from the direction of
+   travel (18px, eased) with a light stagger -- tag, then heading, then map, then
+   the rest. --axd is +1/-1, set by JS from the index delta. */
+.ax-mt-out{opacity:0!important;transform:translateX(calc(var(--axd,1)*-0.5208vw));
+  transition:opacity .16s ease,transform .16s ease;}
+.ax-mt-in{animation:ax-mt-in .34s cubic-bezier(.22,.61,.36,1) both;}
+.ax-mt-in.ax-mt-d1{animation-delay:.05s}
+.ax-mt-in.ax-mt-d2{animation-delay:.09s}
+.ax-mt-in.ax-mt-d3{animation-delay:.13s}
+@keyframes ax-mt-in{
+  from{opacity:0;transform:translateX(calc(var(--axd,1)*0.9375vw))}
+  to{opacity:1;transform:none}
+}
 @media (prefers-reduced-motion:reduce){
-  .ax-mt-strip,.ax-mt-tab,.ax-mt-tab>.g-t{transition:none;}
+  .ax-mt-strip,.ax-mt-tab,.ax-mt-tab>.g-t,.ax-mt-out{transition:none;}
+  .ax-mt-in{animation:none;}
 }
 </style>
 <script>
@@ -201,10 +216,35 @@
       warmed[r] = 1;
       (new Image()).src = '/assets/gen/'+r+'.png';    /* maps are ~1.5MB: on demand */
     }
+    /* fields in stagger order: tag leads, heading next, map with it, details last */
+    var flow = [[f.tag,0],[f.head,1],[f.map,1],[f.addr,2],[f.tel,3],[f.mail,3]];
+    var swapTimer = null;
+    var noMotion = window.matchMedia && matchMedia('(prefers-reduced-motion:reduce)').matches;
+
     function select(sel, focus){
       if (sel !== cur){
+        var dir = sel > cur ? 1 : -1;
         cur = sel;
-        paint(sel); apply(CITY[sel]); bring(sel);
+        paint(sel); bring(sel); warm(sel);
+        if (noMotion){
+          apply(CITY[sel]);
+        } else {
+          if (swapTimer) clearTimeout(swapTimer);       /* rapid clicks: restart cleanly */
+          flow.forEach(function(p){
+            p[0].classList.remove('ax-mt-in','ax-mt-d1','ax-mt-d2','ax-mt-d3');
+            p[0].style.setProperty('--axd', dir);
+            p[0].classList.add('ax-mt-out');
+          });
+          swapTimer = setTimeout(function(){
+            apply(CITY[sel]);
+            flow.forEach(function(p){
+              p[0].classList.remove('ax-mt-out');
+              void p[0].offsetWidth;                    /* restart the enter animation */
+              p[0].classList.add('ax-mt-in');
+              if (p[1]) p[0].classList.add('ax-mt-d' + p[1]);
+            });
+          }, 170);
+        }
       }
       if (focus) tabs[sel].focus();
     }

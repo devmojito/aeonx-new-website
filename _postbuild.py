@@ -38,6 +38,12 @@ SCOPED = [
     ('contact-us/index.html',         'ax-maptabs-css', '_maptabs.html'),
     ('contact-us/index.html',         'ax-ftabs-css',   '_formtabs.html'),
     ('services/aws/index.html',       'ax-awstabs-css', '_awstabs.html'),
+    ('industries/manufacturing/index.html',            'ax-gearspin-css', '_gearspin.html'),
+    ('industries/metals-engineering/index.html',       'ax-gearspin-css', '_gearspin.html'),
+    ('industries/automotive-aerospace/index.html',     'ax-gearspin-css', '_gearspin.html'),
+    ('industries/textiles-apparel/index.html',         'ax-gearspin-css', '_gearspin.html'),
+    ('industries/fmcg-distribution/index.html',        'ax-gearspin-css', '_gearspin.html'),
+    ('industries/energy-fertiliser-oil-gas/index.html','ax-gearspin-css', '_gearspin.html'),
 ]
 SCOPED = [(sfx, sent, open(os.path.join(_HERE, fn), encoding='utf-8').read())
           for sfx, sent, fn in SCOPED]

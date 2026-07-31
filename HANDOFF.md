@@ -374,3 +374,31 @@ hover system, nav/CTA links.
 **Still blocked (client):** Leadership department tabs — the variants exist in Figma
 but no roster content is authored for SALES & GROWTH etc. (§6.6). Stale wiring on
 hidden nodes (the old 16-logo testimonial strip, retired hero variants) was ignored.
+
+## 13. Shared tab motion language + industries hero gears (2026-07-31)
+
+User feedback: map city tabs also snapped, and the first-pass tab animations were too
+plain. ALL in-page switches now share ONE motion language, and it is directional:
+- OUT: content slips 10px toward the old tab and fades, .16s ease.
+- IN: content slides in 18px from the direction of travel, .34s
+  cubic-bezier(.22,.61,.36,1) (`--axd` = ±1 from the index delta, set by JS).
+- Pills/strip keep their .25s/.35s eases. `prefers-reduced-motion` kills everything.
+- Applied in `_maptabs.html` (six panel fields swap with a light stagger — tag,
+  heading+map, address, contact lines; map warm() now also fires on click),
+  `_formtabs.html` (panels exit/enter directionally; the old translateY rise is gone;
+  initial arm still animation-free), `_awstabs.html` (description slips out/in).
+- Enter animations are keyframes (`ax-mt-in`/`ax-ft-in`/`ax-awt-in`) with `both` fill;
+  every switch REMOVES the in-class before applying the out-state, otherwise the
+  animation's fill would override the exit transition (animations beat transitions).
+
+**Industries hero gears (`_gearspin.html`, scoped to the six industries pages):** each
+industries hero has one gear/fan vector pair (top-left + bottom-right corner, square
+exports, one pair per page — 12 assets total, ids listed in the fragment). Top-left
+turns clockwise (80s linear), bottom-right counter-clockwise (104s) like a meshed
+pair. Selector-gated by asset id, so the fragment is inert everywhere else; reduced
+motion stops both.
+
+Verified headless: directional classes + `--axd` + computed animation-names on
+contact-us (both switchers), services/aws, manufacturing and textiles gears
+(ax-gear-cw 80s / ax-gear-ccw 104s). Remember trap #2: headless cannot measure the
+actual motion, only the wiring.

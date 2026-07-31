@@ -5,9 +5,16 @@
    display kills the transition. The visibility flip is delayed until the fade ends
    on the way out and immediate on the way in (standard crossfade choreography), so
    a hidden panel is never focusable or hit-testable mid-fade. */
-.ax-ftabs-panel{transition:opacity .3s ease,transform .3s cubic-bezier(.22,.61,.36,1),visibility 0s 0s}
-.ax-ftabs-off{visibility:hidden;opacity:0;transform:translateY(0.4167vw);pointer-events:none;
-  transition:opacity .3s ease,transform .3s cubic-bezier(.22,.61,.36,1),visibility 0s .3s}
+.ax-ftabs-panel{transition:opacity .16s ease,transform .16s ease,visibility 0s 0s}
+.ax-ftabs-off{visibility:hidden;opacity:0;transform:translateX(calc(var(--axd,0)*-0.5208vw));
+  pointer-events:none;
+  transition:opacity .16s ease,transform .16s ease,visibility 0s .16s}
+/* the entering panel slides in from the direction of travel with the shared curve */
+.ax-ftabs-in{animation:ax-ft-in .34s cubic-bezier(.22,.61,.36,1) both}
+@keyframes ax-ft-in{
+  from{opacity:0;transform:translateX(calc(var(--axd,1)*0.9375vw))}
+  to{opacity:1;transform:none}
+}
 /* Active-tab pill and label colours ease over instead of snapping (same timing as
    the contact map tabs). */
 .ax-ftabs-hit{cursor:pointer;transition:background-color .25s ease}
@@ -17,6 +24,7 @@
 .ax-ftabs-mv{transition:top .3s ease,height .3s ease}
 @media (prefers-reduced-motion:reduce){
   .ax-ftabs-panel,.ax-ftabs-off,.ax-ftabs-hit,.ax-ftabs-lbl,.ax-ftabs-mv{transition:none}
+  .ax-ftabs-in{animation:none}
 }
 /* The strip is a .g-clip, so an outset ring gets cut off top and bottom -- draw it
    inset instead. 23272E is the design's own dark and clears 3:1 against both the
@@ -248,15 +256,31 @@
       tabs[i].setAttribute('aria-labelledby', 'ax-ftabs-l' + n + i);
     }
 
+    var prev = 0;
     function select(k, focus){
+      var dir = k > prev ? 1 : (k < prev ? -1 : 0);
       for (var i = 0; i < 2; i++){
         var on = i === k;
         tabs[i].style.backgroundColor = FILL[on ? 1 : 0];
         labels[i].style.color = LBL[on ? 1 : 0];
         tabs[i].setAttribute('aria-selected', on ? 'true' : 'false');
         tabs[i].setAttribute('tabindex', on ? '0' : '-1');
-        panels[i].classList.toggle('ax-ftabs-off', !on);
+        if (on && dir){
+          /* entering: start from the travel side, run the slide-in once */
+          panels[i].style.setProperty('--axd', dir);
+          panels[i].classList.remove('ax-ftabs-off', 'ax-ftabs-in');
+          void panels[i].offsetWidth;
+          panels[i].classList.add('ax-ftabs-in');
+        } else if (on){
+          panels[i].classList.remove('ax-ftabs-off');   /* initial arm: no animation */
+        } else {
+          /* leaving: slip out toward where the old tab sits */
+          if (dir) panels[i].style.setProperty('--axd', -dir);
+          panels[i].classList.remove('ax-ftabs-in');
+          panels[i].classList.add('ax-ftabs-off');
+        }
       }
+      prev = k;
       if (shift) shift(k === 1);
       if (focus) tabs[k].focus();
     }
