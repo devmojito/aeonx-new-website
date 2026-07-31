@@ -2243,8 +2243,11 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
    tint needed a radius guard -- that hack is gone).
    Filled pills lighten and warm; outlined pills fill with a brand wash and take
    a brand hairline. */
+/* background-clip MUST be padding-box: these pills carry a 1px border, and a background
+   defaults to border-box, so the wash paints UNDER and PAST the border out to the square
+   border-box edge -- which showed as cream corners escaping the rounded orange outline. */
 .ax-hv-fill,.ax-hv-out{background-repeat:no-repeat;background-position:left center;
-  background-size:0 100%}
+  background-size:0 100%;background-clip:padding-box;-webkit-background-clip:padding-box}
 .ax-hv-fill{background-image:linear-gradient(90deg,rgba(255,255,255,.20),rgba(255,255,255,.20))}
 .ax-hv-out {background-image:linear-gradient(90deg,rgba(223,63,23,.10),rgba(223,63,23,.10))}
 
@@ -2631,6 +2634,25 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
          reads as colour bleeding out of the button. */
       var boxy = (/(^|;)\s*border:/.test(st) || /background-color:/.test(st)) && rad > 0;
       var cls = filled ? 'ax-hv-fill' : (boxy ? 'ax-hv-out' : 'ax-hv-txt');
+      /* SECOND BADGE SHAPE -- the EYEBROW CHIP. Same Figma badge component as the
+         capsule above, but drawn as a 218x26 rect with a 4px radius, so the
+         capsule test cannot see it: "MANUFACTURING · SAP AMS · AXIOM" and its
+         siblings, 64 of them across 8 pages. It was taking the outlined/filled
+         button skin, which is where the drop shadow the client reported came from
+         (rest state is box-shadow:none -- Figma specifies no effect on these,
+         `"effects":[]` on the Subtitle frame, so nothing here is undoing a design).
+         What separates it from a real CTA is TYPE SIZE, not shape: measured across
+         all 36 pages, every boxed CTA labels at >=16px/0.8333vw and every eyebrow
+         chip at 11px/0.5729vw. The cut sits at 0.68vw (13px @1920), and the label
+         must actually exist -- a boxed control with no text (the prev/next
+         chevrons) inherits a 13.3px default and must stay on the button path.
+         Bare-text links are exempt: `s` is its own label there, and they have no
+         box to cast a shadow from anyway. */
+      if (cls !== 'ax-hv-txt') {
+        var lab = texts.filter(function(t){ return t.w && t.el !== s.el && inside(s, t); })
+                       .sort(function(x, y){ return x.a - y.a; })[0];
+        if (lab && fsize(lab.el) < U * 0.68) return;
+      }
       var mem = membersOf(s, boxes.concat(texts, OTHER), null);
       /* A small vector in the right half of the pill is its trailing arrow. It can be a
          flat sibling OR a child of a g-clip pill, and membersOf drops descendants of

@@ -244,10 +244,29 @@ capsule ("SAP AMS · AXIOM", "Why we exist", "SAP Gold Partner"). The wider-than
 test keeps round icon buttons on the button path. Badges stay clickable and still lift
 with their card; they just no longer lift, tint or cast a shadow on their own.
 
-**Known and left alone:** the grey `MANUFACTURING · SAP AMS · AXIOM` eyebrow chips on
-the industry pages are the *same* badge with a 4px radius, not a capsule, so they are
-still armed as buttons. Nothing separates them from the real 28px `Read the story`
-CTA except label semantics — widening the rule would kill a real button. Also, a pill
+**Eyebrow chips — finished 2026-07-31 (second pass).** The `MANUFACTURING · SAP AMS ·
+AXIOM` chips were the *same* badge drawn as a 218×26 rect with a 4px radius, so the
+capsule test could not see them and they took the `ax-hv-out` / `ax-hv-fill` button skin
+— that was the remaining shadow. Not Figma (`"effects":[]` on the `Subtitle` frame,
+`I4556:5027;4556:4943`; rest state measured `box-shadow:none`, no inline shadow in the
+generated markup) and not `_gen.py`. The earlier note that "nothing separates them from
+the real 28px `Read the story` CTA" was wrong on one axis: **type size** does. Measured
+across all 36 pages — every boxed CTA labels at ≥16px/0.8333vw, every eyebrow chip at
+11px/0.5729vw. `buildButtons` now skips a boxed skin whose tightest contained label is
+set below `0.68vw`; label-less boxed controls (the prev/next chevrons, which inherit
+13.3px) and bare-text links are exempt. 64 chips across 8 pages dropped off the button
+path, **0 real CTAs lost, 0 gained** (`python3 _btnaudit.py` diffs the armed-button
+population page by page; `python3 _shadowsweep.py` lists every SAP-AMS/AXIOM-labelled
+element still painting a shadow — what remains is real CTAs plus Figma's own inline
+inset outlines). Chips stay clickable and still lift with their card.
+
+**OWED: `_chrome.html` has NOT been re-spliced with this `_hover.html`** — another agent
+owned it that run. The 34 generated pages were patched directly, so the site is correct
+*now*, but `_build_all.py` re-bakes the chrome's stale copy and would reintroduce the
+shadow. Run the §1 re-deploy snippet against `_chrome.html` (and `index.html`, which has
+no eyebrow chips but must stay byte-identical) before the next full build.
+
+Also, a pill
 whose Figma export carries an **inline** `box-shadow` (e.g. `Meet AXIOM`, an inset
 outline) keeps it and gets no hover shadow; it still gets the wash and the lift.
 
