@@ -2744,8 +2744,15 @@ img.g-vec[src*="6138-25767"],
 img.g-vec[src*="6138-25985"],
 img.g-vec[src*="6138-26117"],
 img.g-vec[src*="6138-26173"]{animation:ax-gear-ccw 104s linear infinite}
-@keyframes ax-gear-cw{to{transform:rotate(360deg)}}
-@keyframes ax-gear-ccw{to{transform:rotate(-360deg)}}
+/* Animate the standalone `rotate` property, NOT `transform`: the scroll-reveal
+   fragment leaves `transform:translateY(0)` on revealed hero elements, and a
+   keyframe to transform:rotate(360deg) against that base has MISMATCHED transform
+   lists -- the browser falls back to matrix interpolation, and rotate(360deg) AS A
+   MATRIX is the identity matrix, so the whole animation collapsed to a no-op
+   (proven: 0px screenshot diff at animation-delay:-20s). `rotate` composes with
+   any transform value and cannot collide with it. */
+@keyframes ax-gear-cw{from{rotate:0turn}to{rotate:1turn}}
+@keyframes ax-gear-ccw{from{rotate:0turn}to{rotate:-1turn}}
 @media (prefers-reduced-motion:reduce){
   img.g-vec[src*="4690-134"],img.g-vec[src*="6131-22640"],img.g-vec[src*="6138-25"],
   img.g-vec[src*="6138-26"]{animation:none}

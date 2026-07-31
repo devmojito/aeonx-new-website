@@ -68,7 +68,17 @@ for f in glob.glob('**/index.html', recursive=True) + ['_chrome.html']:
 6. **Moving a row element out of `main.ax-page` into a new track lays out and
    hit-tests correctly but NEVER PAINTS.** Proven with a blue test background; not
    blend-mode, stacking or reveal classes. **Clone, never move.**
-7. The dev server (`python3 -m http.server 8809`) wedges. On `ERR_EMPTY_RESPONSE`:
+7. **A keyframe that animates `transform` can silently collapse to a NO-OP** if the
+   element's base transform comes from another rule with a different transform list.
+   The scroll-reveal end state leaves `transform:translateY(0)` on revealed elements;
+   a keyframe to `transform:rotate(360deg)` against that base has mismatched lists,
+   so the browser matrix-interpolates -- and rotate(360deg) AS A MATRIX is the
+   identity matrix. Result: animation "running", keyframes parsed, zero motion
+   (gears bug; proven by a 0px screenshot diff at `animation-delay:-20s`, which is
+   also the ONLY reliable headless way to prove CSS-animation motion -- the virtual
+   -time clock never advances animations). Fix: animate the standalone `rotate`
+   property, which composes with any `transform` and cannot collide with it.
+8. The dev server (`python3 -m http.server 8809`) wedges. On `ERR_EMPTY_RESPONSE`:
    `pkill -f "http.server 8809"` then
    `(setsid python3 -m http.server 8809 --directory . >/dev/null 2>&1 &)`
 
