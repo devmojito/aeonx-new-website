@@ -320,3 +320,19 @@ Not in scope / notes:
 - NEW client-content flags for §7: the orange announcement bar text ("Grep, Embeddings,
   or Both? … webinar June 30th …") is designer placeholder copy from Figma, live on every
   page since Jul 01; board-of-directors still shows `[NEEDS INPUT: Name]` placeholders.
+
+## 11. Mega-menu featured card synced to Figma (2026-07-31, "update navbar images")
+
+Component set `5228:6945` ("Component 25", the menu container variants) now gives all four
+panels the same featured card: flat `#DF3F17` band ("About Aeonx Digital" / "Our vision,
+mission, and impact." / plain-text "Learn More →") over a 743×375 image, whole card one
+Link. Chrome had a text-only gradient card, and what-we-do still had the retired AXIOM
+copy ("Production AI for SAP…") — both replaced; `.ax-mm2__feat` markup+CSS updated in
+`_chrome.html` + `index.html` (byte-identical, verified) and rebuilt site-wide. The 10
+link-card images (`ax-mm2__img`) are UNCHANGED in Figma — same imageRefs.
+
+**CLIENT FLAG:** the featured-card image (`ece298d0…png`) is Figma's stock grey
+CHECKERBOARD placeholder (256×256, #FAFAFA/#EBEBEB squares — verified by pixel sample;
+the designer also tiles it as small squares in the mobile block). The design literally
+ships a placeholder; a real image is owed. Swap = replace `assets/gen/ece298d0….png` or
+re-export once the designer drops a real fill on nodes `5210:15997/16421/16608/16809`.
