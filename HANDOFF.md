@@ -108,12 +108,18 @@ Read values back by appending a `<pre id="dbg">` from script and using `--dump-d
 |---|---|---|---|
 | `_hover.html` | `ax-hover-css` | all | tile/button hover + contextual Explore pills |
 | `_scrollrow.html` | `ax-scrollrow-css` | all | over-wide Figma clips → real scrollers |
-| `_footalign.html` | `ax-footalign-css` | all | footer newsletter aligned to the link column |
 | `_recogfx.html` | `ax-recogfx-css` | culture | RECOGNITIONS logo marquee |
 | `_maptabs.html` | `ax-maptabs-css` | contact-us | six city tabs |
 | `_formtabs.html` | `ax-ftabs-css` | contact-us | "Got a project in mind?" panel |
 
 Plus pre-existing: `_mobfx`, `_counters`, `_cursor`, `_ctawash`, `_navload`, `_preloader*`.
+
+**`_footalign.html` was RETIRED 2026-07-31** (file kept, no longer injected): it existed to
+pull the OLD footer's newsletter left, keyed on the "Get the latest from AeonX" heading —
+which the NEW footer also has, so it would have dragged the redesigned newsletter off-Figma.
+Removed from `_postbuild.py` and stripped from all 36 files. The new footer's own tiny CSS
+(`<style id="ax-footer-css">`, link color/hover) lives INSIDE the footer section markup, so
+it travels with the footer through `get_shell()` — it is not a postbuild fragment.
 
 ---
 
@@ -161,8 +167,7 @@ Plus pre-existing: `_mobfx`, `_counters`, `_cursor`, `_ctawash`, `_navload`, `_p
    three `_gen.py` bugs — see §8. **The generator fix is NOT propagated**: only the
    manufacturing page was rebuilt. A full `_build_all.py` will change ~440 more
    gradients and ~100 rounded clips across the other 30 pages — correct, but review it.
-5. **Footer is redesigned in Figma and not built**: old `4046:31862` (580px) is hidden,
-   new instance `5323:14151` "Footer ( AeonX)" (850px) is live.
+5. ~~Footer is redesigned in Figma and not built~~ — **DONE 2026-07-31**, see §10.
 6. **Leadership "SALES & GROWTH" tab** has no roster in Figma. Needs the client to say
    which people belong under each tab — do not guess, these are real named staff.
 
@@ -260,11 +265,10 @@ population page by page; `python3 _shadowsweep.py` lists every SAP-AMS/AXIOM-lab
 element still painting a shadow — what remains is real CTAs plus Figma's own inline
 inset outlines). Chips stay clickable and still lift with their card.
 
-**OWED: `_chrome.html` has NOT been re-spliced with this `_hover.html`** — another agent
-owned it that run. The 34 generated pages were patched directly, so the site is correct
-*now*, but `_build_all.py` re-bakes the chrome's stale copy and would reintroduce the
-shadow. Run the §1 re-deploy snippet against `_chrome.html` (and `index.html`, which has
-no eyebrow chips but must stay byte-identical) before the next full build.
+~~OWED: `_chrome.html` has NOT been re-spliced with this `_hover.html`~~ — **CLEARED**:
+verified 2026-07-31 (later session) that `_chrome.html` and `index.html` both carry the
+current `_hover.html` byte-identically; commits `6be43ec`/`c5c660b` had already done the
+re-splice plus the full rebuild.
 
 Also, a pill
 whose Figma export carries an **inline** `box-shadow` (e.g. `Meet AXIOM`, an inset
@@ -277,3 +281,42 @@ search/page wrapper/`.ax-mob`, 0 capsule badges left on the button path. `_probe
 now stubs `matchMedia('(hover:hover)')` to true — headless reports `hover:none`, so
 the hover listeners never attached and every earlier hover probe silently measured
 nothing.
+
+## 10. Footer rebuild 2026-07-31 (new 850px "Footer ( AeonX)", `5323:14151`)
+
+The redesigned footer is now the shared chrome footer on all 35 pages (34 generated +
+homepage). What the fresh Figma re-pull had actually caused: the new footer instances are
+named `Footer ( AeonX)`, which `_gen.py` neither skipped nor used for `footer_top`, so
+every generated page had the new footer FLATTENED into its body as dead static divs AND
+the old 580px chrome footer appended at the homepage's offset (438.99vw) — past every
+page's height, so `.ax-page{overflow:hidden}` clipped it invisible. No page had a working
+footer link.
+
+Build: the section was generated once from `5323:14151` (`_gen.py` on that node), headings
+demoted to divs (a shared footer must not put an `h1` on every page — renders identically,
+`*{margin:0}` + absolute layout), 32 labels wrapped in real `<a>` (route map = the old
+footer's 25 anchors + SupplierX/OrderX/Xpense/Logystix/ManuFex → `/products/axiom`, per
+the CTA convention). Twitter/LinkedIn/BSE disclosures/Terms/Privacy/Cookies/Sitemap have
+no real destinations and stay UNLINKED on purpose (old footer did the same) — client owes
+URLs. `Get Started`/`Sign up to learn more` pills are linkified at runtime by the chrome
+CTA script (→ `/contact-us/`); `Subscribe` has no backend and stays inert — client owes a
+newsletter endpoint.
+
+`_gen.py` contract now: skips `Footer ( AeonX)` at depth<=1 like `footer`; `footer_top`
+accepts either name, prefers the redesign when a node carries both visible; a node with
+NO footer child gets the footer appended at content end (board-of-directors is the one
+such page — designer omission, flagged); page height grows to `footer_top + footer
+height` so an 850px footer can never be clipped by a node still sized for the 580px one.
+
+Verified headless (home, contact-us, board-of-directors): footer rect exactly
+1920x850 at page bottom, 32/32 anchors visible and routed, exactly one footer per page,
+zero `ax-footalign` remnants. Screenshot matches the Figma design (CTA band, 4 link
+columns, About/Follow, partner badges, newsletter band, legal row).
+
+Not in scope / notes:
+- The mobile `.ax-mob` block keeps its own older mobile footer (mobile Figma has no
+  redesign yet).
+- `_shot.py` is referenced in §8 but does not exist in the tree — use the §2 recipe.
+- NEW client-content flags for §7: the orange announcement bar text ("Grep, Embeddings,
+  or Both? … webinar June 30th …") is designer placeholder copy from Figma, live on every
+  page since Jul 01; board-of-directors still shows `[NEEDS INPUT: Name]` placeholders.

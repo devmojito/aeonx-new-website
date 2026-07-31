@@ -686,7 +686,8 @@ def walk(n, ox, oy, out, depth=0):
         return
     name = n.get('name', '')
     # skip shared chrome instances/frames - we reuse our own
-    if depth <= 1 and (name.startswith('Nav Bar') or name == 'footer'):
+    if depth <= 1 and (name.startswith('Nav Bar') or name == 'footer'
+                       or name == 'Footer ( AeonX)'):
         return
     t = n.get('type')
     bb = n.get('absoluteBoundingBox')
@@ -807,13 +808,16 @@ def build_body(node):
     HDG['h1_used'] = False
     scan_fontsizes(node)
     out = []
-    footer_top = None
+    ftops = {}
     for c in node.get('children', []):
-        if c.get('name') == 'footer' and c.get('visible', True) is not False:
+        if c.get('name') in ('footer', 'Footer ( AeonX)') and c.get('visible', True) is not False:
             fbb = c.get('absoluteBoundingBox')
             if fbb:
-                footer_top = (fbb['y'] - oy)
+                ftops[c.get('name')] = (fbb['y'] - oy)
         walk(c, ox, oy, out, 0)
+    # a page can carry both the old hidden-in-figma 'footer' and the redesigned
+    # instance; the redesign wins when both are visible
+    footer_top = ftops.get('Footer ( AeonX)', ftops.get('footer'))
     return '\n'.join(out), bb['height'], footer_top
 
 def get_shell():
@@ -852,8 +856,19 @@ def main():
     top = re.sub(r'(<meta property="og:title" content=")[^"]*(">)', lambda m: m.group(1)+esc(title)+m.group(2), top)
     top = re.sub(r'(<meta name="twitter:title" content=")[^"]*(">)', lambda m: m.group(1)+esc(title)+m.group(2), top)
     # reposition reused footer to this page's footer offset
+    if footer_top is None:
+        # figma node carries no footer instance (designer omission) -- append the
+        # shared footer right after the content instead of leaving the page bare
+        print(f'NOTE {nid}: no footer child in figma node, appending at content end')
+        footer_top = page_h_px
     if footer_top is not None:
         footer = re.sub(r'top:[\d.]+vw', f'top:{vw(footer_top)}', footer, count=1)
+        # the shared footer is 850px tall; a page whose figma node still holds
+        # the old 580px footer is 270px short and .ax-page{overflow:hidden}
+        # would clip it -- grow the page to fit
+        fh = re.search(r'height:([\d.]+)vw', footer)
+        if fh:
+            page_h_px = max(page_h_px, footer_top + float(fh.group(1)) * 1920 / 100)
     main_open = f'<main class="ax-page" style="height:{vw(page_h_px)}">'
     html_out = top + '\n' + main_open + '\n' + body + '\n' + footer + '\n' + bottom
     import os

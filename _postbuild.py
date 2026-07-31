@@ -23,7 +23,6 @@ CTAWASH = open(os.path.join(_HERE, '_ctawash.html'), encoding='utf-8').read()
 CURSOR = open(os.path.join(_HERE, '_cursor.html'), encoding='utf-8').read()
 NAVLOAD = open(os.path.join(_HERE, '_navload.html'), encoding='utf-8').read()
 COUNTERS = open(os.path.join(_HERE, '_counters.html'), encoding='utf-8').read()
-FOOTALIGN = open(os.path.join(_HERE, '_footalign.html'), encoding='utf-8').read()
 HOVER = open(os.path.join(_HERE, '_hover.html'), encoding='utf-8').read()
 SCROLLROW = open(os.path.join(_HERE, '_scrollrow.html'), encoding='utf-8').read()
 MOBFX = open(os.path.join(_HERE, '_mobfx.html'), encoding='utf-8').read()
@@ -99,7 +98,7 @@ def fix_gptw_sizing(s):
     return re.sub(r'style="([^"]*)"', sub, s)
 
 def main():
-    stats = {'gptw': 0, 'mobnav': 0, 'ctawash': 0, 'burst': 0, 'cursor': 0, 'preload': 0, 'navload': 0, 'counters': 0, 'mobfx': 0, 'scoped': 0, 'footalign': 0, 'hover': 0, 'scrollrow': 0}
+    stats = {'gptw': 0, 'mobnav': 0, 'ctawash': 0, 'burst': 0, 'cursor': 0, 'preload': 0, 'navload': 0, 'counters': 0, 'mobfx': 0, 'scoped': 0, 'hover': 0, 'scrollrow': 0}
     bids = burst_ids()
     for f in glob.glob('**/index.html', recursive=True) + ['_chrome.html']:
         try:
@@ -122,9 +121,6 @@ def main():
         if 'ax-hover-css' not in s and '</body>' in s:
             s = s.replace('</body>', HOVER + '\n</body>', 1)
             stats['hover'] = stats.get('hover', 0) + 1
-        if 'ax-footalign-css' not in s and '</body>' in s:
-            s = s.replace('</body>', FOOTALIGN + '\n</body>', 1)
-            stats['footalign'] = stats.get('footalign', 0) + 1
         if 'STAT COUNTERS' not in s and '</body>' in s:
             s = s.replace('</body>', COUNTERS + '\n</body>', 1)
             stats['counters'] += 1
@@ -159,7 +155,7 @@ def main():
           f"cursor {stats['cursor']}, preloader {stats['preload']}, "
           f"nav-loader {stats['navload']}, counters {stats['counters']}, "
           f"mobile-fx {stats['mobfx']}, page-scoped {stats['scoped']}, "
-          f"footer-align {stats['footalign']}, hover {stats['hover']}, "
+          f"hover {stats['hover']}, "
           f"scroll-rows {stats['scrollrow']} files")
 
 if __name__ == '__main__':
