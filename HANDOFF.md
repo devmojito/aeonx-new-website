@@ -336,3 +336,41 @@ CHECKERBOARD placeholder (256×256, #FAFAFA/#EBEBEB squares — verified by pixe
 the designer also tiles it as small squares in the mobile block). The design literally
 ships a placeholder; a real image is owed. Swap = replace `assets/gen/ece298d0….png` or
 re-export once the designer drops a real fill on nodes `5210:15997/16421/16608/16809`.
+
+## 12. Figma interaction audit + tab-switch fixes (2026-07-31)
+
+Swept every prototype interaction in the fresh dump (3,128 actions: 1,412 ON_CLICK→NODE,
+869 ON_HOVER, 341 ON_CLICK→URL, 101 AFTER_TIMEOUT SMART_ANIMATE, rest minor) and diffed
+against built behavior.
+
+**Fixed — contact form tabs (`_formtabs.html`):** the switch was a hard swap
+(`display:none` + instant colours). The Figma prototype itself specifies an INSTANT
+transition (both directions, `transition:None`), so the animation follows the house
+style instead: panels crossfade + 8px rise (.3s, visibility choreographed so hidden
+panels are never focusable), pill/label colours ease .25s (same curve as `_maptabs`),
+and the mobile height reflow (63 shifted elements + page) eases top/height .3s.
+`prefers-reduced-motion` kills all of it. Panel B is hidden BEFORE DOM insertion or the
+fade-out would flash on first paint.
+
+**Fixed — AWS services "Tab Switch" (`_awstabs.html`, NEW, scoped to services/aws/):**
+Figma set `4830:16255`, six variants; only "Landing Zone & Foundation" was instantiated,
+so five tabs were DEAD on the built page (trap #5 again). Every variant is the same
+strip + one description paragraph (fixed 208px — no reflow), so the fragment arms the
+six generated pills (active pill restyles .25s, palette captured from the markup, not
+hardcoded) and crossfades the description (.15s out, swap, fade in). Full ARIA tabs +
+arrow-key pattern. Descriptions carried verbatim from the fresh REST pull (double
+spaces and the `→` in "See Multi-cloud CMS →" included; note that arrow is TEXT, not a
+link — Figma wires no destination on it).
+- **Mobile is deliberately NOT armed:** the mobile layout stacks all six services as
+  always-visible cards — no switcher exists in the design. First cut armed the whole
+  mobile section as one giant pill (six labels share the section clip as direct parent
+  — a tap painted the section orange); the collector now requires the pill's own text
+  to equal the label and all six to be distinct siblings of one strip.
+
+**Verified working already:** map city tabs, mega-menu category swap, testimonial
+prev/next, mobile carousels, logo marquees (the AFTER_TIMEOUT SMART_ANIMATE wirings),
+hover system, nav/CTA links.
+
+**Still blocked (client):** Leadership department tabs — the variants exist in Figma
+but no roster content is authored for SALES & GROWTH etc. (§6.6). Stale wiring on
+hidden nodes (the old 16-logo testimonial strip, retired hero variants) was ignored.

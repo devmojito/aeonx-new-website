@@ -2889,9 +2889,26 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
 })();
 </script>
 
-<style id="ax-ftabs-css">.ax-ftabs-off{display:none!important}
-.ax-ftabs-lbl{pointer-events:none}
-.ax-ftabs-hit{cursor:pointer}
+<style id="ax-ftabs-css">
+/* Tab switch animation. The two panels are absolutely positioned siblings over the
+   same slot, so they crossfade in place: the leaving panel fades out, the entering
+   one fades in and rises 8px. Hidden state uses visibility, NOT display:none --
+   display kills the transition. The visibility flip is delayed until the fade ends
+   on the way out and immediate on the way in (standard crossfade choreography), so
+   a hidden panel is never focusable or hit-testable mid-fade. */
+.ax-ftabs-panel{transition:opacity .3s ease,transform .3s cubic-bezier(.22,.61,.36,1),visibility 0s 0s}
+.ax-ftabs-off{visibility:hidden;opacity:0;transform:translateY(0.4167vw);pointer-events:none;
+  transition:opacity .3s ease,transform .3s cubic-bezier(.22,.61,.36,1),visibility 0s .3s}
+/* Active-tab pill and label colours ease over instead of snapping (same timing as
+   the contact map tabs). */
+.ax-ftabs-hit{cursor:pointer;transition:background-color .25s ease}
+.ax-ftabs-lbl{pointer-events:none;transition:color .25s ease}
+/* Mobile: variant B is taller, so everything below the panel is shifted by inline
+   top/height writes -- ease those too so the page glides instead of jumping. */
+.ax-ftabs-mv{transition:top .3s ease,height .3s ease}
+@media (prefers-reduced-motion:reduce){
+  .ax-ftabs-panel,.ax-ftabs-off,.ax-ftabs-hit,.ax-ftabs-lbl,.ax-ftabs-mv{transition:none}
+}
 /* The strip is a .g-clip, so an outset ring gets cut off top and bottom -- draw it
    inset instead. 23272E is the design's own dark and clears 3:1 against both the
    DF3F17 active fill and the ECEEF2 idle fill. Width stays in px, not vw:
@@ -3062,6 +3079,9 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
       if (t >= bottom - 0.01) moves.push({ el: el, k: 'top', v: t });
       else if (h !== null && t + h > bottom + 0.01) moves.push({ el: el, k: 'height', v: h });
     }
+    /* the shifted siblings and the page itself ease their top/height writes */
+    for (var j = 0; j < moves.length; j++) moves[j].el.classList.add('ax-ftabs-mv');
+    page.classList.add('ax-ftabs-mv');
     return function(on){
       for (var j = 0; j < moves.length; j++){
         var m = moves[j];
@@ -3082,6 +3102,11 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
     strip.setAttribute('data-ax-ftabs', '1');
 
     var panelB = tpl.content.firstElementChild.cloneNode(true);
+    /* hidden BEFORE it enters the DOM: inserting it visible and hiding it in
+       select(0) below would run the fade-out transition on first paint */
+    panelB.classList.add('ax-ftabs-off');
+    panelA.classList.add('ax-ftabs-panel');
+    panelB.classList.add('ax-ftabs-panel');
     panelA.parentNode.insertBefore(panelB, panelA.nextSibling);
 
     var n = ++uid, tabs = [kids[0], kids[2]], labels = [kids[1], kids[3]];

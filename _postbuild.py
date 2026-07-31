@@ -37,6 +37,7 @@ SCOPED = [
     ('who-we-are/culture/index.html', 'ax-recogfx-css', '_recogfx.html'),
     ('contact-us/index.html',         'ax-maptabs-css', '_maptabs.html'),
     ('contact-us/index.html',         'ax-ftabs-css',   '_formtabs.html'),
+    ('services/aws/index.html',       'ax-awstabs-css', '_awstabs.html'),
 ]
 SCOPED = [(sfx, sent, open(os.path.join(_HERE, fn), encoding='utf-8').read())
           for sfx, sent, fn in SCOPED]

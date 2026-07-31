@@ -2755,5 +2755,149 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
 })();
 </script>
 
+<style id="ax-awstabs-css">
+/* AWS services "Tab Switch" (Figma set 4830:16255). Only the pinned variant was on
+   the canvas, so the other five tabs were dead: every variant is the same strip +
+   one description paragraph, so the switch is an active-pill restyle plus a
+   description swap -- no geometry moves. */
+.ax-awt-pill{cursor:pointer;transition:background-color .25s ease}
+.ax-awt-pill>.g-t{pointer-events:none;transition:color .25s ease}
+.ax-awt-desc{transition:opacity .15s ease}
+.ax-awt-desc.ax-awt-fade{opacity:0}
+.ax-awt-pill:focus-visible{outline:2px solid rgb(35,39,46);outline-offset:-3px}
+.ax-awt-pill:focus:not(:focus-visible){outline:none}
+@media (prefers-reduced-motion:reduce){
+  .ax-awt-pill,.ax-awt-pill>.g-t,.ax-awt-desc{transition:none}
+}
+</style>
+<script>
+/* ---- AWS SERVICES TAB SWITCH ----
+   Tabs and description are matched by TEXT, not position, so the same code arms
+   the desktop layout and the .ax-mob copy (which may be injected after this
+   script -- init also re-runs on DOMContentLoaded). Active/idle colours are
+   captured from the generated markup itself (tab 1 ships active, the rest idle),
+   so a Figma re-pull that changes the palette keeps working. */
+(function(){
+  var LABELS = ['Landing Zone & Foundation', 'Cloud Migration', 'DevOps Platform',
+                'SAP on AWS', 'AI & ML on AWS', 'Multi-cloud CMS'];
+  var DESCS = [
+    'Secure AWS foundation  Control Tower, Organizations, IAM baseline. Landing zone in 2 weeks, policy-as-code from day one.',
+    'Lift & shift, re-platform, re-architect  the 6Rs, well-planned. Migration factory model with parallel runs for zero-downtime cutovers.',
+    'CI/CD, Infrastructure-as-Code, platform engineering, DORA-aligned delivery. Containers (EKS, ECS), serverless (Lambda), event-driven architectures.',
+    'AWS-certified SAP workload optimisation. HANA on EC2 with high availability, disaster recovery, and FinOps-aligned commercials.',
+    'Bedrock, SageMaker, Amazon Q. Agentic services. Vector databases. Production-grade RAG and AI workloads.',
+    '24x7 managed operations on AWS  unified with GCP and SAP BTP via CloudLedger FinOps. See Multi-cloud CMS →'
+  ];
+  var uid = 0;
+
+  function txt(e){ return (e.textContent || '').replace(/\s+/g, ' ').trim(); }
+
+  function setup(scope){
+    /* collect the six pills of ONE strip. A pill is the label's parent clip and
+       must contain NOTHING but that label: the mobile layout stacks all six
+       services as full cards whose titles are direct children of the whole
+       section clip, and without this guard the section itself got armed as one
+       giant pill (six labels, same parent) -- a tap then painted the entire
+       section orange. */
+    var pills = [];
+    var all = scope.querySelectorAll('.g-b.g-clip > .g-t');
+    for (var i = 0; i < LABELS.length; i++){
+      var hit = null;
+      for (var j = 0; j < all.length; j++)
+        if (txt(all[j]) === LABELS[i] && txt(all[j].parentElement) === LABELS[i] &&
+            !all[j].parentElement.hasAttribute('data-ax-awt')){
+          hit = all[j].parentElement; break;
+        }
+      if (!hit) return;                     /* this scope has no (unarmed) strip */
+      pills.push(hit);
+    }
+    /* all six must be DISTINCT siblings of one strip */
+    var strip0 = pills[0].parentElement;
+    for (var i = 0; i < 6; i++)
+      for (var j = i + 1; j < 6; j++)
+        if (pills[i] === pills[j] || pills[i].parentElement !== strip0) return;
+    /* the description text node: starts with the pinned variant's copy */
+    var desc = null;
+    var ts = scope.querySelectorAll('.g-t');
+    for (var k = 0; k < ts.length; k++)
+      if (txt(ts[k]).indexOf('Secure AWS foundation') === 0 && !ts[k].hasAttribute('data-ax-awt') &&
+          !ts[k].closest('.ax-mob')){    /* the mobile card body starts with the same copy */
+        desc = ts[k]; break;
+      }
+    if (!desc) return;
+
+    var n = ++uid;
+    desc.setAttribute('data-ax-awt', '1');
+    desc.classList.add('ax-awt-desc');
+    desc.id = 'ax-awt-p' + n;
+    desc.setAttribute('role', 'tabpanel');
+    desc.setAttribute('aria-live', 'polite');
+
+    /* palette captured from the generated markup: pill 0 ships active */
+    var activeBg = pills[0].style.backgroundColor || 'rgb(223,63,23)';
+    var activeCol = pills[0].querySelector('.g-t').style.color || 'rgb(255,255,255)';
+    var idleCol = pills[1].querySelector('.g-t').style.color || 'rgb(82,96,119)';
+
+    var strip = pills[0].parentElement;
+    strip.setAttribute('role', 'tablist');
+    var cur = 0, timer = null;
+
+    for (var i = 0; i < 6; i++) (function(i){
+      var p = pills[i], l = p.querySelector('.g-t');
+      p.setAttribute('data-ax-awt', '1');
+      p.classList.add('ax-awt-pill');
+      p.id = 'ax-awt-t' + n + i;
+      p.setAttribute('role', 'tab');
+      p.setAttribute('aria-controls', 'ax-awt-p' + n);
+      l.id = 'ax-awt-l' + n + i;
+      p.setAttribute('aria-labelledby', 'ax-awt-l' + n + i);
+
+      p.addEventListener('click', function(){ select(i); });
+      p.addEventListener('keydown', function(e){
+        var k = e.key, m = null;
+        if (k === 'Enter' || k === ' ' || k === 'Spacebar') m = i;
+        else if (k === 'ArrowRight' || k === 'ArrowDown') m = (cur + 1) % 6;
+        else if (k === 'ArrowLeft' || k === 'ArrowUp') m = (cur + 5) % 6;
+        else if (k === 'Home') m = 0;
+        else if (k === 'End') m = 5;
+        if (m !== null){ e.preventDefault(); select(m, true); }
+      });
+    })(i);
+
+    function select(k, focus){
+      cur = k;
+      for (var i = 0; i < 6; i++){
+        var on = i === k;
+        pills[i].style.backgroundColor = on ? activeBg : 'transparent';
+        pills[i].querySelector('.g-t').style.color = on ? activeCol : idleCol;
+        pills[i].setAttribute('aria-selected', on ? 'true' : 'false');
+        pills[i].setAttribute('tabindex', on ? '0' : '-1');
+      }
+      /* fade the paragraph out, swap the copy, fade back in */
+      if (timer) clearTimeout(timer);
+      desc.classList.add('ax-awt-fade');
+      timer = setTimeout(function(){
+        desc.textContent = DESCS[k];
+        desc.classList.remove('ax-awt-fade');
+      }, 160);
+      if (focus) pills[k].focus();
+    }
+
+    /* arm the rest state without running the fade */
+    for (var i = 0; i < 6; i++){
+      var on = i === 0;
+      pills[i].setAttribute('aria-selected', on ? 'true' : 'false');
+      pills[i].setAttribute('tabindex', on ? '0' : '-1');
+    }
+  }
+
+  /* Desktop only ON PURPOSE: the mobile layout is not tabs -- it stacks all six
+     services as always-visible cards, so there is nothing to switch. */
+  function init(){ setup(document); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
+
 </body>
 </html>
