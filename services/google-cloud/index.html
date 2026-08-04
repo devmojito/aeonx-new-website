@@ -492,7 +492,7 @@ html.ax-pre-off #ax-pre{opacity:0;transform:translateY(-2vw);pointer-events:none
 </div>
 </div>
 <div class="g-b" style="position:absolute;left:0.0000vw;top:52.2917vw;width:100.0000vw;height:59.8958vw;background-color:rgb(255,255,255);box-sizing:border-box;border-bottom:0.0521vw solid rgb(236,238,242);"></div>
-<img class="g-vec" src="/assets/vec/4734-10207.svg" data-vec="4734:10207" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:0.0000vw;top:52.2917vw;width:100.0000vw;height:59.8958vw;opacity:0.23000000417232513;">
+<img class="g-vec" src="/assets/vec/4734-10207.svg" data-vec="4734:10207" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:0.0000vw;top:52.2917vw;width:100.0000vw;height:60.7292vw;opacity:0.23000000417232513;">
 <div class="g-t" style="position:absolute;left:41.0417vw;top:61.1458vw;width:17.9167vw;height:2.7604vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:1.2500vw;line-height:1.8750vw;color:rgb(223,63,23);text-align:center;white-space:nowrap;">CAPABILITIES</div>
 <h2 class="g-t" style="position:absolute;left:15.6250vw;top:65.0000vw;width:68.7500vw;height:3.5417vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:2.9167vw;line-height:3.5417vw;color:rgb(35,39,46);text-align:center;white-space:nowrap;">Six core capabilities.</h2>
 <div class="g-b g-clip" style="position:absolute;left:13.5417vw;top:71.6667vw;width:24.3229vw;height:15.2083vw;background:linear-gradient(180deg, rgba(0,0,0,0.000) -0.0%, rgba(0,0,0,0.010) 80.0%, rgba(0,0,0,0.060) 100.0%);box-sizing:border-box;border:0.0521vw solid rgb(177,186,200);backdrop-filter:blur(0.5208vw);-webkit-backdrop-filter:blur(0.5208vw);overflow:hidden;">
@@ -2686,6 +2686,17 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
     return !!(el && (el.dataset.cta || el.dataset.axcta || el.closest('[data-cta],[data-axcta]')));
   }
 
+  /* NEVER neutralise site chrome. The header is position:fixed, so as soon as a CTA
+     scrolls underneath it the header becomes the topmost element at that CTA's
+     centre -- and peeling it would kill the navbar, the mega-menu and the search
+     overlay for the rest of the session. Same for the footer and the mobile nav.
+     (This bit the navbar once; the guard is the fix.) */
+  function isChrome(el){
+    return !!(el.closest && (el.closest('header') || el.closest('footer') ||
+              el.closest('.ax-footer') || el.closest('.ax-mm') ||
+              el.closest('.ax-mnav') || el.closest('.ax-search')));
+  }
+
   function run(){
     var ctas = document.querySelectorAll('[data-cta],[data-axcta]');
     for (var i = 0; i < ctas.length; i++){
@@ -2696,10 +2707,15 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
       /* hit-testing is viewport-bound, hence the re-run on scroll below */
       if (r.bottom < 0 || r.top > innerHeight) continue;
       var x = r.left + r.width / 2, y = r.top + r.height / 2;
+      /* a CTA scrolled behind the fixed header is not blocked by page content --
+         testing it there would only ever find the header */
+      var hd = document.querySelector('header');
+      if (hd){ var hr = hd.getBoundingClientRect(); if (y < hr.bottom) continue; }
       for (var n = 0; n < MAX_PEEL; n++){
         var top = document.elementFromPoint(x, y);
         if (!top || top === el || el.contains(top) || top.contains(el)) break;
         if (isCta(top)) break;                     /* another CTA legitimately on top */
+        if (isChrome(top)) break;                  /* fixed header/footer: leave alone */
         if (top === document.body || top === document.documentElement) break;
         top.style.pointerEvents = 'none';
       }
@@ -2929,6 +2945,29 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
   else init();
 })();
 </script>
+
+<style id="ax-gchero-css">
+/* Google Cloud hero: the headline sits on a static field of curved line-art
+   (node 5069:5380). Give it slow ambient life so the section reads as alive
+   rather than a flat screenshot -- a gentle drift plus a breathing scale, on the
+   backdrop only.
+   Safe by construction: the target is an aria-hidden decorative <img>, and
+   transform cannot reflow anything, so the pixel-locked layout is untouched.
+   Deliberately long (34s) and small (1.5% scale, 0.35vw travel) so it never
+   competes with the headline or the CTAs painted on top of it. */
+main.ax-page img.g-vec[src$="5069-5380.svg"]{
+  transform-origin:50% 45%;
+  animation:ax-gc-drift 34s ease-in-out infinite;
+  will-change:transform;
+}
+@keyframes ax-gc-drift{
+  0%,100%{transform:scale(1) translate3d(0,0,0)}
+  50%    {transform:scale(1.015) translate3d(0,-0.35vw,0)}
+}
+@media (prefers-reduced-motion:reduce){
+  main.ax-page img.g-vec[src$="5069-5380.svg"]{animation:none}
+}
+</style>
 
 </body>
 </html>

@@ -1,0 +1,68 @@
+<style id="ax-suitemap-css">
+/* "THE AEONX SaaS SUITE" -- six product logos wired by dotted curves down to a
+   central SAP mark. It was inert: _hover.html's tile engine cannot claim these
+   because the logo plates are far below its 12vw minimum tile width, so nothing
+   ever armed them. Hovering one now brings it forward and drops the rest back, so
+   the eye follows a single product down its curve into SAP.
+   Paint-only -- opacity / filter / transform. No box metric moves, same hard rule
+   _hover.html states, so the pixel-locked layout cannot shift. */
+.ax-sm-tile{transition:transform .24s cubic-bezier(.22,.61,.36,1),
+            opacity .24s ease, filter .24s ease}
+.ax-sm-row.ax-sm-hot .ax-sm-tile{opacity:.32}
+.ax-sm-row.ax-sm-hot .ax-sm-tile.ax-sm-on{opacity:1;
+  transform:translateY(-0.3125vw);
+  filter:drop-shadow(0 0.25vw 0.5vw rgba(35,39,46,.28))}
+/* the SAP hub is the shared destination, so it stays lit while any product leads */
+.ax-sm-row.ax-sm-hot .ax-sm-hub{opacity:1;filter:drop-shadow(0 0.2vw 0.45vw rgba(35,39,46,.22))}
+.ax-sm-tile:focus-visible{outline:0.1042vw solid rgb(223,63,23);outline-offset:0.15vw}
+@media (prefers-reduced-motion:reduce){
+  .ax-sm-tile{transition:none}
+  .ax-sm-row.ax-sm-hot .ax-sm-tile.ax-sm-on{transform:none}
+}
+</style>
+<script>
+/* ---- SaaS SUITE MAP: focus one product at a time ---- */
+(function(){
+  function init(){
+    /* the connector artwork is unique to this page, so it identifies the row */
+    var curve = document.querySelector('main.ax-page img.g-vec[src$="4752-8303.svg"]');
+    if (!curve || !curve.parentElement) return;
+    var row = curve.parentElement;
+    if (row.dataset.axSm) return;
+    row.dataset.axSm = '1';
+    row.classList.add('ax-sm-row');
+
+    /* The six logo plates sit in the TOP third of the row; the SAP hub and its
+       label sit near the bottom. Splitting on offsetTop is what separates them
+       without hardcoding ids that a Figma re-pull would renumber. */
+    var kids = [].slice.call(row.children).filter(function(e){ return e !== curve; });
+    var h = row.offsetHeight || 1;
+    var tiles = kids.filter(function(e){ return e.offsetHeight && e.offsetTop < h * 0.3; })
+                    .sort(function(a, b){ return a.offsetLeft - b.offsetLeft; });
+    var hub = kids.filter(function(e){ return e.offsetTop >= h * 0.3; })
+                  .sort(function(a, b){ return (b.offsetWidth * b.offsetHeight) - (a.offsetWidth * a.offsetHeight); })[0];
+    if (tiles.length < 2) return;                 /* not the layout we think it is */
+
+    tiles.forEach(function(t){
+      t.classList.add('ax-sm-tile');
+      t.setAttribute('tabindex', '0');
+      function on(){
+        row.classList.add('ax-sm-hot');
+        tiles.forEach(function(o){ o.classList.toggle('ax-sm-on', o === t); });
+      }
+      function off(){
+        row.classList.remove('ax-sm-hot');
+        tiles.forEach(function(o){ o.classList.remove('ax-sm-on'); });
+      }
+      t.addEventListener('mouseenter', on);
+      t.addEventListener('mouseleave', off);
+      t.addEventListener('focus', on);
+      t.addEventListener('blur', off);
+    });
+    if (hub) hub.classList.add('ax-sm-hub');
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+  addEventListener('load', function(){ setTimeout(init, 120); });
+})();
+</script>

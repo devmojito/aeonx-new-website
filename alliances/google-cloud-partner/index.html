@@ -2699,6 +2699,17 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
     return !!(el && (el.dataset.cta || el.dataset.axcta || el.closest('[data-cta],[data-axcta]')));
   }
 
+  /* NEVER neutralise site chrome. The header is position:fixed, so as soon as a CTA
+     scrolls underneath it the header becomes the topmost element at that CTA's
+     centre -- and peeling it would kill the navbar, the mega-menu and the search
+     overlay for the rest of the session. Same for the footer and the mobile nav.
+     (This bit the navbar once; the guard is the fix.) */
+  function isChrome(el){
+    return !!(el.closest && (el.closest('header') || el.closest('footer') ||
+              el.closest('.ax-footer') || el.closest('.ax-mm') ||
+              el.closest('.ax-mnav') || el.closest('.ax-search')));
+  }
+
   function run(){
     var ctas = document.querySelectorAll('[data-cta],[data-axcta]');
     for (var i = 0; i < ctas.length; i++){
@@ -2709,10 +2720,15 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
       /* hit-testing is viewport-bound, hence the re-run on scroll below */
       if (r.bottom < 0 || r.top > innerHeight) continue;
       var x = r.left + r.width / 2, y = r.top + r.height / 2;
+      /* a CTA scrolled behind the fixed header is not blocked by page content --
+         testing it there would only ever find the header */
+      var hd = document.querySelector('header');
+      if (hd){ var hr = hd.getBoundingClientRect(); if (y < hr.bottom) continue; }
       for (var n = 0; n < MAX_PEEL; n++){
         var top = document.elementFromPoint(x, y);
         if (!top || top === el || el.contains(top) || top.contains(el)) break;
         if (isCta(top)) break;                     /* another CTA legitimately on top */
+        if (isChrome(top)) break;                  /* fixed header/footer: leave alone */
         if (top === document.body || top === document.documentElement) break;
         top.style.pointerEvents = 'none';
       }

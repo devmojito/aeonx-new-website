@@ -1363,7 +1363,7 @@ document.addEventListener('DOMContentLoaded',function(){
 </div>
 </div>
 <img class="g-vec" src="/assets/vec/5637-64011.svg" data-vec="5637:64011" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:4.1860vw;top:902.0930vw;width:92.5581vw;height:9.3023vw;">
-<img class="g-vec" src="/assets/vec/5637-64026.svg" data-vec="5637:64026" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:0.0000vw;top:109.2332vw;width:100.0000vw;height:124.0922vw;">
+<img class="g-vec" src="/assets/vec/5637-64026.svg" data-vec="5637:64026" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:0.0000vw;top:109.2332vw;width:178.0049vw;height:124.0922vw;">
 <div class="g-b" style="position:absolute;left:0.0000vw;top:185.1163vw;width:100.0000vw;height:173.2558vw;background-color:rgb(255,255,255);box-sizing:border-box;border-bottom:0.2326vw solid rgb(213,218,226);backdrop-filter:blur(2.3256vw);-webkit-backdrop-filter:blur(2.3256vw);"></div>
 <div class="g-t" style="position:absolute;left:6.0011vw;top:194.4186vw;width:21.1628vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:2.7907vw;line-height:4.6512vw;color:rgb(223,63,23);text-align:left;white-space:nowrap;">A TYPICAL DAY</div>
 <h2 class="g-t" style="position:absolute;left:6.0011vw;top:202.0930vw;width:88.1395vw;height:30.6977vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:8.3721vw;line-height:10.2326vw;color:rgb(35,39,46);text-align:left;white-space:pre-wrap;">A user logs a ticket: &quot;I can&#x27;t post an invoice to vendor XYZ.</h2>
@@ -2826,6 +2826,17 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
     return !!(el && (el.dataset.cta || el.dataset.axcta || el.closest('[data-cta],[data-axcta]')));
   }
 
+  /* NEVER neutralise site chrome. The header is position:fixed, so as soon as a CTA
+     scrolls underneath it the header becomes the topmost element at that CTA's
+     centre -- and peeling it would kill the navbar, the mega-menu and the search
+     overlay for the rest of the session. Same for the footer and the mobile nav.
+     (This bit the navbar once; the guard is the fix.) */
+  function isChrome(el){
+    return !!(el.closest && (el.closest('header') || el.closest('footer') ||
+              el.closest('.ax-footer') || el.closest('.ax-mm') ||
+              el.closest('.ax-mnav') || el.closest('.ax-search')));
+  }
+
   function run(){
     var ctas = document.querySelectorAll('[data-cta],[data-axcta]');
     for (var i = 0; i < ctas.length; i++){
@@ -2836,10 +2847,15 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
       /* hit-testing is viewport-bound, hence the re-run on scroll below */
       if (r.bottom < 0 || r.top > innerHeight) continue;
       var x = r.left + r.width / 2, y = r.top + r.height / 2;
+      /* a CTA scrolled behind the fixed header is not blocked by page content --
+         testing it there would only ever find the header */
+      var hd = document.querySelector('header');
+      if (hd){ var hr = hd.getBoundingClientRect(); if (y < hr.bottom) continue; }
       for (var n = 0; n < MAX_PEEL; n++){
         var top = document.elementFromPoint(x, y);
         if (!top || top === el || el.contains(top) || top.contains(el)) break;
         if (isCta(top)) break;                     /* another CTA legitimately on top */
+        if (isChrome(top)) break;                  /* fixed header/footer: leave alone */
         if (top === document.body || top === document.documentElement) break;
         top.style.pointerEvents = 'none';
       }

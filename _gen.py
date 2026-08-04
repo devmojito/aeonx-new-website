@@ -552,6 +552,23 @@ def render_box(n, ox, oy):
         fits = lambda b: abs(dim[0]-b['width']) <= 1.5 and abs(dim[1]-b['height']) <= 1.5
         if not fits(rb) and fits(bb):
             rb = bb
+        # One axis agreeing and the other not means the export was cropped on that
+        # other axis by an ancestor mask, while Figma still reports the UNCROPPED
+        # bound. Forcing the file into that box makes the <img> letterbox it
+        # (preserveAspectRatio defaults to "meet"), which slides the art off-centre:
+        # the products hero grid landed 92px right of its rail, and the sap-ams-axiom
+        # hero grid pushed its first stroked line into the middle of the CTAs.
+        # Derive the clipped axis from the export's own aspect instead and let the
+        # ancestor's overflow:hidden do the cropping -- which is what this function
+        # already does everywhere else. Affects 15 placements site-wide.
+        w, h = rb['width'], rb['height']
+        if dim[0] and dim[1] and w and h:
+            wok = abs(dim[0]-w) <= 1.5
+            hok = abs(dim[1]-h) <= 1.5
+            if wok != hok:
+                if wok: h = w * dim[1] / dim[0]
+                else:   w = h * dim[0] / dim[1]
+                return rb['x']-ox, rb['y']-oy, w, h
     return rb['x']-ox, rb['y']-oy, rb['width'], rb['height']
 
 def emit_vec_asset(n, left, top, w, h):

@@ -1,0 +1,22 @@
+<style id="ax-gchero-css">
+/* Google Cloud hero: the headline sits on a static field of curved line-art
+   (node 5069:5380). Give it slow ambient life so the section reads as alive
+   rather than a flat screenshot -- a gentle drift plus a breathing scale, on the
+   backdrop only.
+   Safe by construction: the target is an aria-hidden decorative <img>, and
+   transform cannot reflow anything, so the pixel-locked layout is untouched.
+   Deliberately long (34s) and small (1.5% scale, 0.35vw travel) so it never
+   competes with the headline or the CTAs painted on top of it. */
+main.ax-page img.g-vec[src$="5069-5380.svg"]{
+  transform-origin:50% 45%;
+  animation:ax-gc-drift 34s ease-in-out infinite;
+  will-change:transform;
+}
+@keyframes ax-gc-drift{
+  0%,100%{transform:scale(1) translate3d(0,0,0)}
+  50%    {transform:scale(1.015) translate3d(0,-0.35vw,0)}
+}
+@media (prefers-reduced-motion:reduce){
+  main.ax-page img.g-vec[src$="5069-5380.svg"]{animation:none}
+}
+</style>

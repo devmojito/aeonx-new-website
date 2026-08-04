@@ -18,3 +18,6 @@ __pycache__/
 aeonx-mobile.json
 _audit_expected.json
 node_modules
+
+# Blog publishing runbook (Webmin root URL, server IP, DB name) - do not commit
+blog-fetch.md

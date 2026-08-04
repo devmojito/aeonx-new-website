@@ -501,7 +501,7 @@ html.ax-pre-off #ax-pre{opacity:0;transform:translateY(-2vw);pointer-events:none
 <div class="g-t" style="position:absolute;left:52.2917vw;top:94.0625vw;width:30.4167vw;height:2.9167vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:0.9375vw;line-height:1.4583vw;color:rgb(82,96,119);text-align:left;white-space:pre-wrap;">SAP Gold consultants for L2/L3. ITIL v4 governance. ISO 20000 and 27001 aligned. Continuous audit evidence.</div>
 <div class="g-b" style="position:absolute;left:87.5000vw;top:52.2917vw;width:0.0000vw;height:54.3750vw;box-sizing:border-box;border:0.0521vw solid rgb(236,238,242);"></div>
 <div class="g-b" style="position:absolute;left:12.5000vw;top:52.2917vw;width:0.0000vw;height:54.3750vw;box-sizing:border-box;border:0.0521vw solid rgb(236,238,242);"></div>
-<img class="g-vec" src="/assets/vec/4656-5293.svg" data-vec="4656:5293" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:0.0000vw;top:2.2656vw;width:100.0000vw;height:110.7552vw;">
+<img class="g-vec" src="/assets/vec/4656-5293.svg" data-vec="4656:5293" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:0.0000vw;top:2.2656vw;width:100.0000vw;height:50.0521vw;">
 <h1 class="g-t" style="position:absolute;left:12.5000vw;top:23.6979vw;width:75.0000vw;height:3.7500vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:3.7500vw;line-height:3.7500vw;color:rgb(35,39,46);text-align:center;white-space:nowrap;">SAP AMS, reimagined with AXIOM.</h1>
 <div class="g-t" style="position:absolute;left:12.5000vw;top:28.4896vw;width:75.0000vw;height:1.8750vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:1.2500vw;line-height:1.8750vw;color:rgb(82,96,119);text-align:center;white-space:nowrap;">AXIOM at the core. SAP Gold consultants for L2/L3. Transition in 6 weeks.</div>
 <div class="g-b g-clip" style="position:absolute;left:37.7604vw;top:32.4479vw;width:10.9896vw;height:2.5000vw;background-color:rgb(223,63,23);border-radius:0.4167vw;box-shadow:inset 0.0000vw 0.0000vw 0.1042vw rgb(147,38,25);overflow:hidden;">
@@ -2648,6 +2648,17 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
     return !!(el && (el.dataset.cta || el.dataset.axcta || el.closest('[data-cta],[data-axcta]')));
   }
 
+  /* NEVER neutralise site chrome. The header is position:fixed, so as soon as a CTA
+     scrolls underneath it the header becomes the topmost element at that CTA's
+     centre -- and peeling it would kill the navbar, the mega-menu and the search
+     overlay for the rest of the session. Same for the footer and the mobile nav.
+     (This bit the navbar once; the guard is the fix.) */
+  function isChrome(el){
+    return !!(el.closest && (el.closest('header') || el.closest('footer') ||
+              el.closest('.ax-footer') || el.closest('.ax-mm') ||
+              el.closest('.ax-mnav') || el.closest('.ax-search')));
+  }
+
   function run(){
     var ctas = document.querySelectorAll('[data-cta],[data-axcta]');
     for (var i = 0; i < ctas.length; i++){
@@ -2658,10 +2669,15 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
       /* hit-testing is viewport-bound, hence the re-run on scroll below */
       if (r.bottom < 0 || r.top > innerHeight) continue;
       var x = r.left + r.width / 2, y = r.top + r.height / 2;
+      /* a CTA scrolled behind the fixed header is not blocked by page content --
+         testing it there would only ever find the header */
+      var hd = document.querySelector('header');
+      if (hd){ var hr = hd.getBoundingClientRect(); if (y < hr.bottom) continue; }
       for (var n = 0; n < MAX_PEEL; n++){
         var top = document.elementFromPoint(x, y);
         if (!top || top === el || el.contains(top) || top.contains(el)) break;
         if (isCta(top)) break;                     /* another CTA legitimately on top */
+        if (isChrome(top)) break;                  /* fixed header/footer: leave alone */
         if (top === document.body || top === document.documentElement) break;
         top.style.pointerEvents = 'none';
       }
@@ -2892,21 +2908,7 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
 })();
 </script>
 
-<style id="ax-amsgrid-css">
-/* The hero's background grid (Figma node 4656:5293) exports mask-cropped at
-   1920x961, but Figma reports render bounds of 2126.5 -- and _gen.render_box falls
-   back to those bounds when the file matches neither box, so the <img> is given a
-   110.7552vw height for a 961-tall file. preserveAspectRatio then letterboxes the
-   art and its first stroked grid line surfaces mid-hero as a 1px #DF3F17 rule,
-   right across the CTA buttons. Restoring the file's own aspect (961/1920 =
-   50.0521vw) makes the grid fill the hero exactly, with its top edge tucked behind
-   the fixed header where the design puts it.
-   Scoped, NOT fixed in render_box: 483 other placements site-wide have the same
-   box/file mismatch and correcting them globally would shift pixel-locked layouts. */
-/* !important is required: _gen.py writes height into the element's INLINE style,
-   which a stylesheet rule can never outrank. */
-main.ax-page img.g-vec[data-vec="4656:5293"]{height:50.0521vw!important}
-</style>
+
 
 <style id="ax-amsicon-css">
 /* "Four characteristics." -- card 1 ("Outcome-led") is a stray in the Figma source:

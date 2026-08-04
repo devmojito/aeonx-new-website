@@ -429,7 +429,7 @@ html.ax-pre-off #ax-pre{opacity:0;transform:translateY(-2vw);pointer-events:none
 <div class="g-b" style="position:absolute;left:87.5521vw;top:179.7917vw;width:0.0000vw;height:28.5417vw;box-sizing:border-box;border:0.0521vw solid rgb(213,218,226);"></div>
 <div class="g-b" style="position:absolute;left:12.4479vw;top:179.7917vw;width:0.0000vw;height:28.5417vw;box-sizing:border-box;border:0.0521vw solid rgb(213,218,226);"></div>
 <div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:104.4271vw;width:100.0000vw;height:75.3646vw;background-color:rgb(35,39,46);box-sizing:border-box;border-bottom:0.0521vw solid rgb(236,238,242);overflow:hidden;">
-<img class="g-vec" src="/assets/vec/4765-9245.svg" data-vec="4765:9245" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:0.0000vw;top:0.0000vw;width:100.0000vw;height:75.3646vw;">
+<img class="g-vec" src="/assets/vec/4765-9245.svg" data-vec="4765:9245" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:0.0000vw;top:0.0000vw;width:100.0000vw;height:73.6979vw;">
 <div class="g-t" style="position:absolute;left:47.1354vw;top:5.6771vw;width:5.7292vw;height:1.8750vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:1.2500vw;line-height:1.8750vw;color:rgb(223,63,23);text-align:center;white-space:nowrap;">THE SaaS</div>
 <h2 class="g-t" style="position:absolute;left:12.5000vw;top:9.0625vw;width:75.0000vw;height:2.8125vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:2.8125vw;line-height:2.8125vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;letter-spacing:-0.0563vw;">THE SUITE.</h2>
 <div class="g-b g-clip" style="position:absolute;left:13.8542vw;top:15.0000vw;width:36.1458vw;height:18.1771vw;background:linear-gradient(90deg, rgba(223,63,23,0.060) 0.0%, rgba(223,63,23,0.010) 20.0%, rgba(223,63,23,0.010) 50.0%, rgba(223,63,23,0.010) 80.0%, rgba(223,63,23,0.060) 100.0%);box-sizing:border-box;border:0.0521vw solid rgb(177,186,200);backdrop-filter:blur(0.5208vw);-webkit-backdrop-filter:blur(0.5208vw);overflow:hidden;">
@@ -557,7 +557,7 @@ html.ax-pre-off #ax-pre{opacity:0;transform:translateY(-2vw);pointer-events:none
 <div class="g-b g-clip" style="position:absolute;left:49.4792vw;top:31.0938vw;width:12.7604vw;height:2.5000vw;background-color:rgb(255,255,255);border-radius:0.4167vw;box-sizing:border-box;border:0.0521vw solid rgb(246,168,123);box-shadow:inset 0.0000vw 0.0000vw 0.1042vw rgb(147,38,25);overflow:hidden;">
 <div class="g-t" style="position:absolute;left:2.8906vw;top:0.6250vw;width:6.9792vw;height:1.2500vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:1.0417vw;line-height:1.2500vw;color:rgb(58,67,82);text-align:center;white-space:nowrap;">Compare Suite</div>
 </div>
-<img class="g-vec" src="/assets/vec/4752-8231.svg" data-vec="4752:8231" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:12.5000vw;top:0.0000vw;width:78.9223vw;height:50.0000vw;">
+<img class="g-vec" src="/assets/vec/4752-8231.svg" data-vec="4752:8231" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:12.5000vw;top:0.0000vw;width:78.9223vw;height:56.7970vw;">
 </div>
 <div class="g-b" style="position:absolute;left:0.0000vw;top:209.5833vw;width:100.0000vw;height:21.4583vw;background-color:rgb(255,255,255);box-sizing:border-box;border-bottom:0.0521vw solid rgb(236,238,242);"></div>
 <img class="g-vec" src="/assets/vec/5175-14451.svg" data-vec="5175:14451" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:0.0000vw;top:209.5833vw;width:100.0000vw;height:21.4583vw;">
@@ -2797,6 +2797,17 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
     return !!(el && (el.dataset.cta || el.dataset.axcta || el.closest('[data-cta],[data-axcta]')));
   }
 
+  /* NEVER neutralise site chrome. The header is position:fixed, so as soon as a CTA
+     scrolls underneath it the header becomes the topmost element at that CTA's
+     centre -- and peeling it would kill the navbar, the mega-menu and the search
+     overlay for the rest of the session. Same for the footer and the mobile nav.
+     (This bit the navbar once; the guard is the fix.) */
+  function isChrome(el){
+    return !!(el.closest && (el.closest('header') || el.closest('footer') ||
+              el.closest('.ax-footer') || el.closest('.ax-mm') ||
+              el.closest('.ax-mnav') || el.closest('.ax-search')));
+  }
+
   function run(){
     var ctas = document.querySelectorAll('[data-cta],[data-axcta]');
     for (var i = 0; i < ctas.length; i++){
@@ -2807,10 +2818,15 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
       /* hit-testing is viewport-bound, hence the re-run on scroll below */
       if (r.bottom < 0 || r.top > innerHeight) continue;
       var x = r.left + r.width / 2, y = r.top + r.height / 2;
+      /* a CTA scrolled behind the fixed header is not blocked by page content --
+         testing it there would only ever find the header */
+      var hd = document.querySelector('header');
+      if (hd){ var hr = hd.getBoundingClientRect(); if (y < hr.bottom) continue; }
       for (var n = 0; n < MAX_PEEL; n++){
         var top = document.elementFromPoint(x, y);
         if (!top || top === el || el.contains(top) || top.contains(el)) break;
         if (isCta(top)) break;                     /* another CTA legitimately on top */
+        if (isChrome(top)) break;                  /* fixed header/footer: leave alone */
         if (top === document.body || top === document.documentElement) break;
         top.style.pointerEvents = 'none';
       }
@@ -3038,6 +3054,75 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
+})();
+</script>
+
+<style id="ax-suitemap-css">
+/* "THE AEONX SaaS SUITE" -- six product logos wired by dotted curves down to a
+   central SAP mark. It was inert: _hover.html's tile engine cannot claim these
+   because the logo plates are far below its 12vw minimum tile width, so nothing
+   ever armed them. Hovering one now brings it forward and drops the rest back, so
+   the eye follows a single product down its curve into SAP.
+   Paint-only -- opacity / filter / transform. No box metric moves, same hard rule
+   _hover.html states, so the pixel-locked layout cannot shift. */
+.ax-sm-tile{transition:transform .24s cubic-bezier(.22,.61,.36,1),
+            opacity .24s ease, filter .24s ease}
+.ax-sm-row.ax-sm-hot .ax-sm-tile{opacity:.32}
+.ax-sm-row.ax-sm-hot .ax-sm-tile.ax-sm-on{opacity:1;
+  transform:translateY(-0.3125vw);
+  filter:drop-shadow(0 0.25vw 0.5vw rgba(35,39,46,.28))}
+/* the SAP hub is the shared destination, so it stays lit while any product leads */
+.ax-sm-row.ax-sm-hot .ax-sm-hub{opacity:1;filter:drop-shadow(0 0.2vw 0.45vw rgba(35,39,46,.22))}
+.ax-sm-tile:focus-visible{outline:0.1042vw solid rgb(223,63,23);outline-offset:0.15vw}
+@media (prefers-reduced-motion:reduce){
+  .ax-sm-tile{transition:none}
+  .ax-sm-row.ax-sm-hot .ax-sm-tile.ax-sm-on{transform:none}
+}
+</style>
+<script>
+/* ---- SaaS SUITE MAP: focus one product at a time ---- */
+(function(){
+  function init(){
+    /* the connector artwork is unique to this page, so it identifies the row */
+    var curve = document.querySelector('main.ax-page img.g-vec[src$="4752-8303.svg"]');
+    if (!curve || !curve.parentElement) return;
+    var row = curve.parentElement;
+    if (row.dataset.axSm) return;
+    row.dataset.axSm = '1';
+    row.classList.add('ax-sm-row');
+
+    /* The six logo plates sit in the TOP third of the row; the SAP hub and its
+       label sit near the bottom. Splitting on offsetTop is what separates them
+       without hardcoding ids that a Figma re-pull would renumber. */
+    var kids = [].slice.call(row.children).filter(function(e){ return e !== curve; });
+    var h = row.offsetHeight || 1;
+    var tiles = kids.filter(function(e){ return e.offsetHeight && e.offsetTop < h * 0.3; })
+                    .sort(function(a, b){ return a.offsetLeft - b.offsetLeft; });
+    var hub = kids.filter(function(e){ return e.offsetTop >= h * 0.3; })
+                  .sort(function(a, b){ return (b.offsetWidth * b.offsetHeight) - (a.offsetWidth * a.offsetHeight); })[0];
+    if (tiles.length < 2) return;                 /* not the layout we think it is */
+
+    tiles.forEach(function(t){
+      t.classList.add('ax-sm-tile');
+      t.setAttribute('tabindex', '0');
+      function on(){
+        row.classList.add('ax-sm-hot');
+        tiles.forEach(function(o){ o.classList.toggle('ax-sm-on', o === t); });
+      }
+      function off(){
+        row.classList.remove('ax-sm-hot');
+        tiles.forEach(function(o){ o.classList.remove('ax-sm-on'); });
+      }
+      t.addEventListener('mouseenter', on);
+      t.addEventListener('mouseleave', off);
+      t.addEventListener('focus', on);
+      t.addEventListener('blur', off);
+    });
+    if (hub) hub.classList.add('ax-sm-hub');
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+  addEventListener('load', function(){ setTimeout(init, 120); });
 })();
 </script>
 

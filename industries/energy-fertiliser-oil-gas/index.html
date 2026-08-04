@@ -1252,15 +1252,15 @@ document.addEventListener('DOMContentLoaded',function(){
 <div class="g-b g-clip" style="position:absolute;left:5.5814vw;top:938.6047vw;width:49.0698vw;height:11.1628vw;background-color:rgb(223,63,23);border-radius:1.8605vw;box-sizing:border-box;border:0.2326vw solid rgb(213,218,226);box-shadow:inset 0.0000vw 0.0000vw 0.4651vw rgb(147,38,25);overflow:hidden;">
 <div class="g-t" style="position:absolute;left:5.3488vw;top:2.3256vw;width:38.3721vw;height:6.5116vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:4.1860vw;line-height:6.5116vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">Read the case study</div>
 </div>
-<img class="g-vec" src="/assets/vec/5637-58828.svg" data-vec="5637:58828" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:87.4818vw;top:13.1059vw;width:12.5182vw;height:32.3360vw;">
+<img class="g-vec" src="/assets/vec/5637-58828.svg" data-vec="5637:58828" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:87.4818vw;top:13.1059vw;width:28.4095vw;height:32.3360vw;">
 <img class="g-vec" src="/assets/vec/5637-58829.svg" data-vec="5637:58829" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:68.2151vw;top:0.0000vw;width:31.7849vw;height:7.4114vw;">
 <img class="g-vec" src="/assets/vec/5637-58830.svg" data-vec="5637:58830" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:56.4533vw;top:4.2539vw;width:24.4401vw;height:38.9852vw;">
 <div class="g-b" style="position:absolute;left:79.8274vw;top:28.6069vw;width:17.5198vw;height:17.5198vw;background:linear-gradient(101deg, rgb(31,56,91) 11.3%, rgb(127,163,214) 222.6%);border-radius:50%;"></div>
 <div class="g-b" style="position:absolute;left:91.9783vw;top:-8.9930vw;width:22.6131vw;height:22.6131vw;background:linear-gradient(86deg, rgb(62,73,90) 16.2%, rgb(159,168,182) 108.9%);border-radius:50%;"></div>
 <div class="g-b" style="position:absolute;left:55.5018vw;top:-2.8145vw;width:21.1224vw;height:21.1224vw;background:linear-gradient(72deg, rgb(243,71,30) 11.0%, rgb(243,145,30) 112.4%);border-radius:50%;"></div>
 <div class="g-b" style="position:absolute;left:-73.1255vw;top:120.5787vw;width:125.5648vw;height:125.5648vw;background:conic-gradient(from 90deg at 50.0% 50.0%, rgba(31,56,91,0.000) 0.0%, rgba(31,56,91,0.534) 12.7%, rgb(31,56,91) 22.1%, rgba(31,56,91,0.000) 62.2%, rgba(31,56,91,0.000) 100.0%);border-radius:50%;"></div>
-<img class="g-vec" src="/assets/vec/5637-58836.svg" data-vec="5637:58836" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:0.0000vw;top:192.2502vw;width:30.8139vw;height:36.5089vw;">
-<img class="g-vec" src="/assets/vec/5637-58837.svg" data-vec="5637:58837" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:0.0000vw;top:137.9697vw;width:34.8862vw;height:43.5432vw;">
+<img class="g-vec" src="/assets/vec/5637-58836.svg" data-vec="5637:58836" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:0.0000vw;top:192.2502vw;width:60.4606vw;height:36.5089vw;">
+<img class="g-vec" src="/assets/vec/5637-58837.svg" data-vec="5637:58837" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:0.0000vw;top:137.9697vw;width:49.1019vw;height:43.5432vw;">
 <div class="g-b" style="position:absolute;left:-45.8572vw;top:138.9116vw;width:34.0159vw;height:34.0159vw;background:linear-gradient(101deg, rgb(31,56,91) 11.3%, rgb(127,163,214) 222.6%);border-radius:50%;"></div>
 <div class="g-b" style="position:absolute;left:-40.0908vw;top:197.2892vw;width:32.6762vw;height:32.6762vw;background:linear-gradient(86deg, rgb(62,73,90) 16.2%, rgb(159,168,182) 108.9%);border-radius:50%;"></div>
 <div class="g-b" style="position:absolute;left:9.2398vw;top:166.5155vw;width:26.6631vw;height:26.6631vw;background:linear-gradient(72deg, rgb(243,71,30) 11.0%, rgb(243,145,30) 112.4%);border-radius:50%;"></div>
@@ -2765,6 +2765,17 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
     return !!(el && (el.dataset.cta || el.dataset.axcta || el.closest('[data-cta],[data-axcta]')));
   }
 
+  /* NEVER neutralise site chrome. The header is position:fixed, so as soon as a CTA
+     scrolls underneath it the header becomes the topmost element at that CTA's
+     centre -- and peeling it would kill the navbar, the mega-menu and the search
+     overlay for the rest of the session. Same for the footer and the mobile nav.
+     (This bit the navbar once; the guard is the fix.) */
+  function isChrome(el){
+    return !!(el.closest && (el.closest('header') || el.closest('footer') ||
+              el.closest('.ax-footer') || el.closest('.ax-mm') ||
+              el.closest('.ax-mnav') || el.closest('.ax-search')));
+  }
+
   function run(){
     var ctas = document.querySelectorAll('[data-cta],[data-axcta]');
     for (var i = 0; i < ctas.length; i++){
@@ -2775,10 +2786,15 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
       /* hit-testing is viewport-bound, hence the re-run on scroll below */
       if (r.bottom < 0 || r.top > innerHeight) continue;
       var x = r.left + r.width / 2, y = r.top + r.height / 2;
+      /* a CTA scrolled behind the fixed header is not blocked by page content --
+         testing it there would only ever find the header */
+      var hd = document.querySelector('header');
+      if (hd){ var hr = hd.getBoundingClientRect(); if (y < hr.bottom) continue; }
       for (var n = 0; n < MAX_PEEL; n++){
         var top = document.elementFromPoint(x, y);
         if (!top || top === el || el.contains(top) || top.contains(el)) break;
         if (isCta(top)) break;                     /* another CTA legitimately on top */
+        if (isChrome(top)) break;                  /* fixed header/footer: leave alone */
         if (top === document.body || top === document.documentElement) break;
         top.style.pointerEvents = 'none';
       }
