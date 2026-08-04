@@ -829,7 +829,18 @@ document.addEventListener('DOMContentLoaded',function(){
 'explore sap services':'/services/','explore aws services':'/services/aws/','explore all services':'/services/',
 'explore services':'/services/','explore supplierx':'/products/axiom/','explore orderx':'/products/axiom/',
 'explore xpense':'/products/axiom/','explore logystix':'/products/axiom/','explore manufex':'/products/axiom/',
-'explore aeonxiq':'/products/axiom/'};
+'explore aeonxiq':'/products/axiom/',
+/* AWS competency / delivery microsites, supplied in the mobile review doc.
+   External hosts, so they are absolute URLs. AWS WAF Delivery is deliberately
+   absent: the review says no microsite exists for it (two case studies under
+   AeonX Research Academy instead), so it stays inert rather than guessing. */
+'agentic ai competency':'https://agentic.axdigital.cloud/',
+'generative ai competency':'https://genai.axdigital.cloud/',
+'devops competency':'https://devops.axdigital.cloud/',
+'ecs delivery':'https://ecs.axdigital.cloud/',
+'amazon ecs service delivery':'https://ecs.axdigital.cloud/',
+'aws cloudformation delivery':'https://cloudformation.axdigital.cloud/',
+'aws cloudformation service delivery':'https://cloudformation.axdigital.cloud/'};
 var NOTBTN=/^(your company name|your name|work email|email|phone|message|ind\(|xxxxx|[^@\s]+@[^@\s]+\.[a-z]+$|.*\|$)/;
 var NOTBTN2=['landing zone & foundation','cloud migration','devops platform','sap on aws','ai & ml on aws','multi-cloud cms',
 'source-to-pay','distribution management','travel & expense','logistics operations','production planning & execution',
@@ -1982,8 +1993,12 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
   box-shadow:0 0.2083vw 0.5729vw rgba(176,45,12,.28)}
 /* the hairline is drawn as a shadow ring, not border-color: Figma writes the border
    into the element's INLINE style shorthand, which a class can never outrank */
+/* INSET, like the tile ring: buttons that sit edge-to-edge in a row shared an
+   outset hairline, so hovering one drew its ring over its neighbour -- the
+   "edges are overlapping" note against cards 1/2/3 on several pages. Inset hugs
+   the inside of the pill and cannot cross into the next one. */
 .ax-hv-out.ax-hv-selfon{background-size:100% 100%;
-  box-shadow:0 0 0 0.0521vw rgba(223,63,23,.55),
+  box-shadow:inset 0 0 0 0.0521vw rgba(223,63,23,.55),
              0 0.1042vw 0.3125vw rgba(35,39,46,.10)}
 /* bare text link: no box to wash, so the label itself goes brand */
 .ax-hv-txt.ax-hv-selfon{color:rgb(223,63,23)!important}
@@ -2590,6 +2605,54 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
   addEventListener('scroll', schedule, { passive: true });
   addEventListener('resize', schedule);
 })();
+
+/* ---- AWS COMPETENCY / DELIVERY BADGES -> THEIR MICROSITES ----
+   The review supplied a microsite per competency. These badges are IMAGES, not
+   text pills, so the chrome's label-based route map can never reach them -- they
+   carry the name in aria-label ("DevOps Competency (1) 1"), which is what this
+   matches on, after stripping Figma's duplicate counters.
+   AWS WAF Delivery is intentionally absent: the review states no microsite exists
+   for it, so that badge stays inert rather than pointing somewhere invented. */
+(function(){
+  var SITES = {
+    'agentic ai competency'          : 'https://agentic.axdigital.cloud/',
+    'generative ai competency'       : 'https://genai.axdigital.cloud/',
+    'devops competency'              : 'https://devops.axdigital.cloud/',
+    'ecs delivery'                   : 'https://ecs.axdigital.cloud/',
+    'amazon ecs service delivery'    : 'https://ecs.axdigital.cloud/',
+    'aws cloudformation delivery'    : 'https://cloudformation.axdigital.cloud/',
+    'aws cloudformation service delivery':'https://cloudformation.axdigital.cloud/'
+  };
+  function norm(s){
+    return (s||'').toLowerCase()
+      .replace(/\(\d+\)/g,' ')      /* Figma duplicate marker: "(1)" */
+      .replace(/\s+\d+$/,'')        /* trailing instance counter */
+      .replace(/[^a-z0-9 ]+/g,' ')
+      .replace(/\s+/g,' ').trim();
+  }
+  function run(){
+    var n=0;
+    [].slice.call(document.querySelectorAll('[aria-label]')).forEach(function(el){
+      if(el.dataset.axms) return;
+      var url=SITES[norm(el.getAttribute('aria-label'))];
+      if(!url) return;
+      el.dataset.axms='1';
+      el.style.cursor='pointer';
+      el.setAttribute('role','link');
+      if(!el.hasAttribute('tabindex')) el.setAttribute('tabindex','0');
+      var go=function(){ window.open(url,'_blank','noopener'); };
+      el.addEventListener('click',go);
+      el.addEventListener('keydown',function(e){
+        if(e.key==='Enter'||e.key===' '){ e.preventDefault(); go(); }
+      });
+      n++;
+    });
+    return n;
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',run);
+  else run();
+  addEventListener('load',function(){ setTimeout(run,150); });
+})();
 </script>
 
 <style id="ax-scrollrow-css">
@@ -2599,11 +2662,17 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
    change: the children are absolutely positioned, so the box already reports the full
    scrollWidth -- it just was not allowed to scroll. */
 .ax-srow{overflow-x:auto!important;overflow-y:hidden!important;
-  scrollbar-width:thin;scroll-behavior:smooth;overscroll-behavior-x:contain;
+  scrollbar-width:thin;scrollbar-color:rgba(35,39,46,.12) transparent;scroll-behavior:smooth;overscroll-behavior-x:contain;
   -webkit-overflow-scrolling:touch;cursor:grab}
 .ax-srow.is-drag{cursor:grabbing;scroll-behavior:auto}
-.ax-srow::-webkit-scrollbar{height:6px}
-.ax-srow::-webkit-scrollbar-thumb{background:rgba(35,39,46,.22);border-radius:99px}
+/* The bar used to sit hard against the cards and read too dark. Reserve space for
+   it below the row and lighten the thumb. padding-bottom is safe here: this box is
+   the scroll container itself, and its children are absolutely positioned, so the
+   extra space cannot push anything around. */
+.ax-srow{padding-bottom:0.9vw}
+.ax-srow::-webkit-scrollbar{height:5px}
+.ax-srow::-webkit-scrollbar-thumb{background:rgba(35,39,46,.12);border-radius:99px}
+.ax-srow::-webkit-scrollbar-thumb:hover{background:rgba(35,39,46,.22)}
 .ax-srow::-webkit-scrollbar-track{background:transparent}
 /* edge fades hint that there is more to the right */
 .ax-srow-wrap{position:relative}
