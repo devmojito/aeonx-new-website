@@ -394,8 +394,21 @@ def box_style(n, left, top, w, h):
     strokes = n.get('strokes')
     sc = solid_fill(strokes)
     if sc:
-        sw = n.get('strokeWeight', 1)
-        style += f"box-sizing:border-box;border:{vw(sw)} solid {sc};"
+        # Figma can stroke individual SIDES (individualStrokeWeights), and a side set
+        # to 0 is not drawn at all. Reading the summary `strokeWeight` alone painted a
+        # full four-sided box wherever the design has a single accent rule -- which is
+        # what put a border around every card heading in "Four pillars"
+        # (/services/multi-cloud-cms/) and "Data Bridge" (/services/sap-ams-axiom/).
+        isw = n.get('individualStrokeWeights')
+        if isw:
+            sides = (('top', isw.get('top', 0)), ('right', isw.get('right', 0)),
+                     ('bottom', isw.get('bottom', 0)), ('left', isw.get('left', 0)))
+            drawn = [f"border-{side}:{vw(w)} solid {sc};" for side, w in sides if w]
+            if drawn:
+                style += 'box-sizing:border-box;' + ''.join(drawn)
+        else:
+            sw = n.get('strokeWeight', 1)
+            style += f"box-sizing:border-box;border:{vw(sw)} solid {sc};"
     style += shadow_css(n)
     bl = blend_css(n)
     if bl:

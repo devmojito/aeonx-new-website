@@ -1,0 +1,20 @@
+<style id="ax-amsicon-css">
+/* "Four characteristics." -- card 1 ("Outcome-led") is a stray in the Figma source:
+   its icon plate is a 120px square parked to the RIGHT of the copy and vertically
+   centred, while cards 2-4 use a 44px plate at the card's top-left. _gen.py
+   reproduces the source faithfully, so the outlier is upstream, not a generator bug.
+   Cards 2-4 are the intent: that 120px plate is the only one of its kind on the whole
+   canvas (13 other icon plates are all 44px), and the MOBILE frame of this very
+   section gives all four cards the small top-left plate, "Outcome-led" included.
+   Card 1's box sits at left:15.6250vw top:70.3125vw, and its siblings place their
+   plate at card corner + 1.6667vw -> 17.2917 / 71.9792, matching card 3's left and
+   card 2's top exactly. */
+main.ax-page .g-b.g-clip:has(> img.g-vec[src$="4613-9605.svg"]){
+  left:17.2917vw!important; top:71.9792vw!important;
+  width:2.2917vw!important; height:2.2917vw!important;
+  border-radius:0.4167vw!important;
+}
+main.ax-page img.g-vec[src$="4613-9605.svg"]{
+  left:0.2083vw!important; top:0.2083vw!important;   /* same inset as cards 2-4 */
+}
+</style>

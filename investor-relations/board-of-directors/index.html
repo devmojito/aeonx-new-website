@@ -725,9 +725,17 @@ function skipBtn(n){ return NOTBTN.test(n)||NOTBTN2.indexOf(n)>=0; }
     if(best){ make(best.el,h); make(t,h); }
   });
   Array.prototype.forEach.call(document.querySelectorAll('.g-t'),function(t){
-    if(t.closest('a')||t.closest('.g-b')||t.dataset.cta)return;
+    var pillBox=t.closest('.g-b');
+    if(t.closest('a')||t.dataset.cta||(pillBox&&/background-color/.test(pillBox.getAttribute('style')||'')&&/border-radius/.test(pillBox.getAttribute('style')||'')))return;
     var n=norm(t.textContent);
-    if(n==='explore'||/^explore .+/.test(n)) make(t, resolve(n)||'#');
+    if(skipBtn(n))return;
+    /* was: only bare "Explore ..." labels. "See the suite ->" and any other
+       plain-text CTA with a KNOWN route (resolve() found a real ROUTES/LINKMAP
+       hit, not the '#' fallback) is just as dead for the same reason and
+       deserves the same fix -- guessing is still off the table, resolve()
+       already refuses to guess. */
+    if(n==='explore'||/^explore .+/.test(n)){ make(t, resolve(n)||'#'); return; }
+    var rr=resolve(n); if(rr) make(t, rr);
   });
 });
 </script>
@@ -1762,6 +1770,13 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
 /* --ax-bt preserves any transform the element already carried (set by the
    script) so the lift composes with it instead of wiping it. */
 .ax-hv-tile.ax-hv-on{transform:translateY(-0.2083vw) var(--ax-bt,translateZ(0))}
+/* A tile with no headroom inside a clipping ancestor keeps every other hover cue
+   (ring, shadow, colour) but does NOT travel: lifting it slides its top edge under
+   the clip, so the card's own top border visibly vanishes on hover. That is what
+   happened to the metric cards on /services/rise-with-sap/, which are exactly as
+   tall as the band that clips them -- zero headroom. */
+.ax-hv-tile.ax-hv-flat.ax-hv-on{transform:var(--ax-bt,translateZ(0))}
+
 /* A CTA inside a card is a member of the card group AND its own button group. Letting
    both lifts apply made the pill drift 2px out of its own card on card hover. The card
    owns the lift; the pill only moves when it is itself hovered. */
@@ -1850,6 +1865,7 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
      badges sitewide run 1.3-2.5vw tall, so 6 still leaves them well clear. */
   var TILE_MIN_H = 6,  TILE_MAX_H = 36;
   var TOL = 3;                               /* px slack: offset* is integer-rounded */
+  var LIFT_PX = 4;                           /* .ax-hv-tile lift: 0.2083vw @1920 */
   var STOP = {and:1,the:1,our:1,for:1,with:1,you:1,your:1,all:1,more:1,new:1,see:1,
               view:1,read:1,learn:1,open:1,meet:1,book:1,explore:1,home:1,page:1,
               tier:1,aeonx:1,digital:1,here:1,now:1,how:1,why:1,what:1,who:1};
@@ -1916,14 +1932,35 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
 
   /* Best route by shared-token count. A tie means we genuinely do not know, and
      a wrong destination is worse than an inert pill -- so return null. */
+  /* Headings whose wording shares no distinguishing token with their destination's
+     URL or nav label, so token matching genuinely cannot resolve them. Taken from
+     the Figma prototype's own click-through targets, not invented: the "SAP Cloud
+     ERP" card's Learn More points at Grow with SAP. */
+  var HEADING_ROUTES = { 'sap cloud erp': '/services/grow-with-sap' };
+
   function matchRoute(routes, heading){
+    var explicit = HEADING_ROUTES[norm(heading).toLowerCase()];
+    if (explicit) return explicit;
     var h = toks(heading), best = null, tie = false;
+    /* Rank by MATCH COUNT first, then by SPECIFICITY -- how much of that route's own
+       vocabulary the match covers. Count alone ties constantly here: "AWS" matches
+       both /services/aws (vocab {aws}) and /alliances/aws-advanced-tier (vocab
+       {aws,advanced}) on one token, and giving up left the button dead. The tighter
+       route is the right answer. Specificity alone is wrong too -- it would let a
+       one-token stub outrank a two-token exact match -- hence count first.
+       A true tie on BOTH still returns null: with nothing to separate the
+       candidates, an inert control beats sending people to the wrong page. */
     routes.forEach(function(r){
-      var n = 0, k;
+      var n = 0, k, size = 0;
+      for (k in r.t) size++;
       for (k in h) if (r.t[k]) n++;
       if (!n) return;
-      if (!best || n > best.n) { best = { r:r, n:n }; tie = false; }
-      else if (n === best.n) tie = true;
+      var spec = n / size;
+      if (!best || n > best.n) { best = { r:r, n:n, spec:spec }; tie = false; }
+      else if (n === best.n){
+        if (spec > best.spec) { best = { r:r, n:n, spec:spec }; tie = false; }
+        else if (spec === best.spec) tie = true;
+      }
     });
     return (best && !tie) ? best.r.href : null;
   }
@@ -2007,13 +2044,20 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
 
   var report = [];
   function wireExplore(boxes, texts){
-    /* every bare "Explore" on the page, so headingFor can reject shared containers */
+    /* every bare contextual CTA on the page, so headingFor can reject shared
+       containers. "Learn more" belongs here for the same reason "Explore" does: it
+       carries no destination of its own, so it can only be resolved from the card it
+       sits in. The six on /services/ (RISE with SAP, SAP Cloud ERP, SAP AMS powered
+       by AXIOM, AWS, Google Cloud, Multi-cloud CMS) were dead because nothing wired
+       them at all -- ROUTES has no "learn more" entry, and resolve()'s prefix strip
+       reduces it to "more", which matches nothing. */
+    var CONTEXTUAL = /^(explore|learn more)$/;
     var pills = texts.filter(function(t){
-      return norm(t.el.textContent).toLowerCase() === 'explore';
+      return CONTEXTUAL.test(norm(t.el.textContent).toLowerCase());
     });
     texts.forEach(function(t){
       var n = norm(t.el.textContent).toLowerCase();
-      if (n !== 'explore') return;
+      if (!CONTEXTUAL.test(n)) return;
       /* the chrome's CTA linkifier marks whatever it already owns */
       if (t.el.dataset.cta || t.el.closest('[data-cta]') || t.el.closest('a')) return;
 
@@ -2023,7 +2067,12 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
         if (!b.w || !inside(b, t) || b.a > t.a * 12) return;
         if (!pill || b.a < pill.a) pill = b;
       });
-      if (!pill) return;
+      /* No pill is normal, not a failure: "Learn more >" on the /services/ cards is
+         bare text with a chevron, so the smallest box containing it is the CARD
+         (measured 62x its area, well past the 12x pill cap). Those six were dead
+         because this used to `return` here. Fall back to treating the LABEL as the
+         control -- same thing the chrome's bare-text pass does for "Explore". */
+      if (!pill) pill = t;
       if (pill.el.dataset.cta) return;
       /* Mark it BEFORE we know whether a route exists. buildButtons only looks at
          things that are already linkified, so an Explore pill with no destination
@@ -2061,6 +2110,7 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
   function arm(g){
     g.members.forEach(function(e){
       e.el.classList.add('ax-hv-m', g.kind === 'tile' ? 'ax-hv-tile' : 'ax-hv-btn');
+      if (g.flat) e.el.classList.add('ax-hv-flat');   /* whole card stays put, not just its skin */
       if (g.clk) e.el.classList.add('ax-hv-clk');
       var tf = e.el.style.transform;
       if (tf) e.el.style.setProperty('--ax-bt', tf);
@@ -2139,8 +2189,25 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
           if (/^\d{1,3}$/.test((t.el.textContent || '').trim())) t.el.classList.add('ax-hv-badgetx');
         });
       });
+      /* Zero headroom inside a clipping ancestor -> mark the tile flat, so the lift
+         is dropped and its top border cannot be swallowed by the clip.
+         Measured with box() (offsetTop chain), NOT getBoundingClientRect: the
+         scroll-reveal fragment starts these elements at translateY(1.4vw), and a
+         rect includes that transform -- it reported 26.9px of headroom for cards
+         that actually sit flush at top:0, so the guard never fired. */
+      var flat = false, node = skin.el.parentElement, st = box(skin.el);
+      while (node && node !== document.body){
+        if ((node.classList && node.classList.contains('g-clip')) ||
+            (node.nodeType === 1 && getComputedStyle(node).overflow !== 'visible')){
+          var cb = box(node);
+          if (cb.h && st.t - cb.t < LIFT_PX + 1) flat = true;
+          break;
+        }
+        node = node.parentElement;
+      }
+      if (flat) skin.el.classList.add('ax-hv-flat');
       GROUPS.push({ kind:'tile', skin:skin, skinClass:'ax-hv-tileskin',
-                    members:mem, on:false });
+                    members:mem, on:false, flat:flat });
     });
   }
 
@@ -2286,59 +2353,60 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
   addEventListener('load', function(){ setTimeout(scan, 60); });
 })();
 
-/* ---- UNBLOCK CTAs SWALLOWED BY DECORATIVE SHELLS ----
+/* ---- UNBLOCK CTAs THAT SOMETHING ELSE IS SWALLOWING ----
    Every generated element is position:absolute with no z-index, so paint order is
-   DOM order -- and Figma emits a section's outline (a .g-b carrying only a border:
-   no background, no children, no text) AFTER the content it encloses. Those
-   transparent shells land ON TOP of the buttons and eat the click. Measured on the
-   homepage: 4 of 4 on-screen CTAs unreachable, "See AXIOM" / "SaaS Suite" among
-   them -- they were correctly wired (role=link, data-cta, pointer cursor) and still
-   did nothing, because the click never reached them. z-index cannot fix it: the
-   shell usually lives in a LATER SIBLING SUBTREE, so raising a pill inside its own
-   card never lifts it past the shell's whole branch.
+   DOM order and a later sibling lands on top of the buttons underneath it. The
+   overlappers are invisible -- a section outline with no fill, a decorative SVG, a
+   nowrap text block wider than its own column -- so the button looks fine and is
+   correctly wired (role=link, data-cta, pointer cursor) yet nothing happens,
+   because the click never reaches it. Measured on the homepage: 4 of 4 on-screen
+   CTAs unreachable; on /services/: "Request a proposal" and "Talk to a specialist".
 
-   A shell is only neutralised when it is unambiguously decorative -- no background,
-   no children, no text -- and is far larger than the CTA it covers, so real cards
-   and hoverable tiles keep their pointer events. Geometry, not hit-testing, so
-   off-screen CTAs are covered too. */
+   z-index cannot fix it: the overlapper usually lives in a LATER SIBLING SUBTREE,
+   so raising a pill inside its own card never lifts it past that whole branch
+   (tried, measured, still blocked).
+
+   This is hit-test driven rather than geometry-guessed, because the blocker turned
+   out to be a different element type each time (.g-b shell, then .g-vec art, then a
+   .g-t text run) -- asking the browser what is actually on top is the only version
+   that does not need updating for the next one. Only elements that are NOT part of
+   any CTA are neutralised, and only while they sit over one. */
 (function(){
-  var AREA_RATIO = 25;      /* a card is ~10x its pill; a section shell is 200x+ */
+  var MAX_PEEL = 6;          /* stacked overlappers; bounded so this can never spin */
 
-  function shell(el){
-    if (el.children.length || (el.textContent || '').trim()) return false;
-    if (el.dataset.cta || el.dataset.axcta || el.dataset.axpill) return false;
-    var st = getComputedStyle(el);
-    var bg = st.backgroundColor;
-    if (!(bg === 'transparent' || bg === 'rgba(0, 0, 0, 0)')) return false;
-    return !st.backgroundImage || st.backgroundImage === 'none';
+  function isCta(el){
+    return !!(el && (el.dataset.cta || el.dataset.axcta || el.closest('[data-cta],[data-axcta]')));
   }
 
   function run(){
-    var ctas = [].slice.call(document.querySelectorAll('[data-cta],[data-axcta]'))
-                 .filter(function(el){ return !el.closest('.ax-mob'); })
-                 .map(function(el){ var r = el.getBoundingClientRect();
-                                    return { el:el, r:r, a:r.width * r.height }; })
-                 .filter(function(c){ return c.a > 0; });
-    if (!ctas.length) return;
-    [].slice.call(document.querySelectorAll('.g-b')).forEach(function(b){
-      if (b.style.pointerEvents === 'none' || !shell(b)) return;
-      var br = b.getBoundingClientRect(), ba = br.width * br.height;
-      if (!ba) return;
-      for (var i = 0; i < ctas.length; i++){
-        var c = ctas[i];
-        if (b.contains(c.el)) continue;             /* a real ancestor, not an overlay */
-        if (ba < c.a * AREA_RATIO) continue;
-        if (c.r.left >= br.left - 2 && c.r.right <= br.right + 2 &&
-            c.r.top >= br.top - 2 && c.r.bottom <= br.bottom + 2){
-          b.style.pointerEvents = 'none';
-          return;
-        }
+    var ctas = document.querySelectorAll('[data-cta],[data-axcta]');
+    for (var i = 0; i < ctas.length; i++){
+      var el = ctas[i];
+      if (el.closest('.ax-mob')) continue;
+      var r = el.getBoundingClientRect();
+      if (!r.width || !r.height) continue;
+      /* hit-testing is viewport-bound, hence the re-run on scroll below */
+      if (r.bottom < 0 || r.top > innerHeight) continue;
+      var x = r.left + r.width / 2, y = r.top + r.height / 2;
+      for (var n = 0; n < MAX_PEEL; n++){
+        var top = document.elementFromPoint(x, y);
+        if (!top || top === el || el.contains(top) || top.contains(el)) break;
+        if (isCta(top)) break;                     /* another CTA legitimately on top */
+        if (top === document.body || top === document.documentElement) break;
+        top.style.pointerEvents = 'none';
       }
-    });
+    }
   }
-  /* after the chrome CTA pass, this file's own wiring, and .ax-mob injection */
-  addEventListener('load', function(){ setTimeout(run, 120); });
-  addEventListener('resize', function(){ setTimeout(run, 150); });
+
+  var queued = false;
+  function schedule(){
+    if (queued) return;
+    queued = true;
+    setTimeout(function(){ queued = false; run(); }, 120);
+  }
+  addEventListener('load', function(){ setTimeout(run, 140); });
+  addEventListener('scroll', schedule, { passive: true });
+  addEventListener('resize', schedule);
 })();
 </script>
 

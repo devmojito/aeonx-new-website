@@ -48,6 +48,8 @@ SCOPED = [
     ('industries/energy-fertiliser-oil-gas/index.html','ax-gearspin-css', '_gearspin.html'),
     ('who-we-are/leadership/index.html', 'ax-ltabs-css', '_leadtabs.html'),
     ('who-we-are/leadership/index.html', 'ax-leadscroll-css', '_leadscroll.html'),
+    ('services/sap-ams-axiom/index.html', 'ax-amsgrid-css', '_amsgrid.html'),
+    ('services/sap-ams-axiom/index.html', 'ax-amsicon-css', '_amsicon.html'),
 ]
 SCOPED = [(sfx, sent, open(os.path.join(_HERE, fn), encoding='utf-8').read())
           for sfx, sent, fn in SCOPED]
