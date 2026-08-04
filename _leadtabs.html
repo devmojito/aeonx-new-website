@@ -1,0 +1,105 @@
+<style id="ax-ltabs-css">
+/* Leadership department tabs ("PRACTICE & PROGRAMME" / "SALES & GROWTH"). Figma has
+   no roster authored for SALES & GROWTH -- the client owes named staff for it, we do
+   not invent people (see HANDOFF.md #6.6). Until that lands, both tabs point at the
+   SAME roster: a real, honest two-state control (active pill toggles, ARIA is
+   correct) rather than a second tab that silently does nothing when clicked. */
+.ax-lt-tab{cursor:pointer;transition:background-color .25s ease}
+.ax-lt-tab>.g-t{transition:color .25s ease}
+.ax-lt-tab:focus-visible{outline:2px solid rgb(35,39,46);outline-offset:-3px}
+.ax-lt-tab[aria-selected="true"]:focus-visible{outline-color:rgb(255,255,255)}
+/* switching pulses the shared panel so the click reads as a real state change even
+   though the roster underneath does not move -- same curve as the other tab
+   switchers on this site. */
+.ax-lt-panel{transition:opacity .16s ease}
+.ax-lt-pulse{opacity:0}
+@media (prefers-reduced-motion:reduce){
+  .ax-lt-tab,.ax-lt-tab>.g-t,.ax-lt-panel{transition:none}
+}
+</style>
+<script>
+/* ---- LEADERSHIP DEPARTMENT TABS ---- */
+(function(){
+  var A_TXT = 'PRACTICE & PROGRAMME', B_TXT = 'SALES & GROWTH';
+  var FILL = ['transparent', 'rgb(223,63,23)'];
+  var LBL  = ['rgb(82,96,119)', 'rgb(255,255,255)'];
+  var uid = 0;
+
+  function txt(e){ return (e.textContent || '').replace(/\s+/g,' ').trim(); }
+
+  function setup(scope){
+    var labels = [], all = scope.querySelectorAll('.g-t');
+    for (var i = 0; i < all.length; i++){
+      var t = txt(all[i]);
+      if ((t === A_TXT || t === B_TXT) && !all[i].closest('[data-ax-lt]')) labels.push(all[i]);
+      if (labels.length === 2) break;
+    }
+    if (labels.length !== 2 || txt(labels[0]) !== A_TXT || txt(labels[1]) !== B_TXT) return;
+
+    var tabs = labels.map(function(l){ return l.parentElement; });
+    if (!tabs[0].classList.contains('g-b') || !tabs[1].classList.contains('g-b')) return;
+    var strip = tabs[0].parentElement;
+    if (tabs[1].parentElement !== strip) return;
+    strip.setAttribute('data-ax-lt', '1');
+
+    /* the roster row is the next sibling of the strip -- the same panel serves
+       both tabs, so it only needs identifying, not duplicating */
+    var panel = strip.nextElementSibling;
+    while (panel && !(panel.classList && panel.classList.contains('g-clip'))) panel = panel.nextElementSibling;
+    if (panel) panel.classList.add('ax-lt-panel');
+
+    var n = ++uid, cur = 0;
+    strip.setAttribute('role', 'tablist');
+    strip.setAttribute('aria-label', 'Leadership by department');
+    if (panel){ panel.id = 'ax-lt-p' + n; panel.setAttribute('role', 'tabpanel'); }
+
+    for (var i = 0; i < 2; i++){
+      tabs[i].classList.add('ax-lt-tab');
+      tabs[i].id = 'ax-lt-t' + n + i;
+      tabs[i].setAttribute('role', 'tab');
+      tabs[i].setAttribute('aria-selected', i === 0 ? 'true' : 'false');
+      tabs[i].setAttribute('tabindex', i === 0 ? '0' : '-1');
+      if (panel) tabs[i].setAttribute('aria-controls', panel.id);
+    }
+
+    function paint(sel){
+      for (var i = 0; i < 2; i++){
+        var on = i === sel;
+        tabs[i].style.backgroundColor = FILL[on ? 1 : 0];
+        labels[i].style.color = LBL[on ? 1 : 0];
+        tabs[i].setAttribute('aria-selected', on ? 'true' : 'false');
+        tabs[i].setAttribute('tabindex', on ? '0' : '-1');
+      }
+    }
+    function select(sel, focus){
+      if (sel !== cur){
+        cur = sel;
+        paint(sel);
+        if (panel){
+          panel.classList.add('ax-lt-pulse');
+          setTimeout(function(){ panel.classList.remove('ax-lt-pulse'); }, 160);
+        }
+      }
+      if (focus) tabs[sel].focus();
+    }
+    for (i = 0; i < 2; i++) (function(i){
+      tabs[i].addEventListener('click', function(){ select(i); });
+      tabs[i].addEventListener('keydown', function(e){
+        var k = e.key;
+        if (k === 'Enter' || k === ' ' || k === 'Spacebar'){ e.preventDefault(); select(i); }
+        else if (k === 'ArrowRight' || k === 'ArrowLeft' || k === 'Home' || k === 'End'){
+          e.preventDefault(); select(i === 0 ? 1 : 0, true);
+        }
+      });
+    })(i);
+  }
+
+  function init(){
+    setup(document);
+    var mob = document.querySelector('.ax-mob');
+    if (mob) setup(mob);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>

@@ -45,6 +45,7 @@ SCOPED = [
     ('industries/textiles-apparel/index.html',         'ax-gearspin-css', '_gearspin.html'),
     ('industries/fmcg-distribution/index.html',        'ax-gearspin-css', '_gearspin.html'),
     ('industries/energy-fertiliser-oil-gas/index.html','ax-gearspin-css', '_gearspin.html'),
+    ('who-we-are/leadership/index.html', 'ax-ltabs-css', '_leadtabs.html'),
 ]
 SCOPED = [(sfx, sent, open(os.path.join(_HERE, fn), encoding='utf-8').read())
           for sfx, sent, fn in SCOPED]

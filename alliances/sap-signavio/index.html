@@ -1977,9 +1977,14 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
 .ax-hv-btn.ax-hv-selfon {transform:translateY(-0.1042vw) var(--ax-bt,translateZ(0))}
 
 /* tile: soft lift + brand-tinted hairline drawn as a shadow ring, so it shows
-   even when a coincident white fill box paints over the real border */
+   even when a coincident white fill box paints over the real border. The ring is
+   INSET: cards in a seamless grid can share a coincident edge (card A's right
+   border sits on card B's left border, zero gap), and an OUTSET ring bleeds past
+   that edge into the neighbour. Inset hugs the inside of the box instead, so it
+   can never cross a shared border no matter how tight the grid is. The ambient
+   drop shadow stays outset -- that is the lift's depth cue, not a hairline. */
 .ax-hv-tileskin.ax-hv-on{
-  box-shadow:0 0 0 0.0521vw rgba(223,63,23,.45),
+  box-shadow:inset 0 0 0 0.0521vw rgba(223,63,23,.45),
              0 0.4167vw 1.0417vw rgba(35,39,46,.10);
   border-color:rgba(223,63,23,.45)}
 
@@ -2048,7 +2053,10 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
 
   /* ---------- tuning ---------- */
   var TILE_MIN_W = 12, TILE_MAX_W = 46;      /* vw -- below: chips, above: bands */
-  var TILE_MIN_H = 8,  TILE_MAX_H = 36;
+  /* was 8: a real card family (career page "Five reasons", row 2) sits at 6.98vw
+     tall and fell just under the floor, so those two tiles never armed. Chips/
+     badges sitewide run 1.3-2.5vw tall, so 6 still leaves them well clear. */
+  var TILE_MIN_H = 6,  TILE_MAX_H = 36;
   var TOL = 3;                               /* px slack: offset* is integer-rounded */
   var STOP = {and:1,the:1,our:1,for:1,with:1,you:1,your:1,all:1,more:1,new:1,see:1,
               view:1,read:1,learn:1,open:1,meet:1,book:1,explore:1,home:1,page:1,
