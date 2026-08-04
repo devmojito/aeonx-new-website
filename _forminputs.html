@@ -106,6 +106,33 @@ select.ax-cf-in{cursor:pointer;appearance:none;-webkit-appearance:none}
     return null;
   }
 
+  /* The clickable pill for a button label.
+     Figma exports a button as the coloured RECT and its LABEL as SIBLINGS, not as
+     parent and child -- so label.closest('.g-b') walks straight PAST the pill and
+     lands on whatever big box encloses the whole area. That is what made the entire
+     form panel a submit target: any click anywhere in it ran validation, which
+     focuses the first invalid field, so clicking "Full name" snapped focus back to
+     "Company name". Find the pill by GEOMETRY instead: the smallest .g-b whose rect
+     contains the label's, capped so a section box can never qualify. Falls back to
+     the label itself -- never to an ancestor, because being wrong here means
+     hijacking clicks for the whole panel again. */
+  function pillFor(form, label){
+    var lr = label.getBoundingClientRect();
+    if (!lr.width || !lr.height) return label;
+    var la = lr.width * lr.height, best = null, bestA = Infinity;
+    form.querySelectorAll('.g-b').forEach(function(b){
+      if (b.contains(label)) return;              /* an ancestor, not a sibling pill */
+      var br = b.getBoundingClientRect();
+      if (!br.width || !br.height) return;
+      var ba = br.width * br.height;
+      if (ba > la * 8) return;                    /* far bigger than its label = not a pill */
+      if (!(lr.left >= br.left - 3 && lr.right <= br.right + 3 &&
+            lr.top >= br.top - 3 && lr.bottom <= br.bottom + 3)) return;
+      if (ba < bestA){ bestA = ba; best = b; }
+    });
+    return best || label;
+  }
+
   function wireSubmit(form, subjectPrefix){
     var msgHost = null;
     form.addEventListener('submit', function(e){
@@ -172,13 +199,13 @@ select.ax-cf-in{cursor:pointer;appearance:none;-webkit-appearance:none}
 
     var resetBtn = findByText(form, 'Reset Form');
     if (resetBtn){
-      var resetPill = resetBtn.closest('.g-b') || resetBtn;
+      var resetPill = pillFor(form, resetBtn);
       resetPill.style.cursor = 'pointer';
       resetPill.addEventListener('click', function(){ form.reset(); });
     }
     var sendLabel = findByText(form, 'Send Message') || findByText(form, 'Send RPF Request');
     if (sendLabel){
-      var sendPill = sendLabel.closest('.g-b') || sendLabel;
+      var sendPill = pillFor(form, sendLabel);
       sendPill.style.cursor = 'pointer';
       sendPill.addEventListener('click', function(){
         if (form.requestSubmit) form.requestSubmit(); else form.dispatchEvent(new Event('submit', {cancelable:true}));

@@ -1,0 +1,10 @@
+<style id="ax-leadscroll-css">
+/* Leadership page only: hide the two roster scrollbars. _scrollrow.html already
+   makes these rows drag-scrollable (pointer drag + arrow keys), so the visible
+   bar is redundant here. Scoped to this page via the fragment being page-scoped in
+   _postbuild.py -- the bars stay everywhere else, where drag is less discoverable.
+   Keyboard access is unaffected: the row keeps tabindex/role/aria-label and its
+   arrow-key handler from _scrollrow, so this is a purely visual change. */
+.ax-srow{scrollbar-width:none;-ms-overflow-style:none}
+.ax-srow::-webkit-scrollbar{height:0;width:0;display:none}
+</style>

@@ -2609,6 +2609,61 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
   /* the .ax-mob block and the chrome's own CTA pass can land after us */
   addEventListener('load', function(){ setTimeout(scan, 60); });
 })();
+
+/* ---- UNBLOCK CTAs SWALLOWED BY DECORATIVE SHELLS ----
+   Every generated element is position:absolute with no z-index, so paint order is
+   DOM order -- and Figma emits a section's outline (a .g-b carrying only a border:
+   no background, no children, no text) AFTER the content it encloses. Those
+   transparent shells land ON TOP of the buttons and eat the click. Measured on the
+   homepage: 4 of 4 on-screen CTAs unreachable, "See AXIOM" / "SaaS Suite" among
+   them -- they were correctly wired (role=link, data-cta, pointer cursor) and still
+   did nothing, because the click never reached them. z-index cannot fix it: the
+   shell usually lives in a LATER SIBLING SUBTREE, so raising a pill inside its own
+   card never lifts it past the shell's whole branch.
+
+   A shell is only neutralised when it is unambiguously decorative -- no background,
+   no children, no text -- and is far larger than the CTA it covers, so real cards
+   and hoverable tiles keep their pointer events. Geometry, not hit-testing, so
+   off-screen CTAs are covered too. */
+(function(){
+  var AREA_RATIO = 25;      /* a card is ~10x its pill; a section shell is 200x+ */
+
+  function shell(el){
+    if (el.children.length || (el.textContent || '').trim()) return false;
+    if (el.dataset.cta || el.dataset.axcta || el.dataset.axpill) return false;
+    var st = getComputedStyle(el);
+    var bg = st.backgroundColor;
+    if (!(bg === 'transparent' || bg === 'rgba(0, 0, 0, 0)')) return false;
+    return !st.backgroundImage || st.backgroundImage === 'none';
+  }
+
+  function run(){
+    var ctas = [].slice.call(document.querySelectorAll('[data-cta],[data-axcta]'))
+                 .filter(function(el){ return !el.closest('.ax-mob'); })
+                 .map(function(el){ var r = el.getBoundingClientRect();
+                                    return { el:el, r:r, a:r.width * r.height }; })
+                 .filter(function(c){ return c.a > 0; });
+    if (!ctas.length) return;
+    [].slice.call(document.querySelectorAll('.g-b')).forEach(function(b){
+      if (b.style.pointerEvents === 'none' || !shell(b)) return;
+      var br = b.getBoundingClientRect(), ba = br.width * br.height;
+      if (!ba) return;
+      for (var i = 0; i < ctas.length; i++){
+        var c = ctas[i];
+        if (b.contains(c.el)) continue;             /* a real ancestor, not an overlay */
+        if (ba < c.a * AREA_RATIO) continue;
+        if (c.r.left >= br.left - 2 && c.r.right <= br.right + 2 &&
+            c.r.top >= br.top - 2 && c.r.bottom <= br.bottom + 2){
+          b.style.pointerEvents = 'none';
+          return;
+        }
+      }
+    });
+  }
+  /* after the chrome CTA pass, this file's own wiring, and .ax-mob injection */
+  addEventListener('load', function(){ setTimeout(run, 120); });
+  addEventListener('resize', function(){ setTimeout(run, 150); });
+})();
 </script>
 
 <style id="ax-scrollrow-css">
