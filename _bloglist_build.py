@@ -48,6 +48,7 @@ def main():
             'd': d,
             'i': p['thumb'] or LOGO,
             'ph': 0 if p['thumb'] else 1,
+            'a': p['author'].replace('-', ' ').title(),
             'ts': '%s%s%s' % (p['year'], p['month'], p['day']),
         })
     items.sort(key=lambda x: x['ts'], reverse=True)
@@ -65,204 +66,209 @@ def main():
 
 
 FRAGMENT = r'''<style id="ax-bloglist-css">
-/* Real posts on /insights/blog/. The Figma hero slots (one featured card + three
-   compact rows) are rewritten in place, so that part of the pixel-locked layout is
-   untouched. Everything below "Browse by category" is a normal-flow grid: 53 cards
-   cannot be absolutely positioned into a fixed-height frame, and only the footer
-   follows it. Card styling mirrors the Figma cards (same radius, hairline, type
-   scale and brand chip). */
-/* CRITICAL: the page carries a global rule making every img / h1-h3 / p / span
-   inside main.ax-page position:absolute (that is how the pixel-locked Figma layout
-   works). Normal-flow cards inserted here inherit it and collapse into one stack --
-   which is exactly what happened on the first attempt. Everything inside this grid
-   is forced back into normal flow. */
-.ax-bl-grid *,.ax-bl-filters *,.ax-bl-count *{position:static!important}
-.ax-bl-grid img,.ax-bl-grid h3,.ax-bl-grid span,.ax-bl-grid div{position:static!important}
-.ax-bl-card{position:relative!important}
-.ax-bl-grid{position:relative;margin:1.5vw 7.9vw 4vw;display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(19rem,1fr));gap:1.6vw 1.25vw;
-  font-family:'Nunito Sans',sans-serif}
-.ax-bl-card{display:flex;flex-direction:column;text-decoration:none;color:inherit;
-  border:1px solid rgb(236,238,242);border-radius:.6vw;overflow:hidden;background:#fff;
-  transition:transform .22s cubic-bezier(.22,.61,.36,1),box-shadow .22s ease}
-.ax-bl-card:hover{transform:translateY(-.2vw);
-  box-shadow:0 .4vw 1.05vw rgba(35,39,46,.10),inset 0 0 0 1px rgba(223,63,23,.45)}
-.ax-bl-card:focus-visible{outline:2px solid rgb(223,63,23);outline-offset:2px}
-.ax-bl-thumb{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;background:#F6F7F9}
-.ax-bl-thumb--ph{object-fit:contain;padding:2.2vw}
-.ax-bl-body{padding:1vw 1.05vw 1.25vw}
-.ax-bl-chip{display:inline-block;font-size:.63rem;font-weight:700;letter-spacing:.07em;
-  text-transform:uppercase;color:rgb(223,63,23);background:rgb(254,245,238);
-  padding:.25rem .5rem;border-radius:.2rem;margin-bottom:.55rem}
-.ax-bl-title{font-size:1rem;font-weight:700;line-height:1.35;color:rgb(35,39,46);margin:0 0 .45rem}
-.ax-bl-date{font-size:.8rem;color:rgb(82,96,119)}
-.ax-bl-filters{position:relative;margin:0 7.9vw 1vw;display:flex;flex-wrap:wrap;gap:.5rem;
-  font-family:'Nunito Sans',sans-serif}
-.ax-bl-f{border:1px solid rgb(213,218,226);background:#fff;border-radius:99px;
-  padding:.35rem .9rem;font-size:.82rem;font-weight:600;color:rgb(82,96,119);cursor:pointer;
-  transition:background-color .2s ease,color .2s ease,border-color .2s ease}
-.ax-bl-f[aria-pressed="true"]{background:rgb(223,63,23);color:#fff;border-color:rgb(223,63,23)}
-.ax-bl-count{position:relative;margin:0 7.9vw .6vw;font-family:'Nunito Sans',sans-serif;
-  font-size:.85rem;color:rgb(82,96,119)}
-@media (prefers-reduced-motion:reduce){.ax-bl-card{transition:none}.ax-bl-card:hover{transform:none}}
-@media (max-width:1024px){
-  .ax-bl-grid,.ax-bl-filters,.ax-bl-count{margin-left:5vw;margin-right:5vw}
-  .ax-bl-grid{grid-template-columns:1fr;gap:4vw}
-  .ax-bl-card{border-radius:2vw}
-}
+/* Real posts inside the DESIGNED Figma slots. Nothing is inserted into the
+   pixel-locked layout and no element is repositioned -- each designed card slot
+   (image box, category chip, title) simply gets real content, so the page still
+   renders exactly as drawn. Only paint-level properties are touched. */
+.ax-bl-hit{cursor:pointer}
+.ax-bl-hit:focus-visible{outline:2px solid rgb(223,63,23);outline-offset:2px}
+.ax-bl-img{background-size:cover!important;background-position:center!important;
+  background-repeat:no-repeat!important}
+.ax-bl-img--ph{background-size:60%!important;background-color:#F6F7F9!important}
+.ax-bl-t{transition:color .18s ease;height:auto!important;display:-webkit-box;
+  -webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.ax-bl-hit:hover .ax-bl-t,.ax-bl-t.ax-bl-hit:hover{color:rgb(223,63,23)}
+.ax-bl-page{position:absolute;display:flex;gap:.5rem;align-items:center;
+  font-family:'Nunito Sans',sans-serif;font-size:.85rem;color:rgb(82,96,119)}
+.ax-bl-page button{border:1px solid rgb(213,218,226);background:#fff;border-radius:99px;
+  width:2rem;height:2rem;cursor:pointer;color:rgb(35,39,46);font-size:1rem;line-height:1}
+.ax-bl-page button[disabled]{opacity:.35;cursor:default}
 </style>
 <script>
-/* ---- REAL BLOG INDEX ---- */
+/* ---- REAL POSTS IN THE DESIGNED BLOG SLOTS ---- */
 (function(){
   var POSTS = __DATA__;
   var CATS  = __CATS__;
 
-  function el(tag, cls, txt){
-    var e=document.createElement(tag);
-    if(cls) e.className=cls;
-    if(txt!=null) e.textContent=txt;
-    return e;
-  }
-
-  function card(p){
-    var a=el('a','ax-bl-card'); a.href=p.u;
-    var img=el('img','ax-bl-thumb'+(p.ph?' ax-bl-thumb--ph':''));
-    img.src=p.i; img.alt=p.t; img.loading='lazy';
-    var b=el('div','ax-bl-body');
-    b.appendChild(el('span','ax-bl-chip',p.c));
-    b.appendChild(el('h3','ax-bl-title',p.t));
-    b.appendChild(el('div','ax-bl-date',p.d));
-    a.appendChild(img); a.appendChild(b);
-    return a;
-  }
-
-  /* Rewrite the four Figma hero slots with the newest posts. Each slot is a set of
-     flat siblings (image box, chip, title) rather than a nested card, so they are
-     matched by the dummy copy they ship with -- geometry alone cannot tell a title
-     from any other text at that size. */
-  var HERO = [
-    {title:'Making sense of the AI control plane', chip:'Enterprise AI'},
-    {title:'MCP authorization: Roll out AI to every team, safely', chip:'PRODUCT'},
-    {title:'We were wrong about the hard problem', chip:'ENTERPRISE AI'},
-    {title:'AEONX is SOC 2 Type II and ISO 27001 certified', chip:'OTHER'}
-  ];
   function txt(e){ return (e.textContent||'').replace(/\s+/g,' ').trim(); }
+  function rect(e){ return e.getBoundingClientRect(); }
 
-  function fillHero(){
-    var texts=[].slice.call(document.querySelectorAll('main.ax-page .g-t'));
-    HERO.forEach(function(h,i){
-      var p=POSTS[i]; if(!p) return;
-      /* replace EVERY copy: the mobile block (.ax-mob) is injected inside
-         main.ax-page and carries its own duplicate of each hero slot */
-      var nodes=texts.filter(function(t){ return txt(t)===h.title; });
-      if(!nodes.length) return;
-      nodes.forEach(function(node){
-      node.textContent=p.t;
-      node.style.whiteSpace='normal';
-      node.style.overflow='hidden';
-      /* make the whole slot navigate; the chrome CTA pass ignores plain text */
-      node.style.cursor='pointer';
-      node.setAttribute('role','link');
-      node.setAttribute('tabindex','0');
-      var go=function(){ location.href=p.u; };
-      node.addEventListener('click',go);
-      node.addEventListener('keydown',function(e){
-        if(e.key==='Enter'||e.key===' '){ e.preventDefault(); go(); }
-      });
-      /* nearest chip above the title inside the same column */
-      var tr=node.getBoundingClientRect();
-      var chip=texts.filter(function(t){
-        var r=t.getBoundingClientRect();
-        return t!==node && r.bottom<=tr.top+2 && tr.top-r.bottom<90 &&
-               Math.abs(r.left-tr.left)<40 && /^[A-Z][A-Z &]+$/.test(txt(t));
-      }).sort(function(a,b){ return b.getBoundingClientRect().bottom-a.getBoundingClientRect().bottom; })[0];
-      if(chip) chip.textContent=p.c.toUpperCase();
-      });
+  function slots(){
+    var page=document.querySelector('main.ax-page');
+    if(!page) return null;
+    var imgs=[],texts=[];
+    page.querySelectorAll('.g-img,.g-b.g-clip').forEach(function(e){
+      if(e.closest('.ax-mob')) return;
+      var r=rect(e), st=e.getAttribute('style')||'';
+      if(r.width>90&&r.height>60&&r.width<900&&/background-image/.test(st))
+        imgs.push({el:e,r:r});
+    });
+    page.querySelectorAll('.g-t').forEach(function(e){
+      if(e.closest('.ax-mob')) return;
+      var r=rect(e); if(!r.width) return;
+      texts.push({el:e,r:r,t:txt(e),fs:parseFloat(getComputedStyle(e).fontSize)||0});
+    });
+    /* one image box per visual position (Figma stacks a fill box under the image) */
+    var seen={},uniq=[];
+    imgs.sort(function(a,b){return a.r.top-b.r.top||a.r.left-b.r.left;});
+    imgs.forEach(function(i){
+      var k=Math.round(i.r.left)+'x'+Math.round(i.r.top);
+      if(!seen[k]){ seen[k]=1; uniq.push(i); }
+    });
+    return {page:page,imgs:uniq,texts:texts};
+  }
+
+  /* the card's title: the biggest text starting below the image, in its column */
+  function titleFor(img,texts){
+    var c=texts.filter(function(t){
+      return t.fs>=15 && t.t.length>12 &&
+             t.r.top>=img.r.top-8 && t.r.top<img.r.bottom+150 &&
+             t.r.left>=img.r.left-8 && t.r.left<img.r.right+420 &&
+             !/^(Field notes|Long-form|Browse by|Want the long|Subscribe|Sign up)/.test(t.t);
+    });
+    c.sort(function(a,b){ return (b.fs-a.fs) || (a.r.top-b.r.top); });
+    return c[0];
+  }
+  function chipFor(title,texts){
+    if(!title) return null;
+    var c=texts.filter(function(t){
+      return t!==title && /^[A-Za-z][A-Za-z &]{2,}$/.test(t.t) && t.t.length<26 &&
+             t.fs<15 && t.r.bottom<=title.r.top+4 && title.r.top-t.r.bottom<70 &&
+             Math.abs(t.r.left-title.r.left)<60;
+    });
+    c.sort(function(a,b){ return b.r.bottom-a.r.bottom; });
+    return c[0];
+  }
+
+  function wire(el,url){
+    if(!el) return;
+    el.classList.add('ax-bl-hit');
+    if(!el.hasAttribute('tabindex')) el.setAttribute('tabindex','0');
+    el.setAttribute('role','link');
+    if(el.__axgo){ el.__axgo.url=url; return; }
+    var box={url:url};
+    el.__axgo=box;
+    var go=function(){ location.href=box.url; };
+    el.addEventListener('click',go);
+    el.addEventListener('keydown',function(e){
+      if(e.key==='Enter'||e.key===' '){ e.preventDefault(); go(); }
     });
   }
 
-  function buildGrid(){
-    /* anchor: the designed "Browse by category" heading */
-    var anchor=[].slice.call(document.querySelectorAll('main.ax-page .g-t'))
-      .filter(function(t){ return /^Browse by category/i.test(txt(t)); })[0];
-    var page=document.querySelector('main.ax-page');
-    if(!page || page.dataset.axBl) return;
-    page.dataset.axBl='1';
+  function fill(slot,p){
+    if(!p){ return; }
+    var st=slot.img.el.getAttribute('style')||'';
+    st=st.replace(/background-image:[^;]*;?/,'');
+    slot.img.el.setAttribute('style', st+';background-image:url("'+p.i+'")');
+    slot.img.el.classList.add('ax-bl-img');
+    slot.img.el.classList.toggle('ax-bl-img--ph', !!p.ph);
+    if(slot.title){
+      slot.title.el.textContent=p.t;
+      slot.title.el.style.whiteSpace='normal';
+      slot.title.el.style.overflow='hidden';
+      slot.title.el.classList.add('ax-bl-t');
+      wire(slot.title.el,p.u);
+    }
+    if(slot.chip) slot.chip.el.textContent=p.c;
+    if(slot.author) slot.author.el.textContent=p.a||'AeonX Digital';
+    if(slot.date) slot.date.el.textContent=p.d;
+    wire(slot.img.el,p.u);
+  }
 
-    var filters=el('div','ax-bl-filters');
-    var count=el('div','ax-bl-count');
-    var grid=el('div','ax-bl-grid');
-    var active='All';
+  function init(){
+    var s=slots();
+    if(!s||s.imgs.length<3) return;
+    if(s.page.dataset.axBl) return;
+    s.page.dataset.axBl='1';
+
+    function nearBelow(title,test){
+      if(!title) return null;
+      var c=s.texts.filter(function(t){
+        return t!==title && test(t.t) && t.r.top>=title.r.bottom-4 &&
+               t.r.top-title.r.bottom<90 && Math.abs(t.r.left-title.r.left)<520;
+      });
+      c.sort(function(a,b){ return a.r.top-b.r.top; });
+      return c[0];
+    }
+    var cards=s.imgs.map(function(img){
+      var t=titleFor(img,s.texts);
+      return {img:img, title:t, chip:chipFor(t,s.texts),
+              author:nearBelow(t,function(x){ return /^[A-Z][a-z]+ [A-Z][a-z]+$/.test(x); }),
+              date:nearBelow(t,function(x){ return /^[A-Z][a-z]+ \d{1,2}, \d{4}$/.test(x); })};
+    }).filter(function(c){ return c.title; });
+    if(!cards.length) return;
+
+    /* hero = everything above the "Browse by category" heading; the rest is the
+       paged category grid the design puts underneath it */
+    var browse=s.texts.filter(function(t){ return /^Browse by category/i.test(t.t); })[0];
+    var cut=browse?browse.r.top:Infinity;
+    var hero=cards.filter(function(c){ return c.img.r.top<cut; });
+    var grid=cards.filter(function(c){ return c.img.r.top>=cut; });
+
+    var active='All', pageNo=0;
+    function pool(){ return POSTS.filter(function(p){ return active==='All'||p.c===active; }); }
 
     function render(){
-      grid.textContent='';
-      var list=POSTS.filter(function(p){ return active==='All'||p.c===active; });
-      list.forEach(function(p){ grid.appendChild(card(p)); });
-      count.textContent=list.length+(list.length===1?' article':' articles')+
-        (active==='All'?'':' in '+active);
-      [].slice.call(filters.children).forEach(function(b){
-        b.setAttribute('aria-pressed', String(b.textContent===active));
+      var list=pool();
+      hero.forEach(function(c,i){ fill(c,list[i]); });
+      var off=hero.length+pageNo*grid.length;
+      grid.forEach(function(c,i){
+        var p=list[off+i];
+        c.img.el.style.visibility = p?'':'hidden';
+        if(c.title) c.title.el.style.visibility = p?'':'hidden';
+        if(c.chip)  c.chip.el.style.visibility  = p?'':'hidden';
+        fill(c,p);
       });
+      if(pager){
+        var total=Math.max(1,Math.ceil(Math.max(0,list.length-hero.length)/grid.length));
+        label.textContent=(pageNo+1)+' / '+total+'  ·  '+list.length+' articles';
+        prev.disabled=pageNo<=0; next.disabled=pageNo>=total-1;
+      }
     }
-    CATS.forEach(function(c){
-      var b=el('button','ax-bl-f',c);
-      b.type='button';
-      b.addEventListener('click',function(){ active=c; render(); });
-      filters.appendChild(b);
+
+    /* pager sits under the designed grid, absolutely positioned like everything
+       else on this page so nothing reflows */
+    var pager=null,prev,next,label;
+    if(grid.length){
+      var last=grid[grid.length-1];
+      pager=document.createElement('div');
+      pager.className='ax-bl-page';
+      prev=document.createElement('button'); prev.type='button'; prev.textContent='\u2039';
+      next=document.createElement('button'); next.type='button'; next.textContent='\u203a';
+      label=document.createElement('span');
+      prev.setAttribute('aria-label','Previous page');
+      next.setAttribute('aria-label','Next page');
+      pager.appendChild(prev); pager.appendChild(label); pager.appendChild(next);
+      var pr=s.page.getBoundingClientRect();
+      pager.style.left=(grid[0].img.r.left-pr.left)+'px';
+      pager.style.top=(last.title? last.title.r.bottom-pr.top+28 : last.img.r.bottom-pr.top+28)+'px';
+      s.page.appendChild(pager);
+      prev.addEventListener('click',function(){ if(pageNo>0){pageNo--; render();} });
+      next.addEventListener('click',function(){ pageNo++; render(); });
+    }
+
+    /* the designed category chips become the real filter */
+    var chipRow=s.texts.filter(function(t){ return /^(All|Product|Enterprise AI|Engineering|Other)$/.test(t.t); });
+    chipRow.forEach(function(t,i){
+      var label=CATS[i];
+      if(label===undefined){ t.el.style.display='none'; return; }
+      t.el.textContent=label;
+      t.el.classList.add('ax-bl-hit');
+      t.el.setAttribute('role','button');
+      t.el.setAttribute('tabindex','0');
+      var pick=function(){ active=label; pageNo=0; render(); };
+      t.el.addEventListener('click',pick);
+      t.el.addEventListener('keydown',function(e){
+        if(e.key==='Enter'||e.key===' '){ e.preventDefault(); pick(); }
+      });
     });
 
-    /* Retire the whole designed placeholder grid that sits BELOW the browse
-       heading. Those cards are absolutely positioned, so leaving them in place
-       makes them bleed through the real grid (stray "John Smith" bylines and
-       half-titles showing between rows). Everything after the heading is dummy
-       content; the footer is a separate section and must survive. */
-    if(anchor){
-      var cut=anchor.getBoundingClientRect().bottom;
-      [].slice.call(page.children).forEach(function(c){
-        if(c===anchor||c.classList.contains('ax-footer')) return;
-        if(c.classList.contains('ax-mob')) return;
-        if(/ax-bl-/.test(c.className||'')) return;
-        if(c.tagName==='SECTION') return;
-        var r=c.getBoundingClientRect();
-        if(r.height && r.top>=cut-2) c.style.display='none';
-      });
-    }
-    /* the designed chips name categories this site does not have */
-    var dummy=[].slice.call(document.querySelectorAll('main.ax-page .g-t'))
-      .filter(function(t){ return /^(All|Product|Engineering|Other|Enterprise AI)$/.test(txt(t)); });
-    dummy.forEach(function(t){ t.style.display='none'; });
-
-    if(anchor){
-      /* park the real controls after the pixel-locked page, before the footer.
-         The designed "Browse by category:" heading is absolutely positioned at its
-         own vw offset, so once the grid flows below the frame it collides with the
-         cards -- bring the heading into normal flow and let it head the section it
-         was written for. */
-      var foot=page.querySelector('section.ax-footer');
-      /* Absolutely positioned children contribute NO height, so a normal-flow grid
-         added here starts at y=0 and paints straight through the designed hero.
-         Push the flow content down to just below the "Browse by category:" heading
-         -- the designed featured cards above it stay exactly where Figma put them,
-         and the real grid takes over the placeholder area below. */
-      var offset=anchor.offsetTop+anchor.offsetHeight;
-      filters.style.marginTop=(offset+18)+'px';
-      page.insertBefore(filters, foot);
-      page.insertBefore(count, foot);
-      page.insertBefore(grid, foot);
-    } else {
-      page.appendChild(filters); page.appendChild(count); page.appendChild(grid);
-    }
-    /* the page height is hard-coded in vw for the absolute layout; normal-flow
-       content added after it needs the cap lifted or it would be clipped */
-    page.style.height='auto';
-    page.style.minHeight='0';
-    page.style.overflow='visible';
     render();
   }
 
-  function init(){ try{ fillHero(); }catch(e){} buildGrid(); }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init);
   else init();
+  addEventListener('load',function(){ setTimeout(init,150); });
 })();
 </script>
 '''
