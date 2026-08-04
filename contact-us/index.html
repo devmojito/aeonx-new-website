@@ -2700,6 +2700,14 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
   var KEYS = [['mumbai'],['ahmedabad','ahmadabad'],['delhi (noida)'],
               ['kolkata'],['bhuj'],['dehradun']];
 
+  /* Google's no-API-key embed endpoint: /maps?q=<query>&output=embed. No token to
+     manage, no billing account, works today -- matches this project's "avoid paid
+     SaaS" constraint. Query is the office address itself (already below per city),
+     not coordinates, so it survives an office move without touching lat/lng. */
+  function mapSrc(addr){
+    return 'https://www.google.com/maps?q=' + encodeURIComponent(addr) + '&output=embed';
+  }
+
   /* Verbatim from the Figma component set "Location" 4541:8166 (desktop) /
      "Component 34" 5598:24680 (mobile) -- copy is identical between the two.
      d/m are [heading height, address top, address height] in DESIGN PX, converted
@@ -2795,6 +2803,22 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
     var f = fields(row) || fields(row.nextElementSibling);
     if (!f) return;
 
+    /* Swap the static map PNG for a real embed. Copy the div's own inline geometry
+       (left/top/width/height/border-radius/overflow) onto the iframe rather than
+       hardcoding it, so this survives a Figma re-pull that shifts the slot. The
+       PNG div is removed outright -- an iframe needs no image asset behind it. */
+    var mapSlotStyle = f.map.getAttribute('style')
+      .replace(/background-image:[^;]*;?/, '').replace(/background-size:[^;]*;?/, '')
+      .replace(/background-position:[^;]*;?/, '').replace(/background-repeat:[^;]*;?/, '');
+    var mapFrame = document.createElement('iframe');
+    mapFrame.className = 'ax-mt-mapframe';
+    mapFrame.setAttribute('style', mapSlotStyle + 'border:0;');
+    mapFrame.setAttribute('loading', 'lazy');
+    mapFrame.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
+    mapFrame.setAttribute('title', 'Map');
+    f.map.parentNode.replaceChild(mapFrame, f.map);
+    f.map = mapFrame;
+
     var mob = !!row.closest('.ax-mob');
     var FAC = mob ? F_M : F_D;
     var panel = f.tag.closest('.g-b.g-clip') || row;
@@ -2834,7 +2858,7 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
       arm(t, i);
     }
 
-    var cur = 0, warmed = {};
+    var cur = 0;
 
     function paint(sel){
       for (var i=0;i<6;i++){
@@ -2856,8 +2880,7 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
       f.addr.style.height = vw(g[2], FAC);
       f.tel.textContent  = city.tel;
       f.mail.textContent = city.mail;
-      f.map.style.backgroundImage = 'url(/assets/gen/'+city.map+'.png)';
-      f.map.setAttribute('data-ref', city.map);
+      f.map.src = mapSrc(city.addr);
     }
     /* centre the cell in the clip, clamped to the ends of the row. On desktop the six
        cells exactly fill the strip so this always resolves to 0. */
@@ -2869,13 +2892,7 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
       if (x < 0.01) x = 0;
       strip.style.left = (-x).toFixed(4)+'vw';
     }
-    function warm(sel){
-      var r = CITY[sel].map;
-      if (warmed[r]) return;
-      warmed[r] = 1;
-      (new Image()).src = '/assets/gen/'+r+'.png';    /* maps are ~1.5MB: on demand */
-    }
-    /* fields in stagger order: tag leads, heading next, map with it, details last */
+/* fields in stagger order: tag leads, heading next, map with it, details last */
     var flow = [[f.tag,0],[f.head,1],[f.map,1],[f.addr,2],[f.tel,3],[f.mail,3]];
     var swapTimer = null;
     var noMotion = window.matchMedia && matchMedia('(prefers-reduced-motion:reduce)').matches;
@@ -2884,7 +2901,7 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
       if (sel !== cur){
         var dir = sel > cur ? 1 : -1;
         cur = sel;
-        paint(sel); bring(sel); warm(sel);
+        paint(sel); bring(sel);
         if (noMotion){
           apply(CITY[sel]);
         } else {
@@ -2909,8 +2926,6 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
     }
     function arm(t, sel){
       t.addEventListener('click', function(e){ e.preventDefault(); select(sel, false); });
-      t.addEventListener('mouseenter', function(){ warm(sel); });
-      t.addEventListener('focus', function(){ warm(sel); });
       t.addEventListener('keydown', function(e){
         var k = e.key;
         if (k === 'Enter' || k === ' ' || k === 'Spacebar'){ e.preventDefault(); select(sel, true); }
@@ -2921,8 +2936,11 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
       });
     }
 
-    /* Mumbai is already in the DOM verbatim from Figma -- only add the semantics,
-       never re-render it, so the initial paint stays byte-exact. */
+    /* Mumbai's TEXT is already in the DOM verbatim from Figma -- apply() is never
+       called for it so that copy stays byte-exact. The map is the one exception:
+       the PNG it used to sit on is gone (replaced by the live iframe above), so it
+       needs its src set explicitly, or the panel opens on a blank frame. */
+    f.map.src = mapSrc(CITY[0].addr);
     paint(0); bring(0);
     row.setAttribute('data-axmt','1');
   }
@@ -3336,6 +3354,239 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
       hit.addEventListener('mouseenter', on);
       hit.addEventListener('mouseleave', off);
     });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
+
+<style id="ax-cform-css">
+/* The contact panels are flattened Figma output: every field is a dummy TEXT div
+   inside a bordered box, not a real form control -- nothing was typeable, nothing
+   submitted. Real <input>/<select>/<textarea> elements are grafted in at the exact
+   geometry of the div they replace, matched by LABEL TEXT (not hardcoded offsets),
+   so this survives a Figma re-pull. No backend exists on this static site, so
+   submission goes through mailto: -- no account, no key, no paid SaaS, works today. */
+.ax-cf-in{position:absolute;box-sizing:border-box;border:none;outline:none;background:transparent;
+  font-family:'Nunito Sans',sans-serif;color:rgb(35,39,46);padding:0;margin:0;width:100%!important}
+.ax-cf-in::placeholder{color:rgb(134,149,170)}
+.ax-cf-box{transition:border-color .15s ease}
+.ax-cf-box:focus-within{border-color:rgb(223,63,23)!important}
+textarea.ax-cf-in{resize:vertical;font-family:'Nunito Sans',sans-serif}
+select.ax-cf-in{cursor:pointer;appearance:none;-webkit-appearance:none}
+.ax-cf-err{border-color:rgb(220,38,38)!important}
+.ax-cf-msg{position:absolute;font-family:'Nunito Sans',sans-serif;font-weight:500;
+  color:rgb(2,51,89);transition:opacity .2s ease}
+</style>
+<script>
+/* ---- CONTACT FORM: REAL FIELDS + MAILTO SUBMIT ---- */
+(function(){
+  var MAILTO = 'sales@aeonx.digital';
+
+  function txt(e){ return (e.textContent || '').replace(/\s+/g,' ').replace(/[*]$/,'').trim(); }
+  function styleOf(el){ return el.getAttribute('style') || ''; }
+
+  /* Move every absolutely-positioned child of `div` into a same-styled <form>, then
+     swap the div out for the form. Children resolve position against the nearest
+     positioned ancestor, so as long as the form keeps the div's own inline style
+     (position:absolute + the same box) everything inside stays pixel-identical. */
+  function divToForm(div){
+    var form = document.createElement('form');
+    form.setAttribute('style', styleOf(div));
+    form.className = div.className;
+    form.setAttribute('novalidate', '');
+    while (div.firstChild) form.appendChild(div.firstChild);
+    div.parentNode.replaceChild(form, div);
+    return form;
+  }
+
+  /* Replace a dummy label div with a real control at the SAME geometry, inheriting
+     its font styles so nothing visually shifts. `mk` builds the actual element. */
+  function swap(box, dummy, mk){
+    var st = styleOf(dummy);
+    var el = mk();
+    el.className = 'ax-cf-in';
+    el.setAttribute('style', st.replace(/color:[^;]+;?/, '').replace(/white-space:[^;]+;?/, ''));
+    dummy.parentNode.replaceChild(el, dummy);
+    box.classList.add('ax-cf-box');
+    return el;
+  }
+
+  function findLabelBox(scope, label){
+    var ts = scope.querySelectorAll('.g-t');
+    for (var i = 0; i < ts.length; i++)
+      if (txt(ts[i]) === label){
+        var box = ts[i].nextElementSibling;
+        while (box && !(box.classList && box.classList.contains('g-b'))) box = box.nextElementSibling;
+        if (box) return box;
+      }
+    return null;
+  }
+  function dummyIn(box){
+    for (var i = 0; i < box.children.length; i++)
+      if (box.children[i].classList.contains('g-t')) return box.children[i];
+    return null;
+  }
+
+  function field(scope, label, opts){
+    opts = opts || {};
+    var box = findLabelBox(scope, label);
+    if (!box) return null;
+    var dummy = dummyIn(box);
+    if (!dummy) return null;
+    var el = swap(box, dummy, function(){
+      var e = document.createElement(opts.tag === 'textarea' ? 'textarea' : 'input');
+      if (opts.tag !== 'textarea') e.type = opts.type || 'text';
+      return e;
+    });
+    el.name = label;
+    el.placeholder = opts.placeholder || label;
+    if (opts.required) el.required = true;
+    if (opts.pattern) el.pattern = opts.pattern;
+    return el;
+  }
+
+  function selectField(scope, label, options){
+    var box = findLabelBox(scope, label);
+    if (!box) return null;
+    var dummy = dummyIn(box);
+    if (!dummy) return null;
+    var el = swap(box, dummy, function(){ return document.createElement('select'); });
+    el.name = label;
+    el.required = true;
+    options.forEach(function(o){
+      var opt = document.createElement('option');
+      opt.value = o; opt.textContent = o;
+      el.appendChild(opt);
+    });
+    return el;
+  }
+
+  function findByText(scope, label){
+    var ts = scope.querySelectorAll('.g-t');
+    for (var i = 0; i < ts.length; i++) if (txt(ts[i]) === label) return ts[i];
+    return null;
+  }
+
+  function wireSubmit(form, subjectPrefix){
+    var msgHost = null;
+    form.addEventListener('submit', function(e){
+      e.preventDefault();
+      var bad = [].slice.call(form.querySelectorAll('.ax-cf-err'));
+      bad.forEach(function(b){ b.classList.remove('ax-cf-err'); });
+      if (!form.checkValidity()){
+        var first = null;
+        [].slice.call(form.elements).forEach(function(el){
+          if (el.willValidate && !el.checkValidity()){
+            (el.closest('.g-b') || el).classList.add('ax-cf-err');
+            if (!first) first = el;
+          }
+        });
+        if (first) first.focus();
+        return;
+      }
+      var lines = [];
+      [].slice.call(form.elements).forEach(function(el){
+        if (!el.name || !el.value) return;
+        lines.push(el.name + ': ' + el.value);
+      });
+      var subject = encodeURIComponent(subjectPrefix + ' -- ' + (form.querySelector('[name="Full name"]') || {}).value);
+      var body = encodeURIComponent(lines.join('\n'));
+      window.location.href = 'mailto:' + MAILTO + '?subject=' + subject + '&body=' + body;
+
+      if (!msgHost){
+        var disclaimer = form.querySelector('.g-t:last-of-type');
+        msgHost = disclaimer;
+      }
+      if (msgHost){
+        var prev = msgHost.textContent;
+        msgHost.textContent = 'Opening your email client with this message ready to send...';
+        setTimeout(function(){ if (msgHost) msgHost.textContent = prev; }, 6000);
+      }
+    });
+  }
+
+  function wirePanel(scope, kind){
+    /* the marker must be set on the FINAL <form>, not the div: divToForm() discards
+       the original element outright, so anything set on it before the swap is lost
+       and this would re-wire on every scan */
+    var form = scope.tagName === 'FORM' ? scope : divToForm(scope);
+    if (form.dataset.axCform) return;
+    form.dataset.axCform = '1';
+
+    field(form, 'Company name', { required:true, placeholder:'Your company name' });
+    field(form, 'Full name', { required:true, placeholder:'Your full name' });
+    field(form, 'Email ID', { required:true, type:'email', placeholder:'you@company.com' });
+    field(form, 'Phone Number', { required:true, type:'tel', placeholder:'XXXXX-XXXXX',
+      pattern:'[0-9()+\\-\\s]{6,}' });
+
+    if (kind === 'A'){
+      field(form, 'Role', { required:true, placeholder:'Your role' });
+      field(form, 'Additional Information', { tag:'textarea', placeholder:'Any additional information about your quotation' });
+    } else {
+      selectField(form, 'Region', ['India', 'UAE', 'Other']);
+      selectField(form, 'Type of engagement', ['RISE with SAP', 'GROW with SAP',
+        'SAP AMS (AXIOM)', 'AWS', 'Google Cloud', 'Multi-cloud CMS', 'AXIOM AI Platform', 'Other']);
+      selectField(form, 'Timeline', ['0-3 Months', '3-6 Months', '6-12 Months', '12+ Months']);
+      field(form, 'Brief Description', { tag:'textarea',
+        placeholder:"Tell us what you're trying to do, what's in your way, and what done looks like." });
+    }
+
+    var resetBtn = findByText(form, 'Reset Form');
+    if (resetBtn){
+      var resetPill = resetBtn.closest('.g-b') || resetBtn;
+      resetPill.style.cursor = 'pointer';
+      resetPill.addEventListener('click', function(){ form.reset(); });
+    }
+    var sendLabel = findByText(form, 'Send Message') || findByText(form, 'Send RPF Request');
+    if (sendLabel){
+      var sendPill = sendLabel.closest('.g-b') || sendLabel;
+      sendPill.style.cursor = 'pointer';
+      sendPill.addEventListener('click', function(){
+        if (form.requestSubmit) form.requestSubmit(); else form.dispatchEvent(new Event('submit', {cancelable:true}));
+      });
+    }
+    wireSubmit(form, kind === 'A' ? 'Talk to AeonX' : 'Project enquiry');
+  }
+
+  function scan(){
+    /* Each panel is identified by walking up from a field label to the surrounding
+       white box; both panels reuse the same label set, so this runs once per panel
+       as each becomes available (variant B is injected by _formtabs.html). The
+       outer panel wrapper (the whole card: grey info column + white form box as
+       siblings) also "contains" all four labels via its subtree and would
+       otherwise match too -- keep only the innermost candidate, or the outer one
+       gets converted into a form wrapping an already-real inner form, and a
+       nested form's own .elements is empty per spec (silently dead). */
+    var candidates = [];
+    document.querySelectorAll('.g-b.g-clip').forEach(function(box){
+      if (box.dataset.axCform) return;
+      var isPanel = findLabelBox(box, 'Company name') && findLabelBox(box, 'Full name') &&
+                    findLabelBox(box, 'Email ID') && findLabelBox(box, 'Phone Number');
+      if (isPanel) candidates.push(box);
+    });
+    var panels = candidates.filter(function(c){
+      return !candidates.some(function(o){ return o !== c && c.contains(o); });
+    });
+    panels.forEach(function(box){
+      var kind = findLabelBox(box, 'Role') ? 'A' : (findLabelBox(box, 'Region') ? 'B' : null);
+      if (kind) wirePanel(box, kind);
+    });
+  }
+
+  function init(){
+    scan();
+    /* variant B is cloned in by _formtabs.html's own init, which runs in the same
+       DOMContentLoaded phase -- a MutationObserver catches it whichever order the
+       two scripts settle in, and disconnects once both known panels are wired. */
+    var seen = 0;
+    var mo = new MutationObserver(function(){
+      scan();
+      seen = document.querySelectorAll('[data-ax-cform]').length;
+      if (seen >= 2) mo.disconnect();
+    });
+    mo.observe(document.body, { childList:true, subtree:true });
+    setTimeout(function(){ mo.disconnect(); }, 4000);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();

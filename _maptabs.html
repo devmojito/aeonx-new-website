@@ -41,6 +41,14 @@
   var KEYS = [['mumbai'],['ahmedabad','ahmadabad'],['delhi (noida)'],
               ['kolkata'],['bhuj'],['dehradun']];
 
+  /* Google's no-API-key embed endpoint: /maps?q=<query>&output=embed. No token to
+     manage, no billing account, works today -- matches this project's "avoid paid
+     SaaS" constraint. Query is the office address itself (already below per city),
+     not coordinates, so it survives an office move without touching lat/lng. */
+  function mapSrc(addr){
+    return 'https://www.google.com/maps?q=' + encodeURIComponent(addr) + '&output=embed';
+  }
+
   /* Verbatim from the Figma component set "Location" 4541:8166 (desktop) /
      "Component 34" 5598:24680 (mobile) -- copy is identical between the two.
      d/m are [heading height, address top, address height] in DESIGN PX, converted
@@ -136,6 +144,22 @@
     var f = fields(row) || fields(row.nextElementSibling);
     if (!f) return;
 
+    /* Swap the static map PNG for a real embed. Copy the div's own inline geometry
+       (left/top/width/height/border-radius/overflow) onto the iframe rather than
+       hardcoding it, so this survives a Figma re-pull that shifts the slot. The
+       PNG div is removed outright -- an iframe needs no image asset behind it. */
+    var mapSlotStyle = f.map.getAttribute('style')
+      .replace(/background-image:[^;]*;?/, '').replace(/background-size:[^;]*;?/, '')
+      .replace(/background-position:[^;]*;?/, '').replace(/background-repeat:[^;]*;?/, '');
+    var mapFrame = document.createElement('iframe');
+    mapFrame.className = 'ax-mt-mapframe';
+    mapFrame.setAttribute('style', mapSlotStyle + 'border:0;');
+    mapFrame.setAttribute('loading', 'lazy');
+    mapFrame.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
+    mapFrame.setAttribute('title', 'Map');
+    f.map.parentNode.replaceChild(mapFrame, f.map);
+    f.map = mapFrame;
+
     var mob = !!row.closest('.ax-mob');
     var FAC = mob ? F_M : F_D;
     var panel = f.tag.closest('.g-b.g-clip') || row;
@@ -175,7 +199,7 @@
       arm(t, i);
     }
 
-    var cur = 0, warmed = {};
+    var cur = 0;
 
     function paint(sel){
       for (var i=0;i<6;i++){
@@ -197,8 +221,7 @@
       f.addr.style.height = vw(g[2], FAC);
       f.tel.textContent  = city.tel;
       f.mail.textContent = city.mail;
-      f.map.style.backgroundImage = 'url(/assets/gen/'+city.map+'.png)';
-      f.map.setAttribute('data-ref', city.map);
+      f.map.src = mapSrc(city.addr);
     }
     /* centre the cell in the clip, clamped to the ends of the row. On desktop the six
        cells exactly fill the strip so this always resolves to 0. */
@@ -210,13 +233,7 @@
       if (x < 0.01) x = 0;
       strip.style.left = (-x).toFixed(4)+'vw';
     }
-    function warm(sel){
-      var r = CITY[sel].map;
-      if (warmed[r]) return;
-      warmed[r] = 1;
-      (new Image()).src = '/assets/gen/'+r+'.png';    /* maps are ~1.5MB: on demand */
-    }
-    /* fields in stagger order: tag leads, heading next, map with it, details last */
+/* fields in stagger order: tag leads, heading next, map with it, details last */
     var flow = [[f.tag,0],[f.head,1],[f.map,1],[f.addr,2],[f.tel,3],[f.mail,3]];
     var swapTimer = null;
     var noMotion = window.matchMedia && matchMedia('(prefers-reduced-motion:reduce)').matches;
@@ -225,7 +242,7 @@
       if (sel !== cur){
         var dir = sel > cur ? 1 : -1;
         cur = sel;
-        paint(sel); bring(sel); warm(sel);
+        paint(sel); bring(sel);
         if (noMotion){
           apply(CITY[sel]);
         } else {
@@ -250,8 +267,6 @@
     }
     function arm(t, sel){
       t.addEventListener('click', function(e){ e.preventDefault(); select(sel, false); });
-      t.addEventListener('mouseenter', function(){ warm(sel); });
-      t.addEventListener('focus', function(){ warm(sel); });
       t.addEventListener('keydown', function(e){
         var k = e.key;
         if (k === 'Enter' || k === ' ' || k === 'Spacebar'){ e.preventDefault(); select(sel, true); }
@@ -262,8 +277,11 @@
       });
     }
 
-    /* Mumbai is already in the DOM verbatim from Figma -- only add the semantics,
-       never re-render it, so the initial paint stays byte-exact. */
+    /* Mumbai's TEXT is already in the DOM verbatim from Figma -- apply() is never
+       called for it so that copy stays byte-exact. The map is the one exception:
+       the PNG it used to sit on is gone (replaced by the live iframe above), so it
+       needs its src set explicitly, or the panel opens on a blank frame. */
+    f.map.src = mapSrc(CITY[0].addr);
     paint(0); bring(0);
     row.setAttribute('data-axmt','1');
   }

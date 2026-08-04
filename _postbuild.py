@@ -38,6 +38,7 @@ SCOPED = [
     ('who-we-are/culture/index.html', 'ax-recogfx-css', '_recogfx.html'),
     ('contact-us/index.html',         'ax-maptabs-css', '_maptabs.html'),
     ('contact-us/index.html',         'ax-ftabs-css',   '_formtabs.html'),
+    ('contact-us/index.html',         'ax-cform-css',   '_forminputs.html'),
     ('services/aws/index.html',       'ax-awstabs-css', '_awstabs.html'),
     ('industries/manufacturing/index.html',            'ax-gearspin-css', '_gearspin.html'),
     ('industries/metals-engineering/index.html',       'ax-gearspin-css', '_gearspin.html'),
