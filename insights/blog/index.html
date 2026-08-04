@@ -3091,5 +3091,173 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
 })();
 </script>
 
+<style id="ax-bloglist-css">
+/* Real posts on /insights/blog/. The Figma hero slots (one featured card + three
+   compact rows) are rewritten in place, so that part of the pixel-locked layout is
+   untouched. Everything below "Browse by category" is a normal-flow grid: 53 cards
+   cannot be absolutely positioned into a fixed-height frame, and only the footer
+   follows it. Card styling mirrors the Figma cards (same radius, hairline, type
+   scale and brand chip). */
+.ax-bl-grid{position:relative;margin:1.5vw 7.9vw 4vw;display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(19rem,1fr));gap:1.6vw 1.25vw;
+  font-family:'Nunito Sans',sans-serif}
+.ax-bl-card{display:flex;flex-direction:column;text-decoration:none;color:inherit;
+  border:1px solid rgb(236,238,242);border-radius:.6vw;overflow:hidden;background:#fff;
+  transition:transform .22s cubic-bezier(.22,.61,.36,1),box-shadow .22s ease}
+.ax-bl-card:hover{transform:translateY(-.2vw);
+  box-shadow:0 .4vw 1.05vw rgba(35,39,46,.10),inset 0 0 0 1px rgba(223,63,23,.45)}
+.ax-bl-card:focus-visible{outline:2px solid rgb(223,63,23);outline-offset:2px}
+.ax-bl-thumb{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;background:#F6F7F9}
+.ax-bl-thumb--ph{object-fit:contain;padding:2.2vw}
+.ax-bl-body{padding:1vw 1.05vw 1.25vw}
+.ax-bl-chip{display:inline-block;font-size:.63rem;font-weight:700;letter-spacing:.07em;
+  text-transform:uppercase;color:rgb(223,63,23);background:rgb(254,245,238);
+  padding:.25rem .5rem;border-radius:.2rem;margin-bottom:.55rem}
+.ax-bl-title{font-size:1rem;font-weight:700;line-height:1.35;color:rgb(35,39,46);margin:0 0 .45rem}
+.ax-bl-date{font-size:.8rem;color:rgb(82,96,119)}
+.ax-bl-filters{position:relative;margin:0 7.9vw 1vw;display:flex;flex-wrap:wrap;gap:.5rem;
+  font-family:'Nunito Sans',sans-serif}
+.ax-bl-f{border:1px solid rgb(213,218,226);background:#fff;border-radius:99px;
+  padding:.35rem .9rem;font-size:.82rem;font-weight:600;color:rgb(82,96,119);cursor:pointer;
+  transition:background-color .2s ease,color .2s ease,border-color .2s ease}
+.ax-bl-f[aria-pressed="true"]{background:rgb(223,63,23);color:#fff;border-color:rgb(223,63,23)}
+.ax-bl-count{position:relative;margin:0 7.9vw .6vw;font-family:'Nunito Sans',sans-serif;
+  font-size:.85rem;color:rgb(82,96,119)}
+@media (prefers-reduced-motion:reduce){.ax-bl-card{transition:none}.ax-bl-card:hover{transform:none}}
+@media (max-width:1024px){
+  .ax-bl-grid,.ax-bl-filters,.ax-bl-count{margin-left:5vw;margin-right:5vw}
+  .ax-bl-grid{grid-template-columns:1fr;gap:4vw}
+  .ax-bl-card{border-radius:2vw}
+}
+</style>
+<script>
+/* ---- REAL BLOG INDEX ---- */
+(function(){
+  var POSTS = [{"u":"/2026/07/08/guardrails-for-production-genai-how-we-stopped-prompt-injection-and-pii-leakage-before-it-reached-amazon-bedrock/10/00/00/243291/aws/chandni-gadhvi/","t":"Guardrails for Production GenAI: How We Stopped Prompt Injection and PII Leakage Before It Reached Amazon Bedrock","c":"AWS","d":"July 8, 2026","i":"https://www.aeonx.digital/wp-content/plugins/revslider/public/assets/assets/dummy.png","ph":0,"ts":"20260708"},{"u":"/2026/07/02/how-an-fmcg-manufacturer-reduced-logistics-costs-by-24-using-agentic-ai-on-aws-architecture-deployment-and-what-broke/10/00/00/243275/uncategorized/rajat-jindal/","t":"How an FMCG Manufacturer Reduced Logistics Costs by 24% Using Agentic AI on AWS: Architecture, Deployment, and What Broke","c":"Insights","d":"July 2, 2026","i":"https://www.aeonx.digital/wp-content/uploads/2026/07/blog12-architecture-diagram.png","ph":0,"ts":"20260702"},{"u":"/2026/06/24/cost-aware-ai-architecture-how-we-reduced-amazon-bedrock-spend-by-52-without-sacrificing-output-quality/10/00/00/243290/aws/chandni-gadhvi/","t":"Cost-Aware AI Architecture: How We Reduced Amazon Bedrock Spend by 52% Without Sacrificing Output Quality","c":"AWS","d":"June 24, 2026","i":"https://www.aeonx.digital/wp-content/uploads/2026/07/aws-blog7-diagram-v2.png","ph":0,"ts":"20260624"},{"u":"/2026/06/11/how-an-enterprise-apparel-company-cut-expense-claim-processing-from-45-minutes-to-under-5-using-agentic-ai-on-aws-architecture-deployment-and-what-broke/10/00/00/243274/uncategorized/rajat-jindal/","t":"How an Enterprise Apparel Company Cut Expense Claim Processing From 45 Minutes to Under 5 Using Agentic AI on AWS: Architecture, Deployment, and What Broke","c":"Insights","d":"June 11, 2026","i":"https://www.aeonx.digital/wp-content/uploads/2026/06/blog11-architecture-diagram.png","ph":0,"ts":"20260611"},{"u":"/2026/06/10/building-a-self-healing-data-pipeline-on-aws-how-we-used-amazon-bedrock-to-diagnose-and-auto-remediate-etl-failures/10/00/00/243289/aws/chandni-gadhvi/","t":"Building a Self-Healing Data Pipeline on AWS: How We Used Amazon Bedrock to Diagnose and Auto-Remediate ETL Failures","c":"AWS","d":"June 10, 2026","i":"https://www.aeonx.digital/wp-content/uploads/2026/07/aws-blog6-diagram.png","ph":0,"ts":"20260610"},{"u":"/2026/05/27/agentic-ai-in-finance-how-we-built-an-autonomous-accounts-payable-agent-on-amazon-bedrock-that-processes-invoices-end-to-end/10/00/00/243288/aws/chandni-gadhvi/","t":"Agentic AI in Finance: How We Built an Autonomous Accounts Payable Agent on Amazon Bedrock That Processes Invoices End-to-End","c":"AWS","d":"May 27, 2026","i":"https://www.aeonx.digital/wp-content/uploads/2026/07/aws-blog5-diagram.png","ph":0,"ts":"20260527"},{"u":"/2026/05/21/sap-on-aws-meets-generative-ai-why-your-erp-is-the-most-underused-ai-data-source-in-the-enterprise/10/00/00/243271/uncategorized/rajat-jindal/","t":"SAP on AWS Meets Generative AI: Why Your ERP Is the Most Underused AI Data Source in the Enterprise","c":"Insights","d":"May 21, 2026","i":"https://www.aeonx.digital/wp-content/uploads/diagram10.png","ph":0,"ts":"20260521"},{"u":"/2026/05/13/multi-tenant-ai-how-we-built-a-single-amazon-bedrock-integration-that-serves-five-business-units-with-isolated-data-security-and-costs/10/00/00/243287/aws/chandni-gadhvi/","t":"Multi-Tenant AI: How We Built a Single Amazon Bedrock Integration That Serves Five Business Units With Isolated Data, Security, and Costs","c":"AWS","d":"May 13, 2026","i":"https://www.aeonx.digital/wp-content/uploads/2026/07/aws-blog4-diagram.png","ph":0,"ts":"20260513"},{"u":"/2026/05/07/data-governance-is-the-ai-gatekeeper-how-lake-formation-decides-what-your-ai-can-and-cannot-see/10/00/00/243270/uncategorized/rajat-jindal/","t":"Data Governance Is the AI Gatekeeper: How Lake Formation Decides What Your AI Can and Cannot See","c":"Insights","d":"May 7, 2026","i":"/assets/aeonx-logo.svg","ph":1,"ts":"20260507"},{"u":"/2026/04/29/the-observability-gap-in-ml-systems-how-we-built-a-model-health-dashboard-that-catches-degradation-before-users-do/10/00/00/243286/aws/chandni-gadhvi/","t":"The Observability Gap in ML Systems: How We Built a Model Health Dashboard That Catches Degradation Before Users Do","c":"AWS","d":"April 29, 2026","i":"https://www.aeonx.digital/wp-content/uploads/2026/07/aws-blog3-diagram.png","ph":0,"ts":"20260429"},{"u":"/2026/04/23/zero-etl-is-the-end-of-pipeline-engineering-how-aws-is-eliminating-the-data-lakes-biggest-bottleneck/10/00/00/243269/uncategorized/rajat-jindal/","t":"Zero-ETL Is the End of Pipeline Engineering: How AWS Is Eliminating the Data Lake\u2019s Biggest Bottleneck","c":"Insights","d":"April 23, 2026","i":"https://www.aeonx.digital/wp-content/uploads/diagram8_1.png","ph":0,"ts":"20260423"},{"u":"/2026/04/15/building-an-ai-powered-visual-inspection-system-on-aws-with-yolov11-and-amazon-bedrock/10/00/00/243197/aws/chandni-gadhvi/","t":"Building an AI-Powered Visual Inspection System on AWS with YOLOv11 and Amazon Bedrock","c":"AWS","d":"April 15, 2026","i":"https://www.aeonx.digital/wp-content/uploads/2026/07/aws-blog2-diagram.png","ph":0,"ts":"20260415"},{"u":"/2026/04/09/your-data-lake-is-a-data-swamp-until-ai-can-query-it-building-semantic-data-lakes-on-aws/10/00/00/243268/aws/rajat-jindal/","t":"Your Data Lake Is a Data Swamp Until AI Can Query It: Building Semantic Data Lakes on AWS","c":"AWS","d":"April 9, 2026","i":"https://www.aeonx.digital/wp-content/uploads/diagram7.png","ph":0,"ts":"20260409"},{"u":"/2026/04/01/architecting-an-ai-driven-freight-optimization-platform-on-aws-using-amazon-bedrock-and-sagemaker/10/00/00/243180/aws/chandni-gadhvi/","t":"Architecting an AI-Driven Freight Optimization Platform on AWS Using Amazon Bedrock and SageMaker","c":"AWS","d":"April 1, 2026","i":"https://www.aeonx.digital/wp-content/uploads/2026/07/aws-blog1-diagram.png","ph":0,"ts":"20260401"},{"u":"/2026/03/26/the-multi-model-strategy-why-locking-into-one-ai-provider-is-the-new-vendor-lock-in/10/00/00/243267/uncategorized/rajat-jindal/","t":"The Multi-Model Strategy: Why Locking Into One AI Provider Is the New Vendor Lock-In","c":"Insights","d":"March 26, 2026","i":"https://www.aeonx.digital/wp-content/uploads/2026/03/blog6-architecture-diagram.png","ph":0,"ts":"20260326"},{"u":"/2026/03/05/shadow-ai-is-the-biggest-data-risk-your-ciso-hasnt-budgeted-for-and-its-already-inside-your-organisation/10/00/00/243266/uncategorized/rajat-jindal/","t":"Shadow AI Is the Biggest Data Risk Your CISO Hasn\u2019t Budgeted For \u2014 And It\u2019s Already Inside Your Organisation","c":"Insights","d":"March 5, 2026","i":"/assets/aeonx-logo.svg","ph":1,"ts":"20260305"},{"u":"/2026/02/12/building-an-ai-ready-data-foundation/10/00/00/243240/aws/rajat-jindal/","t":"Building an AI-Ready Data Foundation","c":"AWS","d":"February 12, 2026","i":"/assets/aeonx-logo.svg","ph":1,"ts":"20260212"},{"u":"/2026/02/05/applying-the-aws-well-architected-framework-to-modernize-a-legacy-crm-and-employee-portal-platform/10/00/00/243212/aws/rajat-jindal/","t":"Applying the AWS Well-Architected Framework to Modernize a Legacy CRM and Employee Portal Platform","c":"AWS","d":"February 5, 2026","i":"/assets/aeonx-logo.svg","ph":1,"ts":"20260205"},{"u":"/2026/01/29/architecting-a-secure-multi-application-platform-with-ci-cd-and-cross-region-disaster-recovery-on-aws/10/00/00/243183/aws/rajat-jindal/","t":"Architecting a Secure Multi-Application Platform with CI/CD and Cross-Region Disaster Recovery on AWS","c":"AWS","d":"January 29, 2026","i":"https://www.aeonx.digital/wp-content/uploads/2026/01/blog2-architecture-diagram.png","ph":0,"ts":"20260129"},{"u":"/2026/01/26/architecting-a-secure-multi-vpc-rd-platform-on-aws-with-hybrid-connectivity-and-ci-cd-automation/01/23/06/243191/aws/rajat-jindal/","t":"Architecting a Secure Multi-VPC R&D Platform on AWS with Hybrid Connectivity and CI/CD Automation","c":"AWS","d":"January 26, 2026","i":"/assets/aeonx-logo.svg","ph":1,"ts":"20260126"},{"u":"/2026/01/23/building-a-real-time-inventory-validation-system-on-aws-using-iot-containers-and-automated-devops/01/13/19/243176/aws/rajat-jindal/","t":"Building a Real-Time Inventory Validation System on AWS Using IoT, Containers, and Automated DevOps","c":"AWS","d":"January 23, 2026","i":"/assets/aeonx-logo.svg","ph":1,"ts":"20260123"},{"u":"/2026/01/22/modernizing-enterprise-crm-and-employee-platforms-with-aws-fargate-and-end-to-end-ci-cd/10/00/00/243171/aws/rajat-jindal/","t":"Modernizing an Enterprise CRM Platform Using Amazon ECS Fargate and AWS CI/CD","c":"AWS","d":"January 22, 2026","i":"https://www.aeonx.digital/wp-content/uploads/2026/01/blog1-architecture-diagram.png","ph":0,"ts":"20260122"},{"u":"/2023/04/14/itd/05/25/44/240713/success-stories-sap/admin/","t":"ITD Cementation","c":"Success Stories","d":"April 14, 2023","i":"https://www.aeonx.digital/wp-content/uploads/2023/04/itd-top-banner.jpg","ph":0,"ts":"20230414"},{"u":"/2023/03/01/sap-on-aws-delux-bearings/04/21/19/240608/success-stories-aws/admin/","t":"Hosting SAP workloads on AWS","c":"Success Stories","d":"March 1, 2023","i":"https://www.aeonx.digital/wp-content/uploads/2023/03/top-banner2.jpg","ph":0,"ts":"20230301"},{"u":"/2023/01/03/ashok-alco-chem-case-study/07/29/19/240171/success-stories-aws/admin/","t":"SAP AMS support for mining and exploration.","c":"Success Stories","d":"January 3, 2023","i":"https://www.aeonx.digital/wp-content/uploads/2023/01/test-post2-2.jpg","ph":0,"ts":"20230103"},{"u":"/2023/01/03/ckbh-case-study/07/01/09/240160/success-stories-aws/admin/","t":"SAP AMS support for mining and exploration.","c":"Success Stories","d":"January 3, 2023","i":"https://www.aeonx.digital/wp-content/uploads/2023/01/top-banner-final.jpg","ph":0,"ts":"20230103"},{"u":"/2023/01/03/konark-case-study/05/36/54/240144/success-stories-aws/admin/","t":"SAP AMS support for mining and exploration.","c":"Success Stories","d":"January 3, 2023","i":"https://www.aeonx.digital/wp-content/uploads/2023/01/top-banner.jpg","ph":0,"ts":"20230103"},{"u":"/2022/09/30/reaping-the-benefits-of-aws/11/34/26/239403/success-stories-aws/admin/","t":"Reaping the benefits of AWS","c":"Success Stories","d":"September 30, 2022","i":"https://www.aeonx.digital/wp-content/uploads/2022/09/MicrosoftTeams-image-1-1.jpg","ph":0,"ts":"20220930"},{"u":"/2022/09/15/bvg-india-limited-deploys-aws-for-disaster-recovery-2/10/08/31/1112/aws/admin/","t":"BVG India Limited deploys AWS for Disaster Recovery","c":"AWS","d":"September 15, 2022","i":"https://www.aeonx.digital/wp-content/uploads/2022/09/02_Aeonx-blog-02-1.jpg","ph":0,"ts":"20220915"},{"u":"/2022/09/13/public-sector-competency-in-aws/12/56/17/1052/aws/admin/","t":"Public Sector Competency in AWS","c":"AWS","d":"September 13, 2022","i":"https://www.aeonx.digital/wp-content/uploads/2022/09/technology.jpg","ph":0,"ts":"20220913"},{"u":"/2022/09/06/sap-ams-for-using-multiple-data-sources/10/09/42/1009/sap/admin/","t":"SAP AMS for using multiple data sources","c":"SAP","d":"September 6, 2022","i":"https://www.aeonx.digital/wp-content/uploads/2022/09/03_AeonX-Blogs-02.jpg","ph":0,"ts":"20220906"},{"u":"/2022/09/06/sap-ams-support-for-mining-and-exploration/10/32/56/1007/sap/admin/","t":"SAP AMS support for mining and exploration.","c":"SAP","d":"September 6, 2022","i":"https://www.aeonx.digital/wp-content/uploads/2022/09/Untitled-design-2.jpg","ph":0,"ts":"20220906"},{"u":"/2022/09/06/the-proliferation-of-brands-with-sap-ams-cpg/10/17/32/1012/sap/admin/","t":"The proliferation of brands with SAP AMS CPG.","c":"SAP","d":"September 6, 2022","i":"https://www.aeonx.digital/wp-content/uploads/2022/09/03_AeonX-Blogs-04.jpg","ph":0,"ts":"20220906"},{"u":"/2022/09/06/success-story-of-technology-adoption/12/09/24/1003/sap/admin/","t":"Success Story of Technology Adoption","c":"SAP","d":"September 6, 2022","i":"https://www.aeonx.digital/wp-content/uploads/2022/09/02_Aeonx-blog-01.jpg","ph":0,"ts":"20220906"},{"u":"/2022/09/01/sap-ams-to-streamline-and-enhance-real-state-management-processes/12/49/29/1000/sap/admin/","t":"SAP AMS to streamline and enhance Real State management processes.","c":"SAP","d":"September 1, 2022","i":"https://www.aeonx.digital/wp-content/uploads/2022/09/03_AeonX-Blogs-03.jpg","ph":0,"ts":"20220901"},{"u":"/2022/08/30/sap-ams-to-establish-strategic-and-targeted-value/12/06/57/996/sap/admin/","t":"SAP AMS to establish strategic and targeted value.","c":"SAP","d":"August 30, 2022","i":"https://www.aeonx.digital/wp-content/uploads/2022/08/02_Aeonx-blog-02.jpg","ph":0,"ts":"20220830"},{"u":"/2022/08/30/sap-ams-fostering-advancement-through-developing-technology/12/10/13/992/sap/admin/","t":"SAP AMS fostering advancement through developing technology.","c":"SAP","d":"August 30, 2022","i":"https://www.aeonx.digital/wp-content/uploads/2022/08/02_Aeonx-blog-04.jpg","ph":0,"ts":"20220830"},{"u":"/2022/07/19/case-study-for-integration-of-trackabout-with-sap-erp/07/52/04/984/sap/admin/","t":"Case Study for Integration of TrackAbout with SAP ERP","c":"SAP","d":"July 19, 2022","i":"https://www.aeonx.digital/wp-content/uploads/2022/07/01_Aeonx-blog-04.jpg","ph":0,"ts":"20220719"},{"u":"/2022/07/07/migrate-to-modernize-a-case-study/06/08/04/938/aws/admin/","t":"Migrate-to-Modernize: A Case Study","c":"AWS","d":"July 7, 2022","i":"https://www.aeonx.digital/wp-content/uploads/2022/07/01_Aeonx-blog-02-1.jpg","ph":0,"ts":"20220707"},{"u":"/2022/06/13/aeonx-modernizing-the-gopal-namkeen-processing-system-using-sap/14/37/26/932/sap/admin/","t":"AeonX modernizing the Gopal Namkeen processing system using SAP/AWS","c":"SAP","d":"June 13, 2022","i":"https://www.aeonx.digital/wp-content/uploads/2022/06/01_Aeonx-blog-01.jpg","ph":0,"ts":"20220613"},{"u":"/2022/06/08/aeonx-aws-partner-network/05/48/43/918/aws/admin/","t":"AeonX achieves Advanced Tier Status in the AWS Partner Network","c":"AWS","d":"June 8, 2022","i":"https://www.aeonx.digital/wp-content/uploads/2022/06/Untitled-design-10.jpg","ph":0,"ts":"20220608"},{"u":"/2022/03/11/disaster-recovery-for-bhilosa-industry-using-aws/09/17/41/814/sap/admin/","t":"Disaster Recovery for Bhilosa Industry Using AWS.","c":"SAP","d":"March 11, 2022","i":"https://www.aeonx.digital/wp-content/uploads/2022/03/Disaster-Recovery-using-AWS.jpg","ph":0,"ts":"20220311"},{"u":"/2022/03/11/sap-consultant-guide-career-salary-jobs-scope-skills/06/41/07/795/sap/admin/","t":"A Sap Consultant Guide 2022 : Career, Salary, Jobs, Scope, Skills","c":"SAP","d":"March 11, 2022","i":"https://www.aeonx.digital/wp-content/uploads/2022/03/sap_guide.jpg","ph":0,"ts":"20220311"},{"u":"/2021/12/18/is-the-rise-of-the-internet-increasing-the-need-for-digital-transformation-in-businesses/08/22/06/768/digital-transformation/admin/","t":"What role does the internet play in the rise of Digital Transformation?","c":"Digital Transformation","d":"December 18, 2021","i":"https://www.aeonx.digital/wp-content/uploads/2021/12/AenoX-Blog-Banner-3-1.png","ph":0,"ts":"20211218"},{"u":"/2021/12/17/what-does-cloud-computing-mean-for-todays-businesses/14/13/21/746/cloud-computing/admin/","t":"What does cloud computing mean for today's businesses","c":"Cloud","d":"December 17, 2021","i":"https://www.aeonx.digital/wp-content/uploads/2021/12/AenoX-Blog-Banner.png","ph":0,"ts":"20211217"},{"u":"/2021/03/15/how-does-sap-protect-your-data/07/54/52/694/sap/admin/","t":"How Does SAP Protect Your Data? - AeonX Digital Solution","c":"SAP","d":"March 15, 2021","i":"https://www.aeonx.digital/wp-content/uploads/2021/03/Untitled-design-3.jpg","ph":0,"ts":"20210315"},{"u":"/2021/02/07/driving-innovation-with-sap/06/49/35/631/sap/admin/","t":"Driving Innovation With SAP","c":"SAP","d":"February 7, 2021","i":"https://www.aeonx.digital/wp-content/uploads/2021/02/Untitled-design-4.jpg","ph":0,"ts":"20210207"},{"u":"/2021/01/28/sap-interview-questions/07/21/25/633/sap/admin/","t":"Top 30 SAP Interview Questions & Answers","c":"SAP","d":"January 28, 2021","i":"https://www.aeonx.digital/wp-content/uploads/2021/01/Untitled-design-5.jpg","ph":0,"ts":"20210128"},{"u":"/2020/12/29/e-invoicing-under-gst-india/06/43/49/628/sap/admin/","t":"E-Invoicing Under GST India","c":"SAP","d":"December 29, 2020","i":"https://www.aeonx.digital/wp-content/uploads/2020/12/Untitled-design-6.jpg","ph":0,"ts":"20201229"},{"u":"/2020/12/16/where-there-is-business-there-is-sap/06/52/05/624/sap/admin/","t":"Where There Is Business, There is SAP","c":"SAP","d":"December 16, 2020","i":"https://www.aeonx.digital/wp-content/uploads/2020/12/Untitled-design-7.jpg","ph":0,"ts":"20201216"},{"u":"/2020/10/19/search-string-in-electronic-bank-reconciliation-mt940-format-part-ii/17/10/16/607/sap/admin/","t":"Search String in Electronic Bank Reconciliation \u2013 MT940 Format \u2013 Part II","c":"SAP","d":"October 19, 2020","i":"https://www.aeonx.digital/wp-content/uploads/2020/10/Untitled-design-8.jpg","ph":0,"ts":"20201019"},{"u":"/2020/10/19/steps-to-activate-electronic-bank-reconciliation-statement-mt940-format-part-i/17/04/20/604/sap/admin/","t":"Steps to Activate Electronic BRS \u2013 MT940 Format \u2013 Part I","c":"SAP","d":"October 19, 2020","i":"https://www.aeonx.digital/wp-content/uploads/2020/10/Untitled-design-8.jpg","ph":0,"ts":"20201019"},{"u":"/2020/10/12/sales-order-level-approval-workflow-and-release-from-credit-block-2-in-1/11/08/18/545/sap/admin/","t":"Sales Order \u2013 Level Approval Workflow","c":"SAP","d":"October 12, 2020","i":"https://www.aeonx.digital/wp-content/uploads/2020/10/Untitled-design-9-400x250.jpg","ph":0,"ts":"20201012"}];
+  var CATS  = ["All","AWS","Insights","Success Stories","SAP","Digital Transformation","Cloud"];
+
+  function el(tag, cls, txt){
+    var e=document.createElement(tag);
+    if(cls) e.className=cls;
+    if(txt!=null) e.textContent=txt;
+    return e;
+  }
+
+  function card(p){
+    var a=el('a','ax-bl-card'); a.href=p.u;
+    var img=el('img','ax-bl-thumb'+(p.ph?' ax-bl-thumb--ph':''));
+    img.src=p.i; img.alt=p.t; img.loading='lazy';
+    var b=el('div','ax-bl-body');
+    b.appendChild(el('span','ax-bl-chip',p.c));
+    b.appendChild(el('h3','ax-bl-title',p.t));
+    b.appendChild(el('div','ax-bl-date',p.d));
+    a.appendChild(img); a.appendChild(b);
+    return a;
+  }
+
+  /* Rewrite the four Figma hero slots with the newest posts. Each slot is a set of
+     flat siblings (image box, chip, title) rather than a nested card, so they are
+     matched by the dummy copy they ship with -- geometry alone cannot tell a title
+     from any other text at that size. */
+  var HERO = [
+    {title:'Making sense of the AI control plane', chip:'Enterprise AI'},
+    {title:'MCP authorization: Roll out AI to every team, safely', chip:'PRODUCT'},
+    {title:'We were wrong about the hard problem', chip:'ENTERPRISE AI'},
+    {title:'AEONX is SOC 2 Type II and ISO 27001 certified', chip:'OTHER'}
+  ];
+  function txt(e){ return (e.textContent||'').replace(/\s+/g,' ').trim(); }
+
+  function fillHero(){
+    var texts=[].slice.call(document.querySelectorAll('main.ax-page .g-t'));
+    HERO.forEach(function(h,i){
+      var p=POSTS[i]; if(!p) return;
+      /* replace EVERY copy: the mobile block (.ax-mob) is injected inside
+         main.ax-page and carries its own duplicate of each hero slot */
+      var nodes=texts.filter(function(t){ return txt(t)===h.title; });
+      if(!nodes.length) return;
+      nodes.forEach(function(node){
+      node.textContent=p.t;
+      node.style.whiteSpace='normal';
+      node.style.overflow='hidden';
+      /* make the whole slot navigate; the chrome CTA pass ignores plain text */
+      node.style.cursor='pointer';
+      node.setAttribute('role','link');
+      node.setAttribute('tabindex','0');
+      var go=function(){ location.href=p.u; };
+      node.addEventListener('click',go);
+      node.addEventListener('keydown',function(e){
+        if(e.key==='Enter'||e.key===' '){ e.preventDefault(); go(); }
+      });
+      /* nearest chip above the title inside the same column */
+      var tr=node.getBoundingClientRect();
+      var chip=texts.filter(function(t){
+        var r=t.getBoundingClientRect();
+        return t!==node && r.bottom<=tr.top+2 && tr.top-r.bottom<90 &&
+               Math.abs(r.left-tr.left)<40 && /^[A-Z][A-Z &]+$/.test(txt(t));
+      }).sort(function(a,b){ return b.getBoundingClientRect().bottom-a.getBoundingClientRect().bottom; })[0];
+      if(chip) chip.textContent=p.c.toUpperCase();
+      });
+    });
+  }
+
+  function buildGrid(){
+    /* anchor: the designed "Browse by category" heading */
+    var anchor=[].slice.call(document.querySelectorAll('main.ax-page .g-t'))
+      .filter(function(t){ return /^Browse by category/i.test(txt(t)); })[0];
+    var page=document.querySelector('main.ax-page');
+    if(!page || page.dataset.axBl) return;
+    page.dataset.axBl='1';
+
+    var filters=el('div','ax-bl-filters');
+    var count=el('div','ax-bl-count');
+    var grid=el('div','ax-bl-grid');
+    var active='All';
+
+    function render(){
+      grid.textContent='';
+      var list=POSTS.filter(function(p){ return active==='All'||p.c===active; });
+      list.forEach(function(p){ grid.appendChild(card(p)); });
+      count.textContent=list.length+(list.length===1?' article':' articles')+
+        (active==='All'?'':' in '+active);
+      [].slice.call(filters.children).forEach(function(b){
+        b.setAttribute('aria-pressed', String(b.textContent===active));
+      });
+    }
+    CATS.forEach(function(c){
+      var b=el('button','ax-bl-f',c);
+      b.type='button';
+      b.addEventListener('click',function(){ active=c; render(); });
+      filters.appendChild(b);
+    });
+
+    /* Replace the designed dummy chips: they name categories this site does not
+       have (Product / Engineering). The real ones are derived from the posts. */
+    var dummy=[].slice.call(document.querySelectorAll('main.ax-page .g-t'))
+      .filter(function(t){ return /^(All|Product|Engineering|Other)$/.test(txt(t)); });
+    dummy.forEach(function(t){ t.style.display='none'; });
+
+    if(anchor){
+      /* park the real controls after the pixel-locked page, before the footer */
+      var foot=page.querySelector('section.ax-footer');
+      page.insertBefore(filters, foot);
+      page.insertBefore(count, foot);
+      page.insertBefore(grid, foot);
+    } else {
+      page.appendChild(filters); page.appendChild(count); page.appendChild(grid);
+    }
+    /* the page height is hard-coded in vw for the absolute layout; normal-flow
+       content added after it needs the cap lifted or it would be clipped */
+    page.style.height='auto';
+    page.style.minHeight='0';
+    page.style.overflow='visible';
+    render();
+  }
+
+  function init(){ try{ fillHero(); }catch(e){} buildGrid(); }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init);
+  else init();
+})();
+</script>
+
 </body>
 </html>
