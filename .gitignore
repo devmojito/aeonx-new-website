@@ -21,3 +21,6 @@ node_modules
 
 # Blog publishing runbook (Webmin root URL, server IP, DB name) - do not commit
 blog-fetch.md
+
+# Harvested blog content pack (large, regenerable from the public site)
+_blogdata.json
