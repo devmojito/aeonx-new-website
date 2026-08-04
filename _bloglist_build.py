@@ -219,32 +219,92 @@ FRAGMENT = r'''<style id="ax-bloglist-css">
         if(c.chip)  c.chip.el.style.visibility  = p?'':'hidden';
         fill(c,p);
       });
-      if(pager){
-        var total=Math.max(1,Math.ceil(Math.max(0,list.length-hero.length)/grid.length));
-        label.textContent=(pageNo+1)+' / '+total+'  ·  '+list.length+' articles';
-        prev.disabled=pageNo<=0; next.disabled=pageNo>=total-1;
-      }
+      var total=Math.max(1,Math.ceil(Math.max(0,list.length-hero.length)/Math.max(1,grid.length)));
+      if(pageNo>total-1){ pageNo=total-1; }
+      paintPager(total);
     }
 
-    /* pager sits under the designed grid, absolutely positioned like everything
-       else on this page so nothing reflows */
+    /* Wire the DESIGNED pagination row (\u2039 1 2 3 4 5 \u2026 40 \u203a) rather than adding
+       another one. The numbers are plain .g-t nodes on a single baseline; the arrows
+       are the small bordered boxes flanking them. Labels are rewritten to the real
+       page count, and any surplus number slot is hidden. */
     var pager=null,prev,next,label;
-    if(grid.length){
-      var last=grid[grid.length-1];
-      pager=document.createElement('div');
-      pager.className='ax-bl-page';
-      prev=document.createElement('button'); prev.type='button'; prev.textContent='\u2039';
-      next=document.createElement('button'); next.type='button'; next.textContent='\u203a';
-      label=document.createElement('span');
-      prev.setAttribute('aria-label','Previous page');
-      next.setAttribute('aria-label','Next page');
-      pager.appendChild(prev); pager.appendChild(label); pager.appendChild(next);
-      var pr=s.page.getBoundingClientRect();
-      pager.style.left=(grid[0].img.r.left-pr.left)+'px';
-      pager.style.top=(last.title? last.title.r.bottom-pr.top+28 : last.img.r.bottom-pr.top+28)+'px';
-      s.page.appendChild(pager);
-      prev.addEventListener('click',function(){ if(pageNo>0){pageNo--; render();} });
-      next.addEventListener('click',function(){ pageNo++; render(); });
+    var numRow=s.texts.filter(function(t){ return /^(\d{1,3}|\u2026|\.\.\.)$/.test(t.t) && t.r.width; });
+    var pagBar=null;
+    if(numRow.length>=3){
+      var yy={};
+      numRow.forEach(function(t){ var k=Math.round(t.r.top/6); (yy[k]=yy[k]||[]).push(t); });
+      var best=Object.keys(yy).map(function(k){ return yy[k]; })
+        .sort(function(a,b){ return b.length-a.length; })[0];
+      if(best&&best.length>=3){
+        best.sort(function(a,b){ return a.r.left-b.r.left; });
+        pagBar=best;
+      }
+    }
+    var arrows=[];
+    if(pagBar){
+      var ry=pagBar[0].r.top;
+      s.page.querySelectorAll('.g-b').forEach(function(e){
+        if(e.closest('.ax-mob')) return;
+        var r=e.getBoundingClientRect();
+        if(Math.abs(r.top-ry)<80 && r.width>24 && r.width<110 && r.height>24 && r.height<110)
+          arrows.push({el:e,r:r});
+      });
+      arrows.sort(function(a,b){ return a.r.left-b.r.left; });
+    }
+
+    function paintPager(total){
+      if(!pagBar) return;
+      /* windowed numbering: 1..5 then an ellipsis then the last page, exactly the
+         shape the design draws */
+      var nums=[],i;
+      if(total<=pagBar.length){ for(i=1;i<=total;i++) nums.push(String(i)); }
+      else {
+        var start=Math.min(Math.max(1,pageNo),Math.max(1,total-4));
+        for(i=start;i<start+Math.min(5,pagBar.length-2)&&i<=total;i++) nums.push(String(i));
+        nums.push('\u2026'); nums.push(String(total));
+      }
+      pagBar.forEach(function(t,idx){
+        var v=nums[idx];
+        if(v===undefined){ t.el.style.display='none'; return; }
+        t.el.style.display='';
+        t.el.textContent=v;
+        var isNum=/^\d+$/.test(v);
+        t.el.style.cursor=isNum?'pointer':'default';
+        t.el.style.fontWeight=(isNum&&(+v-1)===pageNo)?'700':'';
+        t.el.style.color=(isNum&&(+v-1)===pageNo)?'rgb(223,63,23)':'';
+        if(isNum&&!t.el.__axpg){
+          t.el.__axpg=1;
+          t.el.setAttribute('role','button');
+          t.el.setAttribute('tabindex','0');
+          var jump=function(){ var n=parseInt(t.el.textContent,10); if(n){ pageNo=n-1; render(); } };
+          t.el.addEventListener('click',jump);
+          t.el.addEventListener('keydown',function(e){
+            if(e.key==='Enter'||e.key===' '){ e.preventDefault(); jump(); } });
+        }
+      });
+      if(arrows.length>=2){
+        var a0=arrows[0].el, a1=arrows[arrows.length-1].el;
+        [[a0,-1],[a1,1]].forEach(function(pair){
+          var el=pair[0], dir=pair[1];
+          el.style.cursor='pointer';
+          if(!el.__axpg){
+            el.__axpg=1;
+            el.setAttribute('role','button');
+            el.setAttribute('tabindex','0');
+            el.setAttribute('aria-label', dir<0?'Previous page':'Next page');
+            var step=function(){
+              var list=pool();
+              var tot=Math.max(1,Math.ceil(Math.max(0,list.length-hero.length)/grid.length));
+              pageNo=Math.min(Math.max(0,pageNo+dir),tot-1); render();
+            };
+            el.addEventListener('click',step);
+            el.addEventListener('keydown',function(e){
+              if(e.key==='Enter'||e.key===' '){ e.preventDefault(); step(); } });
+          }
+          el.style.opacity = ((dir<0&&pageNo<=0)) ? '.35' : '';
+        });
+      }
     }
 
     /* the designed category chips become the real filter */
