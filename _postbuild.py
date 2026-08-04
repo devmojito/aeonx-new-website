@@ -23,6 +23,7 @@ CTAWASH = open(os.path.join(_HERE, '_ctawash.html'), encoding='utf-8').read()
 CURSOR = open(os.path.join(_HERE, '_cursor.html'), encoding='utf-8').read()
 NAVLOAD = open(os.path.join(_HERE, '_navload.html'), encoding='utf-8').read()
 COUNTERS = open(os.path.join(_HERE, '_counters.html'), encoding='utf-8').read()
+STATHOV = open(os.path.join(_HERE, '_stathov.html'), encoding='utf-8').read()
 HOVER = open(os.path.join(_HERE, '_hover.html'), encoding='utf-8').read()
 SCROLLROW = open(os.path.join(_HERE, '_scrollrow.html'), encoding='utf-8').read()
 MOBFX = open(os.path.join(_HERE, '_mobfx.html'), encoding='utf-8').read()
@@ -128,6 +129,9 @@ def main():
         if 'ax-hover-css' not in s and '</body>' in s:
             s = s.replace('</body>', HOVER + '\n</body>', 1)
             stats['hover'] = stats.get('hover', 0) + 1
+        if 'ax-stathov-css' not in s and '</body>' in s:
+            s = s.replace('</body>', STATHOV + '\n</body>', 1)
+            stats['stathov'] = stats.get('stathov', 0) + 1
         if 'STAT COUNTERS' not in s and '</body>' in s:
             s = s.replace('</body>', COUNTERS + '\n</body>', 1)
             stats['counters'] += 1

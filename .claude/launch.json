@@ -1,0 +1,6 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    { "name": "aeonx", "url": "http://localhost:8809", "port": 8809 }
+  ]
+}

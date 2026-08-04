@@ -2759,5 +2759,96 @@ img.g-vec[src*="6138-26173"]{animation:ax-gear-ccw 104s linear infinite}
 }
 </style>
 
+<style id="ax-stathov-css">
+/* Stats-band hover micro-interaction (homepage "proof" strip: BSE / 280+ / 15+ ...).
+   The band is flattened Figma output: each stat is a bordered .g-b cell with its
+   number and caption as SIBLINGS, so JS groups the trio by geometry and the hover
+   class is toggled on all three together. Paint + transform only -- never layout. */
+.ax-sh-cell{transition:transform .22s cubic-bezier(.22,.61,.36,1),
+  background-color .22s ease,box-shadow .22s ease;cursor:default}
+.ax-sh-cell.ax-sh-on{transform:translateY(-0.16vw);background-color:#FFF7F2;
+  box-shadow:0 0.42vw 1.04vw rgba(223,63,23,.13)}
+/* the number pops with a light overshoot; the two-tone gradient spans inside the
+   text are untouched (only transform, never color, on the number) */
+.ax-sh-num{transition:transform .22s cubic-bezier(.34,1.56,.64,1)}
+.ax-sh-num.ax-sh-on{transform:translateY(-0.16vw) scale(1.07)}
+/* the caption's colour is INLINE on the element (Figma writes colour into every
+   .g-t style attribute), and a class rule can never outrank an inline declaration
+   -- same trap as the button borders in _hover.html. !important is the only lever
+   short of rewriting the generated markup. */
+.ax-sh-cap{transition:transform .22s ease,color .22s ease}
+.ax-sh-cap.ax-sh-on{transform:translateY(-0.16vw);color:#DF3F17!important}
+@media (prefers-reduced-motion:reduce){
+  .ax-sh-cell,.ax-sh-num,.ax-sh-cap{transition:none}
+  .ax-sh-cell.ax-sh-on,.ax-sh-num.ax-sh-on,.ax-sh-cap.ax-sh-on{transform:none}
+}
+</style>
+<script>
+/* ---- STATS BAND HOVER ---- */
+(function(){
+  if (!(window.matchMedia && matchMedia('(hover:hover)').matches)) return;
+
+  function init(){
+    /* self-gating: only the homepage has this band */
+    var anchor = null;
+    document.querySelectorAll('.g-t').forEach(function(t){
+      if (!anchor && !t.closest('.ax-mob') &&
+          /^Listed on Bombay Stock Exchange$/.test((t.textContent||'').trim())) anchor = t;
+    });
+    if (!anchor || anchor.hasAttribute('data-ax-sh')) return;
+    anchor.setAttribute('data-ax-sh','1');
+
+    var band = anchor.getBoundingClientRect();
+    var parent = anchor.parentElement;
+    var cells = [], texts = [];
+    for (var i = 0; i < parent.children.length; i++){
+      var el = parent.children[i];
+      if (el.closest && el.closest('.ax-mob')) continue;
+      var r = el.getBoundingClientRect();
+      if (!r.width || Math.abs((r.top + r.height/2) - (band.top + band.height/2)) > band.height*6) continue;
+      /* cells: bordered boxes about 1/8 viewport wide on the band row */
+      if (el.classList.contains('g-b') && r.width > innerWidth*0.10 && r.width < innerWidth*0.15 &&
+          r.height > band.height*2) cells.push(el);
+      else if (el.classList.contains('g-t')) texts.push(el);
+    }
+    if (cells.length < 3) return;
+
+    cells.forEach(function(cell){
+      var cr = cell.getBoundingClientRect();
+      var mine = texts.filter(function(t){
+        var tr = t.getBoundingClientRect();
+        var cx = tr.left + tr.width/2, cy = tr.top + tr.height/2;
+        return cx > cr.left && cx < cr.right && cy > cr.top && cy < cr.bottom;
+      });
+      if (!mine.length) return;
+      cell.classList.add('ax-sh-cell');
+      var members = [cell];
+      mine.forEach(function(t){
+        var big = parseFloat(getComputedStyle(t).fontSize) / (innerWidth||1) * 1920 > 24;
+        t.classList.add(big ? 'ax-sh-num' : 'ax-sh-cap');
+        members.push(t);
+      });
+      function on(){ members.forEach(function(m){ m.classList.add('ax-sh-on'); }); }
+      function off(){ members.forEach(function(m){ m.classList.remove('ax-sh-on'); }); }
+      /* ONE transparent hit surface per cell, appended last so it paints above the
+         texts: cell->text->cell pointer moves would otherwise ping-pong
+         mouseleave/mouseenter between the overlapping siblings and flicker the
+         transition. Geometry is copied from the cell's own inline vw values, so
+         the overlay tracks the layout at every viewport width. */
+      var st = cell.getAttribute('style') || '';
+      function part(k){ var m = st.match(new RegExp(k + ':(-?[0-9.]+vw)')); return m ? m[1] : '0vw'; }
+      var hit = document.createElement('div');
+      hit.style.cssText = 'position:absolute;left:'+part('left')+';top:'+part('top')+
+        ';width:'+part('width')+';height:'+part('height')+';background:transparent;';
+      parent.appendChild(hit);
+      hit.addEventListener('mouseenter', on);
+      hit.addEventListener('mouseleave', off);
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
+
 </body>
 </html>
