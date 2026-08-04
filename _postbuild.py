@@ -50,7 +50,6 @@ SCOPED = [
     ('who-we-are/leadership/index.html', 'ax-leadscroll-css', '_leadscroll.html'),
     ('products/index.html',              'ax-suitemap-css', '_suitemap.html'),
     ('services/google-cloud/index.html', 'ax-gchero-css',   '_gchero.html'),
-    ('insights/blog/index.html',        'ax-bloglist-css', '_bloglist.html'),
     ('services/sap-ams-axiom/index.html', 'ax-amsicon-css', '_amsicon.html'),
 ]
 SCOPED = [(sfx, sent, open(os.path.join(_HERE, fn), encoding='utf-8').read())

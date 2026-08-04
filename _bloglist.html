@@ -5,6 +5,14 @@
    cannot be absolutely positioned into a fixed-height frame, and only the footer
    follows it. Card styling mirrors the Figma cards (same radius, hairline, type
    scale and brand chip). */
+/* CRITICAL: the page carries a global rule making every img / h1-h3 / p / span
+   inside main.ax-page position:absolute (that is how the pixel-locked Figma layout
+   works). Normal-flow cards inserted here inherit it and collapse into one stack --
+   which is exactly what happened on the first attempt. Everything inside this grid
+   is forced back into normal flow. */
+.ax-bl-grid *,.ax-bl-filters *,.ax-bl-count *{position:static!important}
+.ax-bl-grid img,.ax-bl-grid h3,.ax-bl-grid span,.ax-bl-grid div{position:static!important}
+.ax-bl-card{position:relative!important}
 .ax-bl-grid{position:relative;margin:1.5vw 7.9vw 4vw;display:grid;
   grid-template-columns:repeat(auto-fill,minmax(19rem,1fr));gap:1.6vw 1.25vw;
   font-family:'Nunito Sans',sans-serif}
@@ -137,15 +145,41 @@
       filters.appendChild(b);
     });
 
-    /* Replace the designed dummy chips: they name categories this site does not
-       have (Product / Engineering). The real ones are derived from the posts. */
+    /* Retire the whole designed placeholder grid that sits BELOW the browse
+       heading. Those cards are absolutely positioned, so leaving them in place
+       makes them bleed through the real grid (stray "John Smith" bylines and
+       half-titles showing between rows). Everything after the heading is dummy
+       content; the footer is a separate section and must survive. */
+    if(anchor){
+      var cut=anchor.getBoundingClientRect().bottom;
+      [].slice.call(page.children).forEach(function(c){
+        if(c===anchor||c.classList.contains('ax-footer')) return;
+        if(c.classList.contains('ax-mob')) return;
+        if(/ax-bl-/.test(c.className||'')) return;
+        if(c.tagName==='SECTION') return;
+        var r=c.getBoundingClientRect();
+        if(r.height && r.top>=cut-2) c.style.display='none';
+      });
+    }
+    /* the designed chips name categories this site does not have */
     var dummy=[].slice.call(document.querySelectorAll('main.ax-page .g-t'))
-      .filter(function(t){ return /^(All|Product|Engineering|Other)$/.test(txt(t)); });
+      .filter(function(t){ return /^(All|Product|Engineering|Other|Enterprise AI)$/.test(txt(t)); });
     dummy.forEach(function(t){ t.style.display='none'; });
 
     if(anchor){
-      /* park the real controls after the pixel-locked page, before the footer */
+      /* park the real controls after the pixel-locked page, before the footer.
+         The designed "Browse by category:" heading is absolutely positioned at its
+         own vw offset, so once the grid flows below the frame it collides with the
+         cards -- bring the heading into normal flow and let it head the section it
+         was written for. */
       var foot=page.querySelector('section.ax-footer');
+      /* Absolutely positioned children contribute NO height, so a normal-flow grid
+         added here starts at y=0 and paints straight through the designed hero.
+         Push the flow content down to just below the "Browse by category:" heading
+         -- the designed featured cards above it stay exactly where Figma put them,
+         and the real grid takes over the placeholder area below. */
+      var offset=anchor.offsetTop+anchor.offsetHeight;
+      filters.style.marginTop=(offset+18)+'px';
       page.insertBefore(filters, foot);
       page.insertBefore(count, foot);
       page.insertBefore(grid, foot);
