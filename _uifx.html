@@ -118,9 +118,16 @@
     /* Follow Us: LinkedIn resolves to the real company page (taken from the live
        site, not guessed). Twitter has no account linked anywhere on aeonx.digital,
        so it gets the hover affordance but no destination rather than a made-up one. */
+    /* Verified accounts. X and YouTube are not linked anywhere on aeonx.digital,
+       so they were tracked down separately and confirmed against the company's own
+       posts before being wired. "Twitter" is kept as a key because the footer copy
+       still says Twitter while the nav has moved to the X mark. */
     var SOC={ 'linkedin':'https://www.linkedin.com/company/aeonx-digital/',
               'facebook':'https://www.facebook.com/aeonx.digital',
-              'instagram':'https://www.instagram.com/aeonx.digital/' };
+              'instagram':'https://www.instagram.com/aeonx.digital/',
+              'twitter':'https://x.com/AeonXDigital',
+              'x':'https://x.com/AeonXDigital',
+              'youtube':'https://www.youtube.com/channel/UCiB9FZmN6-uiK-Y3cHO_bTA' };
     [].slice.call(foot.querySelectorAll('.g-t')).forEach(function(l){
       var k=txt(l).toLowerCase();
       var url=SOC[k];
