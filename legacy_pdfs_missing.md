@@ -1,0 +1,40 @@
+# Investor documents that are NOT on the server (client owes these files)
+
+These 32 documents are linked from the live site at www.ashokalcochem.com, the
+company's retired domain, which resolves but serves nothing. The rest of that
+set was matched automatically to the copies re-uploaded to the WordPress media
+library; these have no copy anywhere we can reach. They are listed on the new
+site with the note "not currently available" rather than linked to a dead file.
+
+- AEON PROCARE PVT LTD AUDITED BALANCE SHEET FOR F.Y 2020-21      (Audited%20Signed%20Balance%20Sheet%20Aeon%202020-21_compressed.pdf)
+- AEON PROCARE PVT LTD BALANCE SHEET FOR F.Y. 2021-22             (Aeon%20Procare%20Pvt%20Ltd%20Signed%20Balance%20Sheet%202021-22_compre)
+- AEON PROCARE – FINANCIAL STATEMENT 31.03.2020                   (Aeon%20Procare%20-%20Financial%20Statement%2031%20March%202020.pdf)
+- AEONX (ASHWA) FINANCIAL STATEMENT 31.03.2020                    (Aeonx%20(Ashwa)%20Financial%20Statement%2031%20March%202020.pdf)
+- AEONX AUDITED FOR THE F.Y 2021-2022                             (Aeonx%20Audited%20Financial%20FY%202021-2022_Signed_compressed.pdf)
+- AEONX FINANCIAL RESULTS F.Y. 2020-21                            (Financial%20FY.%202020%20-%20%2021_compressed.pdf)
+- AGM 22.09.2017- REMOTE EVOTING RESULTS AND SCRUTINIZER’S REPOR  (AGM%2022.09.2017-%20Remote%20Evoting%20Results%20and%20Scrutinizer's%2)
+- ANNUAL ACCOUNTS OF ASHWA MINERALS PRIVATE LIMITED               (Ashwa%20Minerals_Annual%20Accounts%20for%20FY%202017-18.pdf)
+- ANNUAL ACCOUNTS OF SUBSIDIARY                                   (Annual%20Accounts%20of%20Subsidiary.pdf)
+- ANNUAL REPORT 2014-15                                           (AR201415.pdf)
+- ANNUAL REPORT 2015-16                                           (Ashok%20Alco-Chem%20Limited%20-%20Annual%20Report%202015-16.pdf)
+- ANNUAL REPORT 2018-19                                           (Annual%20Report%202018-19.pdf)
+- ANNUAL REPORT FY 2017-18                                        (Annual%20Report_FY_2017-18.pdf)
+- ASHWA MINERALS – ANNUAL ACCOUNTS FOR THE FY 2015-16             (Ashwa%20Mineral%20Private%20Limited%20-%20Annual%20Accounts%202015-16.)
+- AUDITED (STANDALONE & CONSOLIDATED) FINANCIAL RESULTS FOR THE   (Audited%20Standalone%20%20Consolidated%20Financial%20Results%20for%20t)
+- BSE FINANCIAL RESULTS 31.03.2023                                (BSE%20Financial%20Results%2031.03.2023.pdf)
+- BSE NEWSPAPER PUBLICATION                                       (BSE%20Newspaper%20Cutting.pdf)
+- BSE NEWSPAPER PUBLICATION                                       (BSE%20Newspaper%20Publication.pdf)
+- BSE NEWSPAPER PUBLICATION                                       (Newspaper%20Publication%20BSE.pdf)
+- BSE NEWSPAPER PUBLICATION 30.06.2022                            (BSE%20Newspaper%20Publication%2030.06.2022.pdf)
+- BSE NEWSPAPER RESULTS                                           (BSE%20Newspaper%20Results.pdf)
+- BSE RESULTS 30.06.2022                                          (BSE%20Results%2030.06.2022.pdf)
+- BSE RESULTS 31.03.2022                                          (BSE%20Results%2031.03.2022.pdf)
+- FORM_MGT_7 2021 AACL                                            (Form_MGT_7%202021%20AACL.pdf)
+- FORM_MGT_7 2022 AACL                                            (Form_MGT_7%202022%20AACL.pdf)
+- LIST OF COMMITTEE MEMBERS                                       (List%20of%20Committee%20Members.pdf)
+- MGT – 7 AACL 2020                                               (MGT%20-%207%20AACL%202020.pdf)
+- OUTCOME RESULTS 10.08.2021                                      (Outcome%20Results%2010.08.2021.pdf)
+- OUTCOME RESULTS BSE                                             (Outcome%20Results%20BSE.pdf)
+- RESULTS 31.03.2021 BSE                                          (Results%2031.03.2021%20BSE.pdf)
+- UNAUDITED FINANCIAL RESULTS FOR THE QUARTER & YEAR ENDED DECEM  (UFR_Dec_31_2014.pdf)
+- UNAUDITED STANDALONE & CONSOLIDATED FINANCIAL RESULTS OF THE C  (UFR%2031.12.2022.pdf)

@@ -24,7 +24,10 @@ Two categories run through this report:
 | Mega-menu **Read Us** button dead on every page (352 anchors) | **FIXED** |
 | Dead `.php` links inside migrated blog posts | **FIXED** |
 | Homepage canonical URL emitted as `https://aeonx.digital/./` | **FIXED** |
-| 280 investor PDFs never placed on the new site | **OPEN — build**, in progress |
+| 280 investor PDFs never placed on the new site | **FIXED** (browser wired; see §3) |
+| Shareholding-pattern / investor document browser showed the same 3 placeholder rows for every category | **FIXED** |
+| "Download the brochure" and every mobile button ignored the Title Case rule | **FIXED** |
+| Subscribe label sat 1px from the pill's left edge, 39px from the right | **FIXED** |
 | Figma "same as figma" hover interactions never built (4 places) | **OPEN — build** |
 | Mega-menu AXIOM featured card is Figma's grey checkerboard placeholder | **OPEN — client** |
 | Announcement bar is designer placeholder copy with no destination | **OPEN — client** |
@@ -103,9 +106,11 @@ built: Manufacturing "Why Choose Us" cards, Trust & Security first card, Partner
 first card, and the "card 3" items on four alliance pages (each is an `ON_HOVER` →
 `SMART_ANIMATE` 0.3s reveal of its own description node).
 
-**Open — build:** `/investor-relations/` and `/investor-relations/shareholding-pattern/`
-each carry a "Search" bar over the document tiles that is still static text, same
-pattern as the insights one. It should be wired once the document lists are placed.
+**Fixed — the investor document browser.** Both investor pages drew a full browser
+(category rail with counts, search field, document rows, "N documents" footer) that
+was entirely static: every category showed the same three placeholder annual reports,
+the counts were wrong, and none of the real PDFs was reachable. All of it works now —
+see §3 for the numbers.
 
 ---
 
@@ -123,12 +128,30 @@ Redirects added for every indexed legacy URL that had no local equivalent (27 st
 `/code-and-policy/`, `/other-documents/`, `/investor-contact/`, `/newsroom/` (+ the AWS
 Partner Network item), `/thank-you/`. All verified 200 locally.
 
+**Investor documents — now placed.** The whole library was harvested from the public
+site and wired into the browser the design draws:
+
+| Page | Categories | Documents |
+|---|---|---|
+| `/investor-relations/` | Annual report · Financial information · Board meeting | 8 · 124 · 3 |
+| `/investor-relations/shareholding-pattern/` | Postal Ballot · Shareholding Pattern · Unclaimed Dividend · Shares Transferred to IEPF · Disclosures | 9 · 49 · 5 · 4 · 1 |
+
+Clicking a category swaps the list and the count, the search field filters within it,
+each row opens its PDF in a new tab, and the list scrolls (49 rows do not fit the
+four-row box the design draws). Nothing on the page moved.
+
+248 of the 280 documents open. The other 32 were only ever linked from the retired
+`ashokalcochem.com` domain and have no copy on the server: the WordPress filename
+rule was reproduced and checked against the media library, which recovered 47 of the
+79 dead links; the rest are listed in `legacy_pdfs_missing.md` for the client and are
+shown on the page as unavailable rather than as links that 404. Twelve remapped URLs
+were spot-checked live — all twelve return `200 application/pdf`.
+
 **Still missing:**
 
 | Item | Owner | Note |
 |---|---|---|
-| 280 investor PDFs (annual reports, results, disclosures) | build | none are linked on the new site yet; work in progress |
-| 80 of those PDFs point at the dead `ashokalcochem.com` domain | build | copies exist under `aeonx.digital/wp-content/uploads/2024/05/` with WordPress-sanitised names |
+| 32 documents that exist nowhere reachable | client | of the 79 linked from the retired `ashokalcochem.com` domain, 47 were matched to the copies re-uploaded to the WordPress media library and now open normally; the remaining 32 are listed in `legacy_pdfs_missing.md` and appear on the site marked "not currently available" rather than linked to a dead file |
 | Newsroom item "SAP Services Competency Achieved" | client | no local counterpart in any form |
 | `/privacy-policy/` and `/termsonlinepayment/` | client | legal pages not migrated |
 | 8 product buy-now pages, 2 solution landing pages | client | decide whether they carry over |
@@ -192,7 +215,7 @@ cast a shadow, and the homepage carries a hand-managed copy of the shared chrome
 
 **Blocking (must be resolved before launch)**
 
-- [ ] Place the 280 investor documents and re-point the 80 dead `ashokalcochem.com` URLs *(build, in progress)*
+- [ ] Supply the investor documents that are not on the server — they show in the list marked "not currently available" and cannot be restored without the files *(client)*
 - [ ] Supply the mega-menu featured-card image — currently Figma's grey checkerboard *(client)*
 - [ ] Supply real announcement-bar copy and its destination, or drop the bar *(client)*
 - [ ] Supply Terms, Privacy, Cookies, Sitemap and BSE-disclosure URLs *(client)*
@@ -202,7 +225,6 @@ cast a shadow, and the homepage carries a hand-managed copy of the shared chrome
 **High**
 
 - [ ] Build the four unbuilt Figma hover interactions *(build)*
-- [ ] Wire the investor-page search bar *(build)*
 - [ ] Provide the SALES & GROWTH leadership roster *(client)*
 - [ ] Decide where INDUSTRIAL · SUPPLIERX "Explore" should go *(client)*
 - [ ] Confirm the nine case studies chosen for the /insights/ grid, and whether the six designed stories (ITD Cementation, Raymond Engineering, Ashapura, Delux Bearings, CK Birla, Raymond Ltd) get their own pages *(client)*

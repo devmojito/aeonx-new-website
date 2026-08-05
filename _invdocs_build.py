@@ -13,6 +13,16 @@ DATA = json.load(open('_invdocs.json'))
 # Only the datasets the built pages actually draw a browser for.
 KEEP = ['shareholder-information', 'financial-highlight']
 SLIM = {k: DATA[k] for k in KEEP if k in DATA}
+# Anything still on the retired domain cannot be opened; mark it so the runtime can
+# show the entry without offering a dead link.
+_gone = 0
+for _p in SLIM.values():
+    for _c in _p['cats']:
+        for _d in _c['docs']:
+            if 'ashokalcochem.com' in _d['u']:
+                _d['gone'] = 1
+                _gone += 1
+print('%d documents flagged unavailable (still on the retired domain)' % _gone)
 
 JS = r'''<style id="ax-invdocs-css">
 /* ---- INVESTOR DOCUMENT BROWSER ----
@@ -28,6 +38,8 @@ JS = r'''<style id="ax-invdocs-css">
 .ax-inv-scroll-host::-webkit-scrollbar{width:6px}
 .ax-inv-scroll-host::-webkit-scrollbar-thumb{background:rgba(35,39,46,.22);border-radius:3px}
 .ax-inv-row{cursor:pointer;transition:background-color .18s ease}
+.ax-inv-row.is-gone{cursor:default;opacity:.55}
+.ax-inv-row.is-gone:hover{background-color:transparent}
 .ax-inv-row:hover{background-color:rgba(223,63,23,.05)}
 .ax-inv-cat{cursor:pointer;transition:color .18s ease}
 .ax-inv-cat:hover{color:rgb(223,63,23)}
@@ -185,6 +197,16 @@ JS = r'''<style id="ax-invdocs-css">
         else if(kind==='latest'){ if(!isFirst){ c.style.display='none'; } }
         frag.appendChild(c);
       });
+      /* A document still hosted on the retired ashokalcochem domain has no file to
+         open -- that host resolves but serves nothing. Show the entry (a listed
+         company's disclosure list must stay complete) but do not pretend it is a
+         link, and say why on hover. The client owes those files. */
+      if(doc.gone){
+        frag.classList.add('is-gone');
+        frag.setAttribute('title','Document not currently available — being restored');
+        frag.setAttribute('aria-label',doc.t+(doc.d?(', '+doc.d):'')+', document not currently available');
+        return frag;
+      }
       frag.setAttribute('role','link');
       frag.setAttribute('tabindex','0');
       frag.setAttribute('aria-label',doc.t+(doc.d?(', '+doc.d):'')+', PDF');

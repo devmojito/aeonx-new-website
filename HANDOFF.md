@@ -656,3 +656,33 @@ static text and should be wired in the same pass.
   `_hover.html` skips `.ax-mob` on purpose; irrelevant on touch.
 - `_deadctl.py` note: run it with `python3 -u`. Buffered stdout plus a `timeout` means a
   killed run loses everything it had already found.
+
+## 17. Investor document library placed (2026-08-05, later)
+
+`_invharvest.py` -> `_invdocs.json` -> `_invdocs_build.py` -> `_invdocs.html` (scoped to
+the two investor pages by `_postbuild.py`). 280 documents harvested from the PUBLIC live
+site; the browser the design draws (category rail + counts, search, rows, footer count)
+is filled from that data at runtime, by GEOMETRY, so a Figma re-pull cannot break it.
+
+Traps hit while building it, all fixed in the fragment:
+- The search label is nested two wrappers deep, so its own `left/top` are relative to
+  that wrapper (0,0) while the rail and rows live in the section's space. Mixing the
+  two compared 0 against 20vw and matched nothing. `boxIn()` accumulates offsets.
+- The document rows are INSIDE the list container, not siblings of it; row geometry is
+  therefore list-local (`rel()`), and the list container itself becomes the scroller.
+- The gap between search bar and list differs per page (2.1 -> 3.3vw on one, 2.1 -> 5.4
+  on the other), so the detection band has to be generous.
+- One page has four rail entries but only three count badges ("All" has none), so a
+  badge is paired to the rail item it sits BESIDE, never by index.
+- Category clicks are intercepted at document capture — the chrome CTA pass owns those
+  labels and clicking MANUFACTURING navigated to /industries/manufacturing/.
+
+`_invremap.py` re-points the 79 documents still on the retired `ashokalcochem.com`
+domain. The WordPress REST media endpoint is locked to the first 10 items (per_page and
+page are both ignored) and there is no attachment sitemap, so the filenames are derived
+instead: `sanitize_file_name()` reproduced exactly (strip `?[]/\=<>:;,'"&$#*()|~\`!{}%+`,
+whitespace -> `-`, collapse `-`, KEEP underscores — verified against the pair recorded
+in §14) and HEAD-checked under `/wp-content/uploads/2024/05|06/` and `2025/06/`.
+47 of 79 recovered; the other 32 are in `legacy_pdfs_missing.md` and render with a
+"not currently available" note instead of a dead link. Widening the month list to ten
+found nothing extra and took twenty minutes — do not bother.
