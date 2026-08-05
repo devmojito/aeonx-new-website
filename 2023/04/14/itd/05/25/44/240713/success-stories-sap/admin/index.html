@@ -2915,8 +2915,18 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
     [].slice.call(foot.querySelectorAll('.g-t')).forEach(function(l){
       var k=txt(l).toLowerCase();
       var url=SOC[k];
-      l.classList.add('ax-fx-link');
-      if(url&&!l.dataset.axfx){ l.dataset.axfx='1'; go(l,url,true); }
+      if(!url||l.dataset.axfx) { l.classList.add('ax-fx-link'); return; }
+      /* Real <a>, not a JS role=link: these should open in a new tab, offer a
+         context menu, copy the address, and be readable by anything that walks
+         links. The anchor inherits the designed element's own inline geometry so
+         the pixel-locked layout is unchanged. */
+      var a=document.createElement('a');
+      a.href=url; a.target='_blank'; a.rel='noopener noreferrer';
+      a.className=(l.className||'')+' ax-fx-link';
+      a.setAttribute('style',(l.getAttribute('style')||'')+';text-decoration:none;color:inherit;display:block');
+      a.textContent=txt(l);
+      a.dataset.axfx='1';
+      l.parentNode.replaceChild(a,l);
     });
   }
 
@@ -2964,7 +2974,11 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
       note.__t=setTimeout(function(){ note.classList.remove('on'); },6000);
     }
     function submit(e){
-      if(e){ e.preventDefault(); e.stopPropagation(); }
+      /* stopImmediatePropagation, not stopPropagation: the chrome CTA pass has its
+         own click handler on THIS SAME element, and stopPropagation only blocks
+         ancestors -- same-element listeners still ran, so Subscribe kept navigating
+         to /contact-us/. */
+      if(e){ e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); }
       var v=(input.value||'').trim();
       if(!v||!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(v)){
         say('Enter a valid work email address.',true); input.focus(); return;
@@ -2975,7 +2989,11 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
         +'?subject='+encodeURIComponent('Newsletter subscription')
         +'&body='+encodeURIComponent('Please subscribe this address to the AeonX newsletter: '+v);
     }
-    /* capture beats the generic CTA linkifier's own click handler */
+    /* capture + immediate stop beats the generic CTA linkifier's own handler, and
+       the data-cta marker is cleared so nothing re-links it on a later pass */
+    delete pill.dataset.cta; delete pill.dataset.axcta;
+    pill.removeAttribute('role');
+    if(subLabel){ delete subLabel.dataset.cta; delete subLabel.dataset.axcta; }
     pill.addEventListener('click',submit,true);
     pill.setAttribute('role','button');
     pill.setAttribute('tabindex','0');
@@ -3081,6 +3099,34 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
     });
   }
 
+  /* ---------- 7. EVEN PADDING INSIDE BUTTON PILLS ----------
+     Figma sizes a label box independently of its pill, so a centred label can sit
+     off-centre inside the pill (the footer Subscribe was the visible case). Measure
+     the label's INK with a Range -- the element box is wider than the glyphs and
+     hides the error -- and nudge the label so left and right gaps match. Only the
+     label moves; the pill is untouched, so nothing can reflow. */
+  function centerLabels(){
+    var seen=new Set();
+    [].slice.call(document.querySelectorAll('.g-t')).forEach(function(l){
+      if(l.closest('.ax-mob')||l.children.length) return;
+      var t=txt(l); if(!t||t.length>34) return;
+      if(getComputedStyle(l).textAlign!=='center') return;   /* left-aligned by design */
+      var pill=pillOf(l); if(!pill) return;
+      var ps=pill.getAttribute('style')||'';
+      if(!/background-color|border/.test(ps)||!/border-radius/.test(ps)) return;
+      if(seen.has(pill)) return; seen.add(pill);
+      var pr=pill.getBoundingClientRect();
+      var rng=document.createRange(); rng.selectNodeContents(l);
+      var ir=rng.getBoundingClientRect();
+      if(!ir.width||!pr.width) return;
+      var d=(ir.left-pr.left)-(pr.right-ir.right);
+      if(Math.abs(d)<2) return;
+      var cur=num(l,'left'); if(cur===null) return;
+      var vwpx=(document.documentElement.clientWidth||1920)/100;
+      setvw(l,'left',cur-(d/2)/vwpx);
+    });
+  }
+
   function init(){
     applyTitleCase();
     armChrome();
@@ -3088,11 +3134,20 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
     productScroll();
     footerMap();
     alignExplore();
+    centerLabels();
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init);
   else init();
   /* after the chrome CTA pass and .ax-mob injection have settled */
-  addEventListener('load',function(){ setTimeout(init,200); });
+  addEventListener('load',function(){
+    setTimeout(init,200);
+    /* one late pass purely to re-centre: the newsletter column shift and the CTA
+       linkifier's own pill auto-fit both move boxes after the first measurement,
+       so the settled layout is the only one worth measuring. */
+    setTimeout(centerLabels,700);
+  });
+  addEventListener('resize',function(){ clearTimeout(window.__axfxR);
+    window.__axfxR=setTimeout(centerLabels,200); });
 })();
 </script>
 
