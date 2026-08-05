@@ -556,3 +556,103 @@ and `legacy_pdfs_urls.txt` hold the exact list; a name-mapping script was writte
 blog grid, the pagination and the EXPLORE hover all passed a headless count while
 being visibly broken or dead. Screenshot the page, and hit-test at the pixel a user
 actually clicks (`elementFromPoint`), before calling anything done.
+
+---
+
+## 16. Pre-launch audit pass (2026-08-05)
+
+Full audit against Figma, against the live aeonx.digital, and against every earlier
+review. Findings and the go-live checklist live in **`GO-LIVE-REPORT.md`**; this
+section records only what changed in the tree and why.
+
+### Fixed
+
+- **Footer Subscribe** (§15.1, third attempt, now actually fixed). Two things were
+  wrong, not one. (a) Registration order: the chrome CTA pass registers its navigate
+  handler on the pill before `_uifx.html` runs, and at the TARGET phase listeners fire
+  in registration order regardless of the capture flag — so the interception has to
+  happen at **document capture**. (b) The pill is covered by an invisible
+  `.g-b.g-clip` shell, so `e.target` is never the pill; the trap therefore also matches
+  by **click point** against the pill's rect. The `data-cta` marker is now KEPT (the
+  CTA-unblock peeler keys on it; removing it re-exposed the pill to the linkifier).
+  Verified with a real click at the pill's own pixel, not `dispatchEvent` on the label.
+- **Foundation "Why CIOs pick us" icons**: six 44×44 PNGs shown at 100×100. Re-exported
+  nodes `4618:10761/10768/10775/10782/10789/10796` at scale 4 (400×400).
+- **`/insights/` search + sector filter** — new fragment `_csfilter.html` (scoped).
+  The Figma page ships a static "Search…" label, nine static sector labels and **34
+  copies of one placeholder card** ("ASML accelerates advanced semiconductor
+  lithography with Aeonx."). The fragment turns the controls into real ones and puts
+  the nine real case-study posts into the designed slots; surplus placeholder slots are
+  hidden and destination-less designed cards lose their fake link affordance.
+  - **Geometry must come from `el.style`, not a regex over the style attribute**: other
+    passes rewrite these properties, so the browser re-serialises with spaces
+    (`left: 34.8438vw`) and sometimes in px (`width: 108px`). And it must not come from
+    `getBoundingClientRect()` either — the desktop block is `display:none` below
+    1025px, so a rect-based pass measures 0×0 and groups nothing on the hidden
+    breakpoint. Both bugs were hit here.
+  - Chips/cards intercept clicks at **document capture** for the same reason as
+    Subscribe (clicking the MANUFACTURING chip navigated to `/industries/manufacturing/`).
+  - **Not done on purpose:** the grid keeps its designed height when filtered, so a
+    narrow result set leaves whitespace below. Collapsing it means re-laying the page
+    and the absolutely positioned footer in two different vw scales — tried, it moved
+    the footer to a negative offset, reverted.
+- **Careers Apply buttons** — new fragment `_career.html` (scoped). Only 1 of 3 desktop
+  pills was linkified; mobile had none. All now route to `/contact-us/?role=<title>`,
+  the role read from the nearest heading above the pill. CLIENT OWES a real ATS URL.
+- **Blog index byline**: the geometry detector misses a card whose byline sits on the
+  same baseline as its date, leaving Figma's "John Smith". `_bloglist.html` now fills
+  those in-card, plus a final sweep attributing any leftover to the post whose title
+  sits directly above it. Verified: 0 "John Smith" left, 7 real bylines.
+- **Mega-menu "Read Us"** was `href="#"` on all 88 chrome-bearing pages → `/insights/blog/`.
+- **Homepage canonical** `https://aeonx.digital/./` → `https://aeonx.digital/`.
+- **Dead `.php` links** inside migrated 2022 posts repointed to current pages; also
+  fixed in `_blogdata.json` so a regenerate does not reintroduce them.
+- **Legacy URL coverage**: 27 redirect stubs added to `_build_all.py` REDIRECTS for
+  every indexed live URL with no local equivalent (`/about-us/`, `/career/`,
+  `/resources/*`, `/solutions/*`, `/industries/`, the seven investor URLs, `/newsroom/*`,
+  `/thank-you/`). Seven blog posts had been recategorised live (`uncategorized` → `aws`)
+  and now live at the current URL with a stub at the old one.
+
+### Performance (`_webp.py`, new)
+
+Referenced image fills were **159.5 MB of PNG** (one hero 13 MB). Re-encoded to WebP —
+q82 for photos, **lossless for anything ≤640px or <200 KB** (measured: q82 puts ~10/255
+mean error on a 120px badge vs ~1 on a photo, and hard-edged marks visibly soften).
+Result **13.4 MB**. PNGs stay on disk; `python3 _webp.py --revert` repoints back.
+
+Also: preloader minimum hold **1500 ms → 450 ms** (`_preloader_js.html`, `var MIN`),
+scroll-reveal **0.70 s → 0.42 s**, and 269 below-fold vector images given
+`loading="lazy" decoding="async"` — `_gen.py` now emits that for any vector above
+`top >= 60vw`, so a rebuild keeps it. Homepage: 2.9 MB / 534 ms → ~1.0 MB / 198 ms.
+
+### New tooling
+
+- `_deadctl.py` — renders every designed page headless and lists controls that LOOK
+  interactive but have no destination and no handler affordance after all runtime
+  passes have run. Most numeric hits are decorative step badges (false positives);
+  the real finds were the careers Apply pills and the investor-page search bar.
+- `_webp.py` — the image re-encode + repoint described above.
+
+### Still open
+
+See `GO-LIVE-REPORT.md` §7. The launch blocker is the **280 investor PDFs**, none of
+which are linked on the new site; the investor pages' own "Search" bar is also still
+static text and should be wired in the same pass.
+
+### Late additions to the 2026-08-05 pass
+
+- **Contact form Reset** was dead: `findByText` was case-sensitive and missed
+  "Reset form" after the Title Case pass rewrote it, and `form.reset()` only restores
+  DEFAULT values while `_forminputs.html` grafts fields in with their text as the live
+  value. Lookup is case-insensitive now, Reset clears explicitly, and both form buttons
+  intercept at document capture. `Send RFP Request` is accepted alongside the old
+  `RPF` spelling because `_uifx.html` now corrects that typo at runtime.
+- **Copy fixes at runtime** (`_uifx.html`, `COPY_FIX`): `Send RPF Request` → RFP and
+  `Ahmadabad` → `Ahmedabad`. Done in the fragment, not the markup, because these pages
+  are regenerated from the Figma dump. The truncated `Gujara.` line and the stock
+  "John Doe" headshot are left for the client — they need real content.
+- **Mobile Explore pills verified**: 9 of 10 navigate on a 375px viewport (the tenth is
+  the documented inert INDUSTRIAL · SUPPLIERX one). They carry no pointer cursor because
+  `_hover.html` skips `.ax-mob` on purpose; irrelevant on touch.
+- `_deadctl.py` note: run it with `python3 -u`. Buffered stdout plus a `timeout` means a
+  killed run loses everything it had already found.

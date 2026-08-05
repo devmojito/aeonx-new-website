@@ -24,3 +24,6 @@ blog-fetch.md
 
 # Harvested blog content pack (large, regenerable from the public site)
 _blogdata.json
+
+# Investor document library harvested from the public site (regenerable)
+_invdocs.json

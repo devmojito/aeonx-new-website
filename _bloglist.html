@@ -105,6 +105,22 @@
     if(slot.chip) slot.chip.el.textContent=p.c;
     if(slot.author) slot.author.el.textContent=p.a||'AeonX Digital';
     if(slot.date) slot.date.el.textContent=p.d;
+    /* The byline/date detector keys on geometry and misses a card whose byline sits
+       on the SAME baseline as its date instead of below the title, which left
+       Figma's placeholder "John Smith" / stock date on screen. Anything inside this
+       card that still carries the placeholder is this post's byline by definition. */
+    if(slot.title){
+      var host=slot.title.el.parentElement||document;
+      var tr=slot.title.el.getBoundingClientRect();
+      [].slice.call(host.querySelectorAll('.g-t')).concat([].slice.call(host.children)).forEach(function(e){
+        if(!e||!e.classList||!/g-t/.test(e.className||'')) return;
+        var t=(e.textContent||'').trim();
+        var q=e.getBoundingClientRect();
+        if(q.top<tr.top-20||q.top>tr.bottom+90) return;
+        if(/^John Smith$/i.test(t)) e.textContent=p.a||'AeonX Digital';
+        else if(p.d&&/^[A-Z][a-z]+ \d{1,2}, \d{4}$/.test(t)&&e!==(slot.date&&slot.date.el)) e.textContent=p.d;
+      });
+    }
     wire(slot.img.el,p.u);
   }
 
@@ -257,6 +273,27 @@
     });
 
     render();
+    /* Final sweep: a slot the geometry detector never claimed still shows Figma's
+       stock byline. Attribute it to the post whose title sits directly above it,
+       so no card on the blog index goes out signed "John Smith". */
+    setTimeout(function(){
+      [].slice.call(document.querySelectorAll('.g-t')).forEach(function(e){
+        if(!/^John Smith$/i.test((e.textContent||'').trim())) return;
+        var r=e.getBoundingClientRect();
+        var best=null,bestGap=1e9;
+        POSTS.forEach(function(p){
+          [].slice.call(document.querySelectorAll('.ax-bl-t')).forEach(function(t){
+            if((t.textContent||'').trim()!==p.t) return;
+            var q=t.getBoundingClientRect();
+            var gap=r.top-q.bottom;
+            if(gap<-8||gap>140) return;
+            if(Math.abs(q.left-r.left)>560) return;
+            if(gap<bestGap){ bestGap=gap; best=p; }
+          });
+        });
+        e.textContent=(best&&best.a)||'AeonX Digital';
+      });
+    },80);
   }
 
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init);

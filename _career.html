@@ -1,0 +1,72 @@
+<style id="ax-career-css">
+/* ---- CAREERS: MAKE EVERY "APPLY" BUTTON WORK ----
+   Figma draws one Apply pill per open role. Only one of them ever picked up the
+   chrome's CTA linkifier (the label map matches by text, and the other pills sit
+   under a shell that swallowed the hit-test), so two desktop and three mobile
+   Apply buttons did nothing. There is no ATS or careers endpoint yet, so they
+   route to the contact form -- the same destination the rest of the site's
+   unrouted CTAs use -- with the role carried in the query string so whoever
+   answers knows which opening it is. CLIENT OWES: a real applications URL. */
+.ax-career-apply{cursor:pointer}
+</style>
+<script>
+(function(){
+  function txt(e){ return (e.textContent||'').replace(/\s+/g,' ').trim(); }
+  function num(el,p){ var v=el.style[p]; if(!v) return null;
+    var m=/^(-?[\d.]+)(vw|px)$/.exec(String(v).trim()); if(!m) return null;
+    return m[2]==='vw'?parseFloat(m[1]):parseFloat(m[1])*100/window.innerWidth; }
+  function box(el){ var l=num(el,'left'),t=num(el,'top'),w=num(el,'width'),h=num(el,'height');
+    return (l===null||t===null||w===null||h===null)?null:{l:l,t:t,w:w,h:h,r:l+w,b:t+h}; }
+
+  function role(btn){
+    /* nearest heading ABOVE the pill inside the same column: the job title */
+    var b=box(btn); if(!b) return '';
+    var host=btn.parentElement; if(!host) return '';
+    var best=null, bestT=-1e9;
+    [].slice.call(host.children).forEach(function(e){
+      if(!/g-t/.test(e.className||'')) return;
+      var eb=box(e); if(!eb) return;
+      if(eb.t>=b.t) return;                              /* below the pill */
+      if(eb.r<b.l-2||eb.l>b.r+22) return;                /* different column */
+      var fs=parseFloat(getComputedStyle(e).fontSize)||0;
+      if(fs<11) return;                                  /* eyebrow chips, not titles */
+      if(eb.t>bestT){ bestT=eb.t; best=e; }
+    });
+    return best?txt(best):'';
+  }
+
+  function init(){
+    var pills=[].slice.call(document.querySelectorAll('.g-t,.g-b')).filter(function(e){
+      return /^apply( now)?$/i.test(txt(e)); });
+    if(!pills.length) return;
+    pills.forEach(function(lbl){
+      if(lbl.dataset.axApply) return;
+      var pill=lbl;
+      /* the label usually sits inside its own pill box; walk one level up if so */
+      if(/g-t/.test(lbl.className||'')&&lbl.parentElement&&/g-b/.test(lbl.parentElement.className||'')
+         &&txt(lbl.parentElement)===txt(lbl)) pill=lbl.parentElement;
+      pill.dataset.axApply='1';
+      var r=role(pill)||role(lbl);
+      var url='/contact-us/'+(r?('?role='+encodeURIComponent(r)):'');
+      pill.classList.add('ax-career-apply');
+      pill.setAttribute('role','link');
+      pill.setAttribute('tabindex','0');
+      pill.setAttribute('aria-label', r?('Apply for '+r):'Apply');
+      /* document capture: the chrome CTA pass registers first on the one pill it
+         did catch, and at the target phase registration order wins */
+      document.addEventListener('click',function(e){
+        var t=e.target, hit=(t&&t.nodeType===1&&(pill===t||pill.contains(t)));
+        if(!hit&&(e.clientX||e.clientY)){ var q=pill.getBoundingClientRect();
+          hit=q.width>0&&e.clientX>=q.left&&e.clientX<=q.right&&e.clientY>=q.top&&e.clientY<=q.bottom; }
+        if(!hit) return;
+        e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+        location.href=url;
+      },true);
+      pill.addEventListener('keydown',function(e){
+        if(e.key==='Enter'||e.key===' '){ e.preventDefault(); location.href=url; } });
+    });
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){ setTimeout(init,80); });
+  else setTimeout(init,80);
+})();
+</script>

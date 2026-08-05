@@ -1,0 +1,304 @@
+<style id="ax-csf-css">
+/* ---- CUSTOMER STORIES: REAL SEARCH + SECTOR FILTER (/insights/) ----
+   Figma ships the search bar and the sector rail as static text, and fills the
+   grid with 34 copies of one placeholder story ("ASML accelerates advanced
+   semiconductor lithography with Aeonx." -- a company AeonX has no relationship
+   with). This fragment turns the designed controls into working ones and puts
+   the real, linkable case studies in the designed slots. Layout is untouched:
+   cards are moved between EXISTING slot positions, never re-styled. */
+.ax-csf-input{position:absolute;left:0;top:-0.15vw;width:100%;height:1.6vw;border:0;background:transparent;outline:none;
+  font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:1.0417vw;line-height:1.25vw;color:rgb(35,39,46);padding:0}
+.ax-csf-input::placeholder{color:rgb(134,149,170);opacity:1}
+.ax-csf-chip{cursor:pointer;transition:color .2s ease,opacity .2s ease}
+.ax-csf-chip:hover{color:rgb(223,63,23)}
+.ax-csf-chip.is-on{color:rgb(223,63,23)!important;font-weight:700}
+.ax-csf-chip.is-off{opacity:.38;cursor:default;pointer-events:none}
+.ax-csf-card{transition:opacity .28s ease,transform .28s cubic-bezier(.22,.61,.36,1)}
+.ax-csf-card.is-hid{opacity:0;pointer-events:none}
+.ax-csf-link{cursor:pointer}
+.ax-csf-empty{position:absolute;font-family:'Nunito Sans',sans-serif;font-weight:400;color:rgb(134,149,170);white-space:nowrap}
+@media (prefers-reduced-motion:reduce){.ax-csf-card,.ax-csf-chip{transition:none}}
+@media (max-width:1024px){.ax-csf-input{font-size:4.6512vw;line-height:5.5814vw;height:6.5vw}}
+</style>
+<script>
+(function(){
+  var ASML=/ASML accelerates/i;
+  var POSTS=[
+    {t:"AeonX modernizing the Gopal Namkeen processing system using SAP/AWS",
+     u:"/2022/06/13/aeonx-modernizing-the-gopal-namkeen-processing-system-using-sap/14/37/26/932/sap/admin/",
+     s:"MANUFACTURING", g:"SAP · AWS · MANUFACTURING",
+     i:"https://www.aeonx.digital/wp-content/uploads/2022/06/01_Aeonx-blog-01.jpg"},
+    {t:"Disaster Recovery for Bhilosa Industries using AWS",
+     u:"/2022/03/11/disaster-recovery-for-bhilosa-industry-using-aws/09/17/41/814/sap/admin/",
+     s:"MANUFACTURING", g:"AWS · DISASTER RECOVERY",
+     i:"https://www.aeonx.digital/wp-content/uploads/2022/03/Disaster-Recovery-using-AWS.jpg"},
+    {t:"Case Study for Integration of TrackAbout with SAP ERP",
+     u:"/2022/07/19/case-study-for-integration-of-trackabout-with-sap-erp/07/52/04/984/sap/admin/",
+     s:"MANUFACTURING", g:"SAP ERP · INTEGRATION",
+     i:"https://www.aeonx.digital/wp-content/uploads/2022/07/01_Aeonx-blog-04.jpg"},
+    {t:"Migrate-to-Modernize: A Case Study",
+     u:"/2022/07/07/migrate-to-modernize-a-case-study/06/08/04/938/aws/admin/",
+     s:"TECHNOLOGY & SOFTWARE", g:"AWS · MIGRATION",
+     i:"https://www.aeonx.digital/wp-content/uploads/2022/07/01_Aeonx-blog-02-1.jpg"},
+    {t:"BVG India Limited deploys AWS for Disaster Recovery",
+     u:"/2022/09/15/bvg-india-limited-deploys-aws-for-disaster-recovery-2/10/08/31/1112/aws/admin/",
+     s:"", g:"AWS · DISASTER RECOVERY",
+     i:"https://www.aeonx.digital/wp-content/uploads/2022/09/02_Aeonx-blog-02-1.jpg"},
+    {t:"Success Story of Technology Adoption",
+     u:"/2022/09/06/success-story-of-technology-adoption/12/09/24/1003/sap/admin/",
+     s:"TECHNOLOGY & SOFTWARE", g:"SAP · ADOPTION",
+     i:"https://www.aeonx.digital/wp-content/uploads/2022/09/02_Aeonx-blog-01.jpg"},
+    {t:"Modernizing an Enterprise CRM Platform using Amazon ECS Fargate and AWS CI/CD",
+     u:"/2026/01/22/modernizing-enterprise-crm-and-employee-platforms-with-aws-fargate-and-end-to-end-ci-cd/10/00/00/243171/aws/rajat-jindal/",
+     s:"TECHNOLOGY & SOFTWARE", g:"AWS · FARGATE · CI/CD",
+     i:"https://www.aeonx.digital/wp-content/uploads/2026/01/blog1-architecture-diagram.png"},
+    {t:"Architecting a Secure Multi-Application Platform with CI/CD and Cross-Region DR on AWS",
+     u:"/2026/01/29/architecting-a-secure-multi-application-platform-with-ci-cd-and-cross-region-disaster-recovery-on-aws/10/00/00/243183/aws/rajat-jindal/",
+     s:"TECHNOLOGY & SOFTWARE", g:"AWS · CI/CD · DR",
+     i:"https://www.aeonx.digital/wp-content/uploads/2026/01/blog2-architecture-diagram.png"},
+    {t:"Architecting a Secure Multi-VPC R&D Platform on AWS with Hybrid Connectivity",
+     u:"/2026/01/26/architecting-a-secure-multi-vpc-rd-platform-on-aws-with-hybrid-connectivity-and-ci-cd-automation/01/23/06/243191/aws/rajat-jindal/",
+     s:"TECHNOLOGY & SOFTWARE", g:"AWS · NETWORKING",
+     i:""}
+  ];
+
+  function txt(e){ return (e.textContent||'').replace(/\s+/g,' ').trim(); }
+  /* Read the inline value through el.style, not a regex over the raw attribute:
+     other passes (hover/CTA) rewrite these properties, and the browser
+     re-serialises the whole attribute with spaces ("left: 34.8438vw") and
+     sometimes in px ("width: 108px"), which a naive attribute regex misses. */
+  function num(el,prop){
+    var v=el.style[prop]; if(!v) return null;
+    var m=/^(-?[\d.]+)(vw|px)$/.exec(String(v).trim()); if(!m) return null;
+    return m[2]==='vw'?parseFloat(m[1]):parseFloat(m[1])*100/window.innerWidth;
+  }
+  function setv(el,prop,v){ el.style[prop]=v.toFixed(4)+'vw'; }
+  /* Geometry comes from the INLINE vw style, never from getBoundingClientRect:
+     the desktop block is display:none below 1025px (and the mobile block above it),
+     so a rect-based pass silently measures 0x0 and groups nothing on whichever
+     breakpoint is not currently rendered. */
+  function box(el){
+    var l=num(el,'left'), t=num(el,'top'), w=num(el,'width'), h=num(el,'height');
+    if(l===null||t===null||w===null||h===null) return null;
+    return {l:l,t:t,w:w,h:h,r:l+w,b:t+h};
+  }
+  function inside(a,b,pad){ pad=pad||0.05; return a.l>=b.l-pad&&a.r<=b.r+pad&&a.t>=b.t-pad&&a.b<=b.b+pad; }
+  function fsize(el){ return parseFloat(getComputedStyle(el).fontSize)||0; }
+
+  /* Originals are cached the first time anyone asks: the second grid must not read
+     a height the first grid has already shortened. */
+  var ORIGS=[];
+  function ORIG(el,prop){
+    if(!el) return null;
+    for(var i=0;i<ORIGS.length;i++) if(ORIGS[i].el===el&&ORIGS[i].p===prop) return ORIGS[i].v;
+    var v=num(el,prop); ORIGS.push({el:el,p:prop,v:v}); return v;
+  }
+
+  /* The chrome CTA pass registers its navigate handler on these same elements
+     BEFORE this fragment runs, and at the target phase listeners fire in
+     registration order regardless of the capture flag -- so a same-element
+     stopImmediatePropagation is too late (clicking the MANUFACTURING chip
+     navigated to /industries/manufacturing/). Intercept at document capture,
+     which structurally precedes every target-phase listener. */
+  function capture(el,fn){
+    document.addEventListener('click',function(e){
+      var t=e.target;
+      var hit=(t&&t.nodeType===1&&(el===t||el.contains(t)));
+      if(!hit&&(e.clientX||e.clientY)){
+        var r=el.getBoundingClientRect();
+        hit=r.width>0&&e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom;
+      }
+      if(!hit) return;
+      e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+      fn(e);
+    },true);
+  }
+
+  function build(sec){
+    if(sec.dataset.axCsf) return; sec.dataset.axCsf='1';
+    var kids=[].slice.call(sec.children);
+    var boxes=kids.map(box);
+
+    /* --- cards: one per "Read the story" pill, grouped by the pill's own card shell --- */
+    var cards=[];
+    kids.forEach(function(p,pi){
+      if(!/g-b/.test(p.className||'')||!/^read the story$/i.test(txt(p))) return;
+      var pb=boxes[pi]; if(!pb) return;
+      var best=-1, bestA=Infinity;
+      kids.forEach(function(k,i){
+        var b=boxes[i]; if(!b||i===pi) return;
+        if(b.w<pb.w*2||b.h<pb.h*4) return;
+        if(!inside(pb,b)) return;
+        var a=b.w*b.h; if(a<bestA){ bestA=a; best=i; }
+      });
+      if(best<0) return;
+      var sb=boxes[best];
+      var mem=[];
+      kids.forEach(function(k,i){
+        var b=boxes[i]; if(!b) return;
+        if(b.l>=sb.l-0.1&&b.l<=sb.r+0.1&&b.t+b.h/2>=sb.t-0.1&&b.t+b.h/2<=sb.b+0.1) mem.push(k);
+      });
+      if(mem.indexOf(kids[best])<0) mem.push(kids[best]);
+      cards.push({ shell:kids[best], slot:{l:sb.l,t:sb.t},
+        mem:mem.map(function(k){ var b=box(k); return { el:k, dl:b.l-sb.l, dt:b.t-sb.t }; }) });
+    });
+    if(cards.length<2) return;
+    cards.sort(function(a,b){ return (a.slot.t-b.slot.t)||(a.slot.l-b.slot.l); });
+    var slots=cards.map(function(c){ return {l:c.slot.l,t:c.slot.t}; });
+
+    /* --- per-card content handles + fill placeholders with real stories --- */
+    var used=0;
+    cards.forEach(function(c){
+      var all=[];
+      c.mem.forEach(function(m){
+        if(/g-t/.test(m.el.className||'')&&txt(m.el)) all.push(m.el);
+        [].slice.call(m.el.querySelectorAll('.g-t')).forEach(function(e){ if(txt(e)) all.push(e); });
+      });
+      var title=null,tag=null,tmax=-1;
+      all.forEach(function(e){
+        if(/^read the story$/i.test(txt(e))) return;
+        var fs=fsize(e);
+        if(fs>tmax){ tmax=fs; title=e; }
+      });
+      all.forEach(function(e){
+        if(e===title||tag||/^read the story$/i.test(txt(e))) return;
+        tag=e;
+      });
+      c.title=title; c.tag=tag;
+      c.img=c.mem.map(function(m){ return m.el; }).filter(function(e){ return /g-img/.test(e.className||''); })[0];
+
+      if(title&&ASML.test(txt(title))){
+        var p=POSTS[used++];
+        if(!p){ c.dead=true; }
+        else{
+          title.textContent=p.t;
+          title.style.whiteSpace='normal';
+          if(tag) tag.textContent=p.g;
+          if(c.img&&p.i) c.img.style.backgroundImage='url('+p.i+')';
+          c.post=p;
+        }
+      }
+      if(!c.dead){
+        c.text=((title?txt(title):'')+' '+(tag?txt(tag):'')+' '+((c.post&&c.post.s)||'')).toLowerCase();
+        c.sector=((c.post&&c.post.s)||(tag?txt(tag):'')).toUpperCase();
+        if(c.post){
+          c.shell.setAttribute('role','link'); c.shell.setAttribute('tabindex','0');
+          var go=function(){ location.href=c.post.u; };
+          c.mem.forEach(function(m){ m.el.classList.add('ax-csf-link'); capture(m.el,go); });
+          c.shell.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' ') go(e); });
+        }
+        else {
+          /* Six designed stories have no page to open (no per-story pages exist yet).
+             The chrome CTA pass had already dressed their "Read the story" pill as a
+             link -- strip that affordance rather than ship a pill that does nothing. */
+          c.mem.forEach(function(m){
+            if(!/^read the story$/i.test(txt(m.el))) return;
+            m.el.style.cursor='default'; m.el.removeAttribute('role'); m.el.removeAttribute('tabindex');
+            m.el.classList.remove('ax-hv-clk');
+            [].slice.call(m.el.querySelectorAll('*')).forEach(function(x){ x.style.cursor='default'; });
+          });
+        }
+        c.mem.forEach(function(m){ m.el.classList.add('ax-csf-card'); });
+      }
+    });
+
+    var live=cards.filter(function(c){ return !c.dead; });
+    cards.filter(function(c){ return c.dead; }).forEach(function(c){
+      c.mem.forEach(function(m){ m.el.style.display='none'; });
+    });
+
+    /* --- controls: search field, sector chips, result count --- */
+    var texts=kids.filter(function(k){ return /g-t/.test(k.className||''); });
+    kids.forEach(function(k){ [].slice.call(k.querySelectorAll('.g-t')).forEach(function(e){ texts.push(e); }); });
+    var searchLbl=texts.filter(function(e){ return /^search\.\.\.$/i.test(txt(e)); })[0];
+    var countLbl=texts.filter(function(e){ return /^\d+\s+results?$/i.test(txt(e)); })[0];
+    var SECTORS=['EDUCATION & SCIENCE','ENERGY','MANUFACTURING','RETAIL & CONSUMER GOODS',
+                 'HEALTHCARE & LIFE SCIENCES','PUBLIC SECTOR','TRANSPORTATION & LOGISTICS',
+                 'TECHNOLOGY & SOFTWARE','FINANCIAL SERVICES'];
+    var chips=texts.filter(function(e){ return SECTORS.indexOf(txt(e).toUpperCase())>-1; });
+
+    var input=null;
+    if(searchLbl){
+      input=document.createElement('input');
+      input.type='search'; input.className='ax-csf-input';
+      input.placeholder='Search customer stories…';
+      input.setAttribute('aria-label','Search customer stories');
+      searchLbl.textContent='';
+      searchLbl.style.whiteSpace='normal';
+      searchLbl.appendChild(input);
+    }
+
+    /* ponytail: the grid keeps its designed height when filtered, so a narrow
+       result set leaves empty space below it. Collapsing it means re-laying the
+       page and the absolutely-positioned footer in two different vw scales
+       (desktop vs mobile block) -- not worth the breakage risk before launch. */
+    var q='', sector='';
+    function matches(c){
+      if(sector&&c.sector.indexOf(sector)<0) return false;
+      if(q&&c.text.indexOf(q)<0) return false;
+      return true;
+    }
+    var empty=null;
+    function apply(){
+      var shown=live.filter(matches);
+      live.forEach(function(c){
+        var on=shown.indexOf(c)>-1;
+        c.mem.forEach(function(m){ m.el.classList.toggle('is-hid',!on); });
+        if(!on){ c.mem.forEach(function(m){ m.el.style.visibility='hidden'; }); return; }
+        c.mem.forEach(function(m){ m.el.style.visibility=''; });
+        var s=slots[shown.indexOf(c)];
+        c.mem.forEach(function(m){ setv(m.el,'left',s.l+m.dl); setv(m.el,'top',s.t+m.dt); });
+      });
+      if(countLbl) countLbl.textContent=shown.length+(shown.length===1?' result':' results');
+      if(!shown.length){
+        if(!empty){
+          empty=document.createElement('div');
+          empty.className='ax-csf-empty';
+          empty.style.left=slots[0].l+'vw'; empty.style.top=slots[0].t+'vw';
+          empty.style.fontSize=((live[0].title?fsize(live[0].title):0.9375)||0.9375)+'vw';
+          sec.appendChild(empty);
+        }
+        empty.textContent='No customer stories match that search.';
+        empty.style.display='';
+      } else if(empty){ empty.style.display='none'; }
+    }
+
+    chips.forEach(function(ch){
+      var name=txt(ch).toUpperCase();
+      var any=live.some(function(c){ return c.sector.indexOf(name)>-1; });
+      ch.classList.add('ax-csf-chip');
+      if(!any){ ch.classList.add('is-off'); ch.title='No customer stories in this sector yet'; ch.setAttribute('aria-disabled','true'); return; }
+      ch.setAttribute('role','button'); ch.setAttribute('tabindex','0');
+      function pick(){
+        var on=sector===name;
+        sector=on?'':name;
+        chips.forEach(function(o){ o.classList.toggle('is-on',!on&&o===ch); });
+        apply();
+      }
+      capture(ch,pick);
+      ch.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); pick(); } });
+    });
+
+    if(input){
+      var t=null;
+      input.addEventListener('input',function(){
+        clearTimeout(t);
+        t=setTimeout(function(){ q=input.value.toLowerCase().trim(); apply(); },120);
+      });
+      input.addEventListener('keydown',function(e){ e.stopPropagation(); });   /* Cmd-K search overlay must not eat typing */
+    }
+
+    apply();
+    var rt=null;
+    window.addEventListener('resize',function(){ clearTimeout(rt); rt=setTimeout(apply,200); });
+  }
+
+  function init(){
+    var labels=[].slice.call(document.querySelectorAll('.g-t')).filter(function(e){
+      return /^filter by sector/i.test((e.textContent||'').trim()); });
+    labels.forEach(function(l){ try{ build(l.parentElement); }catch(err){} });
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){ setTimeout(init,60); });
+  else setTimeout(init,60);
+})();
+</script>

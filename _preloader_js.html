@@ -59,7 +59,7 @@
 
   /* Progress eases to 100. It will not finish before MIN (so the animation is never a
      flash) and it cannot outlast MAX (so a slow asset never holds the site hostage). */
-  var MIN=1500,MAX=3000,t0=Date.now(),loaded=false,done=false,shown=0;
+  var MIN=450,MAX=2000,t0=Date.now(),loaded=false,done=false,shown=0;
   /* Repaint the counter at ~9fps, not every frame. At 60fps the digits changed faster
      than the dots could finish their fade, so the number was an unreadable shimmer. */
   var STEP=110,lastPaint=-1e9,lastVal=-1;

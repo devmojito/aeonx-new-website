@@ -590,8 +590,12 @@ def emit_vec_asset(n, left, top, w, h):
     # its render bounds are bigger than its layout box (a 557x416 ellipse exports at
     # 1009x1009 under an 800px blur). Re-applying it in CSS blurs the art twice.
     style += blur_css(n, layer=False)
-    return (f'<img class="g-vec" src="/assets/vec/{fn}.svg" data-vec="{nid}" '
-            f'alt="" role="presentation" aria-hidden="true" style="{style}">')
+    # Pages carry 60+ vector exports; deferring the off-screen ones cuts the
+    # first-paint request burst without touching layout (width/height come from
+    # the inline style, so nothing reflows when they arrive).
+    lazy = '' if top < 60 else ' loading="lazy" decoding="async"'
+    return (f'<img class="g-vec" src="/assets/vec/{fn}.svg" data-vec="{nid}"'
+            f'{lazy} alt="" role="presentation" aria-hidden="true" style="{style}">')
 
 SKIP_NAMES = ('Nav Bar', 'footer', 'section.final-cta')
 

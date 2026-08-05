@@ -68,27 +68,111 @@
     });
   }
 
-  /* ---------- 1. TITLE CASE ON CTA LABELS ----------
-     Client asked for Title Case on buttons ("Request A Proposal", "Talk To Us").
-     Applied ONLY to control labels, never to headings or body copy, and words that
-     are already all-caps (AWS, SAP, AXIOM, CMS) are left untouched. */
-  var CTA_RE=/^(talk to us|request a proposal|get started|see axiom|saas suite|subscribe|read us|learn more|explore|compare suite|contact us|send message|reset form|book a demo|request the trust pack|meet axiom|see the suite|talk to a specialist|talk to product team|get in touch|explore .+|see .+ services)$/i;
-  /* Whitelisted acronyms keep their casing; everything else is Title Cased. A
-     blanket "all-caps means acronym" rule cannot work here, because the labels the
-     client wants changed are themselves shouty ("TALK TO US" -> "Talk To Us"). */
-  var ACR={aws:'AWS',sap:'SAP',ams:'AMS',ai:'AI',ml:'ML',cms:'CMS',erp:'ERP',gcp:'GCP',
-           ecs:'ECS',waf:'WAF',axiom:'AXIOM',api:'API',saas:'SaaS',rise:'RISE',grow:'GROW',
-           bse:'BSE',noc:'NOC',sre:'SRE',hana:'HANA',btp:'BTP',iot:'IoT',rfp:'RFP',rpf:'RPF'};
-  function titleCase(s){
-    return s.toLowerCase().replace(/[a-z0-9]+/g, function(w){
-      return ACR[w] || (w.charAt(0).toUpperCase()+w.slice(1));
+  /* ---------- 0. COPY DEFECTS CARRIED IN FROM FIGMA ----------
+     Two unambiguous misspellings ship in the design and would go out at launch:
+     "Send RPF Request" (RFP) and "Ahmadabad" (the footer and the rest of the site
+     spell it Ahmedabad). Corrected at runtime rather than in the generated markup,
+     because these pages are rebuilt from the Figma dump and a file edit would be
+     wiped. Anything needing real content -- the truncated "Gujara." address line and
+     the stock "John Doe" testimonial headshot -- is left alone for the client. */
+  var COPY_FIX=[[/\bSend RPF Request\b/g,'Send RFP Request'],[/\bAhmadabad\b/g,'Ahmedabad'],
+                [/\bSaas\b/g,'SaaS'],
+                /* Figma spells the product names three ways ("Logystix" in the footer,
+                   "LogystiX" on the cards). One casing per brand, sitewide. */
+                [/\bLogystix\b/g,'LogystiX'],[/\bManuFex\b/g,'ManufeX'],[/\bManufex\b/g,'ManufeX'],
+                [/\bSupplierx\b/g,'SupplierX'],[/\bOrderx\b/g,'OrderX'],[/\bAeonx\b/g,'AeonX']];
+  function copyFix(){
+    [].slice.call(document.querySelectorAll('.g-t,section.ax-footer a,.ax-mm2__ln,.ax-nav__link')).forEach(function(e){
+      if(e.children.length) return;
+      var t=e.textContent, o=t;
+      COPY_FIX.forEach(function(f){ t=t.replace(f[0],f[1]); });
+      if(t!==o) e.textContent=t;
     });
   }
+
+  /* ---------- 1. TITLE CASE ON CTA LABELS ----------
+     Client asked for Title Case on EVERY button. The first version matched an
+     allow-list of known labels, so anything the list did not name -- "Download the
+     brochure" was the one that got reported -- shipped in sentence case. A label is
+     now Title Cased when the ELEMENT IS A BUTTON, decided from the markup rather
+     than from its wording: it carries a control role (data-cta / data-axpill /
+     role=link|button, or it is a chrome button class), or it sits inside a pill --
+     a box with a background colour and a corner radius that is not much bigger than
+     the label itself. Headings, card titles and body copy fail that test. */
+  var ACR={aws:'AWS',sap:'SAP',ams:'AMS',ai:'AI',ml:'ML',cms:'CMS',erp:'ERP',gcp:'GCP',
+           ecs:'ECS',waf:'WAF',axiom:'AXIOM',api:'API',saas:'SaaS',rise:'RISE',grow:'GROW',
+           bse:'BSE',noc:'NOC',sre:'SRE',hana:'HANA',btp:'BTP',iot:'IoT',rfp:'RFP',rpf:'RPF',
+           iepf:'IEPF',pdf:'PDF',hr:'HR',it:'IT',ceo:'CEO',cio:'CIO',cfo:'CFO',esg:'ESG',
+           brsr:'BRSR',agm:'AGM',faq:'FAQ',us:'Us',
+           /* product names carry internal capitals -- Title Case must not flatten
+              them to "Supplierx" */
+           aeonx:'AeonX',supplierx:'SupplierX',orderx:'OrderX',xpense:'Xpense',
+           logystix:'LogystiX',manufex:'ManufeX',aeonxiq:'AeonX.IQ',axiomai:'AXIOM AI'};
+  function titleCase(s){
+    /* Hyphenated compounds are ONE word: "SAP-on-AWS" must not become
+       "SAP-On-AWS". Capitalise the first part, keep the rest as written unless it
+       is a known acronym. */
+    return s.split(/(\s+)/).map(function(word){
+      if(/^\s+$/.test(word)||!word) return word;
+      if(word.indexOf('-')>-1){
+        return word.split('-').map(function(part,i){
+          var low=part.toLowerCase();
+          if(ACR[low]) return ACR[low];
+          if(i===0) return low.charAt(0).toUpperCase()+low.slice(1);
+          return part;                       /* keep the author's casing */
+        }).join('-');
+      }
+      return word.toLowerCase().replace(/[a-z0-9]+/g, function(w){
+        return ACR[w] || (w.charAt(0).toUpperCase()+w.slice(1));
+      });
+    }).join('');
+  }
+  /* a pill: painted box, rounded, and sized like a button around this label */
+  function inPill(l){
+    var lr=l.getBoundingClientRect();
+    if(!lr.width||lr.height>60) return false;
+    var p=l.parentElement, hops=0;
+    while(p&&hops<3){
+      var st=p.getAttribute&&p.getAttribute('style')||'';
+      if(/background-color|background:/.test(st)&&/border-radius/.test(st)){
+        var pr=p.getBoundingClientRect();
+        if(pr.width&&pr.width*pr.height<=lr.width*lr.height*14) return true;
+      }
+      p=p.parentElement; hops++;
+    }
+    /* Figma also exports the pill as a SIBLING rect behind the label */
+    var pill=pillOf(l);
+    if(pill){
+      var ps=pill.getAttribute('style')||'';
+      if(/background-color/.test(ps)&&/border-radius/.test(ps)) return true;
+    }
+    return false;
+  }
+  function isControl(e){
+    if(e.dataset&&(e.dataset.cta||e.dataset.axcta||e.dataset.axpill)) return true;
+    var role=e.getAttribute('role')||(e.parentElement&&e.parentElement.getAttribute('role'));
+    if(role==='link'||role==='button'||role==='tab') return true;
+    if(e.closest('a[href]')) return true;
+    if(/ax-nav__btn|ax-mm2__feat-btn|ax-mm2__api-btn|ax-fx-pill/.test(e.className||'')) return true;
+    return false;
+  }
+  /* Labels that must keep their exact casing: legal names, addresses, taglines that
+     merely happen to sit inside a painted box. Anything longer than a button label
+     is skipped anyway. */
+  var KEEP=/@|\bhttps?:|^\+?\d|·|©/;
   function applyTitleCase(root){
     (root||document).querySelectorAll('.g-t,.ax-nav__btn,.ax-mm2__feat-btn,.ax-mm2__api-btn').forEach(function(e){
       if(e.children.length) return;                     /* leave rich labels alone */
+      if(e.closest('section.ax-footer')&&!isControl(e)) return;
       var t=txt(e);
-      if(!t||t.length>34||!CTA_RE.test(t)) return;
+      if(!t||t.length>34||KEEP.test(t)) return;
+      /* A clickable CARD is not a button: its title is set at heading size. Compare
+         in vw, not px -- the mobile block is authored against a 430px design, so its
+         16px button label computes to ~54px when the desktop viewport is 1440 and a
+         px threshold silently skipped every mobile button. */
+      var fsvw=(parseFloat(getComputedStyle(e).fontSize)||0)*100/(window.innerWidth||1920);
+      if(fsvw > (e.closest('.ax-mob')?5.0:1.05)) return;
+      if(!isControl(e)&&!inPill(e)) return;
       var tc=titleCase(t);
       if(tc!==t) e.textContent=tc;
     });
@@ -173,6 +257,24 @@
     var pill=pillOf(subLabel)||subLabel;
     pill.classList.add('ax-fx-pill');
     subLabel.style.pointerEvents='none';
+    /* Figma sizes the Subscribe label box to the text and pins it at the pill's
+       left edge, so the label sat 0px from the left and 41px from the right. Two
+       measure-and-nudge passes (this one and the generic centreLabels) fought each
+       other over it, so stop measuring: when the label is a CHILD of its pill, make
+       it span the pill and let text-align do the centring. Nothing to race. */
+    /* Do not depend on pillOf() here: on the first pass the footer may not have
+       been laid out yet, it measures 0 and returns null. The label's own parent is
+       the painted pill in this markup, so test that directly. */
+    (function centreInPill(){
+      var host=subLabel.parentElement;
+      if(!host) return;
+      var hs=host.getAttribute('style')||'';
+      if(!/background-color/.test(hs)||!/border-radius/.test(hs)) return;
+      subLabel.style.left='0';
+      subLabel.style.width='100%';
+      subLabel.style.textAlign='center';
+      subLabel.dataset.axCentred='1';
+    })();
 
     var note=document.createElement('div');
     note.className='ax-fx-note';
@@ -205,16 +307,33 @@
         +'?subject='+encodeURIComponent('Newsletter subscription')
         +'&body='+encodeURIComponent('Please subscribe this address to the AeonX newsletter: '+v);
     }
-    /* capture + immediate stop beats the generic CTA linkifier's own handler, and
-       the data-cta marker is cleared so nothing re-links it on a later pass */
-    delete pill.dataset.cta; delete pill.dataset.axcta;
-    pill.removeAttribute('role');
-    if(subLabel){ delete subLabel.dataset.cta; delete subLabel.dataset.axcta; }
-    pill.addEventListener('click',submit,true);
+    /* DOCUMENT-capture interception, not a same-element listener: at the target
+       phase listeners run in REGISTRATION order regardless of the capture flag,
+       and the chrome CTA pass registered its navigate handler on this pill first
+       -- so a same-element stopImmediatePropagation fires too late and Subscribe
+       still navigated to /contact-us/. Capture at document level always runs
+       before any target-phase listener, structurally.
+       The data-cta marker is KEPT: it is what the CTA-unblock peeler keys on
+       (without it the invisible g-clip shell above this pill swallows real
+       clicks), and the chrome linkifier treats it as its already-done guard.
+       Because that shell may still be on top before the peeler runs, the trap
+       matches by CLICK POINT against the pill's rect, not by event target. */
+    function within(e){
+      if(e.target&&e.target.nodeType===1&&(pill.contains(e.target)||subLabel.contains(e.target))) return true;
+      if(!e.clientX&&!e.clientY) return false;   /* keyboard-synth clicks carry 0,0 */
+      var r=pill.getBoundingClientRect();
+      return e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom;
+    }
+    var busy=false;
+    document.addEventListener('click',function(e){
+      if(busy||!within(e)) return;
+      busy=true; setTimeout(function(){busy=false;},150);
+      submit(e); },true);
     pill.setAttribute('role','button');
     pill.setAttribute('tabindex','0');
-    pill.addEventListener('keydown',function(e){
-      if(e.key==='Enter'||e.key===' '){ submit(e); } },true);
+    document.addEventListener('keydown',function(e){
+      if((e.key==='Enter'||e.key===' ')&&e.target&&e.target.nodeType===1&&
+         (pill.contains(e.target)||subLabel.contains(e.target))) submit(e); },true);
     input.addEventListener('keydown',function(e){ if(e.key==='Enter') submit(e); });
 
     /* ---------- 4. NEWSLETTER COLUMN ALIGNMENT ----------
@@ -324,7 +443,7 @@
   function centerLabels(){
     var seen=new Set();
     [].slice.call(document.querySelectorAll('.g-t')).forEach(function(l){
-      if(l.closest('.ax-mob')||l.children.length) return;
+      if(l.closest('.ax-mob')||l.children.length||l.dataset.axCentred) return;
       var t=txt(l); if(!t||t.length>34) return;
       if(getComputedStyle(l).textAlign!=='center') return;   /* left-aligned by design */
       var pill=pillOf(l); if(!pill) return;
@@ -344,6 +463,7 @@
   }
 
   function init(){
+    copyFix();
     applyTitleCase();
     armChrome();
     newsletter();

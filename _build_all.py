@@ -60,6 +60,29 @@ REDIRECTS = {
     "case-studies": ("insights", "Case Studies — AeonX Digital"),
     "industries/energy-oil-gas": ("industries/energy-fertiliser-oil-gas", "Energy, Oil & Gas — AeonX Digital"),
     "industries/textiles": ("industries/textiles-apparel", "Textiles — AeonX Digital"),
+    "industries": ("industries/manufacturing", "Industries — AeonX Digital"),
+    # Legacy WordPress URLs that are indexed on the live site and must keep resolving
+    # after the cutover (harvested from the live Yoast sitemaps).
+    "about-us": ("who-we-are/foundation", "About Us — AeonX Digital"),
+    "career": ("who-we-are/career", "Careers — AeonX Digital"),
+    "resources": ("insights", "Resources — AeonX Digital"),
+    "resources/blog": ("insights/blog", "Blog — AeonX Digital"),
+    "resources/success-stories": ("insights", "Success Stories — AeonX Digital"),
+    "resources/success-stories/sap-tabs": ("insights", "SAP Success Stories — AeonX Digital"),
+    "resources/success-stories/aws-tabs": ("insights", "AWS Success Stories — AeonX Digital"),
+    "solutions": ("products", "Solutions — AeonX Digital"),
+    "solutions/business-solution": ("products", "Business Solutions — AeonX Digital"),
+    "solutions/cloud-solution": ("services", "Cloud Solutions — AeonX Digital"),
+    "investors": ("investor-relations", "Investors — AeonX Digital"),
+    "financial-highlight": ("investor-relations", "Financial Highlights — AeonX Digital"),
+    "shareholder-information": ("investor-relations/shareholding-pattern", "Shareholder Information — AeonX Digital"),
+    "corporate-governance": ("investor-relations", "Corporate Governance — AeonX Digital"),
+    "code-and-policy": ("investor-relations", "Codes and Policies — AeonX Digital"),
+    "other-documents": ("investor-relations", "Other Documents — AeonX Digital"),
+    "investor-contact": ("contact-us", "Investor Contact — AeonX Digital"),
+    "newsroom": ("insights/blog", "Newsroom — AeonX Digital"),
+    "newsroom/aeonx-aws-partner-network": ("2022/06/08/aeonx-aws-partner-network/05/48/43/918/aws/admin", "AeonX joins the AWS Partner Network — AeonX Digital"),
+    "thank-you": ("contact-us", "Thank You — AeonX Digital"),
 }
 
 REDIRECT_TMPL = (

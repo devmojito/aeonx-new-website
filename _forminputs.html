@@ -101,8 +101,12 @@ select.ax-cf-in{cursor:pointer;appearance:none;-webkit-appearance:none}
   }
 
   function findByText(scope, label){
+    /* Case-insensitive on purpose: the Title Case pass rewrites CTA labels
+       ("Reset form" -> "Reset Form") and whichever fragment runs first wins, so an
+       exact match silently found nothing and left the Reset button dead. */
+    var want = String(label).toLowerCase();
     var ts = scope.querySelectorAll('.g-t');
-    for (var i = 0; i < ts.length; i++) if (txt(ts[i]) === label) return ts[i];
+    for (var i = 0; i < ts.length; i++) if (txt(ts[i]).toLowerCase() === want) return ts[i];
     return null;
   }
 
@@ -197,19 +201,58 @@ select.ax-cf-in{cursor:pointer;appearance:none;-webkit-appearance:none}
         placeholder:"Tell us what you're trying to do, what's in your way, and what done looks like." });
     }
 
+    /* Both buttons are intercepted at DOCUMENT CAPTURE. The chrome CTA linkifier
+       registers its own navigate handler on these pills before this fragment runs,
+       and at the target phase listeners fire in registration order regardless of the
+       capture flag -- a same-element listener is simply too late (this is why Reset
+       looked wired and still did nothing). Matching by click POINT as well as target
+       covers the invisible shells that sit over the pills. */
+    function capture(el, fn){
+      document.addEventListener('click', function(e){
+        var t = e.target, hit = (t && t.nodeType === 1 && (el === t || el.contains(t)));
+        if (!hit && (e.clientX || e.clientY)){
+          var r = el.getBoundingClientRect();
+          hit = r.width > 0 && e.clientX >= r.left && e.clientX <= r.right &&
+                e.clientY >= r.top && e.clientY <= r.bottom;
+        }
+        if (!hit) return;
+        e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+        fn();
+      }, true);
+    }
+
     var resetBtn = findByText(form, 'Reset Form');
     if (resetBtn){
       var resetPill = pillFor(form, resetBtn);
       resetPill.style.cursor = 'pointer';
-      resetPill.addEventListener('click', function(){ form.reset(); });
+      resetPill.setAttribute('role', 'button');
+      resetPill.setAttribute('tabindex', '0');
+      var doReset = function(){
+        form.reset();
+        /* form.reset() only restores DEFAULT values, and these fields are grafted in
+           with their user text as the live value -- clear them explicitly. */
+        form.querySelectorAll('input,textarea').forEach(function(i){ i.value = ''; });
+        form.querySelectorAll('select').forEach(function(sel){ sel.selectedIndex = 0; });
+      };
+      capture(resetPill, doReset);
+      resetPill.addEventListener('keydown', function(e){
+        if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); doReset(); } });
     }
-    var sendLabel = findByText(form, 'Send Message') || findByText(form, 'Send RPF Request');
+    /* the RPF/RFP spelling is corrected at runtime by _uifx, so accept both */
+    var sendLabel = findByText(form, 'Send Message') || findByText(form, 'Send RFP Request')
+                 || findByText(form, 'Send RPF Request');
     if (sendLabel){
       var sendPill = pillFor(form, sendLabel);
       sendPill.style.cursor = 'pointer';
-      sendPill.addEventListener('click', function(){
-        if (form.requestSubmit) form.requestSubmit(); else form.dispatchEvent(new Event('submit', {cancelable:true}));
-      });
+      sendPill.setAttribute('role', 'button');
+      sendPill.setAttribute('tabindex', '0');
+      var doSend = function(){
+        if (form.requestSubmit) form.requestSubmit();
+        else form.dispatchEvent(new Event('submit', {cancelable:true}));
+      };
+      capture(sendPill, doSend);
+      sendPill.addEventListener('keydown', function(e){
+        if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); doSend(); } });
     }
     wireSubmit(form, kind === 'A' ? 'Talk to AeonX' : 'Project enquiry');
   }
