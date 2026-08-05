@@ -2574,7 +2574,19 @@ html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
       if (cls !== 'ax-hv-txt') {
         var lab = texts.filter(function(t){ return t.w && t.el !== s.el && inside(s, t); })
                        .sort(function(x, y){ return x.a - y.a; })[0];
-        if (lab && fsize(lab.el) < U * 0.68) return;
+        /* ...but a control this file has ALREADY identified as an Explore/Learn-more
+           pill is a button by construction, whatever its type size. The 0.68vw cut
+           was aimed at eyebrow chips (11px) and was also swallowing real CTAs set at
+           12px -- the EXPLORE pills on the homepage industries grid had no hover at
+           all because of it. Route or no route, wireExplore marks those with
+           data-axpill, so trust that over the size heuristic. */
+        var isPill = s.el.dataset.axpill || s.el.querySelector('[data-axpill]') ||
+                     (lab && lab.el.dataset.axpill);
+        /* 0.68vw was too high: eyebrow chips are 11px (0.5729vw) but real CTAs go
+           down to 12px (0.625vw), so the cut was swallowing genuine buttons -- the
+           EXPLORE pills were only the most visible case. 0.60vw sits cleanly
+           between the two families with margin on both sides. */
+        if (!isPill && lab && fsize(lab.el) < U * 0.60) return;
       }
       var mem = membersOf(s, boxes.concat(texts, OTHER), null);
       /* A small vector in the right half of the pill is its trailing arrow. It can be a
