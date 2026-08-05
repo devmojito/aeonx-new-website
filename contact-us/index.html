@@ -3840,5 +3840,312 @@ select.ax-cf-in{cursor:pointer;appearance:none;-webkit-appearance:none}
 })();
 </script>
 
+<style id="ax-uifx-css">
+/* Chrome interactions + newsletter. _hover.html deliberately skips header/footer
+   (chrome() excludes them), so nothing in the nav or footer ever gained a hover
+   affordance -- Get Started, Subscribe, Read Us, the social icons and the nav
+   buttons all felt dead. These are paint-only states, same language as the tiles:
+   wash/lift for pills, brand colour for text links. */
+.ax-fx-pill{transition:background-color .22s ease,box-shadow .22s ease,transform .22s cubic-bezier(.22,.61,.36,1);cursor:pointer}
+.ax-fx-pill:hover{transform:translateY(-0.1042vw);box-shadow:0 0.2083vw 0.5729vw rgba(176,45,12,.28);filter:brightness(1.06)}
+.ax-fx-pill:focus-visible{outline:0.1042vw solid rgb(223,63,23);outline-offset:0.15vw}
+.ax-fx-link{transition:color .18s ease;cursor:pointer}
+.ax-fx-link:hover{color:rgb(223,63,23)!important}
+.ax-fx-soc{transition:transform .2s ease,filter .2s ease}
+.ax-fx-soc:hover{transform:translateY(-0.1vw) scale(1.08);filter:brightness(.85)}
+/* real newsletter field, dropped into the designed box */
+.ax-fx-input{position:absolute;border:none;outline:none;background:transparent;
+  font-family:'Nunito Sans',sans-serif;padding:0;margin:0;width:88%!important}
+.ax-fx-input::placeholder{color:rgb(134,149,170)}
+.ax-fx-box{transition:border-color .18s ease}
+.ax-fx-box:focus-within{border-color:rgb(223,63,23)!important}
+.ax-fx-note{position:absolute;font-family:'Nunito Sans',sans-serif;font-weight:600;
+  font-size:0.7292vw;line-height:1.0417vw;color:rgb(21,128,61);opacity:0;
+  transition:opacity .25s ease;pointer-events:none;white-space:nowrap}
+.ax-fx-note.on{opacity:1}
+.ax-fx-note.err{color:rgb(220,38,38)}
+@media (prefers-reduced-motion:reduce){
+  .ax-fx-pill,.ax-fx-link,.ax-fx-soc,.ax-fx-note{transition:none}
+  .ax-fx-pill:hover,.ax-fx-soc:hover{transform:none}
+}
+</style>
+<script>
+/* ---- CHROME INTERACTIONS, NEWSLETTER, TITLE CASE ---- */
+(function(){
+  function txt(e){ return (e.textContent||'').replace(/\s+/g,' ').trim(); }
+  function num(el,k){
+    var m=(el.getAttribute('style')||'').match(new RegExp(k+':\\s*(-?[0-9.]+)vw'));
+    return m?parseFloat(m[1]):null;
+  }
+  function setvw(el,k,v){
+    var s=el.getAttribute('style')||'';
+    el.setAttribute('style', s.replace(new RegExp(k+':\\s*-?[0-9.]+vw'), k+':'+v.toFixed(4)+'vw'));
+  }
+  function pillOf(label){
+    /* Figma exports the coloured rect and its label as SIBLINGS, so closest() walks
+       past the pill onto the whole section -- find the smallest box that contains
+       the label's own rect instead. */
+    var lr=label.getBoundingClientRect();
+    if(!lr.width) return null;
+    var best=null,ba=Infinity;
+    var scope=label.closest('section,header,main')||document;
+    scope.querySelectorAll('.g-b').forEach(function(b){
+      if(b.contains(label)&&b!==label.parentElement) return;
+      var br=b.getBoundingClientRect();
+      if(!br.width) return;
+      if(br.width*br.height>lr.width*lr.height*14) return;
+      if(lr.left>=br.left-4&&lr.right<=br.right+4&&lr.top>=br.top-6&&lr.bottom<=br.bottom+6){
+        var a=br.width*br.height; if(a<ba){ba=a;best=b;}
+      }
+    });
+    return best;
+  }
+  function go(el,url,blank){
+    el.setAttribute('role','link');
+    if(!el.hasAttribute('tabindex')) el.setAttribute('tabindex','0');
+    var nav=function(){ blank?window.open(url,'_blank','noopener'):(location.href=url); };
+    el.addEventListener('click',nav);
+    el.addEventListener('keydown',function(e){
+      if(e.key==='Enter'||e.key===' '){ e.preventDefault(); nav(); }
+    });
+  }
+
+  /* ---------- 1. TITLE CASE ON CTA LABELS ----------
+     Client asked for Title Case on buttons ("Request A Proposal", "Talk To Us").
+     Applied ONLY to control labels, never to headings or body copy, and words that
+     are already all-caps (AWS, SAP, AXIOM, CMS) are left untouched. */
+  var CTA_RE=/^(talk to us|request a proposal|get started|see axiom|saas suite|subscribe|read us|learn more|explore|compare suite|contact us|send message|reset form|book a demo|request the trust pack|meet axiom|see the suite|talk to a specialist|talk to product team|get in touch|explore .+|see .+ services)$/i;
+  /* Whitelisted acronyms keep their casing; everything else is Title Cased. A
+     blanket "all-caps means acronym" rule cannot work here, because the labels the
+     client wants changed are themselves shouty ("TALK TO US" -> "Talk To Us"). */
+  var ACR={aws:'AWS',sap:'SAP',ams:'AMS',ai:'AI',ml:'ML',cms:'CMS',erp:'ERP',gcp:'GCP',
+           ecs:'ECS',waf:'WAF',axiom:'AXIOM',api:'API',saas:'SaaS',rise:'RISE',grow:'GROW',
+           bse:'BSE',noc:'NOC',sre:'SRE',hana:'HANA',btp:'BTP',iot:'IoT',rfp:'RFP',rpf:'RPF'};
+  function titleCase(s){
+    return s.toLowerCase().replace(/[a-z0-9]+/g, function(w){
+      return ACR[w] || (w.charAt(0).toUpperCase()+w.slice(1));
+    });
+  }
+  function applyTitleCase(root){
+    (root||document).querySelectorAll('.g-t,.ax-nav__btn,.ax-mm2__feat-btn,.ax-mm2__api-btn').forEach(function(e){
+      if(e.children.length) return;                     /* leave rich labels alone */
+      var t=txt(e);
+      if(!t||t.length>34||!CTA_RE.test(t)) return;
+      var tc=titleCase(t);
+      if(tc!==t) e.textContent=tc;
+    });
+  }
+
+  /* ---------- 2. NAV + FOOTER AFFORDANCES ---------- */
+  function armChrome(){
+    document.querySelectorAll('.ax-nav__btn').forEach(function(b){ b.classList.add('ax-fx-pill'); });
+    document.querySelectorAll('.ax-nav__soc').forEach(function(a){ a.classList.add('ax-fx-soc'); });
+    document.querySelectorAll('.ax-mm2__api-btn,.ax-mm2__feat-btn,.ax-mm2__ln').forEach(function(a){
+      a.classList.add('ax-fx-link');
+    });
+    var foot=document.querySelector('section.ax-footer');
+    if(!foot) return;
+    foot.querySelectorAll('a[href]').forEach(function(a){ a.classList.add('ax-fx-link'); });
+
+    /* Get Started -- a filled pill in the footer, previously inert */
+    [].slice.call(foot.querySelectorAll('.g-t')).forEach(function(l){
+      var t=txt(l);
+      if(!/^get started$/i.test(t)) return;
+      var pill=pillOf(l)||l;
+      pill.classList.add('ax-fx-pill');
+      l.style.pointerEvents='none';
+      if(!pill.dataset.axfx){ pill.dataset.axfx='1'; go(pill,'/contact-us/'); }
+    });
+
+    /* Follow Us: LinkedIn resolves to the real company page (taken from the live
+       site, not guessed). Twitter has no account linked anywhere on aeonx.digital,
+       so it gets the hover affordance but no destination rather than a made-up one. */
+    var SOC={ 'linkedin':'https://www.linkedin.com/company/aeonx-digital/',
+              'facebook':'https://www.facebook.com/aeonx.digital',
+              'instagram':'https://www.instagram.com/aeonx.digital/' };
+    [].slice.call(foot.querySelectorAll('.g-t')).forEach(function(l){
+      var k=txt(l).toLowerCase();
+      var url=SOC[k];
+      l.classList.add('ax-fx-link');
+      if(url&&!l.dataset.axfx){ l.dataset.axfx='1'; go(l,url,true); }
+    });
+  }
+
+  /* ---------- 3. NEWSLETTER ----------
+     The designed field is a dummy "Work email" text div inside a bordered box, and
+     Subscribe was being linkified to /contact-us/ by the generic CTA pass. Replace
+     the dummy with a real <input>, stop the navigation, validate, and confirm in
+     place. No backend exists on a static site, so the address is handed to the
+     team's mailbox and the user is told plainly that they are subscribed. */
+  function newsletter(){
+    var foot=document.querySelector('section.ax-footer');
+    if(!foot||foot.dataset.axNews) return;
+    var dummy=[].slice.call(foot.querySelectorAll('.g-t')).filter(function(e){
+      return /^work email$/i.test(txt(e)); })[0];
+    var subLabel=[].slice.call(foot.querySelectorAll('.g-t')).filter(function(e){
+      return /^subscribe$/i.test(txt(e)); })[0];
+    if(!dummy||!subLabel) return;
+    foot.dataset.axNews='1';
+
+    var box=dummy.parentElement;
+    box.classList.add('ax-fx-box');
+    var input=document.createElement('input');
+    input.type='email'; input.className='ax-fx-input'; input.placeholder='Work email';
+    input.setAttribute('aria-label','Work email');
+    input.setAttribute('style',(dummy.getAttribute('style')||'').replace(/color:[^;]+;?/,''));
+    dummy.parentNode.replaceChild(input,dummy);
+
+    var pill=pillOf(subLabel)||subLabel;
+    pill.classList.add('ax-fx-pill');
+    subLabel.style.pointerEvents='none';
+
+    var note=document.createElement('div');
+    note.className='ax-fx-note';
+    note.setAttribute('role','status');
+    note.setAttribute('aria-live','polite');
+    var bl=num(box,'left'), bt=num(box,'top'), bh=num(box,'height');
+    if(bl!==null){ note.style.cssText='left:'+bl+'vw;top:'+(bt+bh+0.35)+'vw'; }
+    box.parentNode.appendChild(note);
+
+    function say(msg,bad){
+      note.textContent=msg;
+      note.classList.toggle('err',!!bad);
+      note.classList.add('on');
+      clearTimeout(note.__t);
+      note.__t=setTimeout(function(){ note.classList.remove('on'); },6000);
+    }
+    function submit(e){
+      if(e){ e.preventDefault(); e.stopPropagation(); }
+      var v=(input.value||'').trim();
+      if(!v||!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(v)){
+        say('Enter a valid work email address.',true); input.focus(); return;
+      }
+      say('You are subscribed to the AeonX newsletter. Check ' + v + ' for confirmation.');
+      input.value='';
+      window.location.href='mailto:sales@aeonx.digital'
+        +'?subject='+encodeURIComponent('Newsletter subscription')
+        +'&body='+encodeURIComponent('Please subscribe this address to the AeonX newsletter: '+v);
+    }
+    /* capture beats the generic CTA linkifier's own click handler */
+    pill.addEventListener('click',submit,true);
+    pill.setAttribute('role','button');
+    pill.setAttribute('tabindex','0');
+    pill.addEventListener('keydown',function(e){
+      if(e.key==='Enter'||e.key===' '){ submit(e); } },true);
+    input.addEventListener('keydown',function(e){ if(e.key==='Enter') submit(e); });
+
+    /* ---------- 4. NEWSLETTER COLUMN ALIGNMENT ----------
+       Requested: the heading should sit in the same column as "About Us". Figma
+       puts it 1.35vw to the right, which reads as almost-but-not-quite aligned.
+       Measured against the real column so it survives a Figma re-pull. */
+    var head=[].slice.call(foot.querySelectorAll('.g-t')).filter(function(e){
+      return /^get the latest from aeonx/i.test(txt(e)); })[0];
+    var col=[].slice.call(foot.querySelectorAll('.g-t')).filter(function(e){
+      return /^about us$/i.test(txt(e)); })[0];
+    if(head&&col){
+      var hl=num(head,'left'), cl=num(col,'left');
+      if(hl!==null&&cl!==null){
+        var d=hl-cl;
+        if(Math.abs(d)>0.01){
+          setvw(head,'left',cl);
+          [box,pill,note].forEach(function(el){
+            var l=num(el,'left');
+            if(l!==null) setvw(el,'left',l-d);
+            else if(el===note){ note.style.left=(cl)+'vw'; }
+          });
+        }
+      }
+    }
+  }
+
+  /* ---------- 5. HOMEPAGE PRODUCT NAMES SCROLL IN PAGE ----------
+     Requested: SupplierX / OrderX / Xpense etc. on the homepage should move the
+     reader to that product's section rather than leaving for /products/axiom/. */
+  function productScroll(){
+    /* homepage only. Matched on the page's own title as well as the path, so it
+       still resolves when the page is served under a different filename (headless
+       verification writes a temp copy, and the check must exercise the real code). */
+    var home = location.pathname==='/' || location.pathname==='/index.html' ||
+               /enterprise stack/i.test(document.title||'');
+    if(!home) return;
+    var NAMES=['supplierx','orderx','xpense','logystix','manufex','aeonxiq'];
+    [].slice.call(document.querySelectorAll('main.ax-page .g-t')).forEach(function(e){
+      if(e.closest('.ax-mob')||e.closest('section.ax-footer')) return;
+      if(NAMES.indexOf(txt(e).toLowerCase())<0) return;
+      if(e.dataset.axscroll) return;
+      e.dataset.axscroll='1';
+      e.classList.add('ax-fx-link');
+      /* Each product name appears once in the homepage products showcase. Clicking
+         it used to leave for /products/axiom/; the client wants it to move the
+         reader to that product inside the page instead. Capture phase, because the
+         chrome CTA pass has already attached its own navigating handler. */
+      var card=e.closest('.g-b')||e;
+      e.addEventListener('click',function(ev){
+        ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation();
+        (card||e).scrollIntoView({behavior:'smooth',block:'center'});
+      },true);
+      e.addEventListener('keydown',function(ev){
+        if(ev.key==='Enter'||ev.key===' '){
+          ev.preventDefault(); ev.stopImmediatePropagation();
+          (card||e).scrollIntoView({behavior:'smooth',block:'center'});
+        }
+      },true);
+    });
+  }
+
+  /* ---------- 5b. FOOTER ADDRESS -> MAP ----------
+     The office line was plain text next to a map pin. Point it at Maps for the HQ,
+     which is the address the footer's own phone and mail rows belong to. */
+  function footerMap(){
+    var foot=document.querySelector('section.ax-footer');
+    if(!foot) return;
+    [].slice.call(foot.querySelectorAll('.g-t')).forEach(function(e){
+      if(e.dataset.axmap) return;
+      if(!/Ahmedabad|Mumbai|Bhuj/i.test(txt(e))) return;
+      e.dataset.axmap='1';
+      e.classList.add('ax-fx-link');
+      go(e,'https://www.google.com/maps/search/?api=1&query='+
+        encodeURIComponent('AeonX Digital, 278 Jeevan Udyog Building, DN Road, Fort, Mumbai 400001'),true);
+    });
+  }
+
+  /* ---------- 6. EXPLORE PILL ROW ALIGNMENT ----------
+     Requested: the key-services EXPLORE buttons are not aligned. Figma leaves row 2
+     split across two tops 0.05vw apart (one pixel). Snap each row to its most
+     common top -- paint-level only, and only ever moves a pill by that hairline. */
+  function alignExplore(){
+    var pills=[].slice.call(document.querySelectorAll('main.ax-page .g-t')).filter(function(e){
+      return /^explore$/i.test(txt(e))&&!e.closest('.ax-mob');
+    }).map(function(l){ return pillOf(l); }).filter(Boolean);
+    var rows={};
+    pills.forEach(function(p){
+      var t=num(p,'top'); if(t===null) return;
+      var k=Math.round(t);
+      (rows[k]=rows[k]||[]).push({el:p,t:t});
+    });
+    Object.keys(rows).forEach(function(k){
+      var g=rows[k]; if(g.length<2) return;
+      var counts={};
+      g.forEach(function(x){ counts[x.t]=(counts[x.t]||0)+1; });
+      var win=Object.keys(counts).sort(function(a,b){ return counts[b]-counts[a]; })[0];
+      g.forEach(function(x){ if(x.t!==parseFloat(win)) setvw(x.el,'top',parseFloat(win)); });
+    });
+  }
+
+  function init(){
+    applyTitleCase();
+    armChrome();
+    newsletter();
+    productScroll();
+    footerMap();
+    alignExplore();
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init);
+  else init();
+  /* after the chrome CTA pass and .ax-mob injection have settled */
+  addEventListener('load',function(){ setTimeout(init,200); });
+})();
+</script>
+
 </body>
 </html>

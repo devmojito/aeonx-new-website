@@ -26,6 +26,7 @@ COUNTERS = open(os.path.join(_HERE, '_counters.html'), encoding='utf-8').read()
 STATHOV = open(os.path.join(_HERE, '_stathov.html'), encoding='utf-8').read()
 HOVER = open(os.path.join(_HERE, '_hover.html'), encoding='utf-8').read()
 SCROLLROW = open(os.path.join(_HERE, '_scrollrow.html'), encoding='utf-8').read()
+UIFX = open(os.path.join(_HERE, '_uifx.html'), encoding='utf-8').read()
 MOBFX = open(os.path.join(_HERE, '_mobfx.html'), encoding='utf-8').read()
 
 # Page-scoped fragments. These are big (the contact-form one carries two inert <template>
@@ -133,6 +134,9 @@ def main():
         if 'ax-scrollrow-css' not in s and '</body>' in s:
             s = s.replace('</body>', SCROLLROW + '\n</body>', 1)
             stats['scrollrow'] = stats.get('scrollrow', 0) + 1
+        if 'ax-uifx-css' not in s and '</body>' in s:
+            s = s.replace('</body>', UIFX + '\n</body>', 1)
+            stats['uifx'] = stats.get('uifx', 0) + 1
         if 'ax-hover-css' not in s and '</body>' in s:
             s = s.replace('</body>', HOVER + '\n</body>', 1)
             stats['hover'] = stats.get('hover', 0) + 1
