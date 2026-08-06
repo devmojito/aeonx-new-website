@@ -1021,7 +1021,11 @@ document.addEventListener('DOMContentLoaded',function(){
       var pr=p.getBoundingClientRect(); if(!pr.width)return;
       var rng=document.createRange(); rng.selectNodeContents(lab);
       var ink=rng.getBoundingClientRect().width;
-      var pad=Math.max(14,(pr.width-ink)/2);          // symmetric, min 14px
+      /* Figma sets 28px auto-layout padding on these buttons (at the 1920 design
+         width), so scale that to the viewport and treat it as the floor. The old
+         14px floor left Title Cased labels looking cramped in their pill. */
+      var MINPAD=28*(document.documentElement.clientWidth||1920)/1920;
+      var pad=Math.max(MINPAD,(pr.width-ink)/2);      // symmetric, Figma's 28px floor
       var need=Math.ceil(ink+pad*2);
       var delta=need-pr.width;
       if(delta>0.5){
@@ -3121,7 +3125,7 @@ document.addEventListener("DOMContentLoaded",function(){
            ecs:'ECS',waf:'WAF',axiom:'AXIOM',api:'API',saas:'SaaS',rise:'RISE',grow:'GROW',
            bse:'BSE',noc:'NOC',sre:'SRE',hana:'HANA',btp:'BTP',iot:'IoT',rfp:'RFP',rpf:'RPF',
            iepf:'IEPF',pdf:'PDF',hr:'HR',it:'IT',ceo:'CEO',cio:'CIO',cfo:'CFO',esg:'ESG',
-           brsr:'BRSR',agm:'AGM',faq:'FAQ',us:'Us',
+           brsr:'BRSR',agm:'AGM',faq:'FAQ',us:'Us',iq:'IQ',
            /* product names carry internal capitals -- Title Case must not flatten
               them to "Supplierx" */
            aeonx:'AeonX',supplierx:'SupplierX',orderx:'OrderX',xpense:'Xpense',
@@ -3584,11 +3588,38 @@ document.addEventListener("DOMContentLoaded",function(){
     });
   }
 
+  /* ---------- 1d. LABEL SITTING OFF-CENTRE IN ITS PILL ----------
+     Figma positions some labels left inside a wider pill (the Explore <product>
+     pills measured 13px left / 34px right), which reads as broken padding. Centre
+     the label's INK in the pill -- ink, not the label box, because the box is sized
+     to Figma's own text metrics and the browser sets type slightly wider. Pills
+     that carry a trailing arrow are handled by spaceArrows() as a group. */
+  function balanceLabels(){
+    [].slice.call(document.querySelectorAll('.g-b[data-cta],.g-b[data-axpill]')).forEach(function(pill){
+      if(pill.closest('.ax-mob')) return;
+      var pr=pill.getBoundingClientRect(); if(!pr.width) return;
+      var lab=pill.querySelector('.g-t'); if(!lab||!txt(lab)) return;
+      /* an arrow inside the pill means the pair is positioned as a group */
+      var hasArrow=[].slice.call(document.querySelectorAll('.ax-hv-arrow')).some(function(a){
+        var q=a.getBoundingClientRect();
+        return q.width&&q.left>=pr.left-4&&q.right<=pr.right+4&&q.top>=pr.top-6&&q.bottom<=pr.bottom+6; });
+      if(hasArrow) return;
+      var rng=document.createRange(); rng.selectNodeContents(lab);
+      var ink=rng.getBoundingClientRect(); if(!ink.width) return;
+      var d=(ink.left-pr.left)-(pr.right-ink.right);
+      if(Math.abs(d)<3) return;
+      var cur=num(lab,'left'); if(cur===null) return;
+      var vwpx=(document.documentElement.clientWidth||1920)/100;
+      setvw(lab,'left',cur-(d/2)/vwpx);
+    });
+  }
+
   function init(){
     copyFix();
     applyTitleCase();
     bumpExplore();
     spaceArrows();
+    balanceLabels();
     armChrome();
     newsletter();
     productScroll();
@@ -3604,8 +3635,8 @@ document.addEventListener("DOMContentLoaded",function(){
     /* _hover.html creates the trailing arrows on load+140ms, so the arrow pass has
        to run after that or it finds nothing to measure. It is idempotent -- it only
        acts on a pair that actually overlaps -- so running it twice is free. */
-    setTimeout(spaceArrows,400);
-    setTimeout(spaceArrows,1000);
+    setTimeout(function(){ spaceArrows(); balanceLabels(); },400);
+    setTimeout(function(){ spaceArrows(); balanceLabels(); },1000);
     /* one late pass purely to re-centre: the newsletter column shift and the CTA
        linkifier's own pill auto-fit both move boxes after the first measurement,
        so the settled layout is the only one worth measuring. */

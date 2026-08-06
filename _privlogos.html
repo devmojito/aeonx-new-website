@@ -1,0 +1,60 @@
+<style id="ax-privlogos-css">
+/* ---- HOMEPAGE CLIENT LOGO MARQUEE ----
+   The band shipped with Figma's vector exports of a handful of marks. The client
+   asked for the real customer set from private.zip (75 logos) and nothing else, so
+   the designed strip is replaced wholesale: same band, same height, same seamless
+   drift, real logos. Two copies of the set sit end to end and the track translates
+   by exactly half its width, which loops without a visible seam.
+   Each <img> carries its intrinsic width/height so the row has a real width before
+   the lazy images arrive -- without that the track measured 0 and the animation had
+   nothing to travel across. */
+.ax-plg{position:absolute;left:0;top:0;width:100%;height:100%;overflow:hidden}
+.ax-plg__track{position:absolute;left:0;top:0;height:100%;display:flex;align-items:center;
+  gap:3.3vw;width:max-content;will-change:transform;animation:ax-plg-run 90s linear infinite}
+/* every element on this page is absolutely positioned by the generator, and an
+   absolutely positioned flex child is out of flow -- the track collapsed to 0 wide
+   and all 150 logos stacked at x=0. The designed marquee overrides this the same
+   way for its own logos. */
+.ax-plg__track img{position:static!important;height:60%;width:auto;flex:0 0 auto;object-fit:contain;
+  filter:grayscale(1);opacity:.72;transition:filter .3s ease,opacity .3s ease}
+.ax-plg__track img:hover{filter:none;opacity:1}
+.ax-plg:hover .ax-plg__track{animation-play-state:paused}
+@keyframes ax-plg-run{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){
+  .ax-plg__track{animation:none}
+  .ax-plg{overflow-x:auto}
+}
+</style>
+<script>
+(function(){
+  var LOGOS=[["ACME.webp", 150, 100], ["AFCONS.webp", 150, 100], ["APAR.webp", 150, 100], ["ATOM.webp", 300, 100], ["AdEngage.webp", 150, 100], ["AeonProcare.webp", 150, 100], ["Agrocel.webp", 150, 100], ["AmbujaNeotia.webp", 300, 100], ["Ashapura.webp", 150, 100], ["Ashoka-Buildcon.webp", 300, 100], ["BVG-Humanity-Ahead.webp", 300, 100], ["Baldota.webp", 150, 100], ["Bhatia-Hospital.webp", 300, 100], ["Bhilosa.webp", 300, 100], ["Biostadt.webp", 300, 100], ["CK-Birla-Hospitals.webp", 300, 100], ["CRIL.webp", 150, 100], ["CamplinKokuyo.webp", 150, 100], ["Creative.webp", 150, 100], ["DBMSC-Steel.webp", 150, 100], ["Daily-objects.webp", 150, 100], ["Decor.webp", 300, 100], ["Delux.webp", 150, 100], ["FNB.webp", 150, 100], ["GNA-Gears.webp", 150, 100], ["Garden-Vareli.webp", 300, 100], ["GardenVareli.webp", 150, 100], ["General-India.webp", 300, 100], ["Gopal-Snacks.webp", 150, 100], ["Gorica.webp", 300, 100], ["HavmorIceCream.webp", 150, 100], ["HeroCycles.webp", 150, 100], ["IBGroup.webp", 150, 100], ["IRB.webp", 150, 100], ["ITCem.webp", 150, 100], ["Infinitie-Tech.webp", 300, 100], ["KLT-Group.webp", 300, 100], ["Kairish.webp", 150, 100], ["Kaisha-LifeSciences.webp", 300, 100], ["Kaisha-Packaging.webp", 300, 100], ["Konark.webp", 150, 100], ["MAX-Estates.webp", 150, 100], ["MKC.webp", 300, 100], ["MP-birla.webp", 150, 100], ["Mantra-Innvoation.webp", 300, 100], ["Mobistar.webp", 150, 100], ["Movate.webp", 150, 100], ["Operisoft.webp", 300, 100], ["Orient.webp", 150, 100], ["PGPGlass.webp", 150, 100], ["QS.webp", 150, 100], ["Raymond.webp", 300, 100], ["RehmanGroup.webp", 150, 100], ["Reliance-Power.webp", 300, 100], ["Routes2Roots.webp", 300, 100], ["SARA.webp", 150, 100], ["SPL.webp", 150, 100], ["Sanathan-Textiles.webp", 300, 100], ["Sumilon.webp", 150, 100], ["TALAL.webp", 150, 100], ["TATA-Communications.webp", 300, 100], ["TCG.webp", 300, 100], ["Taiyo-Nippo-sanso.webp", 300, 100], ["Timeline.webp", 300, 100], ["VISA-Steel.webp", 300, 100], ["Vadilal.webp", 150, 100], ["amplify-analytix.webp", 150, 100], ["digvijay-cement.webp", 300, 100], ["garware.webp", 150, 100], ["pcptel.webp", 150, 100], ["ramee-dream.webp", 150, 100], ["sadbhav.webp", 150, 100], ["sandesh.webp", 300, 100], ["satyeshBrinechem.webp", 150, 100], ["sovereign.webp", 300, 100]];
+  function build(){
+    var band=document.querySelector('main.ax-page .ax-mq');
+    if(!band||band.dataset.axPlg) return;
+    band.dataset.axPlg='1';
+    [].slice.call(band.children).forEach(function(c){ c.style.display='none'; });
+    var wrap=document.createElement('div');
+    wrap.className='ax-plg';
+    wrap.setAttribute('aria-label','Customer logos');
+    var track=document.createElement('div');
+    track.className='ax-plg__track';
+    function fill(dup){
+      LOGOS.forEach(function(L){
+        var i=document.createElement('img');
+        i.src='/assets/partners/private/'+L[0];
+        i.width=L[1]; i.height=L[2];
+        i.alt=dup?'':L[0].replace(/\.webp$/,'').replace(/[-_]/g,' ');
+        if(dup) i.setAttribute('aria-hidden','true');
+        i.loading='lazy'; i.decoding='async';
+        track.appendChild(i);
+      });
+    }
+    fill(false); fill(true);            /* two copies: the loop is a -50% shift */
+    wrap.appendChild(track);
+    band.appendChild(wrap);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){ setTimeout(build,300); });
+  else setTimeout(build,300);
+  addEventListener('load',function(){ setTimeout(build,600); });
+})();
+</script>
