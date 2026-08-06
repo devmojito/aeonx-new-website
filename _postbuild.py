@@ -54,6 +54,7 @@ SCOPED = [
     ('insights/blog/index.html',        'ax-bloglist-css', '_bloglist.html'),
     ('services/sap-ams-axiom/index.html', 'ax-amsicon-css', '_amsicon.html'),
     ('insights/index.html',              'ax-csf-css',     '_csfilter.html'),
+    ('insights/newsletter/index.html',   'ax-nlform-css',  '_nlform.html'),
     ('who-we-are/career/index.html',     'ax-career-css',  '_career.html'),
     ('investor-relations/index.html',                     'ax-invdocs-css', '_invdocs.html'),
     ('investor-relations/shareholding-pattern/index.html','ax-invdocs-css', '_invdocs.html'),

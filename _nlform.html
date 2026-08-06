@@ -1,0 +1,152 @@
+<style id="ax-nlform-css">
+/* ---- NEWSLETTER SIGNUP (/insights/newsletter/) ----
+   The designed form is three pictures: a box captioned "Your company name" under a
+   "Role*" label, a box showing jaideep.waghela@aeonx.digital -- a real person's
+   address used as filler -- and a Subscribe pill the CTA pass had linkified to
+   /contact-us/. Real fields, real validation, and a Subscribe that subscribes.
+   CLIENT OWES a newsletter endpoint; until then the address is confirmed in place
+   and offered to the team as a plain mailto link, exactly like the footer form. */
+.ax-nl-input{position:absolute;left:0;top:0;width:100%;height:100%;border:0;outline:none;
+  background:transparent;padding:0;font-family:'Nunito Sans',sans-serif;color:rgb(35,39,46)}
+.ax-nl-input::placeholder{color:rgb(134,149,170);opacity:1}
+.ax-nl-box{transition:border-color .18s ease}
+.ax-nl-box:focus-within{border-color:rgb(223,63,23)!important}
+.ax-nl-note{position:absolute;font-family:'Nunito Sans',sans-serif;font-weight:600;
+  font-size:0.7292vw;line-height:1.0417vw;color:rgb(21,128,61);opacity:0;
+  transition:opacity .25s ease;white-space:nowrap;pointer-events:none}
+.ax-nl-note.on{opacity:1;pointer-events:auto}
+.ax-nl-note.err{color:rgb(220,38,38)}
+.ax-nl-note a{color:rgb(223,63,23);text-decoration:underline}
+.ax-nl-pill{cursor:pointer}
+@media (max-width:1024px){.ax-nl-note{font-size:2.7907vw;line-height:3.4884vw}}
+@media (prefers-reduced-motion:reduce){.ax-nl-note,.ax-nl-box{transition:none}}
+</style>
+<script>
+(function(){
+  function txt(e){ return (e.textContent||'').replace(/\s+/g,' ').trim(); }
+  function num(el,p){ var v=el.style[p]; if(!v) return null;
+    var m=/^(-?[\d.]+)(vw|px)$/.exec(String(v).trim()); if(!m) return null;
+    return m[2]==='vw'?parseFloat(m[1]):parseFloat(m[1])*100/window.innerWidth; }
+
+  /* the box a label points at: the next painted sibling on the label's own row */
+  function boxFor(lab){
+    var n=lab.nextElementSibling;
+    for(var i=0;i<6&&n;i++,n=n.nextElementSibling){
+      if(!/g-b/.test(n.className||'')) continue;
+      var st=n.getAttribute('style')||'';
+      if(/background-color|border/.test(st)) return n;
+    }
+    return null;
+  }
+
+  function fieldify(lab, opts){
+    var box=boxFor(lab); if(!box) return null;
+    if(box.dataset.axNl) return box.querySelector('input');
+    var dummy=[].slice.call(box.querySelectorAll('.g-t')).filter(function(e){ return txt(e); })[0];
+    box.dataset.axNl='1';
+    box.classList.add('ax-nl-box');
+    var input=document.createElement('input');
+    input.type=opts.type||'text';
+    input.className='ax-nl-input';
+    input.placeholder=opts.placeholder;
+    input.setAttribute('aria-label',opts.label);
+    if(opts.required) input.required=true;
+    /* The input goes in the BOX, not inside the dummy text node: that node is only
+       as wide as its words (107px inside a 483px field), so an input parented to it
+       inherits a third of the field. The dummy is hidden and the input is inset to
+       fill the box, which is what the design draws. */
+    if(dummy){
+      var cs=getComputedStyle(dummy);
+      input.style.fontSize=cs.fontSize;
+      input.style.fontWeight=cs.fontWeight;
+      input.style.color=cs.color;
+      var dl=num(dummy,'left'), dt=num(dummy,'top');
+      dummy.style.display='none';
+      if(dl!==null) input.style.left=dl+'vw';
+      if(dt!==null){ input.style.top=dt+'vw'; input.style.height='auto'; }
+      input.style.width=(dl!==null?('calc(100% - '+(dl*2)+'vw)'):'100%');
+    } else {
+      input.style.padding='0 0.6vw';
+    }
+    box.appendChild(input);
+    return input;
+  }
+
+  function init(){
+    var main=document.querySelector('main.ax-page');
+    if(!main||main.dataset.axNlForm) return;
+    var labels=[].slice.call(main.querySelectorAll('.g-t')).filter(function(e){
+      return e.getBoundingClientRect().width>0 && !e.closest('.ax-mob'); });
+    var emailLab=labels.filter(function(e){ return /^email id\*?$/i.test(txt(e)); })[0];
+    if(!emailLab) return;
+    main.dataset.axNlForm='1';
+    var roleLab=labels.filter(function(e){ return /^role\*?$/i.test(txt(e)); })[0];
+
+    var role=roleLab?fieldify(roleLab,{label:'Role',placeholder:'Your role'}):null;
+    var email=fieldify(emailLab,{label:'Email ID',placeholder:'you@company.com',type:'email',required:true});
+    if(!email) return;
+
+    /* the confirmation line sits under the field, in the field's own column */
+    var note=document.createElement('div');
+    note.className='ax-nl-note';
+    note.setAttribute('role','status');
+    note.setAttribute('aria-live','polite');
+    var ebox=email.closest('.ax-nl-box')||emailLab;
+    var bl=num(ebox,'left'), bt=num(ebox,'top'), bh=num(ebox,'height');
+    if(bl!==null&&bt!==null) note.style.cssText='left:'+bl+'vw;top:'+(bt+(bh||2.2)+0.4)+'vw';
+    (ebox.parentElement||main).appendChild(note);
+    function say(html,bad){
+      note.innerHTML=html;
+      note.classList.toggle('err',!!bad);
+      note.classList.add('on');
+      clearTimeout(note.__t);
+      note.__t=setTimeout(function(){ note.classList.remove('on'); },9000);
+    }
+
+    var pill=labels.filter(function(e){ return /^subscribe$/i.test(txt(e)); })[0];
+    if(!pill) return;
+    var pbox=pill.parentElement;
+    while(pbox&&pbox!==main&&!/background-color/.test(pbox.getAttribute('style')||'')) pbox=pbox.parentElement;
+    var hit=(pbox&&pbox!==main)?pbox:pill;
+    hit.classList.add('ax-nl-pill');
+    hit.setAttribute('role','button');
+    hit.setAttribute('tabindex','0');
+
+    var busy=false;
+    function submit(){
+      var v=(email.value||'').trim();
+      if(!v||!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(v)){
+        say('Enter a valid work email address.',true); email.focus(); return;
+      }
+      var body='Please subscribe this address to the AeonX newsletter: '+v+
+               (role&&role.value?(' (role: '+role.value.trim()+')'):'');
+      var href='mailto:sales@aeonx.digital?subject='+encodeURIComponent('Newsletter subscription')+
+               '&body='+encodeURIComponent(body);
+      say('Thanks &mdash; we have your address. <a rel="noopener noreferrer" href="'+
+          href.replace(/"/g,'&quot;')+'">Email it to the team</a>');
+      email.value=''; if(role) role.value='';
+    }
+    /* document capture, ahead of the chrome CTA pass that owns this pill, and
+       matched by click POINT as well as target -- an invisible shell sits over it */
+    document.addEventListener('click',function(e){
+      var t=e.target;
+      var on=(t&&t.nodeType===1&&(hit.contains(t)||pill.contains(t)));
+      if(!on&&(e.clientX||e.clientY)){
+        var r=hit.getBoundingClientRect();
+        on=r.width>0&&e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom;
+      }
+      if(!on) return;
+      e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+      if(busy) return;
+      busy=true; setTimeout(function(){ busy=false; },150);
+      submit();
+    },true);
+    hit.addEventListener('keydown',function(e){
+      if(e.key==='Enter'||e.key===' '){ e.preventDefault(); submit(); } });
+    email.addEventListener('keydown',function(e){ if(e.key==='Enter'){ e.preventDefault(); submit(); } });
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){ setTimeout(init,120); });
+  else setTimeout(init,120);
+  addEventListener('load',function(){ setTimeout(init,400); });
+})();
+</script>
