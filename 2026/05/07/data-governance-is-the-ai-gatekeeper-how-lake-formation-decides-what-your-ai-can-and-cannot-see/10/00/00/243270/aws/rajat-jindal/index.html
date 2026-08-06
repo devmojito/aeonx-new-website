@@ -2793,6 +2793,16 @@ document.addEventListener("DOMContentLoaded",function(){
               el.closest('.ax-mnav') || el.closest('.ax-search')));
   }
 
+  /* NEVER neutralise a container that holds real controls. On the newsletter page
+     the element covering the Subscribe pill is the whole form card -- peeling it
+     took the Role and Email inputs down with it and the form went dead. A CTA left
+     under such a blocker still works: the click bubbles to document either way, and
+     the handlers that own these pills listen at document capture and match by
+     click point. */
+  function hasControls(el){
+    return !!(el.querySelector && el.querySelector('input,textarea,select,button,a[href],[contenteditable]'));
+  }
+
   function run(){
     var ctas = document.querySelectorAll('[data-cta],[data-axcta]');
     for (var i = 0; i < ctas.length; i++){
@@ -2812,6 +2822,7 @@ document.addEventListener("DOMContentLoaded",function(){
         if (!top || top === el || el.contains(top) || top.contains(el)) break;
         if (isCta(top)) break;                     /* another CTA legitimately on top */
         if (isChrome(top)) break;                  /* fixed header/footer: leave alone */
+        if (hasControls(top)) break;               /* form card etc: peeling kills its fields */
         if (top === document.body || top === document.documentElement) break;
         top.style.pointerEvents = 'none';
       }

@@ -2517,6 +2517,16 @@ document.addEventListener("DOMContentLoaded",function(){
               el.closest('.ax-mnav') || el.closest('.ax-search')));
   }
 
+  /* NEVER neutralise a container that holds real controls. On the newsletter page
+     the element covering the Subscribe pill is the whole form card -- peeling it
+     took the Role and Email inputs down with it and the form went dead. A CTA left
+     under such a blocker still works: the click bubbles to document either way, and
+     the handlers that own these pills listen at document capture and match by
+     click point. */
+  function hasControls(el){
+    return !!(el.querySelector && el.querySelector('input,textarea,select,button,a[href],[contenteditable]'));
+  }
+
   function run(){
     var ctas = document.querySelectorAll('[data-cta],[data-axcta]');
     for (var i = 0; i < ctas.length; i++){
@@ -2536,6 +2546,7 @@ document.addEventListener("DOMContentLoaded",function(){
         if (!top || top === el || el.contains(top) || top.contains(el)) break;
         if (isCta(top)) break;                     /* another CTA legitimately on top */
         if (isChrome(top)) break;                  /* fixed header/footer: leave alone */
+        if (hasControls(top)) break;               /* form card etc: peeling kills its fields */
         if (top === document.body || top === document.documentElement) break;
         top.style.pointerEvents = 'none';
       }
@@ -3640,7 +3651,10 @@ document.addEventListener("DOMContentLoaded",function(){
       var dl=num(dummy,'left'), dt=num(dummy,'top');
       dummy.style.display='none';
       if(dl!==null) input.style.left=dl+'vw';
-      if(dt!==null){ input.style.top=dt+'vw'; input.style.height='auto'; }
+      /* Fill the field box vertically. Sizing the input to the dummy's line box left a
+         16px-tall hit area inside a 50px-tall field, so most of a click on the field
+         landed on the card behind it. */
+      if(dt!==null){ input.style.top=dt+'vw'; input.style.height='calc(100% - '+(dt*2)+'vw)'; }
       input.style.width=(dl!==null?('calc(100% - '+(dl*2)+'vw)'):'100%');
     } else {
       input.style.padding='0 0.6vw';
@@ -3669,6 +3683,18 @@ document.addEventListener("DOMContentLoaded",function(){
     note.setAttribute('role','status');
     note.setAttribute('aria-live','polite');
     var ebox=email.closest('.ax-nl-box')||emailLab;
+    /* Figma draws the email field with its "Simple Text Input With Validation"
+       component stuck in the VERIFIED state, so an empty field shipped pale green.
+       Keep the design's colour, but make it mean what it says: neutral until the
+       address parses. */
+    var OK='rgb(220, 252, 231)';
+    if(getComputedStyle(ebox).backgroundColor===OK){
+      var paint=function(){ ebox.style.backgroundColor=
+        /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test((email.value||'').trim())?OK:'#fff'; };
+      email.addEventListener('input',paint);
+      email.addEventListener('change',paint);
+      paint();
+    }
     var bl=num(ebox,'left'), bt=num(ebox,'top'), bh=num(ebox,'height');
     if(bl!==null&&bt!==null) note.style.cssText='left:'+bl+'vw;top:'+(bt+(bh||2.2)+0.4)+'vw';
     (ebox.parentElement||main).appendChild(note);
