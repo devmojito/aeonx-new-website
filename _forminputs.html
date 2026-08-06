@@ -186,7 +186,9 @@ select.ax-cf-in{cursor:pointer;appearance:none;-webkit-appearance:none}
     field(form, 'Company name', { required:true, placeholder:'Your company name' });
     field(form, 'Full name', { required:true, placeholder:'Your full name' });
     field(form, 'Email ID', { required:true, type:'email', placeholder:'you@company.com' });
-    field(form, 'Phone Number', { required:true, type:'tel', placeholder:'XXXXX-XXXXX',
+    /* "XXXXX-XXXXX" is Figma's filler, not a hint anyone can act on -- a real
+       example number reads as an instruction instead of noise. */
+    field(form, 'Phone Number', { required:true, type:'tel', placeholder:'98765 43210',
       pattern:'[0-9()+\\-\\s]{6,}' });
 
     if (kind === 'A'){
@@ -220,6 +222,14 @@ select.ax-cf-in{cursor:pointer;appearance:none;-webkit-appearance:none}
         fn();
       }, true);
     }
+
+    /* Figma also leaves the dummy phone string drawn as plain text beside the field
+       ("XXXXX-XXXXX"). It is not a placeholder, it is a picture of one, so it sits
+       there whatever the reader types -- remove it. */
+    [].slice.call(form.querySelectorAll('.g-t')).forEach(function(e){
+      if (e.children.length) return;
+      if (/^[Xx]{4,}\s*[-\u2013]?\s*[Xx]{4,}$/.test(txt(e))) e.style.display = 'none';
+    });
 
     var resetBtn = findByText(form, 'Reset Form');
     if (resetBtn){

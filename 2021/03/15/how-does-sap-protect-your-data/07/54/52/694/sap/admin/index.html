@@ -734,7 +734,20 @@ main.ax-post{position:relative;max-width:100vw;overflow-x:hidden;background:#fff
 <script>
 /* ---- SITE SEARCH ---- */
 (function(){
+  /* The nav rebuild dropped the magnifier button this was bound to, and the whole
+     overlay -- including the Cmd/Ctrl-K shortcut the pages advertise -- was gated
+     behind it, so site search has been dead everywhere. Arm on the button when it
+     exists, otherwise on a hidden stand-in, and always bind the shortcut. */
   var sb=document.getElementById('ax-search-btn');
+  if(!sb){
+    sb=document.createElement('button');
+    sb.id='ax-search-btn';
+    sb.type='button';
+    sb.setAttribute('aria-label','Search');
+    sb.style.cssText='position:absolute;width:1px;height:1px;padding:0;margin:-1px;'+
+      'overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0';
+    (document.querySelector('header')||document.body).appendChild(sb);
+  }
   if(sb){
     var seen={},items=[];
     Array.prototype.forEach.call(document.querySelectorAll('a[href^="/"]'),function(a){
@@ -1089,7 +1102,19 @@ document.addEventListener('DOMContentLoaded',function(){
       var need=Math.ceil(ink+pad*2);
       var delta=need-pr.width;
       if(delta>0.5){
+        /* Figma draws these buttons as TWO stacked boxes -- a filled rect with the
+           outline rect nested inside it (or vice versa). Only one carries data-cta,
+           so widening just that one left the fill jutting past the outline: the
+           "colour outside the box" on Explore <product>. Grow every layer that was
+           the same size as the pill, keeping its own inset. */
+        var layers=[].slice.call(p.querySelectorAll('.g-b')).filter(function(k){
+          var kr=k.getBoundingClientRect();
+          return Math.abs(kr.width-pr.width)<8 && Math.abs(kr.height-pr.height)<8;
+        }).map(function(k){ return {el:k, inset:k.getBoundingClientRect().left-pr.left}; });
         p.style.width=need+'px';
+        layers.forEach(function(L){
+          L.el.style.width=Math.max(0,need-L.inset*2)+'px';
+        });
         var key=Math.round((pr.top+scrollY)/6);        // same visual row
         (rows[key]=rows[key]||[]).push({left:pr.left,delta:delta});
       }

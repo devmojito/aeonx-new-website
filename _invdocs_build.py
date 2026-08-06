@@ -252,10 +252,22 @@ JS = r'''<style id="ax-invdocs-css">
       r.el.setAttribute('role','button');
       r.el.setAttribute('tabindex','0');
       var pick=function(){ active=i; render(); };
+      /* The clickable area is the ROW, not the label: the label text is only as wide
+         as its words, so a click on the rest of the row -- most of it, and where the
+         highlight makes it look clickable -- landed on nothing. Take the row plate
+         behind the label when there is one, and hit-test against that. */
+      var row=null, rowA=Infinity;
+      kids.forEach(function(k,ki){
+        var b=boxes[ki]; if(!b||!/g-b/.test(k.className||'')) return;
+        if(r.b.l<b.l-0.3||r.b.r>b.r+0.3||r.b.t<b.t-0.5||r.b.b>b.b+0.5) return;
+        var a=b.w*b.h; if(a<rowA){ rowA=a; row=k; }
+      });
+      var hitEl=row||r.el;
+      hitEl.classList.add('ax-inv-cat');
       /* document capture: the chrome CTA pass owns these labels already */
       document.addEventListener('click',function(e){
-        var t=e.target, hit=(t&&t.nodeType===1&&(r.el===t||r.el.contains(t)));
-        if(!hit&&(e.clientX||e.clientY)){ var q=r.el.getBoundingClientRect();
+        var t=e.target, hit=(t&&t.nodeType===1&&(hitEl===t||hitEl.contains(t)||r.el===t||r.el.contains(t)));
+        if(!hit&&(e.clientX||e.clientY)){ var q=hitEl.getBoundingClientRect();
           hit=q.width>0&&e.clientX>=q.left&&e.clientX<=q.right&&e.clientY>=q.top&&e.clientY<=q.bottom; }
         if(!hit) return;
         e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); pick();
