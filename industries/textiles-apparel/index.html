@@ -1485,85 +1485,7 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 
-<style id="ax-cursor-css">
-/* Cursor accent: a single brand-orange ring that trails the pointer with easing and
-   opens up over interactive elements. The NATIVE cursor stays on top -- this is an
-   accent, not a replacement: the native cursor is never hidden, so no affordance is lost.
-   Sized in px, not vw: it tracks a physical pointing device and must not shrink on a
-   small laptop. The white halo keeps it legible over the dark navy and deep-red
-   sections as well as over white. */
-.ax-cur{position:fixed;top:0;left:0;z-index:2147483000;pointer-events:none;
-  border-radius:50%;opacity:0;will-change:transform;
-  transition:opacity .18s ease,width .22s cubic-bezier(.22,.68,.28,1),
-             height .22s cubic-bezier(.22,.68,.28,1),margin .22s cubic-bezier(.22,.68,.28,1),
-             background-color .22s ease,border-color .22s ease}
-.ax-cur--ring{width:26px;height:26px;margin:-13px 0 0 -13px;
-  border:1.5px solid #df3f17;background:rgba(223,63,23,.06);
-  box-shadow:0 0 0 1.5px rgba(255,255,255,.42),inset 0 0 0 1.5px rgba(255,255,255,.42)}
-html.ax-cur-on .ax-cur{opacity:1}
-/* over something clickable: ring opens up and tints */
-html.ax-cur-hot .ax-cur--ring{width:44px;height:44px;margin:-22px 0 0 -22px;
-  background:rgba(223,63,23,.14);border-color:#df3f17}
-/* press feedback */
-html.ax-cur-down .ax-cur--ring{width:20px;height:20px;margin:-10px 0 0 -10px}
-@media (max-width:1024px){.ax-cur{display:none}}
-@media (prefers-reduced-motion:reduce){.ax-cur{display:none}}
-</style>
-<script>
-/* ---- CURSOR ACCENT RING ---- */
-(function(){
-  if(!window.matchMedia) return;
-  if(!matchMedia('(min-width:1025px)').matches) return;
-  /* Exclude touch, rather than require a fine pointer: some browsers and virtualised
-     desktops report `pointer: none`, and requiring `fine` silently killed the ring
-     for them. */
-  if(matchMedia('(pointer:coarse)').matches) return;
-  if(matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-  var root=document.documentElement;
-  var ring=document.createElement('div'); ring.className='ax-cur ax-cur--ring';
-  ring.setAttribute('aria-hidden','true');
-  (document.body||root).appendChild(ring);
-
-  var HOT='a,button,[role="link"],[role="button"],input[type="submit"],'+
-          '.ax-nav__link,.ax-nav__btn,.ax-nav__soc,.ax-mm__si,.ax-mm2__ln,'+
-          '.ax-mm2__feat-btn,.ax-mm2__api-btn,.ax-tab,[data-cursor="hot"]';
-  var x=0,y=0,rx=0,ry=0,raf=0,seen=false;
-
-  function frame(){
-    rx+=(x-rx)*0.18; ry+=(y-ry)*0.18;
-    ring.style.transform='translate3d('+rx+'px,'+ry+'px,0)';
-    /* stop the loop once it has caught up, so this is not a permanent frame ticker */
-    if(Math.abs(x-rx)>0.1||Math.abs(y-ry)>0.1){raf=requestAnimationFrame(frame);}
-    else{rx=x;ry=y;ring.style.transform='translate3d('+rx+'px,'+ry+'px,0)';raf=0;}
-  }
-  function tick(){ if(!raf) raf=requestAnimationFrame(frame); }
-
-  document.addEventListener('mousemove',function(e){
-    x=e.clientX; y=e.clientY;
-    if(!seen){seen=true;rx=x;ry=y;root.classList.add('ax-cur-on');}
-    tick();
-  },{passive:true});
-
-  document.addEventListener('mouseover',function(e){
-    var t=e.target;
-    if(t&&t.closest&&t.closest(HOT)) root.classList.add('ax-cur-hot');
-  },{passive:true});
-  document.addEventListener('mouseout',function(e){
-    var t=e.relatedTarget;
-    if(!t||!t.closest||!t.closest(HOT)) root.classList.remove('ax-cur-hot');
-  },{passive:true});
-
-  document.addEventListener('mousedown',function(){root.classList.add('ax-cur-down');},{passive:true});
-  document.addEventListener('mouseup',function(){root.classList.remove('ax-cur-down');},{passive:true});
-  document.addEventListener('mouseleave',function(){root.classList.remove('ax-cur-on');},{passive:true});
-  document.addEventListener('mouseenter',function(){if(seen)root.classList.add('ax-cur-on');},{passive:true});
-  // a touch anywhere means this is not really a mouse machine -- stand down
-  window.addEventListener('touchstart',function(){
-    root.classList.remove('ax-cur-on','ax-cur-hot','ax-cur-down');
-  },{passive:true,once:true});
-})();
-</script>
 
 <style id="ax-navload-css">
 /* Page-transition loader: the same morphing dot cluster as the intro preloader, shown
@@ -3140,6 +3062,11 @@ img.g-vec[src*="6138-26173"]{animation:ax-gear-ccw 104s linear infinite}
 .ax-fx-pill{transition:background-color .22s ease,box-shadow .22s ease,transform .22s cubic-bezier(.22,.61,.36,1);cursor:pointer}
 .ax-fx-pill:hover{transform:translateY(-0.1042vw);box-shadow:0 0.2083vw 0.5729vw rgba(176,45,12,.28);filter:brightness(1.06)}
 .ax-fx-pill:focus-visible{outline:0.1042vw solid rgb(223,63,23);outline-offset:0.15vw}
+/* The contextual Explore pills label at 0.625vw while every other CTA on the page
+   sits at 0.7292vw, so they read as an afterthought inside a generous pill (36px of
+   ink in an 80px box). Match them to the rest. */
+.ax-fx-xl{font-size:0.7292vw!important;line-height:1.0417vw!important}
+@media (max-width:1024px){.ax-fx-xl{font-size:2.4419vw!important;line-height:3.4884vw!important}}
 .ax-fx-link{transition:color .18s ease;cursor:pointer}
 .ax-fx-link:hover{color:rgb(223,63,23)!important}
 .ax-fx-soc{transition:transform .2s ease,filter .2s ease}
@@ -3595,9 +3522,23 @@ img.g-vec[src*="6138-26173"]{animation:ax-gear-ccw 104s linear infinite}
     });
   }
 
+  /* ---------- 1b. EXPLORE PILLS READ TOO SMALL ---------- */
+  function bumpExplore(){
+    [].slice.call(document.querySelectorAll('.g-t')).forEach(function(e){
+      if(e.children.length) return;
+      if(!/^explore(\s|$)/i.test(txt(e))) return;
+      var host=e.parentElement;
+      var hs=host?(host.getAttribute('style')||''):'';
+      /* only the pill-shaped ones; bare "Explore >" text links keep their size */
+      if(!/background-color/.test(hs)||!/border-radius/.test(hs)) return;
+      e.classList.add('ax-fx-xl');
+    });
+  }
+
   function init(){
     copyFix();
     applyTitleCase();
+    bumpExplore();
     armChrome();
     newsletter();
     productScroll();

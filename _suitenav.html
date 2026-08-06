@@ -1,0 +1,139 @@
+<style id="ax-suitenav-css">
+/* ---- HOMEPAGE SUITE INDEX: SCROLL, DO NOT NAVIGATE ----
+   The six product names down the left of the SaaS-suite section were linkified by the
+   chrome CTA pass, so clicking SupplierX / OrderX / Xpense / LogystiX / ManufeX /
+   AeonX.IQ left the homepage for /products/axiom/ and flashed the page-transition
+   scrim on the way. Each product already has its own panel further down THIS page, so
+   the list is an index: a click should move to that panel. */
+.ax-sn-item{cursor:pointer}
+.ax-sn-row{transition:background-color .25s ease}
+.ax-sn-label{transition:color .25s ease}
+@media (prefers-reduced-motion:reduce){.ax-sn-row,.ax-sn-label{transition:none}}
+</style>
+<script>
+(function(){
+  var NAMES=/^(SupplierX|OrderX|Xpense|LogystiX|ManufeX|AeonX ?\.?IQ)$/i;
+  function txt(e){ return (e.textContent||'').replace(/\s+/g,' ').trim(); }
+  function y(el){ var r=el.getBoundingClientRect(); return r.top+window.pageYOffset; }
+
+  function init(){
+    var vis=[].slice.call(document.querySelectorAll('main.ax-page .g-t')).filter(function(e){
+      return e.getBoundingClientRect().width>0 && !e.closest('.ax-mob');
+    });
+    /* the index: the big product names stacked in one column */
+    var items=vis.filter(function(e){
+      return NAMES.test(txt(e)) && parseFloat(getComputedStyle(e).fontSize) > 20;
+    });
+    if(items.length<4) return;
+    items.sort(function(a,b){ return y(a)-y(b); });
+
+    /* each product's panel: the eyebrow heading directly above its "Explore <name>"
+       pill. Found by geometry so a Figma re-pull cannot break the mapping. */
+    function panelFor(name){
+      var key=name.replace(/[^a-z0-9]/gi,'').toLowerCase();
+      var pill=vis.filter(function(e){
+        var t=txt(e).toLowerCase();
+        return t.indexOf('explore')===0 && t.replace(/[^a-z0-9]/g,'').indexOf(key)>6;
+      })[0];
+      if(!pill) return null;
+      var py=y(pill), best=null;
+      vis.forEach(function(e){
+        var ey=y(e);
+        if(ey>=py||py-ey>900) return;
+        if(parseFloat(getComputedStyle(e).fontSize)<26) return;
+        if(!best||ey>y(best)) best=e;
+      });
+      return best;
+    }
+
+    /* the row plate behind each name; the design paints the active one brand orange */
+    function rowFor(el){
+      var r=el.getBoundingClientRect(), best=null, bestA=Infinity;
+      [].slice.call(document.querySelectorAll('main.ax-page .g-b')).forEach(function(b){
+        var q=b.getBoundingClientRect();
+        if(!q.width||q.width>600) return;
+        if(q.left>r.left+2||q.right<r.right-2||q.top>r.top+4||q.bottom<r.bottom-4) return;
+        var a=q.width*q.height;
+        if(a<bestA){ bestA=a; best=b; }
+      });
+      return best;
+    }
+
+    var ACTIVE='rgb(223, 63, 23)';
+    var rows=items.map(rowFor);
+    var onColour=null, offColour=null, labelOn=null, labelOff=null;
+    rows.forEach(function(b,i){
+      if(!b) return;
+      var bg=getComputedStyle(b).backgroundColor;
+      if(bg===ACTIVE){ onColour=bg; labelOn=getComputedStyle(items[i]).color; }
+      else if(!offColour){ offColour=bg; labelOff=getComputedStyle(items[i]).color; }
+    });
+    onColour=onColour||ACTIVE;
+    offColour=offColour||'rgba(0, 0, 0, 0)';
+
+    function select(i){
+      rows.forEach(function(b,n){
+        if(!b) return;
+        b.classList.add('ax-sn-row');
+        b.style.backgroundColor = (n===i? onColour : offColour);
+      });
+      items.forEach(function(e,n){
+        e.classList.add('ax-sn-label');
+        if(labelOn&&labelOff) e.style.color = (n===i? labelOn : labelOff);
+      });
+    }
+
+    var targets=items.map(function(e){ return panelFor(txt(e)); });
+
+    function goTo(i){
+      var t=targets[i];
+      if(!t) return;
+      var hdr=document.querySelector('header');
+      var off=(hdr?hdr.getBoundingClientRect().height:0)+24;
+      var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+      window.scrollTo({top:Math.max(0,y(t)-off), behavior:reduce?'auto':'smooth'});
+      select(i);
+    }
+
+    items.forEach(function(el,i){
+      if(!targets[i]) return;
+      el.classList.add('ax-sn-item');
+      el.setAttribute('role','button');
+      el.setAttribute('tabindex','0');
+      el.removeAttribute('data-href');
+      var row=rows[i];
+      if(row) row.classList.add('ax-sn-item');
+      /* WINDOW capture, not document capture: the page-transition scrim listens on
+         document capture and the CTA linkifier on the element itself. A window-phase
+         listener runs before both, so stopping there kills the navigation AND the
+         scrim flash. */
+      window.addEventListener('click',function(e){
+        var t=e.target, hit=(t&&t.nodeType===1&&(el===t||el.contains(t)||(row&&(row===t||row.contains(t)))));
+        if(!hit&&(e.clientX||e.clientY)){
+          var q=(row||el).getBoundingClientRect();
+          hit=q.width>0&&e.clientX>=q.left&&e.clientX<=q.right&&e.clientY>=q.top&&e.clientY<=q.bottom;
+        }
+        if(!hit) return;
+        e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+        goTo(i);
+      },true);
+      el.addEventListener('keydown',function(e){
+        if(e.key==='Enter'||e.key===' '){ e.preventDefault(); goTo(i); } });
+    });
+
+    /* keep the highlight honest while the reader scrolls the panels themselves */
+    var ticking=false;
+    window.addEventListener('scroll',function(){
+      if(ticking) return; ticking=true;
+      requestAnimationFrame(function(){
+        ticking=false;
+        var mid=window.pageYOffset+window.innerHeight*0.35, cur=0;
+        targets.forEach(function(t,n){ if(t&&y(t)<=mid) cur=n; });
+        select(cur);
+      });
+    },{passive:true});
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){ setTimeout(init,120); });
+  else setTimeout(init,120);
+})();
+</script>

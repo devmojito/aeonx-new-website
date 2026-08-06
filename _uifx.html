@@ -7,6 +7,11 @@
 .ax-fx-pill{transition:background-color .22s ease,box-shadow .22s ease,transform .22s cubic-bezier(.22,.61,.36,1);cursor:pointer}
 .ax-fx-pill:hover{transform:translateY(-0.1042vw);box-shadow:0 0.2083vw 0.5729vw rgba(176,45,12,.28);filter:brightness(1.06)}
 .ax-fx-pill:focus-visible{outline:0.1042vw solid rgb(223,63,23);outline-offset:0.15vw}
+/* The contextual Explore pills label at 0.625vw while every other CTA on the page
+   sits at 0.7292vw, so they read as an afterthought inside a generous pill (36px of
+   ink in an 80px box). Match them to the rest. */
+.ax-fx-xl{font-size:0.7292vw!important;line-height:1.0417vw!important}
+@media (max-width:1024px){.ax-fx-xl{font-size:2.4419vw!important;line-height:3.4884vw!important}}
 .ax-fx-link{transition:color .18s ease;cursor:pointer}
 .ax-fx-link:hover{color:rgb(223,63,23)!important}
 .ax-fx-soc{transition:transform .2s ease,filter .2s ease}
@@ -462,9 +467,23 @@
     });
   }
 
+  /* ---------- 1b. EXPLORE PILLS READ TOO SMALL ---------- */
+  function bumpExplore(){
+    [].slice.call(document.querySelectorAll('.g-t')).forEach(function(e){
+      if(e.children.length) return;
+      if(!/^explore(\s|$)/i.test(txt(e))) return;
+      var host=e.parentElement;
+      var hs=host?(host.getAttribute('style')||''):'';
+      /* only the pill-shaped ones; bare "Explore >" text links keep their size */
+      if(!/background-color/.test(hs)||!/border-radius/.test(hs)) return;
+      e.classList.add('ax-fx-xl');
+    });
+  }
+
   function init(){
     copyFix();
     applyTitleCase();
+    bumpExplore();
     armChrome();
     newsletter();
     productScroll();

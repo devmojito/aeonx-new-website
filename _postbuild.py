@@ -129,9 +129,11 @@ def main():
         if 'ax-ctawash-css' not in s and '</body>' in s:
             s = s.replace('</body>', CTAWASH + '\n</body>', 1)
             stats['ctawash'] = stats.get('ctawash', 0) + 1
-        if 'ax-cursor-css' not in s and '</body>' in s:
-            s = s.replace('</body>', CURSOR + '\n</body>', 1)
-            stats['cursor'] += 1
+        # CURSOR RING RETIRED 2026-08-05. The accent ring that trailed the pointer
+        # (44px, brand orange, translucent fill when over anything clickable) was
+        # reported as "colour overflowing out of the button" — over a CTA it sits
+        # half outside the pill and reads as a paint bug, not as a cursor. The
+        # fragment is kept in the tree but is no longer injected.
         if 'ax-mobfx-css' not in s and '</body>' in s:
             s = s.replace('</body>', MOBFX + '\n</body>', 1)
             stats['mobfx'] += 1
