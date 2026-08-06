@@ -1,0 +1,622 @@
+{
+ "terms-and-conditions": {
+  "eyebrow": "LEGAL",
+  "title": "Terms & conditions.",
+  "subtitle": "Website use, payments, refunds and cancellations.",
+  "intro": "These terms govern your use of aeonx.digital and any service or product purchased through it.",
+  "sections": [
+   {
+    "h": "",
+    "body": []
+   },
+   {
+    "h": "Acceptance of Terms",
+    "body": [
+     [
+      "p",
+      "By accessing, browsing, or using this website, you acknowledge that you have read, understood, and agree to comply with all Terms & Conditions outlined here. If you disagree with any part of these terms, you must not use this website."
+     ]
+    ]
+   },
+   {
+    "h": "User Obligations",
+    "body": [
+     [
+      "p",
+      "Users must provide accurate, complete, and updated information during transactions."
+     ],
+     [
+      "ul",
+      [
+       "You agree not to misuse the website by intentionally introducing viruses, Trojans, worms, or other harmful materials.",
+       "Unauthorized access or attempts to access secure portions of the website are strictly prohibited."
+      ]
+     ]
+    ]
+   },
+   {
+    "h": "Services & Payment",
+    "body": [
+     [
+      "ul",
+      [
+       "Payments for services and products are processed securely through Razorpay. Users explicitly authorize Razorpay and this website to handle transactions as per Razorpay’s policies.",
+       "The website reserves the right to modify, temporarily suspend, or permanently discontinue any services without prior notice."
+      ]
+     ]
+    ]
+   },
+   {
+    "h": "Pricing & Transaction Fees",
+    "body": [
+     [
+      "ul",
+      [
+       "Prices listed are inclusive of applicable taxes unless explicitly stated otherwise.",
+       "Razorpay transaction fees, if any, will be displayed at checkout, and you acknowledge your responsibility to review these charges before payment."
+      ]
+     ]
+    ]
+   },
+   {
+    "h": "Intellectual Property Rights",
+    "body": [
+     [
+      "ul",
+      [
+       "All content, trademarks, logos, and intellectual property rights available on this website are owned exclusively by our company or licensors. Unauthorized use is strictly prohibited."
+      ]
+     ]
+    ]
+   },
+   {
+    "h": "Privacy & Security",
+    "body": [
+     [
+      "ul",
+      [
+       "Razorpay handles your payment details securely. Our website does not store sensitive payment information.",
+       "For more details, review our comprehensive Privacy Policy regarding how your data is collected, used, and secured."
+      ]
+     ]
+    ]
+   },
+   {
+    "h": "Limitation of Liability",
+    "body": [
+     [
+      "ul",
+      [
+       "We are not liable for any interruptions, delays, unauthorized access, or technical issues encountered during your use of the website or payment processing.",
+       "Our maximum liability to users is limited to the amount paid by the user for the relevant transaction"
+      ]
+     ]
+    ]
+   },
+   {
+    "h": "Third-Party Links & Services",
+    "body": [
+     [
+      "ul",
+      [
+       "Our website may include links or references to third-party websites. We are not responsible for the content, privacy policies, or practices of third-party websites."
+      ]
+     ]
+    ]
+   },
+   {
+    "h": "Governing Law & Dispute Resolution",
+    "body": [
+     [
+      "ul",
+      [
+       "These terms are governed by the laws applicable in Mumbai.",
+       "Any disputes arising under these terms should first be addressed through direct negotiation. Unresolved disputes shall be resolved by binding arbitration or judicial proceedings within the jurisdiction of Mumbai."
+      ]
+     ]
+    ]
+   },
+   {
+    "h": "Amendments & Updates",
+    "body": []
+   },
+   {
+    "h": "Refund & Cancellation Policy",
+    "body": []
+   },
+   {
+    "h": "Cancellation Policy",
+    "body": [
+     [
+      "ul",
+      [
+       "Orders may be cancelled prior to payment confirmation. Post-payment cancellations must be communicated via email within 24 hours of the transaction.",
+       "Cancellations after the initiation of service delivery are evaluated on a case-by-case basis and may not qualify for a refund."
+      ]
+     ]
+    ]
+   },
+   {
+    "h": "Refund Policy",
+    "body": [
+     [
+      "ul",
+      [
+       "Refunds will be considered in accordance with the criteria outlined below and, if approved, processed through Razorpay to the original payment source within 7-14 business days."
+      ]
+     ]
+    ]
+   },
+   {
+    "h": "Criteria for Refunds Eligible Circumstances",
+    "body": [
+     [
+      "ul",
+      [
+       "Duplicate or erroneous transactions clearly documented and reported immediately.",
+       "Service not provided due to administrative, technical, or delivery failures.",
+       "Cancellation within the stipulated timeframe before service commencement."
+      ]
+     ]
+    ]
+   },
+   {
+    "h": "Ineligible Circumstances",
+    "body": [
+     [
+      "ul",
+      [
+       "User dissatisfaction unrelated to the stated scope or quality of service",
+       "Requests submitted after service delivery or beyond the allowed cancellation period.",
+       "Change of mind after purchase or acceptance of service delivery"
+      ]
+     ]
+    ]
+   },
+   {
+    "h": "Refund Request Procedure",
+    "body": [
+     [
+      "ul",
+      [
+       "Submit refund requests via email detailing the transaction ID, date, reason for the refund, and supporting documents.",
+       "Refund requests will be acknowledged within 48 hours, with final resolution communicated promptly after review."
+      ]
+     ]
+    ]
+   },
+   {
+    "h": "Partial Refunds",
+    "body": [
+     [
+      "ul",
+      [
+       "Partial refunds may be granted at our sole discretion for services partially delivered or under exceptional circumstances."
+      ]
+     ]
+    ]
+   },
+   {
+    "h": "Contact Information",
+    "body": [
+     [
+      "p",
+      "For cancellations, refund requests, transaction queries, or general inquiries, reach us at:"
+     ],
+     [
+      "ul",
+      [
+       "Email: support@aeonx.digital",
+       "Phone: 022-66221640"
+      ]
+     ]
+    ]
+   },
+   {
+    "h": "Policy Amendments",
+    "body": [
+     [
+      "ul",
+      [
+       "We reserve the right to modify this Refund & Cancellation Policy without prior notice. Users should review this policy periodically for updates."
+      ]
+     ]
+    ]
+   }
+  ]
+ },
+ "privacy-policy": {
+  "eyebrow": "LEGAL",
+  "title": "Privacy policy.",
+  "subtitle": "What we collect, why we collect it, and what you control.",
+  "intro": "",
+  "sections": [
+   {
+    "h": "",
+    "body": [
+     [
+      "p",
+      "Aeonx Digital Solutions Private Limited, including its wholly or partly owned (directly and indirectly) subsidiaries (hereinafter “Aeonx Digital”) is committed to protecting the privacy and security of the personal information of our customers, employees and third parties. Aeonx Digital is committed to maintaining and safeguarding the privacy of the information you share with us through our website (aeonx.digital) as well as our service provider business. This privacy notice discloses the privacy practices for (aeonx.digital and the company, Aeonx Digital Solutions)."
+     ],
+     [
+      "p",
+      "Information We Collect"
+     ],
+     [
+      "p",
+      "Summary"
+     ],
+     [
+      "p",
+      "Aeonx Digital collects many kinds of information in order to operate effectively and provide you the best products, services and experiences we can. We collect information when you register, sign in and use our sites and services or call in / meet for our support or projects. We also may get information from other companies or your employer if we are engaged in business. We collect this information in a variety of ways, including from issue logs, service reports, web forms, technologies like cookies, web logging and software on your computer or other device."
+     ],
+     [
+      "p",
+      "We are the sole owners of the information collected on this site or in our support databases. We only have access to/collect information that you voluntarily give us via form submit, email or other direct contact from you or your employer. We will not sell or rent this information to anyone."
+     ],
+     [
+      "p",
+      "We will use your information to respond to you, regarding the reason you contacted us. We will not share your information with any third party outside of our organization, other than as necessary to fulfill your request, e.g., to ship an order."
+     ],
+     [
+      "p",
+      "Unless you ask us not to, we may contact you via email in the future to tell you about technology tips, trends, new products or services, or changes to this privacy policy."
+     ],
+     [
+      "p",
+      "Additionally, we use information submitted through our websites or collected through email or hard copy surveys to analyze the characteristics of our customers and improve our services. Occasionally, we will provide anonymized aggregated statistics about our customers in reports made available to our customers, to third parties, or to the public. These reports will not identify individual Aeonx Digital customers and will include no personally identifiable data, not personal data."
+     ],
+     [
+      "p",
+      "If you request information about Aeonx Digital products and services, we will collect your name, email address, phone number, and additional company information. We use this information to contact you about your request, and to follow up with you about the products and services in which you have expressed an interest. We will also send information to you regarding upcoming Aeonx Digital events, webinars, and relevant privacy related news and alerts. You may unsubscribe from these communications at any time by clicking on the unsubscribe link provided in the email. Additionally, a natural person may request a deletion of marketing information collected and this request will be processed and personal data expunged."
+     ],
+     [
+      "p",
+      "Aeonx Digital receives and processes information (in paper and electronic form) in accordance with its clients’ instructions for the purpose of providing services to its customers. At Aeonx Digital, we recognize the importance of privacy to our customers and we strive to safeguard any personal information we receive and may need to use in support of our customers."
+     ],
+     [
+      "p",
+      "We respect each individual’s right to personal privacy. We will collect and use information we receive directly from you only in the ways disclosed in this Privacy Policy. This policy does not apply to practices that Aeonx Digital does not own or control, or to individuals that Aeonx Digital does not employ or manage. Aeonx Digital adheres to the set of data protection principles developed by the Government of India, and follows the standards required by the United State Department of Commerce (DOC) and European Union’s General Data Protection Regulation."
+     ]
+    ]
+   },
+   {
+    "h": "Examples",
+    "body": [
+     [
+      "p",
+      "Aeonx Digital collects many kinds of information in order to operate effectively and provide you the best products, services and experiences we can. Some of this information you provide directly to us. Some of it we get by observing how you interact with our products and services. Some of it is available from other sources that we may combine with the data we collect directly. Regardless of the source, we believe it’s important to treat that information with care and to help you maintain your privacy."
+     ],
+     [
+      "p",
+      "Examples of what we collect:"
+     ],
+     [
+      "p",
+      "Registration"
+     ],
+     [
+      "p",
+      "When you sign up to use our sites or services you may be required to provide information about yourself, such as your name, birthdate, organization name, e-mail and postal address and postal code."
+     ]
+    ]
+   },
+   {
+    "h": "Signing in",
+    "body": [
+     [
+      "p",
+      "To access some Aeonx Digital services, you will need to sign in with a user name and password, which we refer to as your user account."
+     ]
+    ]
+   },
+   {
+    "h": "Using our sites and services",
+    "body": [
+     [
+      "p",
+      "We collect information that tells us how you interact with our services, including the browser you’re using, your IP address, location, cookies or other unique IDs, the pages you visit and features you use (of our services)."
+     ]
+    ]
+   },
+   {
+    "h": "Data from other sources",
+    "body": [
+     [
+      "p",
+      "We may get additional information about you, such as demographic data we purchase from other companies."
+     ]
+    ]
+   },
+   {
+    "h": "How we collect",
+    "body": [
+     [
+      "p",
+      "We use a number of methods and technologies to gather information about how you use our sites and services, such as:"
+     ],
+     [
+      "ul",
+      [
+       "Web forms, such as when you type information into a registration form or type a search query into a search box.",
+       "Technologies like cookies and web beacons (Please visit Section 2 of this Privacy Policy page to learn more about these technologies).",
+       "Web logging, which enables us to collect the standard information your browser sends to every web site you visit – such as your IP address, browser type and language, and the site you came from – as well as the pages you visit and the links you click while using our sites and services.",
+       "Software installed on your computer or other device, which may send back information needed to operate, update or improve that software."
+      ]
+     ]
+    ]
+   },
+   {
+    "h": "Customer Data",
+    "body": [
+     [
+      "p",
+      "Aeonx Digital receives and processes information (in paper and electronic form) in accordance with its clients’ instructions for the purpose of providing services to its customers. At Aeonx Digital, we recognize the importance of privacy to our customers and we strive to safeguard any personal information we receive and may need to use in support of our customers."
+     ],
+     [
+      "p",
+      "Aeonx Digital Customer Information"
+     ],
+     [
+      "ul",
+      [
+       "Email address",
+       "Phone number",
+       "Information regarding your role within your company",
+       "Company information, including company name, address, billing information (e.g., P.O. number, bank information, credit card number), and company size and",
+       "Contact information for other relevant points of contact within your company as needed for Aeonx DIgital to provide its services.",
+       "Information regarding the issue or topic being reached out over;"
+      ]
+     ],
+     [
+      "p",
+      "If you purchased one of Aeonx Digital’s technical solutions you may have the option to add additional users to your account. We will ask for the name and email address of the additional users you want to add. This information is used by Aeonx Digital to provide the requested service."
+     ],
+     [
+      "p",
+      "In the course of using Aeonx Digital’s technical solutions or services, you may provide business information related to your company or employees. Business information may include copies of your company’s policies and process documents, responses to assessment questionnaires and evidence to support those responses. This is information is stored on Aeonx Digital’s systems, and is used to provide contracted services in accordance with the applicable terms and conditions of agreements between Aeonx Digital and your company."
+     ]
+    ]
+   },
+   {
+    "h": "Children",
+    "body": [
+     [
+      "p",
+      "Restrictions of Access"
+     ],
+     [
+      "p",
+      "When on a Aeonx Digital site or it’s service collects age information, it is against our policy to collect or approve any data from users under 16."
+     ]
+    ]
+   },
+   {
+    "h": "Cookies & Similar Technologies",
+    "body": [
+     [
+      "p",
+      "Summary"
+     ],
+     [
+      "p",
+      "Most Aeonx Digital web sites and some tools use “cookies,” small pieces of data that can be read by a web server in the same domain that put the cookie on your hard drive. We may use cookies to help us retrieve your preferences and settings; help with sign-in; to combat fraud; and analyze site operations."
+     ],
+     [
+      "p",
+      "We also use web beacons to help deliver cookies and compile analytics. These may include third-party web beacons, which are prohibited from collecting your personal information."
+     ],
+     [
+      "p",
+      "You have a variety of tools to control cookies and similar technologies, including:"
+     ],
+     [
+      "p",
+      "Browser controls to block and delete cookies"
+     ],
+     [
+      "ul",
+      [
+       "Controls from some analytics providers to opt out of data collection in web beacons.",
+       "Full text"
+      ]
+     ]
+    ]
+   },
+   {
+    "h": "Our Use of Cookies",
+    "body": [
+     [
+      "p",
+      "Most Aeonx Digital web sites use “cookies,” which are small pieces of data sent to your browser by a web server. Upon subsequent requests, your browser will send the cookie data to the same web server, or other web servers in the same domain, when accessing the web site. Cookies contain data that can be read by a web server in the domain that issued the cookie to you. That data often consists of a string of numbers and letters that uniquely identifies your computer, but may contain other information as well. Here is an example of a unique ID number stored in a cookie that Aeonx Digital might place on your device when you visit one of our web sites: 0aj17be34l7srju0qcdnftigt0"
+     ],
+     [
+      "p",
+      "We may use cookies for:"
+     ],
+     [
+      "p",
+      "Sign-in and Authentication"
+     ],
+     [
+      "p",
+      "When you sign in to a site or service using your account on an Aeonx Digital web site, we store a unique ID number, and the time you signed in, in an encrypted cookie on your hard disk. This cookie allows you to move from page to page at the site without having to sign in again on each page. When you sign out, these cookies are deleted from your computer. This is commonly referred to as a “session cookie”. We also use cookies to improve the sign-in experience. For example, your user name may be stored in a cookie that will remain on your computer after you sign out. This cookie allows your user name to be pre-populated, so that you will only need to type your password the next time you sign in. If you are using a public computer or do not want this information to be stored, you can select the appropriate radio button on the sign-in page, and this cookie will not be used."
+     ]
+    ]
+   },
+   {
+    "h": "Site Analytics",
+    "body": [
+     [
+      "p",
+      "We may use cookies to count the number of unique visitors to a web page or service or to develop other aggregate statistics about the operations of our sites and services. These analytics help us operate and improve the performance of these sites and services."
+     ],
+     [
+      "p",
+      "In addition to the cookies Aeonx Digital may set when you visit our web sites, third parties may also set certain cookies on your device when you visit Aeonx Digital sites. In some cases, that is because we have hired the third party to provide certain services on our behalf, such as site analytics. In other cases, it is because our web pages contain content or ads from third parties, such as videos, news content or ads delivered by other ad networks. Because your browser connects to those third parties’ web servers to retrieve that content, those third parties can set or read their own cookies on your device and may collect information about your online activities across websites or online services."
+     ]
+    ]
+   },
+   {
+    "h": "How to Control Cookies",
+    "body": [
+     [
+      "p",
+      "Browser Controls to Block Cookies"
+     ],
+     [
+      "p",
+      "Most web browsers automatically accept cookies, but you can usually modify your browser setting to block cookies. Instructions for blocking cookies in different browsers are usually available at each browser’s privacy statement or in their help files or settings pages."
+     ],
+     [
+      "p",
+      "Please be aware that if you choose to block cookies, you may not be able to sign in or use other interactive features of Aeonx Digital sites and services that depend on cookies. This will not stop you from being able to call in for support, however it can restrict the use of some tools for the support."
+     ]
+    ]
+   },
+   {
+    "h": "Browser Controls to Delete Cookies",
+    "body": [
+     [
+      "p",
+      "If you accept cookies, you can delete them later. Instructions for deleting cookies in different browsers are usually available at each browser’s privacy statement or in their help files or settings pages"
+     ],
+     [
+      "p",
+      "Please be aware that if you choose to delete cookies, any settings and preferences controlled by those cookies will be deleted and may need to be recreated."
+     ]
+    ]
+   },
+   {
+    "h": "Browser Controls for “Do Not Track” and Tracking Protection",
+    "body": [
+     [
+      "p",
+      "Some newer browsers have incorporated “Do Not Track” features. Most of these features, when turned on, send a signal or preference to the web sites you visit indicating that you do not wish to be tracked. Those sites (or the third-party content on those sites) may continue to engage in activities you might view as tracking even though you have expressed this preference, depending on the sites’ privacy practices. Because there is not yet a common understanding of how to interpret the DNT signal, Aeonx Digital does not currently respond to the browser DNT signals on its own websites or online services, or on third-party websites or online services where Aeonx Digital provides content or is otherwise able to collect information."
+     ],
+     [
+      "p",
+      "If you feel that we are not abiding by this privacy policy, you should contact us immediately via telephone at 022-6621-640."
+     ]
+    ]
+   }
+  ]
+ },
+ "cookie-policy": {
+  "eyebrow": "LEGAL",
+  "title": "Cookies.",
+  "subtitle": "How AeonX Digital uses cookies and similar technologies.",
+  "intro": "These are the cookie sections of our privacy policy, gathered on one page. The full policy is at /privacy-policy/.",
+  "sections": [
+   {
+    "h": "Cookies & Similar Technologies",
+    "body": [
+     [
+      "p",
+      "Summary"
+     ],
+     [
+      "p",
+      "Most Aeonx Digital web sites and some tools use “cookies,” small pieces of data that can be read by a web server in the same domain that put the cookie on your hard drive. We may use cookies to help us retrieve your preferences and settings; help with sign-in; to combat fraud; and analyze site operations."
+     ],
+     [
+      "p",
+      "We also use web beacons to help deliver cookies and compile analytics. These may include third-party web beacons, which are prohibited from collecting your personal information."
+     ],
+     [
+      "p",
+      "You have a variety of tools to control cookies and similar technologies, including:"
+     ],
+     [
+      "p",
+      "Browser controls to block and delete cookies"
+     ],
+     [
+      "ul",
+      [
+       "Controls from some analytics providers to opt out of data collection in web beacons.",
+       "Full text"
+      ]
+     ]
+    ]
+   },
+   {
+    "h": "Our Use of Cookies",
+    "body": [
+     [
+      "p",
+      "Most Aeonx Digital web sites use “cookies,” which are small pieces of data sent to your browser by a web server. Upon subsequent requests, your browser will send the cookie data to the same web server, or other web servers in the same domain, when accessing the web site. Cookies contain data that can be read by a web server in the domain that issued the cookie to you. That data often consists of a string of numbers and letters that uniquely identifies your computer, but may contain other information as well. Here is an example of a unique ID number stored in a cookie that Aeonx Digital might place on your device when you visit one of our web sites: 0aj17be34l7srju0qcdnftigt0"
+     ],
+     [
+      "p",
+      "We may use cookies for:"
+     ],
+     [
+      "p",
+      "Sign-in and Authentication"
+     ],
+     [
+      "p",
+      "When you sign in to a site or service using your account on an Aeonx Digital web site, we store a unique ID number, and the time you signed in, in an encrypted cookie on your hard disk. This cookie allows you to move from page to page at the site without having to sign in again on each page. When you sign out, these cookies are deleted from your computer. This is commonly referred to as a “session cookie”. We also use cookies to improve the sign-in experience. For example, your user name may be stored in a cookie that will remain on your computer after you sign out. This cookie allows your user name to be pre-populated, so that you will only need to type your password the next time you sign in. If you are using a public computer or do not want this information to be stored, you can select the appropriate radio button on the sign-in page, and this cookie will not be used."
+     ]
+    ]
+   },
+   {
+    "h": "Site Analytics",
+    "body": [
+     [
+      "p",
+      "We may use cookies to count the number of unique visitors to a web page or service or to develop other aggregate statistics about the operations of our sites and services. These analytics help us operate and improve the performance of these sites and services."
+     ],
+     [
+      "p",
+      "In addition to the cookies Aeonx Digital may set when you visit our web sites, third parties may also set certain cookies on your device when you visit Aeonx Digital sites. In some cases, that is because we have hired the third party to provide certain services on our behalf, such as site analytics. In other cases, it is because our web pages contain content or ads from third parties, such as videos, news content or ads delivered by other ad networks. Because your browser connects to those third parties’ web servers to retrieve that content, those third parties can set or read their own cookies on your device and may collect information about your online activities across websites or online services."
+     ]
+    ]
+   },
+   {
+    "h": "How to Control Cookies",
+    "body": [
+     [
+      "p",
+      "Browser Controls to Block Cookies"
+     ],
+     [
+      "p",
+      "Most web browsers automatically accept cookies, but you can usually modify your browser setting to block cookies. Instructions for blocking cookies in different browsers are usually available at each browser’s privacy statement or in their help files or settings pages."
+     ],
+     [
+      "p",
+      "Please be aware that if you choose to block cookies, you may not be able to sign in or use other interactive features of Aeonx Digital sites and services that depend on cookies. This will not stop you from being able to call in for support, however it can restrict the use of some tools for the support."
+     ]
+    ]
+   },
+   {
+    "h": "Browser Controls to Delete Cookies",
+    "body": [
+     [
+      "p",
+      "If you accept cookies, you can delete them later. Instructions for deleting cookies in different browsers are usually available at each browser’s privacy statement or in their help files or settings pages"
+     ],
+     [
+      "p",
+      "Please be aware that if you choose to delete cookies, any settings and preferences controlled by those cookies will be deleted and may need to be recreated."
+     ]
+    ]
+   },
+   {
+    "h": "Browser Controls for “Do Not Track” and Tracking Protection",
+    "body": [
+     [
+      "p",
+      "Some newer browsers have incorporated “Do Not Track” features. Most of these features, when turned on, send a signal or preference to the web sites you visit indicating that you do not wish to be tracked. Those sites (or the third-party content on those sites) may continue to engage in activities you might view as tracking even though you have expressed this preference, depending on the sites’ privacy practices. Because there is not yet a common understanding of how to interpret the DNT signal, Aeonx Digital does not currently respond to the browser DNT signals on its own websites or online services, or on third-party websites or online services where Aeonx Digital provides content or is otherwise able to collect information."
+     ],
+     [
+      "p",
+      "If you feel that we are not abiding by this privacy policy, you should contact us immediately via telephone at 022-6621-640."
+     ]
+    ]
+   }
+  ]
+ }
+}

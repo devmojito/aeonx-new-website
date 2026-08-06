@@ -83,6 +83,12 @@ REDIRECTS = {
     "newsroom": ("insights/blog", "Newsroom — AeonX Digital"),
     "newsroom/aeonx-aws-partner-network": ("2022/06/08/aeonx-aws-partner-network/05/48/43/918/aws/admin", "AeonX joins the AWS Partner Network — AeonX Digital"),
     "thank-you": ("contact-us", "Thank You — AeonX Digital"),
+    # Footer legal pages (built by _legal.py, not from Figma) and the legacy
+    # WordPress URL their copy came from.
+    "termsonlinepayment": ("terms-and-conditions", "Terms & Conditions — AeonX Digital"),
+    "terms": ("terms-and-conditions", "Terms & Conditions — AeonX Digital"),
+    "privacy": ("privacy-policy", "Privacy Policy — AeonX Digital"),
+    "cookies": ("cookie-policy", "Cookies — AeonX Digital"),
 }
 
 REDIRECT_TMPL = (
