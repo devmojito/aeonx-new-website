@@ -56,7 +56,32 @@ select.ax-cf-in{cursor:pointer;appearance:none;-webkit-appearance:none}
       if (txt(ts[i]) === label){
         var box = ts[i].nextElementSibling;
         while (box && !(box.classList && box.classList.contains('g-b'))) box = box.nextElementSibling;
-        if (box) return box;
+        if (!box) continue;
+        /* Phone Number is drawn as TWO boxes -- a narrow country-code chip (flag +
+           chevron) and the number box beside it. Taking the first one put the input
+           in the 108px chip and left the number box showing its "XXXXX-XXXXX"
+           filler, which is why that field looked a third the size of every other.
+           Among the boxes on this field's row, take the WIDEST: for every other
+           field that is still the first one. */
+        /* Width comes from the INLINE style, not a rect: this runs once before the
+           panel has been laid out, where every rect measures 0 and the chip would
+           win by default -- then again after, giving two inputs for one field. */
+        var wOf = function(el){
+          var m = (el.getAttribute('style') || '').match(/width:\s*([\d.]+)vw/);
+          return m ? parseFloat(m[1]) : el.getBoundingClientRect().width;
+        };
+        var tOf = function(el){
+          var m = (el.getAttribute('style') || '').match(/top:\s*([\d.]+)vw/);
+          return m ? parseFloat(m[1]) : el.getBoundingClientRect().top;
+        };
+        var best = box, bw = wOf(box), bt = tOf(box);
+        var n = box.nextElementSibling;
+        for (var k = 0; k < 4 && n; k++, n = n.nextElementSibling){
+          if (!(n.classList && n.classList.contains('g-b'))) continue;
+          if (Math.abs(tOf(n) - bt) > 0.4) break;            /* next row down */
+          if (wOf(n) > bw && dummyIn(n)){ bw = wOf(n); best = n; }
+        }
+        return best;
       }
     return null;
   }
@@ -68,6 +93,10 @@ select.ax-cf-in{cursor:pointer;appearance:none;-webkit-appearance:none}
 
   function field(scope, label, opts){
     opts = opts || {};
+    /* init() runs twice (DOMContentLoaded and load). Without this the second pass
+       grafts a SECOND input for the same field. */
+    var had = scope.querySelector('[name="' + label.replace(/"/g, '') + '"]');
+    if (had) return had;
     var box = findLabelBox(scope, label);
     if (!box) return null;
     var dummy = dummyIn(box);
@@ -189,7 +218,7 @@ select.ax-cf-in{cursor:pointer;appearance:none;-webkit-appearance:none}
     /* "XXXXX-XXXXX" is Figma's filler, not a hint anyone can act on -- a real
        example number reads as an instruction instead of noise. */
     field(form, 'Phone Number', { required:true, type:'tel', placeholder:'98765 43210',
-      pattern:'[0-9()+\\-\\s]{6,}' });
+      pattern:'[0-9 ()+-]{6,}' });   /* a hyphen LAST needs no escape; the old \\-\\s made an invalid range, so browsers dropped the pattern and the field accepted letters */
 
     if (kind === 'A'){
       field(form, 'Role', { required:true, placeholder:'Your role' });
