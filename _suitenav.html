@@ -6,8 +6,16 @@
    scrim on the way. Each product already has its own panel further down THIS page, so
    the list is an index: a click should move to that panel. */
 .ax-sn-item{cursor:pointer}
-.ax-sn-row{transition:background-color .25s ease}
+/* These plates are exported at opacity .4 and the shared hover system also paints
+   background-color on them, so an inline style loses: brand orange came out salmon
+   and two rows could look active at once. The class owns both states outright and
+   the plates are unhooked from the hover system in JS. */
+.ax-sn-row{background-color:transparent!important;opacity:1!important;
+  transition:background-color .25s ease}
+.ax-sn-row.is-on{background-color:rgb(223,63,23)!important}
+.ax-sn-row:not(.is-on):hover{background-color:rgba(223,63,23,.08)!important}
 .ax-sn-label{transition:color .25s ease}
+.ax-sn-label.is-on{color:#fff!important}
 @media (prefers-reduced-motion:reduce){.ax-sn-row,.ax-sn-label{transition:none}}
 </style>
 <script>
@@ -59,28 +67,21 @@
       return best;
     }
 
-    var ACTIVE='rgb(223, 63, 23)';
+    /* Unhook the plates from the shared hover system and from their own inline
+       paint, so nothing else can write background-color on them mid-transition. */
     var rows=items.map(rowFor);
-    var onColour=null, offColour=null, labelOn=null, labelOff=null;
     rows.forEach(function(b,i){
       if(!b) return;
-      var bg=getComputedStyle(b).backgroundColor;
-      if(bg===ACTIVE){ onColour=bg; labelOn=getComputedStyle(items[i]).color; }
-      else if(!offColour){ offColour=bg; labelOff=getComputedStyle(items[i]).color; }
+      b.className=b.className.split(/\s+/).filter(function(c){
+        return c && c.indexOf('ax-hv')!==0; }).join(' ');
+      b.style.backgroundColor=''; b.style.opacity='';
+      b.classList.add('ax-sn-row');
+      items[i].classList.add('ax-sn-label');
     });
-    onColour=onColour||ACTIVE;
-    offColour=offColour||'rgba(0, 0, 0, 0)';
 
     function select(i){
-      rows.forEach(function(b,n){
-        if(!b) return;
-        b.classList.add('ax-sn-row');
-        b.style.backgroundColor = (n===i? onColour : offColour);
-      });
-      items.forEach(function(e,n){
-        e.classList.add('ax-sn-label');
-        if(labelOn&&labelOff) e.style.color = (n===i? labelOn : labelOff);
-      });
+      rows.forEach(function(b,n){ if(b) b.classList.toggle('is-on', n===i); });
+      items.forEach(function(e,n){ e.classList.toggle('is-on', n===i); });
     }
 
     var targets=items.map(function(e){ return panelFor(txt(e)); });
