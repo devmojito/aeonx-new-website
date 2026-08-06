@@ -2981,6 +2981,8 @@ document.addEventListener("DOMContentLoaded",function(){
   transition:opacity .25s ease;pointer-events:none;white-space:nowrap}
 .ax-fx-note.on{opacity:1}
 .ax-fx-note.err{color:rgb(220,38,38)}
+.ax-fx-note-link{color:rgb(223,63,23);text-decoration:underline;pointer-events:auto}
+.ax-fx-note.on{pointer-events:auto}
 @media (prefers-reduced-motion:reduce){
   .ax-fx-pill,.ax-fx-link,.ax-fx-soc,.ax-fx-note{transition:none}
   .ax-fx-pill:hover,.ax-fx-soc:hover{transform:none}
@@ -3213,7 +3215,22 @@ document.addEventListener("DOMContentLoaded",function(){
     input.setAttribute('style',(dummy.getAttribute('style')||'').replace(/color:[^;]+;?/,''));
     dummy.parentNode.replaceChild(input,dummy);
 
-    var pill=pillOf(subLabel)||subLabel;
+    /* Resolve the painted pill by walking UP from the label to the nearest ancestor
+       that Figma painted (background-color + border-radius). pillOf() measures rects,
+       and on the first pass the footer is still at opacity 0 with zero-size rects, so
+       it returned null and this fell back to the LABEL -- which is why clicking the
+       button's body (everything except the glyphs) still reached the chrome's
+       navigate handler and went to /contact-us/. Markup does not depend on layout. */
+    function paintedPill(el){
+      var n=el.parentElement, hops=0;
+      while(n&&hops<4){
+        var st=n.getAttribute('style')||'';
+        if(/background-color/.test(st)&&/border-radius/.test(st)) return n;
+        n=n.parentElement; hops++;
+      }
+      return pillOf(el)||el;
+    }
+    var pill=paintedPill(subLabel);
     pill.classList.add('ax-fx-pill');
     subLabel.style.pointerEvents='none';
     /* Figma sizes the Subscribe label box to the text and pins it at the pill's
@@ -3260,11 +3277,27 @@ document.addEventListener("DOMContentLoaded",function(){
       if(!v||!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(v)){
         say('Enter a valid work email address.',true); input.focus(); return;
       }
-      say('You are subscribed to the AeonX newsletter. Check ' + v + ' for confirmation.');
+      say('');                       /* shows the note, content set just below */
       input.value='';
-      window.location.href='mailto:sales@aeonx.digital'
+      /* Do NOT open mail automatically. Any programmatic mailto -- location.href or
+         a synthesised anchor click -- is a navigation attempt, and on a browser with
+         no mail handler registered it unloads the page: that is what kept being
+         reported as "Subscribe redirects to the contact page". The address is
+         confirmed in place and offered as a plain link the reader may choose to
+         click, so nothing can ever take them off the page.
+         CLIENT OWES a real newsletter endpoint; until then this is the honest
+         behaviour rather than a silent no-op. */
+      var href='mailto:sales@aeonx.digital'
         +'?subject='+encodeURIComponent('Newsletter subscription')
         +'&body='+encodeURIComponent('Please subscribe this address to the AeonX newsletter: '+v);
+      note.innerHTML='';
+      note.appendChild(document.createTextNode(
+        'Thanks \u2014 we have your address. '));
+      var a=document.createElement('a');
+      a.href=href; a.textContent='Email it to the team';
+      a.className='ax-fx-note-link';
+      a.setAttribute('rel','noopener noreferrer');
+      note.appendChild(a);
     }
     /* DOCUMENT-capture interception, not a same-element listener: at the target
        phase listeners run in REGISTRATION order regardless of the capture flag,
@@ -3278,16 +3311,29 @@ document.addEventListener("DOMContentLoaded",function(){
        Because that shell may still be on top before the peeler runs, the trap
        matches by CLICK POINT against the pill's rect, not by event target. */
     function within(e){
-      if(e.target&&e.target.nodeType===1&&(pill.contains(e.target)||subLabel.contains(e.target))) return true;
+      var live=paintedPill(subLabel);          /* re-resolved every click */
+      var t=e.target;
+      if(t&&t.nodeType===1&&(live.contains(t)||pill.contains(t)||subLabel.contains(t))) return true;
       if(!e.clientX&&!e.clientY) return false;   /* keyboard-synth clicks carry 0,0 */
-      var r=pill.getBoundingClientRect();
-      return e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom;
+      var boxes=[live,pill];
+      for(var i=0;i<boxes.length;i++){
+        var r=boxes[i].getBoundingClientRect();
+        if(r.width&&e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom) return true;
+      }
+      return false;
     }
     var busy=false;
     document.addEventListener('click',function(e){
-      if(busy||!within(e)) return;
+      if(!within(e)) return;
+      /* Swallow the event FIRST, every single time. The de-bounce used to return
+         before this, so a second click inside 150ms (a double-click, or an impatient
+         second tap) was left for the chrome's navigate handler -- which is the last
+         way Subscribe could still reach /contact-us/. Stop the event unconditionally
+         and let only the SUBMIT be de-bounced. */
+      e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+      if(busy) return;
       busy=true; setTimeout(function(){busy=false;},150);
-      submit(e); },true);
+      submit(null); },true);
     pill.setAttribute('role','button');
     pill.setAttribute('tabindex','0');
     document.addEventListener('keydown',function(e){
