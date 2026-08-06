@@ -874,7 +874,7 @@ document.addEventListener('DOMContentLoaded',function(){
  .ax-mnav__subttl{flex:1;text-align:center;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#23272E}
  .ax-mnav__grp{padding:16px 16px 6px;font-size:18px;font-weight:700;color:#23272E}
  .ax-mnav__cta{margin-top:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
- .ax-mnav__btn{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-radius:8px;
+ .ax-mnav__btn{text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-radius:8px;
    font-size:15px;font-weight:600;text-decoration:none}
  .ax-mnav__btn--p{background:#DF3F17;color:#fff}
  .ax-mnav__btn--s{background:#fff;color:#23272E;border:1px solid #D5DAE2}
@@ -3041,8 +3041,12 @@ document.addEventListener("DOMContentLoaded",function(){
      is skipped anyway. */
   var KEEP=/@|\bhttps?:|^\+?\d|·|©/;
   function applyTitleCase(root){
-    (root||document).querySelectorAll('.g-t,.ax-nav__btn,.ax-mm2__feat-btn,.ax-mm2__api-btn').forEach(function(e){
+    (root||document).querySelectorAll('.g-t,.ax-mm2__feat-btn,.ax-mm2__api-btn').forEach(function(e){
       if(e.children.length) return;                     /* leave rich labels alone */
+      /* The two nav buttons ship uppercase in the markup and the client wants them
+         kept that way -- TALK TO US / REQUEST A PROPOSAL. Title Case is for the CTAs
+         in the page body, not for the fixed chrome. */
+      if(e.closest('header')||e.closest('.ax-nav')||e.closest('.ax-mnav')) return;
       if(e.closest('section.ax-footer')&&!isControl(e)) return;
       var t=txt(e);
       if(!t||t.length>34||KEEP.test(t)) return;
