@@ -5,10 +5,19 @@
    display kills the transition. The visibility flip is delayed until the fade ends
    on the way out and immediate on the way in (standard crossfade choreography), so
    a hidden panel is never focusable or hit-testable mid-fade. */
-.ax-ftabs-panel{transition:opacity .16s ease,transform .16s ease,visibility 0s 0s}
-.ax-ftabs-off{visibility:hidden;opacity:0;transform:translateX(calc(var(--axd,0)*-0.5208vw));
+.ax-ftabs-panel{transition:opacity .22s cubic-bezier(.4,0,.2,1),
+  transform .22s cubic-bezier(.4,0,.2,1),visibility 0s 0s}
+/* !important, and deliberately so: the scroll-reveal system pins a revealed element
+   with `.ax-rv.ax-in{opacity:1;transform:translateY(0)}`, which is TWO classes and
+   therefore outranks a single-class rule. Without this the leaving panel held
+   opacity 1 and hard-cut to hidden at the end of the transition instead of fading --
+   the incoming panel animated fine only because it is a clone with no reveal
+   classes on it. */
+.ax-ftabs-off{visibility:hidden;opacity:0!important;
+  transform:translateX(calc(var(--axd,0)*-0.8333vw))!important;
   pointer-events:none;
-  transition:opacity .16s ease,transform .16s ease,visibility 0s .16s}
+  transition:opacity .22s cubic-bezier(.4,0,.2,1),
+    transform .22s cubic-bezier(.4,0,.2,1),visibility 0s .22s}
 /* the entering panel slides in from the direction of travel with the shared curve */
 .ax-ftabs-in{animation:ax-ft-in .34s cubic-bezier(.22,.61,.36,1) both}
 @keyframes ax-ft-in{
@@ -257,10 +266,30 @@
     }
 
     var prev = 0;
+    /* Resolve the panel from the DOM on every switch instead of trusting the node
+       captured at setup: _forminputs.html grafts real fields in afterwards and
+       replaces the panel subtree, which left this toggling DETACHED elements --
+       aria-selected flipped and the tab recoloured, but the visible form never
+       changed, so both tabs appeared to show the same form. */
+    function live(i){
+      /* Not by id: the panels in the DOM carry the ax-ftabs-* CLASSES but no id, so
+         whatever rebuilds them (the field grafting in _forminputs) drops attributes
+         set after setup. Position is the one thing that holds: variant A is the
+         strip's next sibling and variant B follows it. */
+      var a=strip.nextElementSibling;
+      while(a&&!/ax-ftabs-panel/.test(a.className||'')) a=a.nextElementSibling;
+      if(!a) return panels[i];
+      if(i===0) return a;
+      var b=a.nextElementSibling;
+      while(b&&!/ax-ftabs-panel/.test(b.className||'')) b=b.nextElementSibling;
+      return b||panels[1];
+    }
+
     function select(k, focus){
       var dir = k > prev ? 1 : (k < prev ? -1 : 0);
       for (var i = 0; i < 2; i++){
         var on = i === k;
+        panels[i] = live(i);
         tabs[i].style.backgroundColor = FILL[on ? 1 : 0];
         labels[i].style.color = LBL[on ? 1 : 0];
         tabs[i].setAttribute('aria-selected', on ? 'true' : 'false');
@@ -274,9 +303,14 @@
         } else if (on){
           panels[i].classList.remove('ax-ftabs-off');   /* initial arm: no animation */
         } else {
-          /* leaving: slip out toward where the old tab sits */
+          /* Leaving: slip out toward where the old tab sits. The reflow between
+             dropping the entrance animation and applying the hidden state is what
+             makes the fade actually run -- ax-ft-in carries fill:both, so removing
+             it and setting opacity:0 in the same tick leaves the transition with no
+             defined start value and the panel hard-cuts instead of fading. */
           if (dir) panels[i].style.setProperty('--axd', -dir);
           panels[i].classList.remove('ax-ftabs-in');
+          void panels[i].offsetWidth;
           panels[i].classList.add('ax-ftabs-off');
         }
       }
