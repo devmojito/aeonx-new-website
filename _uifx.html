@@ -84,6 +84,9 @@
      the stock "John Doe" testimonial headshot -- is left alone for the client. */
   var COPY_FIX=[[/\bSend RPF Request\b/g,'Send RFP Request'],[/\bAhmadabad\b/g,'Ahmedabad'],
                 [/\bSaas\b/g,'SaaS'],
+                /* Figma spells it "COSTUMER IN THIS VERTICAL" on all six
+                   industries pages. The rest of the site says Customer. */
+                [/\bCOSTUMER\b/g,'CUSTOMER'],[/\bCostumer\b/g,'Customer'],
                 /* Figma spells the product names three ways ("Logystix" in the footer,
                    "LogystiX" on the cards). One casing per brand, sitewide. */
                 [/\bLogystix\b/g,'LogystiX'],[/\bManuFex\b/g,'ManufeX'],[/\bManufex\b/g,'ManufeX'],
