@@ -189,6 +189,49 @@
     });
   }
 
+  /* ---------- 1c. TRAILING ARROW OVERLAPPING ITS LABEL ----------
+     Figma sizes a button's text box to the string as IT measures it, then parks the
+     trailing arrow at a fixed offset. Browser metrics for Nunito Sans run a little
+     wider, so a long label fills its box and runs under the arrow -- "All Case
+     Studies" overlapped by 8px. Rather than nudge that one button, re-centre the
+     pair as a GROUP (ink + gap + arrow) inside the pill whenever they actually
+     collide, which is what the design draws and is stable at any width. */
+  function spaceArrows(){
+    [].slice.call(document.querySelectorAll('.ax-hv-arrow')).forEach(function(a){
+      var ar=a.getBoundingClientRect();
+      if(!ar.width) return;
+      var pill=null,best=Infinity;
+      [].slice.call(document.querySelectorAll('.g-b')).forEach(function(b){
+        var r=b.getBoundingClientRect();
+        if(!r.width||r.width>600) return;
+        if(ar.left<r.left-4||ar.right>r.right+4||ar.top<r.top-6||ar.bottom>r.bottom+6) return;
+        var area=r.width*r.height; if(area<best){ best=area; pill=b; }
+      });
+      if(!pill) return;
+      var pr=pill.getBoundingClientRect();
+      var lbl=[].slice.call(document.querySelectorAll('.g-t')).filter(function(t){
+        var r=t.getBoundingClientRect();
+        return r.width&&r.left>=pr.left-4&&r.right<=pr.right+4&&
+               r.top>=pr.top-6&&r.bottom<=pr.bottom+6&&txt(t);
+      })[0];
+      if(!lbl) return;
+      var rng=document.createRange(); rng.selectNodeContents(lbl);
+      var ink=rng.getBoundingClientRect();
+      if(!ink.width) return;
+      if(Math.min(ink.right,ar.right)-Math.max(ink.left,ar.left)<=0) return;   /* no collision */
+
+      var vwpx=(document.documentElement.clientWidth||1920)/100;
+      var gap=Math.max(6,ar.width*0.35);
+      var group=ink.width+gap+ar.width;
+      /* never let the group grow past the pill: fall back to just clearing the text */
+      var start=(group<=pr.width-10) ? pr.left+(pr.width-group)/2 : pr.left+5;
+      var lLeft=num(lbl,'left'), aLeft=num(a,'left');
+      if(lLeft===null||aLeft===null) return;
+      setvw(lbl,'left', lLeft+(start-ink.left)/vwpx);
+      setvw(a,   'left', aLeft+((start+ink.width+gap)-ar.left)/vwpx);
+    });
+  }
+
   /* ---------- 2. NAV + FOOTER AFFORDANCES ---------- */
   function armChrome(){
     document.querySelectorAll('.ax-nav__btn').forEach(function(b){ b.classList.add('ax-fx-pill'); });
@@ -534,6 +577,7 @@
     copyFix();
     applyTitleCase();
     bumpExplore();
+    spaceArrows();
     armChrome();
     newsletter();
     productScroll();
@@ -546,12 +590,17 @@
   /* after the chrome CTA pass and .ax-mob injection have settled */
   addEventListener('load',function(){
     setTimeout(init,200);
+    /* _hover.html creates the trailing arrows on load+140ms, so the arrow pass has
+       to run after that or it finds nothing to measure. It is idempotent -- it only
+       acts on a pair that actually overlaps -- so running it twice is free. */
+    setTimeout(spaceArrows,400);
+    setTimeout(spaceArrows,1000);
     /* one late pass purely to re-centre: the newsletter column shift and the CTA
        linkifier's own pill auto-fit both move boxes after the first measurement,
        so the settled layout is the only one worth measuring. */
     setTimeout(centerLabels,700);
   });
   addEventListener('resize',function(){ clearTimeout(window.__axfxR);
-    window.__axfxR=setTimeout(centerLabels,200); });
+    window.__axfxR=setTimeout(function(){ centerLabels(); spaceArrows(); },200); });
 })();
 </script>

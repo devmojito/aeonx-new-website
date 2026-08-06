@@ -2783,11 +2783,29 @@ document.addEventListener("DOMContentLoaded",function(){
 .ax-srow-fade--r{right:0;background:linear-gradient(270deg,#fff,rgba(255,255,255,0))}
 .ax-srow-fade.on{opacity:1}
 @media (prefers-reduced-motion:reduce){.ax-srow{scroll-behavior:auto}}
+/* ---- PAGER OVERLAY ----
+   Figma exports the carousel's pager -- the dot strip and the prev/next buttons --
+   as ONE flat SVG, so nothing under the cursor was ever clickable and the dots
+   could not track position. Real controls are laid over that picture using its own
+   viewBox geometry (1728x40: dots at x17/73/89/105/121, prev at 1660, next 1708),
+   so the design is untouched and the hit areas land exactly on what is drawn. */
+.ax-srp{position:absolute;pointer-events:none;z-index:3}
+.ax-srp__dots{position:absolute;display:flex;align-items:center;pointer-events:auto;
+  background:#ECEEF2;border-radius:99px}
+.ax-srp__dot{border:0;padding:0;cursor:pointer;background:#8695AA;border-radius:99px;
+  transition:width .28s cubic-bezier(.22,.61,.36,1),background-color .28s ease}
+.ax-srp__dot.is-on{background:#23272E}
+.ax-srp__btn{position:absolute;pointer-events:auto;cursor:pointer;background:transparent;
+  border:0;padding:0;border-radius:99px}
+.ax-srp__btn[disabled]{cursor:default;opacity:.45}
+.ax-srp__btn:focus-visible,.ax-srp__dot:focus-visible{outline:2px solid #23272E;outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.ax-srp__dot{transition:none}}
 </style>
 <script>
 /* ---- OVER-WIDE FIGMA ROWS -> REAL SCROLLERS ---- */
 (function(){
-  var MIN_OVERFLOW = 1.15;      /* content must exceed the box by 15% to be worth it */
+  var MIN_OVERFLOW = 1.15;
+  var REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;      /* content must exceed the box by 15% to be worth it */
 
   function arm(box){
     if (box.dataset.axSrow) return;
@@ -2859,6 +2877,104 @@ document.addEventListener("DOMContentLoaded",function(){
     }
   }
 
+  /* The pager graphic: a wide, short vector sitting at the bottom of the row. */
+  function pagerOf(box){
+    var br = box.getBoundingClientRect();
+    var best = null;
+    [].slice.call(box.querySelectorAll('img.g-vec')).forEach(function(img){
+      var r = img.getBoundingClientRect();
+      if (!r.width || r.width < br.width * 0.5) return;
+      if (r.height > 60 || r.width / r.height < 20) return;      /* long and thin */
+      if (r.top - br.top < br.height * 0.6) return;              /* near the bottom */
+      if (!best || r.top > best.getBoundingClientRect().top) best = img;
+    });
+    return best;
+  }
+
+  function buildPager(box, img){
+    if (img.dataset.axSrp) return;
+    img.dataset.axSrp = '1';
+    var host = img.parentElement;
+    if (!host) return;
+    if (getComputedStyle(host).position === 'static') host.style.position = 'relative';
+
+    var VB = 1728, VH = 40;                    /* the export's own viewBox */
+    var wrap = document.createElement('div');
+    wrap.className = 'ax-srp';
+    function place(){
+      wrap.style.left = img.style.left; wrap.style.top = img.style.top;
+      wrap.style.width = img.style.width; wrap.style.height = img.style.height;
+    }
+    place();
+    host.insertBefore(wrap, img.nextSibling);
+
+    var pct = function(v){ return (v / VB * 100) + '%'; };
+    var vpct = function(v){ return (v / VH * 100) + '%'; };
+
+    /* dots, painted over the baked ones (same fill as the pill interior) */
+    var dots = document.createElement('div');
+    dots.className = 'ax-srp__dots';
+    dots.style.left = pct(8); dots.style.top = vpct(6);
+    dots.style.width = pct(122); dots.style.height = vpct(28);
+    dots.style.justifyContent = 'center';
+    dots.style.gap = pct(8);
+    wrap.appendChild(dots);
+
+    function mkBtn(x0, x1, label){
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'ax-srp__btn'; b.setAttribute('aria-label', label);
+      b.style.left = pct(x0); b.style.width = pct(x1 - x0);
+      b.style.top = '0'; b.style.height = '100%';
+      wrap.appendChild(b);
+      return b;
+    }
+    var prev = mkBtn(1640, 1682, 'Previous');
+    var next = mkBtn(1686, 1728, 'Next');
+
+    var pages = 1, cells = [];
+    function step(){ return box.clientWidth * 0.9; }
+    function maxScroll(){ return box.scrollWidth - box.clientWidth; }
+
+    function render(){
+      var max = maxScroll();
+      var want = Math.max(1, Math.min(6, Math.ceil(box.scrollWidth / Math.max(1, box.clientWidth))));
+      if (want !== pages){
+        pages = want; dots.innerHTML = ''; cells = [];
+        for (var i = 0; i < pages; i++){
+          (function(i){
+            var d = document.createElement('button');
+            d.type = 'button'; d.className = 'ax-srp__dot';
+            d.setAttribute('aria-label', 'Go to page ' + (i + 1));
+            d.style.height = vpct(8);
+            d.addEventListener('click', function(){
+              box.scrollTo({ left: pages > 1 ? max * i / (pages - 1) : 0,
+                behavior: REDUCED ? 'auto' : 'smooth' });
+            });
+            dots.appendChild(d); cells.push(d);
+          })(i);
+        }
+      }
+      var at = max > 0 ? box.scrollLeft / max : 0;
+      var active = Math.round(at * (pages - 1));
+      cells.forEach(function(d, i){
+        var on = i === active;
+        d.classList.toggle('is-on', on);
+        d.style.width = pct(on ? 41 : 8);
+        d.setAttribute('aria-current', on ? 'true' : 'false');
+      });
+      prev.disabled = box.scrollLeft <= 4;
+      next.disabled = box.scrollLeft >= max - 4;
+    }
+
+    prev.addEventListener('click', function(){
+      box.scrollBy({ left: -step(), behavior: REDUCED ? 'auto' : 'smooth' }); });
+    next.addEventListener('click', function(){
+      box.scrollBy({ left: step(), behavior: REDUCED ? 'auto' : 'smooth' }); });
+    box.addEventListener('scroll', render, { passive: true });
+    addEventListener('resize', function(){ place(); render(); });
+    render();
+  }
+
   function scan(){
     var boxes = [].slice.call(document.querySelectorAll('.g-clip'));
     boxes.forEach(function(b){
@@ -2873,6 +2989,8 @@ document.addEventListener("DOMContentLoaded",function(){
       /* leave anything another enhancer already drives */
       if (b.querySelector('.ax-mq,.ax-recog__win,.ax-carm') || b.classList.contains('ax-carm')) return;
       arm(b);
+      var pg = pagerOf(b);
+      if (pg) buildPager(b, pg);
     });
   }
 
@@ -3185,6 +3303,49 @@ main.ax-page img.g-vec[src$="5069-5380.svg"]{
       if(!isControl(e)&&!inPill(e)) return;
       var tc=titleCase(t);
       if(tc!==t) e.textContent=tc;
+    });
+  }
+
+  /* ---------- 1c. TRAILING ARROW OVERLAPPING ITS LABEL ----------
+     Figma sizes a button's text box to the string as IT measures it, then parks the
+     trailing arrow at a fixed offset. Browser metrics for Nunito Sans run a little
+     wider, so a long label fills its box and runs under the arrow -- "All Case
+     Studies" overlapped by 8px. Rather than nudge that one button, re-centre the
+     pair as a GROUP (ink + gap + arrow) inside the pill whenever they actually
+     collide, which is what the design draws and is stable at any width. */
+  function spaceArrows(){
+    [].slice.call(document.querySelectorAll('.ax-hv-arrow')).forEach(function(a){
+      var ar=a.getBoundingClientRect();
+      if(!ar.width) return;
+      var pill=null,best=Infinity;
+      [].slice.call(document.querySelectorAll('.g-b')).forEach(function(b){
+        var r=b.getBoundingClientRect();
+        if(!r.width||r.width>600) return;
+        if(ar.left<r.left-4||ar.right>r.right+4||ar.top<r.top-6||ar.bottom>r.bottom+6) return;
+        var area=r.width*r.height; if(area<best){ best=area; pill=b; }
+      });
+      if(!pill) return;
+      var pr=pill.getBoundingClientRect();
+      var lbl=[].slice.call(document.querySelectorAll('.g-t')).filter(function(t){
+        var r=t.getBoundingClientRect();
+        return r.width&&r.left>=pr.left-4&&r.right<=pr.right+4&&
+               r.top>=pr.top-6&&r.bottom<=pr.bottom+6&&txt(t);
+      })[0];
+      if(!lbl) return;
+      var rng=document.createRange(); rng.selectNodeContents(lbl);
+      var ink=rng.getBoundingClientRect();
+      if(!ink.width) return;
+      if(Math.min(ink.right,ar.right)-Math.max(ink.left,ar.left)<=0) return;   /* no collision */
+
+      var vwpx=(document.documentElement.clientWidth||1920)/100;
+      var gap=Math.max(6,ar.width*0.35);
+      var group=ink.width+gap+ar.width;
+      /* never let the group grow past the pill: fall back to just clearing the text */
+      var start=(group<=pr.width-10) ? pr.left+(pr.width-group)/2 : pr.left+5;
+      var lLeft=num(lbl,'left'), aLeft=num(a,'left');
+      if(lLeft===null||aLeft===null) return;
+      setvw(lbl,'left', lLeft+(start-ink.left)/vwpx);
+      setvw(a,   'left', aLeft+((start+ink.width+gap)-ar.left)/vwpx);
     });
   }
 
@@ -3533,6 +3694,7 @@ main.ax-page img.g-vec[src$="5069-5380.svg"]{
     copyFix();
     applyTitleCase();
     bumpExplore();
+    spaceArrows();
     armChrome();
     newsletter();
     productScroll();
@@ -3545,13 +3707,18 @@ main.ax-page img.g-vec[src$="5069-5380.svg"]{
   /* after the chrome CTA pass and .ax-mob injection have settled */
   addEventListener('load',function(){
     setTimeout(init,200);
+    /* _hover.html creates the trailing arrows on load+140ms, so the arrow pass has
+       to run after that or it finds nothing to measure. It is idempotent -- it only
+       acts on a pair that actually overlaps -- so running it twice is free. */
+    setTimeout(spaceArrows,400);
+    setTimeout(spaceArrows,1000);
     /* one late pass purely to re-centre: the newsletter column shift and the CTA
        linkifier's own pill auto-fit both move boxes after the first measurement,
        so the settled layout is the only one worth measuring. */
     setTimeout(centerLabels,700);
   });
   addEventListener('resize',function(){ clearTimeout(window.__axfxR);
-    window.__axfxR=setTimeout(centerLabels,200); });
+    window.__axfxR=setTimeout(function(){ centerLabels(); spaceArrows(); },200); });
 })();
 </script>
 
