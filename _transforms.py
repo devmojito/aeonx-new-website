@@ -12,6 +12,8 @@ CSS matrix(), so fetch it once for those nodes and cache it.
 
 Usage: FIGMA_TOKEN=<token> python3 _transforms.py [ids-file]
 Writes _transforms.json: {node_id: {"m": [a, b, c, d], "size": [w, h]}}
+MERGE INTO the existing file -- a run for one page's ids used to REPLACE the cache,
+silently dropping every other page's transforms and regressing their tilted cards.
 where CSS is transform:matrix(a,b,c,d,0,0) with transform-origin:0 0.
 """
 import json, os, sys, time, urllib.request
@@ -68,8 +70,17 @@ def main():
         ids = rotated_ids()
     print(f'fetching transforms for {len(ids)} nodes')
     got = fetch(ids, token)
-    json.dump(got, open(OUT, 'w'), indent=0, sort_keys=True)
-    print(f'wrote {OUT}: {len(got)}/{len(ids)} nodes')
+    # MERGE, never replace: a run for one page's ids used to overwrite the whole
+    # cache, silently dropping every other page's transforms -- their tilted cards
+    # then regenerated as flat bars on the next build.
+    try:
+        prev = json.load(open(OUT))
+    except (OSError, ValueError):
+        prev = {}
+    n_new = len([i for i in got if i not in prev])
+    prev.update(got)
+    json.dump(prev, open(OUT, 'w'), indent=0, sort_keys=True)
+    print(f'wrote {OUT}: {len(got)}/{len(ids)} fetched, {n_new} new, {len(prev)} total')
 
 
 if __name__ == '__main__':
