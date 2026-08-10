@@ -28,11 +28,17 @@
    property: background-color:var(--x) computed to transparent here even with the
    property inheriting a valid rgb(), and an invalid var takes the declaration with
    it, so the plate just went blank. */
-.ax-inv-plate{transition:background-color .18s ease}
+.ax-inv-plate{transition:background-color .18s ease,border-color .18s ease}
 .ax-inv-chip{cursor:pointer;transition:background-color .18s ease,border-color .18s ease}
 .ax-inv-chip.is-off,.ax-inv-chiptx.is-off{opacity:.4;cursor:default}
-.ax-inv-chiptx{transition:color .18s ease}
-@media (prefers-reduced-motion:reduce){.ax-inv-row,.ax-inv-cat,.ax-inv-plate,.ax-inv-chip{transition:none}}
+.ax-inv-chiptx{cursor:pointer;transition:color .18s ease}
+.ax-inv-badge{transition:background-color .18s ease}
+.ax-inv-badgetx{transition:color .18s ease}
+/* These are controls: without this the labels take the text I-beam and a click
+   drag-selects "FY 2024-25" instead of feeling like a button. */
+.ax-inv-cat,.ax-inv-plate,.ax-inv-chip,.ax-inv-chiptx,.ax-inv-badge,.ax-inv-badgetx{
+  user-select:none;-webkit-user-select:none}
+@media (prefers-reduced-motion:reduce){.ax-inv-row,.ax-inv-cat,.ax-inv-plate,.ax-inv-chip,.ax-inv-badge{transition:none}}
 </style>
 <script>
 (function(){
@@ -251,7 +257,12 @@
     /* selected-state paint, captured from the design (see the CSS note) */
     var PLATE_ON='rgb(254,245,238)', CHIP_ON='rgb(253,231,215)',
         CHIP_ON_BD='rgb(223,63,23)', CHIP_OFF_BD='rgb(236,238,242)',
-        CHIP_ON_TX='rgb(223,63,23)', CHIP_OFF_TX='';
+        CHIP_ON_TX='rgb(223,63,23)', CHIP_OFF_TX='',
+        /* the orange accent bar on the rail plate's left edge, and the count
+           badge's pill + number -- all baked onto the design-selected item too */
+        PLATE_BD_ON='rgb(223,63,23)', PLATE_BD_OFF='rgb(213,218,226)',
+        BADGE_ON='rgb(253,231,215)', BADGE_OFF='rgb(236,238,242)',
+        BADGE_TX_ON='rgb(223,63,23)', BADGE_TX_OFF='rgb(82,96,119)';
 
     /* A document's fiscal year: the one named in its title when it names one
        ("Annual Report 2024-25"), else the Indian FY (Apr-Mar) of its date. Titles
@@ -313,9 +324,17 @@
       }
       if(footer) footer.textContent=list0.length+(list0.length===1?' document':' documents');
       railTexts.forEach(function(r,i){
-        r.el.classList.toggle('is-on',i===active);
+        var on=(i===active);
+        r.el.classList.toggle('is-on',on);
         (r.plates||[]).forEach(function(p){
-          p.style.backgroundColor=(i===active?PLATE_ON:'transparent'); });
+          p.style.backgroundColor=(on?PLATE_ON:'transparent'); });
+        (r.bdPlates||[]).forEach(function(p){
+          p.style.borderLeftColor=(on?PLATE_BD_ON:PLATE_BD_OFF); });
+        if(r.badge){
+          r.badge.pills.forEach(function(p){
+            p.style.backgroundColor=(on?BADGE_ON:BADGE_OFF); });
+          r.badge.el.style.color=(on?BADGE_TX_ON:BADGE_TX_OFF);
+        }
       });
       host.scrollTop=0;
     }
@@ -336,15 +355,25 @@
       var plates=platesAround(r.b), row=plates[0]||null;
       var hitEl=row||r.el;
       hitEl.classList.add('ax-inv-cat');
-      /* Lift the design's selected plate colour off whichever category Figma drew as
-         selected, then clear it: from here the highlight is driven by render(). */
+      /* Lift the design's selected look off whichever category Figma drew as
+         selected, then clear it: from here the highlight is driven by render().
+         The look is THREE things, not one -- the plate fill, the orange accent bar
+         on the plate's left edge, and the count badge (peach pill, orange number).
+         Moving only the fill left the accent and the badge stuck on Annual Report. */
+      var wasOn=false;
       plates.forEach(function(p){
         var pbg=getComputedStyle(p).backgroundColor;
-        if(pbg&&pbg!=='rgba(0, 0, 0, 0)'&&pbg!=='transparent') PLATE_ON=pbg;
+        if(pbg&&pbg!=='rgba(0, 0, 0, 0)'&&pbg!=='transparent'){ PLATE_ON=pbg; wasOn=true; }
         p.style.backgroundColor='';
         p.classList.add('ax-inv-plate');
       });
       r.plates=plates;
+      r.bdPlates=plates.filter(function(p){
+        var cs=getComputedStyle(p);
+        if(cs.borderLeftWidth==='0px') return false;
+        if(wasOn) PLATE_BD_ON=cs.borderLeftColor; else PLATE_BD_OFF=cs.borderLeftColor;
+        return true;
+      });
       /* document capture: the chrome CTA pass owns these labels already */
       document.addEventListener('click',function(e){
         var t=e.target, hit=(t&&t.nodeType===1&&(hitEl===t||hitEl.contains(t)||r.el===t||r.el.contains(t)));
@@ -362,7 +391,21 @@
         if(badge) return;
         if(c.b.t+c.b.h/2>=r.b.t-0.4&&c.b.t+c.b.h/2<=r.b.b+0.4) badge=c;
       });
-      if(badge) badge.el.textContent=String(docsFor(i).length);
+      if(badge){
+        badge.el.textContent=String(docsFor(i).length);
+        badge.el.classList.add('ax-inv-badgetx');
+        var btx=getComputedStyle(badge.el).color;
+        var bpills=platesAround(badge.b).filter(function(p){ return plates.indexOf(p)<0; });
+        var bbg=null;
+        bpills.forEach(function(p){
+          var bg=getComputedStyle(p).backgroundColor;
+          if(bg&&bg!=='rgba(0, 0, 0, 0)'&&bg!=='transparent') bbg=bg;
+          p.classList.add('ax-inv-badge');
+        });
+        if(wasOn){ if(bbg) BADGE_ON=bbg; BADGE_TX_ON=btx; }
+        else     { if(bbg) BADGE_OFF=bbg; BADGE_TX_OFF=btx; }
+        r.badge={el:badge.el,pills:bpills};
+      }
     });
 
     /* --- year chips: filter the list, and carry the selected pill with them --- */
