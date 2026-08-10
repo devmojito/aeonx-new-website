@@ -686,3 +686,117 @@ in §14) and HEAD-checked under `/wp-content/uploads/2024/05|06/` and `2025/06/`
 47 of 79 recovered; the other 32 are in `legacy_pdfs_missing.md` and render with a
 "not currently available" note instead of a dead link. Widening the month list to ten
 found nothing extra and took twenty minutes — do not bother.
+
+---
+
+## 18. Second pre-launch pass (2026-08-11)
+
+### Keeping up with the Figma file
+
+The dumps are snapshots and the designer keeps working. Two tools, use them in this
+order:
+
+```bash
+python3 _figdiff.py             # desktop frames: which ones moved, and how
+python3 _figdiff.py --mobile    # mobile frames
+python3 _figsync.py 4466:2849 5637:50375 ...   # re-pull just those, splice into the dumps
+```
+
+`_figdiff.py` fingerprints each frame — subtree size, text-node count, **SHA1 of all
+its copy in document order**, image fills, placeholder count, bounds — and compares
+live against the dump. The text hash is the signal that matters: it moves on any copy
+edit and ignores the float jitter a fresh REST pull always introduces.
+
+**Do not re-pull the whole file to "get current".** A full pull re-rolls every float,
+so the next diff reports all 35 pages as changed and you lose the ability to see what
+actually moved. `_figsync.py` splices frame-by-frame for exactly this reason.
+
+After syncing: rebuild the affected desktop pages with `_gen.py`, run `_mobile.py`
+once for mobile frames, then `_postbuild.py` and `_webp.py`.
+
+**Instance ids need BOTH colons.** Assets are stored as `assets/vec/<id with : as ->.svg`,
+so `I6199:18484;4046:29845` is on disk as `I6199-18484;4046-29845.svg`. Converting back
+with `.replace('-', ':', 1)` restores only the first colon and Figma cannot resolve the
+result — 19 exports failed silently that way. Replace **all** dashes.
+
+### Card-expand hover (`_hoverspec.py` + `_cardexpand.html` + `_cardexpand_check.py`)
+
+Figma wires rows of cards with `ON_HOVER` -> `SMART_ANIMATE` 0.3s to a variant in which
+the hovered card is the expanded one. The export flattens only the default state, so
+the collapsed cards' descriptions exist nowhere in the built page.
+
+`_hoverspec.py` harvests them and writes both `_hoverdata.json` and the `DESC` map
+inside `_cardexpand.html` (one source, so they cannot drift). It filters hard: skip the
+mega-menu **by ancestry** (its hover targets are unnamed Containers several levels below
+"Nav Bar" — a name test on the node itself lets all four nav rows through on every
+page), then keep only rows of 3+ cards where exactly one is >=1.5x wider than its
+siblings. Exactly one row in the whole file qualifies: Manufacturing "Why choose us".
+
+The fragment reads geometry from **inline vw only**. These cards sit inside a
+scroll-reveal wrapper that starts them translated, so `getBoundingClientRect` returns
+the animated position, not the designed one. `_cardexpand_check.py` runs the same
+detection in Python against the built page and asserts every hover state re-packs into
+the same row span — run it after any rebuild of that page.
+
+### Footer legal pages (`_legalharvest.py` + `_legal.py`)
+
+`/terms-and-conditions/`, `/privacy-policy/`, `/cookie-policy/`, `/sitemap/`, plus
+`/sitemap.xml` and `robots.txt`. None of these exists in Figma; the hero is lifted
+verbatim from the Shareholding Pattern page and only the copy changes.
+
+Copy is the client's, harvested from the live WordPress site — **do not write policy
+text**. Re-run `_legalharvest.py` if they update the live pages. The live site has no
+standalone cookie page, so `/cookie-policy/` is assembled from the privacy policy's own
+cookie sections.
+
+Two traps, both cost a rebuild:
+
+- The canvas stylesheet absolutely positions every `p` / `h2` / `section` under
+  `.ax-page`. Flowing prose collapsed onto one line behind the footer until the subtree
+  opted out with `position:static!important`.
+- These pages have no `.ax-mob` layout to fall back to, so the borrowed hero would
+  render its 3.75vw title at 16px on a phone. There is a separate flow hero for
+  <=1024px.
+
+The footer's four labels are now anchors on all 89 pages plus `_chrome.html`; a rebuild
+keeps them because the chrome carries them.
+
+### The peel pass can kill forms
+
+`_hover.js` makes CTAs clickable by hit-testing each one and setting
+`pointer-events:none` on whatever covers it. On the newsletter page the blocker was the
+whole form card — so the card and every field inside it went inert, and the form was
+completely dead. Peeling now stops at any container holding an
+`input/textarea/select/a[href]/button`. Leaving a CTA under such a blocker is harmless:
+the click still bubbles to document, and the handlers that own these pills listen at
+document capture and match by click point.
+
+If a control ever goes dead for no visible reason, check for
+`style="…pointer-events: none"` written by that pass before anything else.
+
+### `_transforms.py` merges now
+
+It used to REPLACE `_transforms.json`. A run for one page's ids therefore dropped every
+other page's transforms, and the next rebuild of those pages flattened their tilted
+logo cards into 214x100 bars. It merges into the existing file now. Related: when a
+section is redesigned the node ids change, so the cache misses and `_gen.py` falls back
+to assuming a pure rotation — if tilted cards ever look like flat bars again, that is
+what happened; re-run `_transforms.py` with the current ids.
+
+### CSS custom properties resolve to transparent here
+
+`background-color: var(--x)` computed to transparent on the investor rail plates even
+with the property inheriting a valid `rgb()` on the parent, and an invalid var takes the
+whole declaration with it — so the plate just went blank. Colours captured from the
+design are applied as plain inline values instead.
+
+### Measuring in the preview pane
+
+Two failure modes cost real time this session:
+
+- **Transitions are throttled while the pane is hidden.** Reading a computed colour
+  right after a class change returns the *pre-transition* value and looks like the code
+  did nothing. Inject `*{transition:none!important}` before asserting, or wait.
+- **A hidden pane reports `innerWidth: 0` and lays nothing out**, so every rect is 0.
+  Parsing (`fetch` + `DOMParser`) still works; layout does not. Prefer inline-style
+  geometry for assertions.

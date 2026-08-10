@@ -1,0 +1,22 @@
+{
+ "industries/manufacturing": [
+  [
+   {
+    "title": "SAP angle",
+    "desc": "S/4HANA Manufacturing RISE for the listed conglomerates, GROW for the mid-market. SAP PP, PM, QM, EWM. Plant-level rollouts with industry templates. 14 BUs live in 14 months at one listed customer, 95% fit-to-standard."
+   },
+   {
+    "title": "Cloud Angle",
+    "desc": "HANA on EC2 or GCP. SAP-on-AWS migration factory. AWS IoT Core and Greengrass for shop-floor telemetry. DataBridge SAP ECC to BigQuery in 2 weeks for plant analytics."
+   },
+   {
+    "title": "Product Angle",
+    "desc": "ManuFex with FlexMRP™ for finite scheduling 12% OEE uplift in 3 months at Tier-1 auto. SupplierX for procurement governance. Logystix for inbound/outbound logistics."
+   },
+   {
+    "title": "AXIOM Angle",
+    "desc": "70% L1 auto-resolution on SAP tickets at a listed industrial conglomerate. AXIOM tunes per process strict on payroll, autonomous on password resets, semi-supervised on MM/PP."
+   }
+  ]
+ ]
+}

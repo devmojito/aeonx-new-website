@@ -1,6 +1,6 @@
 # AeonX Digital — pre-launch audit and go-live readiness
 
-Date: 2026-08-05. Scope: the whole static site (41 designed pages + 53 blog posts +
+Date: 2026-08-05, revised 2026-08-11. Scope: the whole static site (41 designed pages + 53 blog posts +
 redirect stubs), audited against the Figma file, against the live aeonx.digital, and
 against every issue raised in earlier reviews.
 
@@ -28,10 +28,10 @@ Two categories run through this report:
 | Shareholding-pattern / investor document browser showed the same 3 placeholder rows for every category | **FIXED** |
 | "Download the brochure" and every mobile button ignored the Title Case rule | **FIXED** |
 | Subscribe label sat 1px from the pill's left edge, 39px from the right | **FIXED** |
-| Figma "same as figma" hover interactions never built (4 places) | **OPEN — build** |
+| Figma "same as figma" hover interactions never built | **FIXED** — the one row that is genuinely this pattern (Manufacturing "Why choose us") now expands on hover; see §2 |
 | Mega-menu AXIOM featured card is Figma's grey checkerboard placeholder | **OPEN — client** |
 | Announcement bar is designer placeholder copy with no destination | **OPEN — client** |
-| Footer Terms / Privacy / Cookies / Sitemap / BSE disclosures unlinked | **OPEN — client** |
+| Footer Terms / Privacy / Cookies / Sitemap unlinked | **FIXED** — all four pages built and linked; BSE disclosure URL still **OPEN — client** |
 | Leadership "SALES & GROWTH" tab has no roster | **OPEN — client** |
 | Board of Directors still shows `[NEEDS INPUT: Name]` | **OPEN — client** |
 | Blog index shows placeholder byline "John Smith" | **FIXED** |
@@ -101,10 +101,22 @@ intercept at document capture like the rest. Verified: typing into the form and 
 Reset clears it; Send still validates in place (9 required fields flagged) without
 navigating.
 
-**Open — build:** the four Figma hover interactions that were specified but never
-built: Manufacturing "Why Choose Us" cards, Trust & Security first card, Partner's Hub
-first card, and the "card 3" items on four alliance pages (each is an `ON_HOVER` →
-`SMART_ANIMATE` 0.3s reveal of its own description node).
+**Fixed — the card-expand hover.** `_hoverspec.py` walks the dump for
+`ON_HOVER`/`MOUSE_ENTER` → `SMART_ANIMATE` interactions, skipping the mega-menu by
+ancestry, and keeps only rows that are genuinely the expand pattern: three or more
+cards side by side, exactly one at least 1.5x wider than its siblings. Exactly one row
+in the file qualifies — Manufacturing "Why choose us" (SAP / Cloud / Product / AXIOM
+angle). The other candidates in the earlier count were the nav's own hover targets and
+unrelated gestures.
+
+The export flattens only the default state, so three of the four descriptions existed
+nowhere in the page. They are pulled from the Figma hover variants into
+`_hoverdata.json`, written into `_cardexpand.html`, and the row now expands the hovered
+card and collapses the open one over 0.3s. Geometry is read from inline vw, never from
+`getBoundingClientRect` (these cards sit in a scroll-reveal wrapper that starts them
+translated, so a rect reads the animated position, not the designed one).
+`_cardexpand_check.py` asserts the detection against the built page: 4 cards, wide
+29.17vw, narrow 13.19vw, and every hover state re-packs into the same 68.75vw row.
 
 **Fixed — the investor document browser.** Both investor pages drew a full browser
 (category rail with counts, search field, document rows, "N documents" footer) that
@@ -153,9 +165,9 @@ were spot-checked live — all twelve return `200 application/pdf`.
 |---|---|---|
 | 32 documents that exist nowhere reachable | client | of the 79 linked from the retired `ashokalcochem.com` domain, 47 were matched to the copies re-uploaded to the WordPress media library and now open normally; the remaining 32 are listed in `legacy_pdfs_missing.md` and appear on the site marked "not currently available" rather than linked to a dead file |
 | Newsroom item "SAP Services Competency Achieved" | client | no local counterpart in any form |
-| `/privacy-policy/` and `/termsonlinepayment/` | client | legal pages not migrated |
+| ~~`/privacy-policy/` and `/termsonlinepayment/`~~ | done | both migrated — see §9 |
 | 8 product buy-now pages, 2 solution landing pages | client | decide whether they carry over |
-| Category / author / testimonial archive URLs | build | 21 taxonomy URLs 404 locally (low SEO value) |
+| ~~Category / author / testimonial archive URLs~~ | done | 14 stubs added, all resolving |
 
 ---
 
@@ -165,8 +177,8 @@ Internal links: **zero 404s** across all 94 pages; all six original redirect stu
 all 27 new ones resolve. Social links are correct and live (X `@AeonXDigital`,
 LinkedIn `/company/aeonx-digital`, YouTube channel `UCiB9FZmN6-uiK-Y3cHO_bTA`).
 
-Remaining `href="#"`: the announcement bar (client owes copy + destination) and the
-footer legal row (client owes URLs).
+Remaining `href="#"`: the announcement bar only (client owes copy + destination). The
+footer legal row now links to the four pages in §9.
 
 ---
 
@@ -218,13 +230,13 @@ cast a shadow, and the homepage carries a hand-managed copy of the shared chrome
 - [ ] Supply the investor documents that are not on the server — they show in the list marked "not currently available" and cannot be restored without the files *(client)*
 - [ ] Supply the mega-menu featured-card image — currently Figma's grey checkerboard *(client)*
 - [ ] Supply real announcement-bar copy and its destination, or drop the bar *(client)*
-- [ ] Supply Terms, Privacy, Cookies, Sitemap and BSE-disclosure URLs *(client)*
+- [x] ~~Supply Terms, Privacy, Cookies, Sitemap URLs~~ — pages built from the client's own live copy (§9). BSE-disclosure URL is still outstanding *(client)*
 - [ ] Replace `[NEEDS INPUT: Name]` on Board of Directors *(client)*
 - [ ] Decide the newsletter endpoint — it is mailto-only today *(client)*
 
 **High**
 
-- [ ] Build the four unbuilt Figma hover interactions *(build)*
+- [x] ~~Build the unbuilt Figma hover interactions~~ — done (§2)
 - [ ] Provide the SALES & GROWTH leadership roster *(client)*
 - [ ] Decide where INDUSTRIAL · SUPPLIERX "Explore" should go *(client)*
 - [ ] Confirm the nine case studies chosen for the /insights/ grid, and whether the six designed stories (ITD Cementation, Raymond Engineering, Ashapura, Delux Bearings, CK Birla, Raymond Ltd) get their own pages *(client)*
@@ -233,12 +245,106 @@ cast a shadow, and the homepage carries a hand-managed copy of the shared chrome
 
 - [ ] Supply the truncated address line that reads `Gujara.`, and confirm `REGIONAL . NCR` punctuation and the lowercase `Aeonx Digital` in the Kolkata address *(client)* — the `Send RPF Request` and `Ahmadabad` misspellings are already corrected
 - [ ] Replace the duplicated testimonial author and the stock "John Doe" headshot *(client)*
-- [ ] Migrate or redirect `/privacy-policy/` and `/termsonlinepayment/` *(client)*
+- [x] ~~Migrate or redirect `/privacy-policy/` and `/termsonlinepayment/`~~ — both live, plus `/terms/`, `/privacy/`, `/cookies/` aliases
 - [ ] Decide on the 8 product buy-now pages and 2 solution landing pages *(client)*
 - [ ] Recover the newsroom item "SAP Services Competency Achieved" *(client)*
 
 **Low**
 
-- [ ] Taxonomy archive URLs (category/author/testimonial) 404 locally *(build)*
+- [x] ~~Taxonomy archive URLs (category/author/testimonial) 404 locally~~ — 14 stubs added
 - [ ] A handful of image fills are low-resolution in the Figma file itself and cannot be
       improved without a new export from the designer *(client/designer)*
+
+---
+
+## 9. Second pass — 2026-08-11
+
+Everything below landed after the 5 August report.
+
+**Figma re-sync.** The design file had moved since the July dump. `_figdiff.py`
+fingerprints every frame (subtree size, text-node count, SHA1 of its copy in document
+order, image fills, placeholders, bounds) and compares live against the local dump;
+`_figsync.py` re-pulls only the frames that moved and splices them in — a full re-pull
+re-rolls every float in the file and would report all 35 pages as changed.
+
+| | Frames moved | What |
+|---|---|---|
+| Desktop | 4 of 35 | cosmetic only, no copy changes: foundation, manufacturing, partners-hub, homepage |
+| Mobile | 15 of 45 | the designer had been filling in mobile artwork — ~40 grey checkerboards |
+
+The mobile finds were the important ones: Insights/Case studies and its card scroller
+(12 placeholders each), five Industries frames (3 each, plus 6 images and new copy),
+Newsletter (1), and copy/height changes on Career, Manufacturing, Leadership and the
+three Partners Hub frames. All rebuilt; those pages now carry **0 placeholders** in
+their mobile blocks.
+
+**Pages pulled fresh from Figma:** `/insights/newsletter/` (its hero was a 1920×1274
+grey checkerboard; the real 2172×724 artwork is in) and `/insights/trust-security/`
+(twelve identical checkerboards where the ISO / SOC 2 / GDPR / ITIL badges belong —
+desktop *and* mobile frames were stale).
+
+**Fixes**
+
+- **The newsletter form was completely dead.** `_hover.js`'s peel pass makes CTAs
+  clickable by hit-testing each one and setting `pointer-events:none` on whatever
+  covers it — on that page the blocker is the whole form card, so the card and every
+  field inside it went inert. Peeling now stops at any container holding an
+  input/textarea/select/anchor/button. The same pass had been a latent hazard on every
+  form on the site.
+- The email field rendered pale green when empty: Figma ships it with its "Simple Text
+  Input With Validation" component stuck in the VERIFIED state. Same colour, now shown
+  only once the address parses.
+- **Investor FY chips** ("All / FY 2024-25 / FY 2023-24 / FY 2019-20") did nothing.
+  They filter now; a document's fiscal year comes from the year named in its title,
+  falling back to the Indian FY (Apr–Mar) of its date — titles win because most of the
+  library was re-uploaded in one batch, so the dates cluster on the upload month. A
+  chip with no matches is dimmed and inert, and a year that empties when the category
+  changes falls back to All.
+- **The selected highlight never moved** on the investor browser — Figma bakes the
+  peach onto the first item (Annual Report rail plate, All chip). Those colours are now
+  lifted off the design at build time and re-applied as the selection moves. Not done
+  with a custom property: `background-color:var(--x)` computed to transparent even with
+  the property inheriting a valid `rgb()`.
+- "All" was being read as a fourth rail **category** — its right edge falls left of the
+  search *label*, which is the test the rail scan used. Chips are identified as a
+  horizontal row instead.
+- **Industries logo cards** rendered as flat 10.8×2.65vw bars on five pages. The
+  designer had replaced that section, so the cards carry new node ids while
+  `_transforms.json` still held the old ones; with no cached matrix `_gen.py` assumes a
+  pure rotation and solves a 120×120 sheared card into a 214×100 bar. `_transforms.py`
+  now merges into the cache instead of replacing it — replacing is what let this
+  regress silently.
+- Title Case rendered "Fy 2024-25"; FY, SOC, ISO, GDPR and SLA added to the shared
+  acronym map.
+
+**Footer legal pages — built.** The footer had always drawn Terms & Conditions /
+Privacy Policy / Cookies / Sitemap as dead text; none of the four exists in Figma. All
+four now exist, using the Shareholding Pattern hero verbatim, and the labels link to
+them on all 89 pages.
+
+| Page | Copy source |
+|---|---|
+| `/terms-and-conditions/` | live `aeonx.digital/termsonlinepayment/` — 20 sections, terms + refund & cancellation |
+| `/privacy-policy/` | live `aeonx.digital/privacy-policy/` — 14 sections |
+| `/cookie-policy/` | the cookie sections of that same policy |
+| `/sitemap/` | generated from the build list and the built post directories |
+
+No policy text was written here. The live site has no standalone cookie page, so
+`/cookie-policy/` is assembled from the privacy policy's own cookie sections — if the
+client has a real one, drop it in and re-run `_legalharvest.py`.
+
+Also added: `/sitemap.xml` (92 URLs) and `robots.txt`; redirect stubs for `/terms/`,
+`/privacy/`, `/cookies/` and the legacy indexed `/termsonlinepayment/`; and 14 taxonomy
+stubs (`/category/…`, `/author/…`, `/testimonials/`) so the WordPress archive URLs stop
+404ing. Both sitemaps skip the canonicalised duplicates left by the post
+recategorisation, which is why the post list is 53 and not 60.
+
+**Still client-owed** (all of these are placeholder *in the Figma file itself*, so
+there is nothing to pull): board of directors headshots, the leadership roster images,
+the blog and case-study card thumbnails, the homepage mobile block, and the mega-menu
+AXIOM featured card.
+
+One open question for the designer: the homepage frame gained a single image fill in
+this sync. `index.html` is hand-managed so nothing applies automatically, and six large
+images in the frame have no counterpart in the page (y=574, y=1863, y=5684, y=11511).
+Which one is new needs a human eye.

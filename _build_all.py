@@ -89,6 +89,22 @@ REDIRECTS = {
     "terms": ("terms-and-conditions", "Terms & Conditions — AeonX Digital"),
     "privacy": ("privacy-policy", "Privacy Policy — AeonX Digital"),
     "cookies": ("cookie-policy", "Cookies — AeonX Digital"),
+    # Taxonomy archives the live WordPress site exposes; they have no design here,
+    # so they resolve to the nearest real index rather than 404 after the cutover.
+    "category": ("insights/blog", "Blog Categories — AeonX Digital"),
+    "category/sap": ("insights/blog", "SAP — AeonX Digital"),
+    "category/aws": ("insights/blog", "AWS — AeonX Digital"),
+    "category/cloud-computing": ("insights/blog", "Cloud Computing — AeonX Digital"),
+    "category/digital-transformation": ("insights/blog", "Digital Transformation — AeonX Digital"),
+    "category/uncategorized": ("insights/blog", "Blog — AeonX Digital"),
+    "category/success-stories-sap": ("insights", "SAP Success Stories — AeonX Digital"),
+    "category/success-stories-aws": ("insights", "AWS Success Stories — AeonX Digital"),
+    "author": ("insights/blog", "Authors — AeonX Digital"),
+    "author/admin": ("insights/blog", "Posts by AeonX Digital — AeonX Digital"),
+    "author/chandni-gadhvi": ("insights/blog", "Posts by Chandni Gadhvi — AeonX Digital"),
+    "author/rajat-jindal": ("insights/blog", "Posts by Rajat Jindal — AeonX Digital"),
+    "testimonials": ("who-we-are/culture", "Testimonials — AeonX Digital"),
+    "dipl-testimonial": ("who-we-are/culture", "Testimonials — AeonX Digital"),
 }
 
 REDIRECT_TMPL = (

@@ -3826,5 +3826,153 @@ img.g-vec[src*="6138-26173"]{animation:ax-gear-ccw 104s linear infinite}
 }
 </style>
 
+<style id="ax-cardex-css">
+/* ---- CARD-EXPAND HOVER (Figma ON_HOVER -> SMART_ANIMATE 0.3s) ----
+   The "Why choose us" row draws four cards with ONE expanded (wide, carrying its
+   description) and three collapsed (narrow, title only). Figma wires each collapsed
+   card to a variant where IT is the expanded one; the REST export flattens only the
+   default state, so the other three descriptions exist nowhere in the page and the
+   row never moved. _hoverspec.py harvests those descriptions; this animates the row.
+
+   Geometry comes from inline vw styles, never getBoundingClientRect: the cards sit
+   inside a scroll-reveal wrapper that starts them translated, and a rect would read
+   the animated position rather than the designed one. */
+.ax-cardex{transition:width .3s cubic-bezier(.22,.61,.36,1)}
+.ax-cardex-m{transition:transform .3s cubic-bezier(.22,.61,.36,1)}
+.ax-cardex-d{transition:opacity .22s ease}
+.ax-cardex-hit{cursor:default}
+@media (prefers-reduced-motion:reduce){
+  .ax-cardex,.ax-cardex-m,.ax-cardex-d{transition:none!important}
+}
+</style>
+<script>
+(function(){
+  /* title -> description, harvested from the Figma hover variants by _hoverspec.py */
+  var DESC={"sap angle": "S/4HANA Manufacturing RISE for the listed conglomerates, GROW for the mid-market. SAP PP, PM, QM, EWM. Plant-level rollouts with industry templates. 14 BUs live in 14 months at one listed customer, 95% fit-to-standard.", "cloud angle": "HANA on EC2 or GCP. SAP-on-AWS migration factory. AWS IoT Core and Greengrass for shop-floor telemetry. DataBridge SAP ECC to BigQuery in 2 weeks for plant analytics.", "product angle": "ManuFex with FlexMRP™ for finite scheduling 12% OEE uplift in 3 months at Tier-1 auto. SupplierX for procurement governance. Logystix for inbound/outbound logistics.", "axiom angle": "70% L1 auto-resolution on SAP tickets at a listed industrial conglomerate. AXIOM tunes per process strict on payroll, autonomous on password resets, semi-supervised on MM/PP."};
+
+  function txt(e){ return (e.textContent||'').replace(/\s+/g,' ').trim(); }
+  function num(el,p){ var v=el.style[p]; if(!v) return null;
+    var m=/^(-?[\d.]+)vw$/.exec(String(v).trim()); return m?parseFloat(m[1]):null; }
+  function box(el,root){
+    var l=num(el,'left'), t=num(el,'top'), w=num(el,'width'), h=num(el,'height');
+    if(l===null||t===null||w===null||h===null) return null;
+    var p=el.parentElement;
+    while(p&&p!==root){ var pl=num(p,'left'), pt=num(p,'top');
+      if(pl!==null) l+=pl; if(pt!==null) t+=pt; p=p.parentElement; }
+    return {el:el,l:l,t:t,w:w,h:h,r:l+w,b:t+h};
+  }
+  function inside(outer,inner,pad){
+    pad=pad||0.3;
+    return inner.l>=outer.l-pad&&inner.r<=outer.r+pad&&
+           inner.t>=outer.t-pad&&inner.b<=outer.b+pad;
+  }
+
+  function build(root){
+    var all=[].slice.call(root.querySelectorAll('.g-t,.g-b,.g-img,.g-vec'))
+      .map(function(e){ return box(e,root); }).filter(Boolean);
+    var titles=all.filter(function(o){
+      return /g-t/.test(o.el.className||'') && DESC[txt(o.el).toLowerCase()]; });
+    if(titles.length<3) return false;
+    titles.sort(function(a,b){ return a.l-b.l; });
+
+    /* each card's plate: the smallest painted box that wraps its title */
+    var cards=[];
+    titles.forEach(function(ti){
+      var plate=null;
+      all.forEach(function(o){
+        if(!/g-b/.test(o.el.className||'')) return;
+        if(o.w<ti.w||!inside(o,ti)) return;
+        if(o.h<ti.h*1.6) return;                   /* the title's own chip, not the card */
+        if(!plate||o.w*o.h<plate.w*plate.h) plate=o;
+      });
+      if(plate) cards.push({title:ti,plate:plate,key:txt(ti.el).toLowerCase()});
+    });
+    if(cards.length<3) return false;
+
+    /* everything that rides with a card: any element inside its plate */
+    cards.forEach(function(c){
+      c.parts=all.filter(function(o){ return o.el!==c.plate.el&&inside(c.plate,o); });
+      c.desc=c.parts.filter(function(o){
+        return /g-t/.test(o.el.className||'')&&txt(o.el).length>40; })[0]||null;
+    });
+
+    var ws=cards.map(function(c){ return c.plate.w; });
+    var WIDE=Math.max.apply(null,ws), NARROW=Math.min.apply(null,ws);
+    if(!(WIDE>NARROW*1.4)) return false;           /* not the expand pattern */
+    var L0=cards[0].plate.l;
+    var span=cards[cards.length-1].plate.r-L0;
+    var GAP=(span-WIDE-NARROW*(cards.length-1))/(cards.length-1);
+    if(!(GAP>-0.2)) return false;
+    var open=cards.reduce(function(a,b){ return a.plate.w>=b.plate.w?a:b; });
+
+    /* the one description in the markup is reused for whichever card is open */
+    var desc=open.desc;
+    if(!desc) return false;
+    var descOffL=desc.l-open.plate.l, descOffT=desc.t-open.plate.t, descW=desc.w;
+    desc.el.classList.add('ax-cardex-d');
+
+    cards.forEach(function(c){
+      c.plate.el.classList.add('ax-cardex');
+      c.parts.forEach(function(o){ o.el.classList.add('ax-cardex-m'); });
+      c.plate.el.classList.add('ax-cardex-m');
+    });
+
+    function layout(active){
+      var x=L0;
+      cards.forEach(function(c){
+        var w=(c===active?WIDE:NARROW);
+        var dx=x-c.plate.l;
+        c.plate.el.style.width=w+'vw';
+        c.plate.el.style.transform=dx?('translateX('+dx.toFixed(4)+'vw)'):'';
+        c.parts.forEach(function(o){
+          if(o.el===desc.el) return;
+          o.el.style.transform=dx?('translateX('+dx.toFixed(4)+'vw)'):'';
+        });
+        if(c===active){
+          desc.el.textContent=DESC[c.key]||'';
+          desc.el.style.left=(c.plate.l+descOffL)+'vw';
+          desc.el.style.top=(c.plate.t+descOffT)+'vw';
+          desc.el.style.width=descW+'vw';
+          desc.el.style.transform=dx?('translateX('+dx.toFixed(4)+'vw)'):'';
+          desc.el.style.opacity='1';
+        }
+        x+=w+GAP;
+      });
+    }
+
+    var current=open, pending=null;
+    function show(c){
+      if(c===current) return;
+      clearTimeout(pending);
+      desc.el.style.opacity='0';
+      current=c;
+      pending=setTimeout(function(){ layout(c); },120);
+    }
+    cards.forEach(function(c){
+      var hit=c.plate.el;
+      hit.classList.add('ax-cardex-hit');
+      hit.addEventListener('mouseenter',function(){ show(c); });
+      c.parts.forEach(function(o){
+        o.el.addEventListener('mouseenter',function(){ show(c); });
+      });
+    });
+    layout(open);
+    return true;
+  }
+
+  function init(){
+    var main=document.querySelector('main.ax-page');
+    if(!main||main.dataset.axCardex) return;
+    /* desktop only: the mobile block stacks these cards, nothing to expand */
+    if(window.innerWidth&&window.innerWidth<=1024) return;
+    if(build(main)) main.dataset.axCardex='1';
+  }
+  if(document.readyState==='loading')
+    document.addEventListener('DOMContentLoaded',function(){ setTimeout(init,200); });
+  else setTimeout(init,200);
+  addEventListener('load',function(){ setTimeout(init,600); });
+})();
+</script>
+
 </body>
 </html>
