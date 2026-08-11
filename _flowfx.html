@@ -94,20 +94,32 @@
         if (cur.hot) cur.el.style.borderColor = cur.hot;   /* faint outlines go solid */
       }
     }
+    /* Hit-test against LIVE rects, not the ones measured at build. This file runs
+       300ms in, while the scroll-reveal still holds the section at translateY(1.4vw)
+       -- about 27px -- so every stored box sat that far off the card it belonged to.
+       The cards are tall enough that the middle still worked, which is why it read as
+       glitchy rather than dead: edges did nothing, the strip just below a card lit it,
+       and moving between two cards crossed a gap that belonged to neither.
+
+       Eleven getBoundingClientRect calls on a throttled mousemove is nothing, and it
+       cannot go stale -- no re-measure hooks, no ordering to get wrong. */
     var last = 0;
     addEventListener('mousemove', function(e){
       var now = e.timeStamp || 0;
       if (now && now - last < 16) return;
       last = now;
       if (innerWidth <= 1024) { paint(null); return; }
-      var x = e.clientX, y = e.clientY + scrollY, hit = null;
+      var x = e.clientX, y = e.clientY, hit = null;
       for (var i = 0; i < cards.length; i++){
-        var c = cards[i];
-        if (x >= c.l && x <= c.r && y >= c.t && y <= c.b) { hit = c; break; }
+        var b = cards[i].el.getBoundingClientRect();
+        if (!b.width) continue;
+        if (x >= b.left && x <= b.right && y >= b.top && y <= b.bottom) { hit = cards[i]; break; }
       }
       paint(hit);
     }, {passive:true});
-    addEventListener('scroll', function(){ if (cur) paint(null); }, {passive:true});
+    /* No paint(null) on scroll. It was there because the stored boxes drifted once
+       the page moved; with live rects the pointer is still over the same card after a
+       scroll, and blanking the highlight mid-scroll was itself part of the flicker. */
     return true;
   }
 

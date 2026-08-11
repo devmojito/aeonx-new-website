@@ -4299,6 +4299,15 @@ document.addEventListener("DOMContentLoaded",function(){
     /* One pointer listener over the grid rather than listeners per element: the
        cells are a flat sheet of absolutely positioned boxes with no wrapper to
        attach to, and a point test is what "hovering this cell" actually means. */
+    /* The cell bands were measured at build, in page coordinates, while the
+       scroll-reveal still held this section translated -- so every band sat about
+       27px off the cell it belonged to: edges did nothing and the strip below a cell
+       lit it. Keep the band's SHAPE from the design but anchor it to the badge's live
+       rect on each move, which cannot drift. Same fix as the flow diagram. */
+    cells.forEach(function(c){
+      c.dx = { l: c.box.l - c.circle.l, r: c.box.r - c.circle.l,
+               t: c.box.t - c.circle.t, b: c.box.b - c.circle.t };
+    });
     var last = 0;
     addEventListener('mousemove', function(e){
       /* Throttled on a timestamp rather than rAF: rAF does not fire while the tab
@@ -4308,14 +4317,18 @@ document.addEventListener("DOMContentLoaded",function(){
       if (now && now - last < 16) return;
       last = now;
       if (innerWidth <= 1024) { paint(null); return; }
-      var x = e.clientX, y = e.clientY + scrollY, hit = null;
+      var x = e.clientX, y = e.clientY, hit = null;
       for (var k = 0; k < cells.length; k++){
-        var b = cells[k].box;
-        if (x >= b.l && x <= b.r && y >= b.t && y <= b.b) { hit = cells[k]; break; }
+        var cr = cells[k].circle.el.getBoundingClientRect();
+        if (!cr.width) continue;
+        var d = cells[k].dx;
+        if (x >= cr.left + d.l && x <= cr.left + d.r &&
+            y >= cr.top + d.t && y <= cr.top + d.b) { hit = cells[k]; break; }
       }
       paint(hit);
     }, {passive:true});
-    addEventListener('scroll', function(){ if (cur) paint(null); }, {passive:true});
+    /* No paint(null) on scroll: with live anchoring the pointer is still inside the
+       same cell after the page moves, and blanking it mid-scroll was itself a flicker. */
     return true;
   }
 
