@@ -17,4 +17,12 @@ main.ax-page .g-b.g-clip:has(> img.g-vec[src$="4613-9605.svg"]){
 main.ax-page img.g-vec[src$="4613-9605.svg"]{
   left:0.2083vw!important; top:0.2083vw!important;   /* same inset as cards 2-4 */
 }
+/* The same stray card also sets its heading and copy 2.7083vw (52px) higher than
+   its rowmate, because in the source they were centred against that tall 120px
+   plate on the right. With the plate moved to the card's top-left, the heading ran
+   straight under it -- "Outcome-led" came out with the icon sitting on the word.
+   Drop both lines to card 2's tops: 73.2292 -> 75.9375 and 76.5625 -> 79.2708,
+   which is exactly the row-1 baseline (cards 3 and 4 already share theirs). */
+main.ax-page .g-t[style*="left:17.2917vw"][style*="top:73.2292vw"]{top:75.9375vw!important}
+main.ax-page .g-t[style*="left:17.2917vw"][style*="top:76.5625vw"]{top:79.2708vw!important}
 </style>
