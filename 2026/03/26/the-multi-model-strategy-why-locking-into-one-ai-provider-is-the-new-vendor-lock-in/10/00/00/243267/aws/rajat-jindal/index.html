@@ -1262,6 +1262,30 @@ document.addEventListener('DOMContentLoaded',function(){
   function fit(){
     var pills=[].slice.call(document.querySelectorAll('.g-b[data-cta]'));
     var rows={};
+    /* The band a pill belongs to. Matched on the LEFT edge and the vertical span,
+       never on containment: a pill that already overflows is not contained by its
+       own band, so a containment test finds the full-bleed section instead and the
+       overflow becomes invisible. Everything is absolutely positioned on a flat
+       sheet, so this has to be geometric -- the pill's parent is the page. */
+    var EDGE = 24 * (document.documentElement.clientWidth || 1920) / 1920;
+    var bands = [].slice.call(document.querySelectorAll('.g-b')).map(function(e){
+      return e.getBoundingClientRect();
+    }).filter(function(r){ return r.width && r.width <= innerWidth * 1.02; });
+    function bandFor(pr){
+      var cy = pr.top + pr.height / 2, best = null;
+      bands.forEach(function(r){
+        if (r.width < pr.width * 1.2) return;
+        if (r.left > pr.left + 2) return;
+        /* ...and it has to actually reach ACROSS the pill. A box that merely starts
+           to the left and ends before the pill begins -- the newsletter email field
+           sitting next to Subscribe -- is not its band, and treating it as one moved
+           the button 300px sideways. */
+        if (r.right < pr.left + pr.width * 0.6) return;
+        if (r.top > cy || r.bottom < cy) return;
+        if (!best || r.width < best.width) best = r;
+      });
+      return best;
+    }
     pills.forEach(function(p){
       var lab=p.querySelector('.g-t'); if(!lab)return;
       var pr=p.getBoundingClientRect(); if(!pr.width)return;
@@ -1275,6 +1299,35 @@ document.addEventListener('DOMContentLoaded',function(){
       var need=Math.ceil(ink+pad*2);
       var delta=need-pr.width;
       if(delta>0.5){
+        /* Grow INTO the band, never through it. If the label needs more room than is
+           left before the band's edge, slide the pill left first (that is free -- the
+           gap to its neighbour is preserved by the row pass below), and only clamp the
+           width once there is nowhere left to slide. A button that touches or crosses
+           the edge of its own panel reads as broken; EDGE keeps a visible margin. */
+        var band = bandFor(pr);
+        if (band){
+          var maxRight = band.right - EDGE;
+          if (pr.left + need > maxRight){
+            var room = Math.max(0, pr.left - (band.left + EDGE));
+            var move = Math.min(pr.left + need - maxRight, room);
+            if (move > 0.5){
+              var cl0 = parseFloat(getComputedStyle(p).left) || 0;
+              p.style.left = (cl0 - move) + 'px';
+              /* only a label that actually sits ON this pill travels with it */
+              var sl0 = p.previousElementSibling;
+              if (sl0 && sl0.classList && sl0.classList.contains('g-t') && sl0.dataset.cta){
+                var sr = sl0.getBoundingClientRect();
+                if (sr.width && sr.left >= pr.left - 2 && sr.right <= pr.right + 2){
+                  sl0.style.left = ((parseFloat(getComputedStyle(sl0).left) || 0) - move) + 'px';
+                }
+              }
+              pr = p.getBoundingClientRect();
+            }
+            need = Math.max(pr.width, Math.min(need, Math.floor(maxRight - pr.left)));
+            delta = need - pr.width;
+            if (delta <= 0.5) return;
+          }
+        }
         /* Figma draws these buttons as TWO stacked boxes -- a filled rect with the
            outline rect nested inside it (or vice versa). Only one carries data-cta,
            so widening just that one left the fill jutting past the outline: the
@@ -1298,6 +1351,9 @@ document.addEventListener('DOMContentLoaded',function(){
       var key=Math.round((pr.top+scrollY)/6);
       var shift=0;
       (rows[key]||[]).forEach(function(g){ if(g.left<pr.left-1) shift+=g.delta; });
+      /* a pill pushed along by its neighbour's growth stops at the band edge too */
+      var bnd = bandFor(pr);
+      if (bnd) shift = Math.min(shift, Math.max(0, (bnd.right - EDGE) - pr.right));
       if(shift>0){
         var cur=parseFloat(getComputedStyle(p).left)||0;
         p.style.left=(cur+shift)+'px';
