@@ -2062,6 +2062,11 @@ document.addEventListener("DOMContentLoaded",function(){
       if (!(target > 1)) continue;                 /* "1" or "0" has nothing to count */
       /* the owning block is what we watch for visibility, not the bare text node */
       var box = host.closest('.g-t') || host;
+      /* A zero-padded number is a step label, not a stat: Figma draws "01".."04"
+         static. Counting it also dropped the zero, because the value is written back
+         through String() -- the culture page's pillars read 1..4 on mobile, where
+         the numbers are large enough to clear the size threshold. */
+      if (/^0\d/.test(m[2])) continue;
       jobs.push({ node:n, target:target, grouped:/,/.test(m[2]),
                   pre:m[1], suf:m[3], box:box, done:false });
       n.nodeValue = m[1] + '0' + m[3];
