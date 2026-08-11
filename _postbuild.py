@@ -84,6 +84,28 @@ PRE_JS = open(os.path.join(_HERE, '_preloader_js.html'), encoding='utf-8').read(
 # directly by the same amount. Deliberate deviation from Figma, which has both crisp.
 BURST_BLUR = 'filter:blur(0.5208vw);-webkit-filter:blur(0.5208vw);'
 
+# _mobile.py re-injects the homepage .ax-mob block from the Figma dump on every
+# build, which silently reverts hand-verified mobile fixes. These two are re-applied
+# here so a rebuild cannot undo them.
+#
+# 1. The Partner section's orbit. Figma (5637:48878) centres a 790x790 disc on the
+#    430-wide frame at rel -178,-30. The dump's own numbers put it at -330,-26 sized
+#    760, centred at x=50, so it bulged off the left and cut through the copy.
+DISC_VEC = '5637:48885'
+DISC_GEO = 'left:-41.3953vw;top:-6.9767vw;width:183.7209vw;height:183.7209vw'
+# 2. A decorative strip the designer has since removed from the homepage. Its SVG is
+#    deleted, so re-injecting the tag would request a 404.
+DROP_VEC = '5858:3740'
+
+def fix_mobile_home(s):
+    s = re.sub(r'<img class="g-vec"[^>]*data-vec="' + DROP_VEC + r'"[^>]*>\n?', '', s)
+
+    def geo(m):
+        tag = m.group(0)
+        return re.sub(r'left:-?[\d.]+vw;top:-?[\d.]+vw;width:[\d.]+vw;height:[\d.]+vw',
+                      DISC_GEO, tag, count=1)
+    return re.sub(r'<img class="g-vec"[^>]*data-vec="' + DISC_VEC + r'"[^>]*>', geo, s)
+
 def burst_ids():
     """Node ids of the hero corner sunburst, read from the Figma dump so this
     survives a re-pull. Empty (no-op) if the dump is not present locally."""
@@ -174,6 +196,11 @@ def main():
             if f.replace(os.sep, '/').endswith(sfx) and sent not in s and '</body>' in s:
                 s = s.replace('</body>', frag + '\n</body>', 1)
                 stats['scoped'] += 1
+        if f.replace(os.sep, '/').endswith('index.html') and DISC_VEC in s:
+            m = fix_mobile_home(s)
+            if m != s:
+                s = m
+                stats['mobhome'] = stats.get('mobhome', 0) + 1
         if GPTW_RAW in s:
             s = s.replace(GPTW_RAW, GPTW_FIX)
             s = fix_gptw_sizing(s)
@@ -193,7 +220,7 @@ def main():
           f"cursor {stats['cursor']}, preloader {stats['preload']}, "
           f"nav-loader {stats['navload']}, counters {stats['counters']}, "
           f"mobile-fx {stats['mobfx']}, page-scoped {stats['scoped']}, "
-          f"hover {stats['hover']}, "
+          f"hover {stats['hover']}, mobile-home {stats.get('mobhome', 0)}, "
           f"scroll-rows {stats['scrollrow']} files")
 
 if __name__ == '__main__':
