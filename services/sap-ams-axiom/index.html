@@ -808,7 +808,12 @@ function resolve(n){
   var s=n.replace(/^(all|see|view|read|open|meet|explore|book|talk to|request|download)\s+/,'').replace(/^(the|a|an)\s+/,'');
   if(ROUTES[s])return ROUTES[s];
   if(LINKMAP[s])return LINKMAP[s];
-  for(var k in LINKMAP){ if(k.length>4&&(n.indexOf(k)>=0||s===k))return LINKMAP[k]; }
+  /* No substring matching. This used to hand a label ANY link whose text it happened
+     to contain, so "textiles \u00b7 ManufeX" went to /products/axiom/, "Manufacturing &
+     industrial conglomerates" to /industries/manufacturing/, and the footer's
+     copyright line -- which contains the words "Google Cloud" -- to
+     /services/google-cloud/. Exact and stem-exact lookups above already cover the
+     real CTAs; anything else stays inert rather than guessing a destination. */
   return null;
 }
 function skipBtn(n){ return NOTBTN.test(n)||NOTBTN2.indexOf(n)>=0; }
