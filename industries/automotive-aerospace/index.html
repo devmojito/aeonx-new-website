@@ -4039,7 +4039,25 @@ img.g-vec[src*="6138-26173"]{animation:ax-gear-ccw 104s linear infinite}
    edge -- the second card read "ad The Story" and the third "The Story". Moving the
    wrapper carries the label and its chevron together and clips nothing.
 
-   Position only, and only along X: the vertical rhythm of the card is untouched. */
+   Position only, and only along X: the vertical rhythm of the card is untouched.
+
+   The row is a TEXT link, not a pill. _hover.html reads its white box as an outlined
+   button and washes it on hover, which is not what the design shows -- the client
+   asked for a slight lift and nothing else. The button skins are stripped and this
+   lift is all that is left.
+
+   The wrapper is also widened when its own content would not fit: it is a fixed
+   157px box with overflow:hidden, so at font metrics even slightly wider than the
+   design's the chevron lands outside it and simply disappears. The box has no
+   visible fill of its own (white on white), so widening it shows nothing new. */
+.ax-csr{transition:transform .2s cubic-bezier(.22,.61,.36,1)}
+.ax-csr:hover{transform:translateY(-0.1042vw)}
+/* the skins _hover.html would otherwise paint on this row */
+.ax-csr.ax-hv-out.ax-hv-selfon,.ax-csr.ax-hv-fill.ax-hv-selfon,
+.ax-csr.ax-hv-out.ax-hv-on,.ax-csr.ax-hv-fill.ax-hv-on{
+  background-image:none!important;background-size:0 100%!important;
+  box-shadow:none!important;border-color:transparent!important}
+@media (prefers-reduced-motion:reduce){.ax-csr{transition:none}.ax-csr:hover{transform:none}}
 </style>
 <script>
 (function(){
@@ -4092,6 +4110,29 @@ img.g-vec[src*="6138-26173"]{animation:ax-gear-ccw 104s linear infinite}
         wrap.setAttribute('style', st.replace(/left:\s*-?[\d.]+px/, 'left:' + cur.toFixed(4) + 'vw'));
       }
       setLeftVw(wrap, cur + dx / vwpx);
+
+      /* a text link, not a button: drop the pill skins and keep only the lift */
+      wrap.classList.remove('ax-hv-out', 'ax-hv-fill', 'ax-hv-fill--pale', 'ax-hv-btn');
+      wrap.classList.add('ax-csr');
+
+      /* make sure the chevron actually fits inside the clip */
+      var chev = [].slice.call(wrap.children).filter(function(e){
+        return /g-vec/.test(e.className || '') && e.getBoundingClientRect().width;
+      })[0];
+      if (chev){
+        var cr = chev.getBoundingClientRect(), nwr = wrap.getBoundingClientRect();
+        var over = (cr.right + 6) - nwr.right;
+        if (over > 0){
+          var wpx = parseFloat(getComputedStyle(wrap).width);
+          if (!isNaN(wpx)){
+            var st2 = wrap.getAttribute('style') || '';
+            var vwW = (wpx + over) / vwpx;
+            wrap.setAttribute('style', /width:\s*-?[\d.]+(vw|px)/.test(st2)
+              ? st2.replace(/width:\s*-?[\d.]+(vw|px)/, 'width:' + vwW.toFixed(4) + 'vw')
+              : st2 + ';width:' + vwW.toFixed(4) + 'vw');
+          }
+        }
+      }
       moved++;
     });
     return moved > 0;
