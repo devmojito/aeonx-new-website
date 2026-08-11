@@ -4023,6 +4023,8 @@ img.g-vec[src*="6138-26173"]{animation:ax-gear-ccw 104s linear infinite}
 }
 </style>
 
+
+
 <style id="ax-caseread-css">
 /* ---- CASE-STUDY CARD CTA ALIGNMENT ----
    "Read the story" and its chevron sit in their own wrapper inside each card, and
@@ -4030,6 +4032,11 @@ img.g-vec[src*="6138-26173"]{animation:ax-gear-ccw 104s linear infinite}
    the second, 40 on the third, growing with the column. The design lines the CTA up
    with the headline above it, so each label (and the chevron travelling with it) is
    nudged back onto its title's left edge.
+
+   The WRAPPER moves, never the label. The label sits 12px inside a 157px box with
+   overflow:hidden, so nudging the label itself just slid it under that box's left
+   edge -- the second card read "ad The Story" and the third "The Story". Moving the
+   wrapper carries the label and its chevron together and clips nothing.
 
    Position only, and only along X: the vertical rhythm of the card is untouched. */
 </style>
@@ -4066,41 +4073,40 @@ img.g-vec[src*="6138-26173"]{animation:ax-gear-ccw 104s linear infinite}
       if (!title) return;
       var dx = title.r.left - lb.left;
       if (Math.abs(dx) < 1) return;
-      var lv = leftVw(lab);
-      if (lv === null) return;
-      setLeftVw(lab, lv + dx / vwpx);
-      /* the chevron rides along, keeping the gap the design gives it */
-      var chev = [].slice.call(root.querySelectorAll('img.g-vec')).map(function(e){
-        return {el:e, r:e.getBoundingClientRect()};
-      }).filter(function(o){
-        return o.r.width && o.r.width < 40 &&
-               Math.abs(o.r.top - lb.top) < 30 &&
-               o.r.left >= lb.right - 12 && o.r.left < lb.right + 80;
-      })[0];
-      if (chev){
-        var cv = leftVw(chev.el);
-        if (cv !== null) setLeftVw(chev.el, cv + dx / vwpx);
+      /* the box that owns the CTA row: the label's positioned parent, as long as it
+         is a row and not the whole card */
+      var wrap = lab.parentElement;
+      if (!wrap) return;
+      var wr = wrap.getBoundingClientRect();
+      if (!wr.width || wr.width > 400 || wr.height > 120) return;
+      /* The wrapper's left may be vw (as generated) or px -- the CTA auto-fit writes
+         px when it shifts a row along. Read whichever is there and always write back
+         vw, so the fix survives a resize like the rest of the layout. */
+      var cur = leftVw(wrap);
+      if (cur === null){
+        var px = parseFloat(getComputedStyle(wrap).left);
+        if (isNaN(px)) return;
+        cur = px / vwpx;
+        var st = wrap.getAttribute('style') || '';
+        wrap.setAttribute('style', st.replace(/left:\s*-?[\d.]+px/, 'left:' + cur.toFixed(4) + 'vw'));
       }
+      setLeftVw(wrap, cur + dx / vwpx);
       moved++;
     });
     return moved > 0;
   }
 
+  /* Run repeatedly rather than once. The CTA auto-fit shifts a row's later pills
+     along AFTER this file's first pass, which left a residual 5px on the second card
+     and 10px on the third; align() only writes when a label is more than a pixel out,
+     so re-running simply converges and costs nothing once it is right. */
   function init(){
     var main = document.querySelector('main.ax-page');
-    if (!main || main.dataset.axCaseread) return;
-    /* after _uifx's arrow pass, which nudges the chevron off the label's ink */
-    if (align(main)) main.dataset.axCaseread = '1';
+    if (main) align(main);
   }
-  if (document.readyState === 'loading')
-    document.addEventListener('DOMContentLoaded', function(){ setTimeout(init, 1300); });
-  else setTimeout(init, 1300);
-  addEventListener('load', function(){ setTimeout(init, 1600); });
-  addEventListener('resize', function(){
-    var m = document.querySelector('main.ax-page');
-    if (m) m.dataset.axCaseread = '';
-    setTimeout(init, 400);
-  });
+  [700, 1300, 1900, 2600].forEach(function(t){ setTimeout(init, t); });
+  addEventListener('load', function(){ setTimeout(init, 800); });
+  addEventListener('resize', function(){ setTimeout(init, 500); });
 })();
 </script>
 
