@@ -17,6 +17,16 @@ main.ax-page .g-b.g-clip:has(> img.g-vec[src$="4613-9605.svg"]){
 main.ax-page img.g-vec[src$="4613-9605.svg"]{
   left:0.2083vw!important; top:0.2083vw!important;   /* same inset as cards 2-4 */
 }
+/* The icon RASTER kept the stray card's 120px size after the plate was resized to
+   44px, so it overflowed the plate on every side. All four of these icons are
+   1254x1254 images with OPAQUE BLACK corners -- what makes them read as rounded
+   tiles is the plate's own border-radius clipping them, which only works while the
+   image matches the plate. Unclipped, card 1 showed a black square sitting over the
+   heading. */
+main.ax-page .g-img[style*="7a11b88cbd"]{
+  width:2.2917vw!important; height:2.2917vw!important;
+}
+
 /* The same stray card also sets its heading and copy 2.7083vw (52px) higher than
    its rowmate, because in the source they were centred against that tall 120px
    plate on the right. With the plate moved to the card's top-left, the heading ran
