@@ -19,6 +19,16 @@ fresh REST pull of the six panel nodes.
 """
 import io, re, sys
 
+# The OrderX and Xpense fills point at the FULL brand lockup (mark + wordmark,
+# ~1183x355). Figma crops each to the mark; the built page used
+# background-size:cover with a square box, which centres that wide image and shows
+# the wordmark instead. These are Figma's own renders of the logo nodes -- the
+# exact crop the design paints -- placed with background-size:contain.
+MARKS = {
+    '8c5b7ed3f14c88fdf9ede7afee31eb0cc4190f51': '8c5b7ed3-mark-264',   # OrderX trolley
+    'b6238bcf5f82afb905a3d48d14fb04a980c2c7b1': 'b6238bcf-mark-264',   # Xpense X
+}
+
 F = 19.2  # px per vw at the 1920 design width
 
 # heading text -> (explore label, screenshot rel x, screenshot rel y)
@@ -46,6 +56,20 @@ def move(tag, x, y):
         return tag
     return GEO.sub(lambda g: 'left:%.4fvw;top:%.4fvw;width:%svw;height:%svw'
                    % (x / F, y / F, g.group(3), g.group(4)), tag, count=1)
+
+
+def crop_marks(s):
+    """Swap the two lockup fills for their cropped marks (desktop panels only --
+    the mobile block already carries the fill's own computed crop)."""
+    n = 0
+    for ref, mark in MARKS.items():
+        pat = re.compile(r'(<div class="g-img" data-ref="' + ref +
+                         r'"[^>]*?)background-image:url\(/assets/gen/' + ref +
+                         r'\.webp\);background-size:cover;background-position:center;')
+        s, c = pat.subn(lambda m: m.group(1) + 'background-image:url(/assets/gen/' + mark +
+                        '.webp);background-size:contain;background-position:center;', s)
+        n += c
+    return s, n
 
 
 def patch(path='index.html'):
@@ -93,6 +117,11 @@ def patch(path='index.html'):
             s = s[:a] + region + s[b:]
             moved += len(out)
             print('  %-24s %d element(s) moved' % (head, len(out)))
+
+    s, cropped = crop_marks(s)
+    if cropped:
+        moved += cropped
+        print('  %-24s %d logo crop(s) corrected' % ('brand marks', cropped))
 
     if not moved:
         print('  = %s already on the Figma geometry' % path)
