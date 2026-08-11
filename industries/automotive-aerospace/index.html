@@ -4091,13 +4091,13 @@ img.g-vec[src*="6138-26173"]{animation:ax-gear-ccw 104s linear infinite}
       }).sort(function(a, b){ return b.r.bottom - a.r.bottom; })[0];
       if (!title) return;
       var dx = title.r.left - lb.left;
-      if (Math.abs(dx) < 1) return;
       /* the box that owns the CTA row: the label's positioned parent, as long as it
          is a row and not the whole card */
       var wrap = lab.parentElement;
       if (!wrap) return;
       var wr = wrap.getBoundingClientRect();
       if (!wr.width || wr.width > 400 || wr.height > 120) return;
+      if (Math.abs(dx) < 1) { pin(); return; }
       /* The wrapper's left may be vw (as generated) or px -- the CTA auto-fit writes
          px when it shifts a row along. Read whichever is there and always write back
          vw, so the fix survives a resize like the rest of the layout. */
@@ -4110,30 +4110,51 @@ img.g-vec[src*="6138-26173"]{animation:ax-gear-ccw 104s linear infinite}
         wrap.setAttribute('style', st.replace(/left:\s*-?[\d.]+px/, 'left:' + cur.toFixed(4) + 'vw'));
       }
       setLeftVw(wrap, cur + dx / vwpx);
+      pin();
+      moved++;
 
-      /* a text link, not a button: drop the pill skins and keep only the lift */
-      wrap.classList.remove('ax-hv-out', 'ax-hv-fill', 'ax-hv-fill--pale', 'ax-hv-btn');
-      wrap.classList.add('ax-csr');
-
-      /* make sure the chevron actually fits inside the clip */
-      var chev = [].slice.call(wrap.children).filter(function(e){
-        return /g-vec/.test(e.className || '') && e.getBoundingClientRect().width;
-      })[0];
-      if (chev){
-        var cr = chev.getBoundingClientRect(), nwr = wrap.getBoundingClientRect();
+      /* PIN the chevron to the label's ink at the design's gap. Its source `left`
+         is a fixed x sized for the design's font metrics; render the label any
+         wider (fonts, zoom, Title Case) and other passes shove the chevron around
+         -- it shipped ~100px adrift of the label and, before the box was widened,
+         clipped out of sight entirely. Written every pass, so nothing that runs
+         later can leave it anywhere else. Figma draws an 8px gap. */
+      function pin(){
+        wrap.classList.remove('ax-hv-out', 'ax-hv-fill', 'ax-hv-fill--pale', 'ax-hv-btn');
+        wrap.classList.add('ax-csr');
+        var chev = [].slice.call(wrap.children).filter(function(e){
+          return /g-vec/.test(e.className || '') && e.getBoundingClientRect().width;
+        })[0];
+        if (!chev) return;
+        var rng = document.createRange();
+        rng.selectNodeContents(lab);
+        var ink = rng.getBoundingClientRect();
+        var nwr = wrap.getBoundingClientRect();
+        if (!ink.width || !nwr.width) return;
+        var gap = 8 * vwpx / (1920 / 100);            /* 8px at the 1920 design width */
+        var want = (ink.right + gap) - nwr.left;      /* chevron left, wrapper-local px */
+        var cr = chev.getBoundingClientRect();
+        if (Math.abs((cr.left - nwr.left) - want) > 1){
+          var st2 = chev.getAttribute('style') || '';
+          var vwL = want / vwpx;
+          chev.setAttribute('style', /left:\s*-?[\d.]+(vw|px)/.test(st2)
+            ? st2.replace(/left:\s*-?[\d.]+(vw|px)/, 'left:' + vwL.toFixed(4) + 'vw')
+            : st2 + ';left:' + vwL.toFixed(4) + 'vw');
+          cr = chev.getBoundingClientRect();
+        }
+        /* and the clip box must hold it */
         var over = (cr.right + 6) - nwr.right;
         if (over > 0){
           var wpx = parseFloat(getComputedStyle(wrap).width);
           if (!isNaN(wpx)){
-            var st2 = wrap.getAttribute('style') || '';
+            var st3 = wrap.getAttribute('style') || '';
             var vwW = (wpx + over) / vwpx;
-            wrap.setAttribute('style', /width:\s*-?[\d.]+(vw|px)/.test(st2)
-              ? st2.replace(/width:\s*-?[\d.]+(vw|px)/, 'width:' + vwW.toFixed(4) + 'vw')
-              : st2 + ';width:' + vwW.toFixed(4) + 'vw');
+            wrap.setAttribute('style', /width:\s*-?[\d.]+(vw|px)/.test(st3)
+              ? st3.replace(/width:\s*-?[\d.]+(vw|px)/, 'width:' + vwW.toFixed(4) + 'vw')
+              : st3 + ';width:' + vwW.toFixed(4) + 'vw');
           }
         }
       }
-      moved++;
     });
     return moved > 0;
   }
