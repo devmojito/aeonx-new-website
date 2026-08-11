@@ -60,6 +60,11 @@ SCOPED = [
     ('services/rise-with-sap/index.html', 'ax-reasons-css', '_reasons.html'),
     ('products/index.html',              'ax-reasons-css', '_reasons.html'),
     ('services/google-cloud/index.html', 'ax-flowfx-css',  '_flowfx.html'),
+    ('industries/metals-engineering/index.html', 'ax-caseread-css', '_caseread.html'),
+    ('industries/energy-fertiliser-oil-gas/index.html', 'ax-caseread-css', '_caseread.html'),
+    ('industries/automotive-aerospace/index.html', 'ax-caseread-css', '_caseread.html'),
+    ('industries/textiles-apparel/index.html', 'ax-caseread-css', '_caseread.html'),
+    ('industries/fmcg-distribution/index.html', 'ax-caseread-css', '_caseread.html'),
     ('investor-relations/index.html',                     'ax-invdocs-css', '_invdocs.html'),
     ('investor-relations/shareholding-pattern/index.html','ax-invdocs-css', '_invdocs.html'),
 ]

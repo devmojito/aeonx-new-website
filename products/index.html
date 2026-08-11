@@ -3537,6 +3537,9 @@ document.addEventListener("DOMContentLoaded",function(){
      the stock "John Doe" testimonial headshot -- is left alone for the client. */
   var COPY_FIX=[[/\bSend RPF Request\b/g,'Send RFP Request'],[/\bAhmadabad\b/g,'Ahmedabad'],
                 [/\bSaas\b/g,'SaaS'],
+                /* Figma ships this line cut off mid-word on 26 nodes across the
+                   industries pages: "...at Level 4 autonom". */
+                [/at Level 4 autonom(?!y)/g,'at Level 4 autonomy.'],
                 /* Figma spells it "COSTUMER IN THIS VERTICAL" on all six
                    industries pages. The rest of the site says Customer. */
                 [/\bCOSTUMER\b/g,'CUSTOMER'],[/\bCostumer\b/g,'Customer'],
@@ -3680,10 +3683,23 @@ document.addEventListener("DOMContentLoaded",function(){
       var vwpx=(document.documentElement.clientWidth||1920)/100;
       var gap=Math.max(6,ar.width*0.35);
       var group=ink.width+gap+ar.width;
-      /* never let the group grow past the pill: fall back to just clearing the text */
-      var start=(group<=pr.width-10) ? pr.left+(pr.width-group)/2 : pr.left+5;
       var lLeft=num(lbl,'left'), aLeft=num(a,'left');
       if(lLeft===null||aLeft===null) return;
+      /* Centre the pair only inside a real PILL -- a painted box that hugs its
+         label. The smallest box around a card's "Read the story" is the CARD, and
+         centring in that pushed the label off the title it is supposed to line up
+         with (12px on the first card, 40px by the third). There the job is only to
+         stop the chevron overlapping the words: leave the label where the design
+         put it and move the arrow. */
+      var pcs=getComputedStyle(pill);
+      var painted=(pcs.backgroundColor&&pcs.backgroundColor!=='rgba(0, 0, 0, 0)')||
+                  pcs.borderTopWidth!=='0px';
+      if(!(painted&&pr.width<=group+80)){
+        setvw(a,'left', aLeft+((ink.right+gap)-ar.left)/vwpx);
+        return;
+      }
+      /* never let the group grow past the pill: fall back to just clearing the text */
+      var start=(group<=pr.width-10) ? pr.left+(pr.width-group)/2 : pr.left+5;
       setvw(lbl,'left', lLeft+(start-ink.left)/vwpx);
       setvw(a,   'left', aLeft+((start+ink.width+gap)-ar.left)/vwpx);
     });

@@ -3420,6 +3420,9 @@ document.addEventListener("DOMContentLoaded",function(){
      the stock "John Doe" testimonial headshot -- is left alone for the client. */
   var COPY_FIX=[[/\bSend RPF Request\b/g,'Send RFP Request'],[/\bAhmadabad\b/g,'Ahmedabad'],
                 [/\bSaas\b/g,'SaaS'],
+                /* Figma ships this line cut off mid-word on 26 nodes across the
+                   industries pages: "...at Level 4 autonom". */
+                [/at Level 4 autonom(?!y)/g,'at Level 4 autonomy.'],
                 /* Figma spells it "COSTUMER IN THIS VERTICAL" on all six
                    industries pages. The rest of the site says Customer. */
                 [/\bCOSTUMER\b/g,'CUSTOMER'],[/\bCostumer\b/g,'Customer'],
@@ -3563,10 +3566,23 @@ document.addEventListener("DOMContentLoaded",function(){
       var vwpx=(document.documentElement.clientWidth||1920)/100;
       var gap=Math.max(6,ar.width*0.35);
       var group=ink.width+gap+ar.width;
-      /* never let the group grow past the pill: fall back to just clearing the text */
-      var start=(group<=pr.width-10) ? pr.left+(pr.width-group)/2 : pr.left+5;
       var lLeft=num(lbl,'left'), aLeft=num(a,'left');
       if(lLeft===null||aLeft===null) return;
+      /* Centre the pair only inside a real PILL -- a painted box that hugs its
+         label. The smallest box around a card's "Read the story" is the CARD, and
+         centring in that pushed the label off the title it is supposed to line up
+         with (12px on the first card, 40px by the third). There the job is only to
+         stop the chevron overlapping the words: leave the label where the design
+         put it and move the arrow. */
+      var pcs=getComputedStyle(pill);
+      var painted=(pcs.backgroundColor&&pcs.backgroundColor!=='rgba(0, 0, 0, 0)')||
+                  pcs.borderTopWidth!=='0px';
+      if(!(painted&&pr.width<=group+80)){
+        setvw(a,'left', aLeft+((ink.right+gap)-ar.left)/vwpx);
+        return;
+      }
+      /* never let the group grow past the pill: fall back to just clearing the text */
+      var start=(group<=pr.width-10) ? pr.left+(pr.width-group)/2 : pr.left+5;
       setvw(lbl,'left', lLeft+(start-ink.left)/vwpx);
       setvw(a,   'left', aLeft+((start+ink.width+gap)-ar.left)/vwpx);
     });
@@ -4006,6 +4022,87 @@ img.g-vec[src*="6138-26173"]{animation:ax-gear-ccw 104s linear infinite}
   img.g-vec[src*="6138-26"]{animation:none}
 }
 </style>
+
+<style id="ax-caseread-css">
+/* ---- CASE-STUDY CARD CTA ALIGNMENT ----
+   "Read the story" and its chevron sit in their own wrapper inside each card, and
+   those wrappers drift right of the card's title -- 12px on the first card, 26 on
+   the second, 40 on the third, growing with the column. The design lines the CTA up
+   with the headline above it, so each label (and the chevron travelling with it) is
+   nudged back onto its title's left edge.
+
+   Position only, and only along X: the vertical rhythm of the card is untouched. */
+</style>
+<script>
+(function(){
+  function txt(e){ return (e.textContent||'').replace(/\s+/g,' ').trim(); }
+  function leftVw(el){
+    var m = (el.getAttribute('style') || '').match(/left:\s*(-?[\d.]+)vw/);
+    return m ? parseFloat(m[1]) : null;
+  }
+  function setLeftVw(el, v){
+    var s = el.getAttribute('style') || '';
+    el.setAttribute('style', s.replace(/left:\s*-?[\d.]+vw/, 'left:' + v.toFixed(4) + 'vw'));
+  }
+
+  function align(root){
+    var vwpx = (document.documentElement.clientWidth || 1920) / 100;
+    var labels = [].slice.call(root.querySelectorAll('.g-t')).filter(function(e){
+      return /^read the story\b/i.test(txt(e)) && e.getBoundingClientRect().width;
+    });
+    if (!labels.length) return false;
+    var moved = 0;
+    labels.forEach(function(lab){
+      var lb = lab.getBoundingClientRect();
+      /* the card's headline: the nearest long line of text above the CTA, in the
+         same column */
+      var title = [].slice.call(root.querySelectorAll('.g-t')).map(function(e){
+        return {el:e, r:e.getBoundingClientRect()};
+      }).filter(function(o){
+        return o.r.width && o.el !== lab && txt(o.el).length > 24 &&
+               o.r.bottom <= lb.top + 4 && o.r.bottom > lb.top - 300 &&
+               Math.abs(o.r.left - lb.left) < 200;
+      }).sort(function(a, b){ return b.r.bottom - a.r.bottom; })[0];
+      if (!title) return;
+      var dx = title.r.left - lb.left;
+      if (Math.abs(dx) < 1) return;
+      var lv = leftVw(lab);
+      if (lv === null) return;
+      setLeftVw(lab, lv + dx / vwpx);
+      /* the chevron rides along, keeping the gap the design gives it */
+      var chev = [].slice.call(root.querySelectorAll('img.g-vec')).map(function(e){
+        return {el:e, r:e.getBoundingClientRect()};
+      }).filter(function(o){
+        return o.r.width && o.r.width < 40 &&
+               Math.abs(o.r.top - lb.top) < 30 &&
+               o.r.left >= lb.right - 12 && o.r.left < lb.right + 80;
+      })[0];
+      if (chev){
+        var cv = leftVw(chev.el);
+        if (cv !== null) setLeftVw(chev.el, cv + dx / vwpx);
+      }
+      moved++;
+    });
+    return moved > 0;
+  }
+
+  function init(){
+    var main = document.querySelector('main.ax-page');
+    if (!main || main.dataset.axCaseread) return;
+    /* after _uifx's arrow pass, which nudges the chevron off the label's ink */
+    if (align(main)) main.dataset.axCaseread = '1';
+  }
+  if (document.readyState === 'loading')
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(init, 1300); });
+  else setTimeout(init, 1300);
+  addEventListener('load', function(){ setTimeout(init, 1600); });
+  addEventListener('resize', function(){
+    var m = document.querySelector('main.ax-page');
+    if (m) m.dataset.axCaseread = '';
+    setTimeout(init, 400);
+  });
+})();
+</script>
 
 </body>
 </html>
