@@ -57,6 +57,7 @@ SCOPED = [
     ('insights/newsletter/index.html',   'ax-nlform-css',  '_nlform.html'),
     ('who-we-are/career/index.html',     'ax-career-css',  '_career.html'),
     ('industries/manufacturing/index.html', 'ax-cardex-css', '_cardexpand.html'),
+    ('services/rise-with-sap/index.html', 'ax-reasons-css', '_reasons.html'),
     ('investor-relations/index.html',                     'ax-invdocs-css', '_invdocs.html'),
     ('investor-relations/shareholding-pattern/index.html','ax-invdocs-css', '_invdocs.html'),
 ]
