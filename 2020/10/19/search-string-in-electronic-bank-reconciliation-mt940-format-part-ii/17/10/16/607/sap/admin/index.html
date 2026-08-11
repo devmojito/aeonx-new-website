@@ -1916,6 +1916,13 @@ document.addEventListener("DOMContentLoaded",function(){
              0 0.1042vw 0.3125vw rgba(35,39,46,.10)}
 /* bare text link: no box to wash, so the label itself goes brand */
 .ax-hv-txt.ax-hv-selfon{color:rgb(223,63,23)!important}
+/* A card's own CTA label goes brand with the WHOLE card, which is what Figma
+   shows on the service cards: hovering anywhere lights the border, the step
+   badge and the "Learn more" row together. Only the label marked ax-hv-cta
+   does this -- card titles are linkified too and must stay dark. */
+.ax-hv-cta.ax-hv-on{color:rgb(223,63,23)!important}
+.ax-hv-cta.ax-hv-on .ax-hv-arrow,.ax-hv-arrow.ax-hv-cta-mate.ax-hv-on{
+  transform:translateX(var(--ax-ar,0.1823vw)) var(--ax-bt,translateZ(0))}
 /* A trailing chevron/arrow leans the way the button leads. Figma places it either as
    a flat SIBLING of the pill or as a CHILD of a g-clip pill, and the two need
    different rules: a sibling is a group member and carries the 2px lift itself, a
@@ -2203,13 +2210,20 @@ document.addEventListener("DOMContentLoaded",function(){
   }
 
   function arm(g){
+    /* The SMALLEST group that owns an element wins the pointer. Members are armed in
+       build order and MAP.set used to overwrite blindly, so a later, larger band group
+       stole the card's own text: hovering the body copy on a service card lit that
+       band instead of the card, which is why the card border and step badge stayed
+       dead unless the pointer was exactly on "Learn more". */
+    var area = function(x){ return x && x.skin ? (x.skin.w||0) * (x.skin.h||0) : Infinity; };
     g.members.forEach(function(e){
       e.el.classList.add('ax-hv-m', g.kind === 'tile' ? 'ax-hv-tile' : 'ax-hv-btn');
       if (g.flat) e.el.classList.add('ax-hv-flat');   /* whole card stays put, not just its skin */
       if (g.clk) e.el.classList.add('ax-hv-clk');
       var tf = e.el.style.transform;
       if (tf) e.el.style.setProperty('--ax-bt', tf);
-      MAP.set(e.el, g);
+      var prev = MAP.get(e.el);
+      if (!prev || area(g) <= area(prev)) MAP.set(e.el, g);
     });
     /* skinClass can carry a modifier ("ax-hv-fill ax-hv-fill--pale"), and
        classList.add() throws on a string containing a space -- split it. */
@@ -2303,6 +2317,22 @@ document.addEventListener("DOMContentLoaded",function(){
         node = node.parentElement;
       }
       if (flat) skin.el.classList.add('ax-hv-flat');
+      /* The card's CTA row -- "Learn more" and the chevron beside it -- takes the
+         brand colour with the card, per Figma's hover state. Marked here rather than
+         in buildButtons because the label only behaves this way INSIDE a card. */
+      var cta = mem.filter(function(m){
+        return /g-t/.test(m.el.className || '') &&
+               /^(learn more|read more|explore|view all|see more)\b/i
+                 .test((m.el.textContent || '').trim()); })[0];
+      if (cta) {
+        cta.el.classList.add('ax-hv-cta');
+        mem.forEach(function(m){
+          if (m === cta || !/g-vec/.test(m.el.className || '')) return;
+          if (m.w <= cta.h * 2 && Math.abs(m.t - cta.t) < cta.h * 1.5 &&
+              m.l >= cta.l + cta.w - 2 && m.l < cta.l + cta.w + cta.h * 3)
+            m.el.classList.add('ax-hv-arrow', 'ax-hv-cta-mate');
+        });
+      }
       GROUPS.push({ kind:'tile', skin:skin, skinClass:'ax-hv-tileskin',
                     members:mem, on:false, flat:flat });
     });
@@ -2347,6 +2377,18 @@ document.addEventListener("DOMContentLoaded",function(){
          reads as colour bleeding out of the button. */
       var boxy = (/(^|;)\s*border:/.test(st) || /background-color:/.test(st)) && rad > 0;
       var cls = filled ? 'ax-hv-fill' : (boxy ? 'ax-hv-out' : 'ax-hv-txt');
+      /* A bare-text group with heading type is a card TITLE that the chrome's
+         linkifier happened to mark as a link, not a text CTA. Colouring it on hover
+         made the service cards light their headline while Figma keeps it dark and
+         lights the "Learn more" row instead. Cut at 20px: every text CTA on the
+         site labels at 14px or less, every card title at 24px or more. */
+      if (cls === 'ax-hv-txt' && parseFloat(getComputedStyle(s.el).fontSize) > 20) return;
+      /* ...and a PARAGRAPH is not a text link either. The chrome's linkifier marks
+         some card body copy, and colouring it on hover is the inconsistency reported
+         against the service cards: one card lit its whole description brand-orange
+         while its neighbours lit only "Learn more". Same 40-character cut the CTA
+         wash uses to tell a label from a sentence. */
+      if (cls === 'ax-hv-txt' && (s.el.textContent || '').trim().length > 40) return;
       /* pale fill = a tint, not a brand-solid button (see the CSS note above) */
       var pale = false;
       if (filled) {
@@ -2447,8 +2489,33 @@ document.addEventListener("DOMContentLoaded",function(){
 
   function listen(){
     if (matchMedia('(hover:hover) and (pointer:fine)').matches) {
+    /* The page is a flat sheet of absolutely positioned boxes: a card's copy is a
+       SIBLING of the card plate, not a child, so walking up from the pointer target
+       only finds a group when that exact element was armed. Some cards' text lands
+       in a wrapper that never became a member, and hovering their headline or body
+       did nothing while the same gesture on the next card lit it -- the
+       inconsistency reported against the service cards. Fall back to the smallest
+       TILE whose plate actually contains the pointer, which is what "hover the card"
+       means to a visitor. */
+    function tileAt(x, y){
+      var best = null;
+      for (var i = 0; i < GROUPS.length; i++){
+        var g = GROUPS[i];
+        if (g.kind !== 'tile' || !g.skin || !g.skin.el) continue;
+        var r = g.skin.el.getBoundingClientRect();
+        if (!r.width || x < r.left || x > r.right || y < r.top || y > r.bottom) continue;
+        if (!best || r.width * r.height < best.a) best = { g: g, a: r.width * r.height };
+      }
+      return best && best.g;
+    }
+
       document.addEventListener('mouseover', function(e){
         var g = groupFor(e.target);
+        /* The smallest CARD under the pointer wins unless the pointer is on a button:
+           card copy is armed by whichever group claimed it first, which on some cards
+           is an outer band, so hovering the headline lit nothing. */
+        var t = (e.clientX || e.clientY) ? tileAt(e.clientX, e.clientY) : null;
+        if (t && (!g || (g.kind === 'tile' && t !== g))) g = t;
         if (g === current) return;
         setOn(current, false); current = g; setOn(g, true);
       });
