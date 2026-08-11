@@ -4066,6 +4066,22 @@ img.g-vec[src*="6138-26173"]{animation:ax-gear-ccw 104s linear infinite}
     var descOffL=desc.l-open.plate.l, descOffT=desc.t-open.plate.t, descW=desc.w;
     desc.el.classList.add('ax-cardex-d');
 
+    /* Figma fills the EXPANDED card peach and leaves the collapsed ones white. The
+       fill was baked onto whichever card the design drew open, so it stayed on card
+       one while the width and the description moved to whatever you hovered -- a wide
+       white card next to a narrow peach one. Both colours are read off the design
+       here and applied explicitly on every layout; never cleared to '', which
+       resolves to transparent rather than back to the design's white. */
+    var OPEN_BG=getComputedStyle(open.plate.el).backgroundColor;
+    var REST_BG=(function(){
+      for(var i=0;i<cards.length;i++){
+        if(cards[i]===open) continue;
+        var bg=getComputedStyle(cards[i].plate.el).backgroundColor;
+        if(bg&&bg!==OPEN_BG) return bg;
+      }
+      return 'rgb(255,255,255)';
+    })();
+
     cards.forEach(function(c){
       c.plate.el.classList.add('ax-cardex');
       c.parts.forEach(function(o){ o.el.classList.add('ax-cardex-m'); });
@@ -4078,6 +4094,7 @@ img.g-vec[src*="6138-26173"]{animation:ax-gear-ccw 104s linear infinite}
         var w=(c===active?WIDE:NARROW);
         var dx=x-c.plate.l;
         c.plate.el.style.width=w+'vw';
+        c.plate.el.style.backgroundColor=(c===active?OPEN_BG:REST_BG);
         c.plate.el.style.transform=dx?('translateX('+dx.toFixed(4)+'vw)'):'';
         c.parts.forEach(function(o){
           if(o.el===desc.el) return;
