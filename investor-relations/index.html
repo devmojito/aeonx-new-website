@@ -2020,8 +2020,14 @@ document.addEventListener("DOMContentLoaded",function(){
    badge and the "Learn more" row together. Only the label marked ax-hv-cta
    does this -- card titles are linkified too and must stay dark. */
 .ax-hv-cta.ax-hv-on{color:rgb(223,63,23)!important}
-.ax-hv-cta.ax-hv-on .ax-hv-arrow,.ax-hv-arrow.ax-hv-cta-mate.ax-hv-on{
-  transform:translateX(var(--ax-ar,0.1823vw)) var(--ax-bt,translateZ(0))}
+/* The card chevron gets its OWN class, never .ax-hv-arrow: _uifx's spaceArrows()
+   walks every .ax-hv-arrow and re-centres it with its label inside the surrounding
+   box. On a card that box is the whole card, so tagging these chevrons pulled the
+   "Learn more" row into the middle of the card and left the step badge stranded. */
+.ax-hv-cta-mate{--ax-ar:0.1823vw;
+  transition:transform .26s cubic-bezier(.22,.61,.36,1)}
+.ax-hv-cta-mate.ax-hv-on{
+  transform:translateX(var(--ax-ar)) var(--ax-bt,translateZ(0))}
 /* A trailing chevron/arrow leans the way the button leads. Figma places it either as
    a flat SIBLING of the pill or as a CHILD of a g-clip pill, and the two need
    different rules: a sibling is a group member and carries the 2px lift itself, a
@@ -2429,7 +2435,7 @@ document.addEventListener("DOMContentLoaded",function(){
           if (m === cta || !/g-vec/.test(m.el.className || '')) return;
           if (m.w <= cta.h * 2 && Math.abs(m.t - cta.t) < cta.h * 1.5 &&
               m.l >= cta.l + cta.w - 2 && m.l < cta.l + cta.w + cta.h * 3)
-            m.el.classList.add('ax-hv-arrow', 'ax-hv-cta-mate');
+            m.el.classList.add('ax-hv-cta-mate');
         });
       }
       GROUPS.push({ kind:'tile', skin:skin, skinClass:'ax-hv-tileskin',
