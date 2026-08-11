@@ -1263,6 +1263,25 @@ document.addEventListener('DOMContentLoaded',function(){
   function fit(){
     var pills=[].slice.call(document.querySelectorAll('.g-b[data-cta]'));
     var rows={};
+    /* The panel a pill sits in. Everything here is absolutely positioned on a flat
+       sheet, so the pill's PARENT is the page, not the panel it visually belongs to
+       -- the containing box has to be found geometrically. Without it the growth
+       below had nothing to stop it: "Talk To A Specialist" grew past the right edge
+       of its section panel on /services/ and hung over the boundary. */
+    var boxes=[].slice.call(document.querySelectorAll('.g-b')).map(function(e){
+      return {el:e, r:e.getBoundingClientRect()};
+    }).filter(function(o){ return o.r.width && o.r.width<=innerWidth*1.02; });
+    function panelOf(pr){
+      var best=null;
+      boxes.forEach(function(o){
+        var r=o.r;
+        if(r.width < pr.width*1.4) return;
+        if(r.left>pr.left+1 || r.right<pr.right-1) return;
+        if(r.top>pr.top+1 || r.bottom<pr.bottom-1) return;
+        if(!best || r.width<best.width) best=r;
+      });
+      return best;
+    }
     pills.forEach(function(p){
       var lab=p.querySelector('.g-t'); if(!lab)return;
       var pr=p.getBoundingClientRect(); if(!pr.width)return;
@@ -1274,6 +1293,28 @@ document.addEventListener('DOMContentLoaded',function(){
       var MINPAD=28*(document.documentElement.clientWidth||1920)/1920;
       var pad=Math.max(MINPAD,(pr.width-ink)/2);      // symmetric, Figma's 28px floor
       var need=Math.ceil(ink+pad*2);
+      /* Never grow past the panel: shift the pill left if there is room on that
+         side, then clamp what is left. A button that overhangs its own section
+         reads as a layout bug, and Figma never draws one. */
+      var panel=panelOf(pr);
+      if(panel){
+        var over=(pr.left+need)-panel.right;
+        if(over>0.5){
+          var room=Math.max(0,pr.left-panel.left);
+          var move=Math.min(over,room);
+          if(move>0.5){
+            var cl=parseFloat(getComputedStyle(p).left)||0;
+            p.style.left=(cl-move)+'px';
+            var lsib=p.previousElementSibling;
+            if(lsib&&lsib.classList&&lsib.classList.contains('g-t')&&lsib.dataset.cta){
+              var ll=parseFloat(getComputedStyle(lsib).left)||0;
+              lsib.style.left=(ll-move)+'px';
+            }
+            pr=p.getBoundingClientRect();
+          }
+          need=Math.min(need,Math.floor(panel.right-pr.left));
+        }
+      }
       var delta=need-pr.width;
       if(delta>0.5){
         /* Figma draws these buttons as TWO stacked boxes -- a filled rect with the
@@ -1299,6 +1340,10 @@ document.addEventListener('DOMContentLoaded',function(){
       var key=Math.round((pr.top+scrollY)/6);
       var shift=0;
       (rows[key]||[]).forEach(function(g){ if(g.left<pr.left-1) shift+=g.delta; });
+      /* ...and a pill shifted along by its neighbour's growth must not be pushed
+         out of the panel either. */
+      var pan=panelOf(pr);
+      if(pan) shift=Math.min(shift,Math.max(0,pan.right-pr.right));
       if(shift>0){
         var cur=parseFloat(getComputedStyle(p).left)||0;
         p.style.left=(cur+shift)+'px';
