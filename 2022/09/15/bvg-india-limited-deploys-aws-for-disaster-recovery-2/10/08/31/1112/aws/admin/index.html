@@ -1980,6 +1980,7 @@ document.addEventListener("DOMContentLoaded",function(){
 .ax-hv-selfon .ax-hv-arrow{                    /* child: slide only */
   transform:translateX(var(--ax-ar)) var(--ax-bt,translateZ(0))}
 /* Grey step badges (01 / 02 / 03) take the brand colour with their tile. */
+.ax-hv-num.ax-hv-on{color:rgb(223,63,23)!important}
 .ax-hv-badge.ax-hv-on{background-color:rgb(223,63,23)!important}
 .ax-hv-badgetx.ax-hv-on{color:rgb(255,255,255)!important}
 
@@ -2332,6 +2333,19 @@ document.addEventListener("DOMContentLoaded",function(){
       var stack = seen[k];
       var skin = stack[stack.length - 1];          /* topmost paints the ring */
       var mem = membersOf(skin, boxes.concat(texts, OTHER), null);
+      /* Step numbers drawn INSIDE their own chip. membersOf() keeps only the
+         outermost elements, so such a digit is dropped (the chip contains it) and
+         never gets `ax-hv-on` -- on the culture page's "Four pillars" the card lit
+         while its 01..04 stayed grey. Pull those digits back in and mark them so
+         they light with the card. The reasons grid paints its own numbers white on
+         a filled circle, so leave those alone. */
+      texts.forEach(function(t){
+        if (!t.w || !inside(skin, t) || mem.indexOf(t) >= 0) return;
+        if (!/^\d{1,3}$/.test((t.el.textContent || '').trim())) return;
+        if (t.el.classList.contains('ax-rsn-n')) return;
+        t.el.classList.add('ax-hv-num');
+        mem.push(t);
+      });
       /* a step badge: a small grey chip holding a 1-3 char number, e.g. 01 / 02 / 03 */
       mem.forEach(function(m){
         var ms = styled(m.el);
