@@ -132,6 +132,25 @@ def main():
         ok, bad = png_fallback(null_svg, load_bbox_dims(null_svg))
         done += len(ok)
         errs += bad
+    # Figma blends a layer against the page behind it; an <img> cannot, so any
+    # mix-blend-mode group inside a fresh export has to be resolved against this
+    # site's white background or it renders its raw colour (the /services/ hero
+    # hand shipped dark red instead of salmon that way).
+    try:
+        import _vecblend
+        for nid in ids:
+            f = os.path.join('assets', 'vec', nid.replace(':', '-') + '.svg')
+            if not os.path.exists(f):
+                continue
+            txt = open(f, encoding='utf-8', errors='replace').read()
+            if 'mix-blend-mode' not in txt:
+                continue
+            out, acts = _vecblend.clean(txt)
+            if out != txt:
+                open(f, 'w', encoding='utf-8').write(out)
+                print('blend-resolved %s: %s' % (nid, ', '.join(a[0]+' '+a[1] for a in acts)))
+    except Exception as e:
+        print('blend pass skipped:', e)
     print(f'\nsaved {done}, errors {len(errs)}')
     if errs:
         print('ERRORS:', errs[:20])
