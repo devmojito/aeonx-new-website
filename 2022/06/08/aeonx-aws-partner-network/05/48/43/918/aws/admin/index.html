@@ -1365,6 +1365,9 @@ document.addEventListener("DOMContentLoaded",function(){
 
 
 <style id="ax-mobfx-css">
+/* sticky mobile header: the bar is one exported SVG, so it is translated rather
+   than re-parented -- nothing else in the flat sheet moves */
+.ax-mstick{will-change:transform;z-index:900}
 /* Mobile-only enhancements. The .ax-mob layout is a flat stack of absolutely
    positioned Figma nodes, so carousels are just cards sitting side by side off the
    screen edge with no scroller and no working controls -- the dots and arrows are
@@ -1397,6 +1400,8 @@ document.addEventListener("DOMContentLoaded",function(){
     if (!page) return;
     var W = page.clientWidth || innerWidth;
     if (W > 768) return;                 /* .ax-mob is only shown on phones */
+    setTimeout(function(){ stickyHeader(mob); }, 350);
+    addEventListener('load', function(){ setTimeout(function(){ stickyHeader(mob); }, 400); });
     /* Deep, not just direct children: the section strips live inside wrappers. */
     var kids = [].slice.call(page.querySelectorAll('.g-b,.g-t,.g-img,.g-vec'));
     var box = kids.map(function(e){
@@ -1518,6 +1523,24 @@ document.addEventListener("DOMContentLoaded",function(){
              b.W <= W * 1.25;
     }).map(function(b){ return b.el; });
     members.unshift(first.el);
+
+    /* A slide drawn as a wrapper with its own children -- the timeline's last card
+       is a clip box holding an image, a tag and its copy -- is not a sibling of the
+       others, so the parent test above skips it and it stayed put while the row
+       slid, bleeding into the window over the slide that should be there. Pull in
+       anything standing in a column band, then keep only the outermost elements so
+       a wrapper and its children never both get translated (that moved such a card
+       twice as far as the rest). */
+    var band = box.filter(function(b){
+      if (b.T < mTop || b.T > mBot) return false;
+      var k = Math.round((b.L - cols[0]) / stride);
+      return k >= 0 && k < count && Math.abs((b.L - cols[0]) - k * stride) < stride * 0.9;
+    }).map(function(b){ return b.el; });
+    members = members.concat(band).filter(function(e, i, a){ return a.indexOf(e) === i; });
+    members = members.filter(function(e){
+      return !members.some(function(p){ return p !== e && p.contains(e); });
+    });
+
     if (members.length < 2) return;
     members.forEach(function(e){ e.classList.add('ax-carm'); });
 
@@ -1748,6 +1771,37 @@ document.addEventListener("DOMContentLoaded",function(){
      measured the label with a Range, which reports the inline box rather than the
      glyphs, read a ~2.9px error that was not there, and pushed every label down.
      Trust the design's own geometry. */
+
+  /* ---- STICKY HEADER ----
+     The mobile bar is a single exported SVG sitting in the flat sheet, so it
+     scrolls away with everything else. Translating it on scroll keeps it at the
+     top without re-parenting anything (a move would need every sibling's absolute
+     top rewritten) and keeps its own hit area, since a transform moves that too. */
+  function stickyHeader(mob){
+    var bar = null, best = 1e9;
+    [].slice.call(mob.querySelectorAll('.g-vec,.g-img,.g-b')).forEach(function(e){
+      var b = e.getBoundingClientRect();
+      if (!b.width) return;
+      var top = b.top + scrollY, S = 430 / (innerWidth || 430);
+      /* y0 is the promo strip, which is meant to scroll away; the nav sits under it */
+      if (top * S < 20 || top * S > 130) return;
+      if (b.width * S < 380 || b.height * S > 70 || b.height * S < 30) return;
+      if (top * S < best) { best = top * S; bar = e; }
+    });
+    if (!bar || bar.dataset.axStick) return;
+    bar.dataset.axStick = '1';
+    bar.classList.add('ax-mstick');
+    var top0 = bar.getBoundingClientRect().top + scrollY;
+    var base = bar.style.transform || '';
+    function pin(){
+      var d = Math.max(0, scrollY - top0);
+      bar.style.transform = d ? (base + ' translateY(' + d + 'px)') : base;
+    }
+    addEventListener('scroll', pin, {passive:true});
+    addEventListener('resize', function(){ top0 = bar.getBoundingClientRect().top + scrollY - Math.max(0, scrollY - top0); pin(); });
+    pin();
+  }
+
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
   else start();
