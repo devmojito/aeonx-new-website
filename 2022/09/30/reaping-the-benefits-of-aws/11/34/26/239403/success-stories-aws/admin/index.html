@@ -1530,11 +1530,6 @@ document.addEventListener("DOMContentLoaded",function(){
     if (!page) return;
     var W = page.clientWidth || innerWidth;
     if (W > 768) return;                 /* .ax-mob is only shown on phones */
-    /* after webfonts land, and again on rotate: the nudge is measured from rendered
-       glyphs, so it must not run against fallback metrics */
-    setTimeout(function(){ centreLabelsVertically(mob); }, 400);
-    addEventListener('load', function(){ setTimeout(function(){ centreLabelsVertically(mob); }, 300); });
-    addEventListener('resize', function(){ setTimeout(function(){ centreLabelsVertically(mob); }, 250); });
     /* Deep, not just direct children: the section strips live inside wrappers. */
     var kids = [].slice.call(page.querySelectorAll('.g-b,.g-t,.g-img,.g-vec'));
     var box = kids.map(function(e){
@@ -1880,46 +1875,12 @@ document.addEventListener("DOMContentLoaded",function(){
     window.axMosaic(c, 6, 4, [['#C4001D',5],['#E51300',4],['#FF8204',2]], 31);
   }
 
-  /* ---- LABEL SITTING HIGH IN ITS PILL ----
-     Figma sizes a button's label box to its own text metrics and pins it at a fixed
-     y; the browser sets the same type a little differently, so the glyphs land above
-     the pill's centre by a varying amount -- measured 1.8px on the Explore <product>
-     pills and 2.9px on Explore SAP Services, which reads as the text jumping around
-     from button to button. Measure the label's INK with a Range (the element box is
-     taller than the glyphs and hides the error) and nudge only the label. The pill
-     is untouched, so nothing reflows.
-
-     Desktop has its own pass in _uifx.html, which deliberately skips .ax-mob and
-     only corrects the horizontal gap; this is the vertical half, for phones. */
-  function centreLabelsVertically(mob){
-    var V = (document.documentElement.clientWidth || 430) / 100;   /* px per vw */
-    [].slice.call(mob.querySelectorAll('.g-t')).forEach(function(l){
-      if (l.children.length || l.dataset.axVc) return;
-      var t = (l.textContent || '').trim();
-      if (!t || t.length > 34) return;
-      var pill = l.parentElement;
-      if (!pill) return;
-      var ps = pill.getAttribute('style') || '';
-      if (!/border-radius/.test(ps) || !/background-color|border:/.test(ps)) return;
-      /* A button wraps exactly one label. Anything holding several is a track, not a
-         pill -- the product filmstrip's tab row is a rounded box with six labels in
-         it, and _prodstrip.html owns their positions. */
-      if (pill.querySelectorAll('.g-t').length > 1) return;
-      var pr = pill.getBoundingClientRect();
-      if (!pr.height || pr.height > 90) return;
-      var rng = document.createRange();
-      rng.selectNodeContents(l);
-      var ir = rng.getBoundingClientRect();
-      if (!ir.height) return;
-      var d = (ir.top + ir.height / 2) - (pr.top + pr.height / 2);
-      if (Math.abs(d) < 0.5) return;
-      var m = /top:\s*(-?[\d.]+)vw/.exec(l.getAttribute('style') || '');
-      if (!m) return;
-      l.setAttribute('style', (l.getAttribute('style') || '')
-        .replace(/top:\s*-?[\d.]+vw/, 'top:' + (parseFloat(m[1]) - d / V).toFixed(4) + 'vw'));
-      l.dataset.axVc = '1';
-    });
-  }
+  /* No vertical re-centring pass here. One was tried and reverted: Figma already
+     centres these labels (the industries card's Explore sits at top:8 in a 36px
+     pill, 8 above and 8 below) and the generator emits that number. The pass
+     measured the label with a Range, which reports the inline box rather than the
+     glyphs, read a ~2.9px error that was not there, and pushed every label down.
+     Trust the design's own geometry. */
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
   else start();
