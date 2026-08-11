@@ -4847,6 +4847,24 @@ document.addEventListener("DOMContentLoaded",function(){
     wrap.appendChild(track);
     band.appendChild(wrap);
 
+    /* The band Figma exports is 100vw wide but ANCHORED at the section's content
+       column (x=360 of 1920), so it reaches 2280 and the strip ran off the right
+       edge of the screen with no matching margin on the left. The column is the real
+       window -- the heading and the testimonial card both sit in it -- so the strip
+       is clamped to the first ancestor that is not wider than the viewport. */
+    function fitWindow(){
+      var col=band.parentElement;
+      while(col&&col!==document.body&&col.getBoundingClientRect().width>innerWidth*1.02)
+        col=col.parentElement;
+      if(!col||col===document.body) return;
+      var cb=col.getBoundingClientRect(), bb=band.getBoundingClientRect();
+      if(!cb.width||bb.width<=cb.width+1) return;
+      wrap.style.left=((cb.left-bb.left)/innerWidth*100)+'vw';
+      wrap.style.width=(cb.width/innerWidth*100)+'vw';
+    }
+    fitWindow();
+    addEventListener('resize',fitWindow);
+
     var x=0, cycle=0, last=0, raf=0, drag=null, vis=true;
     var SPEED=0.035;                       /* px per ms, ~35px/s */
     function measure(){ cycle=track.scrollWidth/2 || track.getBoundingClientRect().width/2; }
