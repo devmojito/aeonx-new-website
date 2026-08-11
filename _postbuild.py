@@ -58,6 +58,8 @@ SCOPED = [
     ('who-we-are/career/index.html',     'ax-career-css',  '_career.html'),
     ('industries/manufacturing/index.html', 'ax-cardex-css', '_cardexpand.html'),
     ('services/rise-with-sap/index.html', 'ax-reasons-css', '_reasons.html'),
+    ('products/index.html',              'ax-reasons-css', '_reasons.html'),
+    ('services/google-cloud/index.html', 'ax-flowfx-css',  '_flowfx.html'),
     ('investor-relations/index.html',                     'ax-invdocs-css', '_invdocs.html'),
     ('investor-relations/shareholding-pattern/index.html','ax-invdocs-css', '_invdocs.html'),
 ]

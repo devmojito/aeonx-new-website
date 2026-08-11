@@ -3951,8 +3951,10 @@ document.addEventListener("DOMContentLoaded",function(){
       var circle = null;
       boxes.forEach(function(c){
         if (!/g-b/.test(c.el.className || '') || c.w > 200) return;
-        if (Math.abs(c.w - c.h) > 4) return;                    /* square-ish */
-        if (parseFloat(getComputedStyle(c.el).borderRadius) < c.w * 0.4) return;
+        if (c.w > c.h * 2 || c.h > c.w * 2) return;              /* a badge, not a bar */
+        /* circle (Six reasons, radius = half the width) or rounded rect (Why buy the
+           suite, 8px on 44px). Anything with square corners is not a step badge. */
+        if (parseFloat(getComputedStyle(c.el).borderRadius) < c.w * 0.12) return;
         if (c.l > n.l + 4 || c.r < n.r - 4 || c.t > n.t + 4 || c.b < n.b - 4) return;
         if (!circle || c.w < circle.w) circle = c;
       });
@@ -3972,15 +3974,25 @@ document.addEventListener("DOMContentLoaded",function(){
     if (!px) px = cells[0].circle.w * 4;
     if (!py) py = cells[0].circle.h * 4;
 
+    var single = cells.every(function(c){ return Math.abs(c.circle.t - cells[0].circle.t) < 8; });
     cells.forEach(function(c){
-      /* the cell: this column, from the circle down to just short of the next row */
-      c.box = {l:c.cx - px / 2, r:c.cx + px / 2, t:c.circle.t - 16, b:c.circle.t + py - 40};
+      /* the cell: this column, from the badge down to just short of the next row.
+         With a single row there is no next row to stop at, so the band runs to the
+         deepest text in the column -- "Why buy the suite" is four cells across, one
+         row, and a fixed guess either clipped the copy or spilled into the section
+         below it. */
+      var bot = single ? c.circle.b + c.circle.h * 8 : c.circle.t + py - 40;
+      c.box = {l:c.cx - px / 2, r:c.cx + px / 2, t:c.circle.t - 16, b:bot};
       c.parts = boxes.filter(function(o){
         if (o.el === c.circle.el || o.el === c.num.el) return false;
         if (!/g-t/.test(o.el.className || '')) return false;
         var mid = o.l + o.w / 2;
         return mid > c.box.l && mid < c.box.r && o.t > c.box.t && o.t < c.box.b;
       });
+      if (single && c.parts.length){
+        var deepest = c.parts.reduce(function(a, o){ return o.b > a ? o.b : a; }, c.circle.b);
+        c.box.b = deepest + 12;
+      }
       /* the heading is the heaviest, largest line under the circle */
       c.head = c.parts.slice().sort(function(a, b){
         return (parseFloat(getComputedStyle(b.el).fontSize) || 0) -

@@ -3932,5 +3932,131 @@ main.ax-page img.g-vec[src$="5069-5380.svg"]{
 })();
 </script>
 
+<style id="ax-flowfx-css">
+/* ---- DATABRIDGE FLOW DIAGRAM ----
+   The diagram is six node cards (SAP ECC, Extractors, Model Templates,
+   Reconciliation, BigQuery, Looker) plus the four day cards under it, and it was
+   entirely static. Each node already carries its own accent as its border colour,
+   so the hover uses THAT rather than a hard-coded palette: the card's outline goes
+   solid and it picks up a soft glow in its own hue, so hovering "Reconciliation"
+   reads purple and "BigQuery" teal without this file knowing either colour.
+
+   Border and shadow only -- no transform. These cards sit on the same absolute
+   sheet as the connector artwork behind them, and moving one would break the lines
+   that run into it. */
+.ax-flow-c{transition:box-shadow .24s ease,border-color .24s ease}
+/* the hover glow is ADDED to whatever shadow the design already gives the card,
+   never substituted for it -- these cards ship with their own soft drop shadow */
+.ax-flow-t{transition:color .24s ease}
+@media (prefers-reduced-motion:reduce){.ax-flow-c,.ax-flow-t{transition:none}}
+</style>
+<script>
+(function(){
+  function alpha(c, a){
+    var m = /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/.exec(c || '');
+    return m ? 'rgba(' + m[1] + ',' + m[2] + ',' + m[3] + ',' + a + ')' : null;
+  }
+  function solid(c){
+    var m = /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/.exec(c || '');
+    return m ? 'rgb(' + m[1] + ',' + m[2] + ',' + m[3] + ')' : null;
+  }
+
+  function build(main){
+    var label = [].slice.call(main.querySelectorAll('.g-t')).filter(function(e){
+      return /^DataBridge Flow$/i.test((e.textContent || '').trim()); })[0];
+    if (!label) return false;
+    var lb = label.getBoundingClientRect();
+    var top = lb.top + scrollY - 60, bot = top + 1000;
+
+    var cards = [].slice.call(main.querySelectorAll('.g-b')).map(function(e){
+      var r = e.getBoundingClientRect();
+      return {el:e, l:r.left, t:r.top + scrollY, w:r.width, h:r.height,
+              r:r.left + r.width, b:r.top + scrollY + r.height};
+    }).filter(function(o){
+      if (!o.w || o.t < top || o.b > bot) return false;
+      if (o.w < 80 || o.w > 420 || o.h < 40 || o.h > 220) return false;
+      var cs = getComputedStyle(o.el);
+      if (parseFloat(cs.borderRadius) < 8) return false;
+      if (cs.borderTopWidth === '0px') return false;
+      return !!solid(cs.borderTopColor);
+    });
+    if (cards.length < 3) return false;
+
+    /* a card swallowed by a bigger card is the same control drawn twice */
+    cards = cards.filter(function(o){
+      return !cards.some(function(p){
+        return p !== o && p.l <= o.l && p.r >= o.r && p.t <= o.t && p.b >= o.b && p.w > o.w;
+      });
+    });
+
+    cards.forEach(function(c){
+      var cs = getComputedStyle(c.el);
+      c.base = cs.borderTopColor;
+      c.glow = alpha(c.base, 0.34) || 'rgba(35,39,46,.18)';
+      c.shadow0 = cs.boxShadow === 'none' ? '' : cs.boxShadow;
+      /* Remember the resting border and write it back on leave. Clearing an inline
+         borderColor does NOT fall back to the `border:` shorthand these cards carry
+         -- it resolves to currentColor, i.e. black. Same trap as resetting a colour
+         with '' elsewhere in this codebase. */
+      c.border0 = c.base;
+      c.hot = solid(c.base);
+      c.el.classList.add('ax-flow-c');
+      /* the caption sitting directly above the card travels with it */
+      c.cap = [].slice.call(main.querySelectorAll('.g-t')).map(function(e){
+        var r = e.getBoundingClientRect();
+        return {el:e, l:r.left, t:r.top + scrollY, w:r.width, b:r.top + scrollY + r.height};
+      }).filter(function(t){
+        return t.w && t.b <= c.t + 4 && t.b > c.t - 46 &&
+               t.l >= c.l - 30 && t.l <= c.r;
+      })[0] || null;
+      if (c.cap) c.cap.el.classList.add('ax-flow-t');
+    });
+
+    var cur = null;
+    function paint(c){
+      if (c === cur) return;
+      if (cur){
+        cur.el.classList.remove('is-on');
+        cur.el.style.boxShadow = '';
+        cur.el.style.borderColor = cur.border0;
+      }
+      cur = c;
+      if (cur){
+        cur.el.classList.add('is-on');
+        cur.el.style.boxShadow = (cur.shadow0 ? cur.shadow0 + ', ' : '') +
+                                 '0 6px 18px ' + cur.glow;
+        if (cur.hot) cur.el.style.borderColor = cur.hot;   /* faint outlines go solid */
+      }
+    }
+    var last = 0;
+    addEventListener('mousemove', function(e){
+      var now = e.timeStamp || 0;
+      if (now && now - last < 16) return;
+      last = now;
+      if (innerWidth <= 1024) { paint(null); return; }
+      var x = e.clientX, y = e.clientY + scrollY, hit = null;
+      for (var i = 0; i < cards.length; i++){
+        var c = cards[i];
+        if (x >= c.l && x <= c.r && y >= c.t && y <= c.b) { hit = c; break; }
+      }
+      paint(hit);
+    }, {passive:true});
+    addEventListener('scroll', function(){ if (cur) paint(null); }, {passive:true});
+    return true;
+  }
+
+  function init(){
+    var main = document.querySelector('main.ax-page');
+    if (!main || main.dataset.axFlowfx) return;
+    if (innerWidth && innerWidth <= 1024) return;
+    if (build(main)) main.dataset.axFlowfx = '1';
+  }
+  if (document.readyState === 'loading')
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(init, 300); });
+  else setTimeout(init, 300);
+  addEventListener('load', function(){ setTimeout(init, 750); });
+})();
+</script>
+
 </body>
 </html>
