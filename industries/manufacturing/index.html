@@ -4064,6 +4064,25 @@ img.g-vec[src*="6138-26173"]{animation:ax-gear-ccw 104s linear infinite}
     var descOffL=desc.l-open.plate.l, descOffT=desc.t-open.plate.t, descW=desc.w;
     desc.el.classList.add('ax-cardex-d');
 
+    /* box() reports every element in the ROOT's frame, by summing the positioned
+       ancestors on the way up. Writing one of those numbers straight back into
+       style.left/top is not the inverse of that walk -- the browser resolves an
+       absolute offset against the nearest positioned ancestor, which here is the
+       row's clip wrapper. The description was therefore pushed out by the wrapper's
+       own offset (300px right, 2115px down) and rendered over an unrelated section
+       instead of inside the open card, which is why the wide card looked empty.
+       Subtract the wrapper chain so the write lands where box() says it should. */
+    var descPad=(function(){
+      var l=0,t=0,p=desc.el.parentElement;
+      while(p&&p!==root){
+        var pl=num(p,'left'), pt=num(p,'top');
+        if(pl!==null) l+=pl;
+        if(pt!==null) t+=pt;
+        p=p.parentElement;
+      }
+      return {l:l,t:t};
+    })();
+
     /* Figma fills the EXPANDED card peach and leaves the collapsed ones white. The
        fill was baked onto whichever card the design drew open, so it stayed on card
        one while the width and the description moved to whatever you hovered -- a wide
@@ -4100,8 +4119,8 @@ img.g-vec[src*="6138-26173"]{animation:ax-gear-ccw 104s linear infinite}
         });
         if(c===active){
           desc.el.textContent=DESC[c.key]||'';
-          desc.el.style.left=(c.plate.l+descOffL)+'vw';
-          desc.el.style.top=(c.plate.t+descOffT)+'vw';
+          desc.el.style.left=(c.plate.l+descOffL-descPad.l)+'vw';
+          desc.el.style.top=(c.plate.t+descOffT-descPad.t)+'vw';
           desc.el.style.width=descW+'vw';
           desc.el.style.transform=dx?('translateX('+dx.toFixed(4)+'vw)'):'';
           desc.el.style.opacity='1';
