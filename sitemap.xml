@@ -39,20 +39,27 @@
   <url><loc>https://aeonx.digital/2026/02/05/applying-the-aws-well-architected-framework-to-modernize-a-legacy-crm-and-employee-portal-platform/10/00/00/243212/aws/rajat-jindal/</loc></url>
   <url><loc>https://aeonx.digital/2026/02/12/building-an-ai-ready-data-foundation/10/00/00/243240/aws/rajat-jindal/</loc></url>
   <url><loc>https://aeonx.digital/2026/03/05/shadow-ai-is-the-biggest-data-risk-your-ciso-hasnt-budgeted-for-and-its-already-inside-your-organisation/10/00/00/243266/aws/rajat-jindal/</loc></url>
+  <url><loc>https://aeonx.digital/2026/03/05/shadow-ai-is-the-biggest-data-risk-your-ciso-hasnt-budgeted-for-and-its-already-inside-your-organisation/10/00/00/243266/uncategorized/rajat-jindal/</loc></url>
   <url><loc>https://aeonx.digital/2026/03/26/the-multi-model-strategy-why-locking-into-one-ai-provider-is-the-new-vendor-lock-in/10/00/00/243267/aws/rajat-jindal/</loc></url>
+  <url><loc>https://aeonx.digital/2026/03/26/the-multi-model-strategy-why-locking-into-one-ai-provider-is-the-new-vendor-lock-in/10/00/00/243267/uncategorized/rajat-jindal/</loc></url>
   <url><loc>https://aeonx.digital/2026/04/01/architecting-an-ai-driven-freight-optimization-platform-on-aws-using-amazon-bedrock-and-sagemaker/10/00/00/243180/aws/chandni-gadhvi/</loc></url>
   <url><loc>https://aeonx.digital/2026/04/09/your-data-lake-is-a-data-swamp-until-ai-can-query-it-building-semantic-data-lakes-on-aws/10/00/00/243268/aws/rajat-jindal/</loc></url>
   <url><loc>https://aeonx.digital/2026/04/15/building-an-ai-powered-visual-inspection-system-on-aws-with-yolov11-and-amazon-bedrock/10/00/00/243197/aws/chandni-gadhvi/</loc></url>
   <url><loc>https://aeonx.digital/2026/04/23/zero-etl-is-the-end-of-pipeline-engineering-how-aws-is-eliminating-the-data-lakes-biggest-bottleneck/10/00/00/243269/aws/rajat-jindal/</loc></url>
+  <url><loc>https://aeonx.digital/2026/04/23/zero-etl-is-the-end-of-pipeline-engineering-how-aws-is-eliminating-the-data-lakes-biggest-bottleneck/10/00/00/243269/uncategorized/rajat-jindal/</loc></url>
   <url><loc>https://aeonx.digital/2026/04/29/the-observability-gap-in-ml-systems-how-we-built-a-model-health-dashboard-that-catches-degradation-before-users-do/10/00/00/243286/aws/chandni-gadhvi/</loc></url>
   <url><loc>https://aeonx.digital/2026/05/07/data-governance-is-the-ai-gatekeeper-how-lake-formation-decides-what-your-ai-can-and-cannot-see/10/00/00/243270/aws/rajat-jindal/</loc></url>
+  <url><loc>https://aeonx.digital/2026/05/07/data-governance-is-the-ai-gatekeeper-how-lake-formation-decides-what-your-ai-can-and-cannot-see/10/00/00/243270/uncategorized/rajat-jindal/</loc></url>
   <url><loc>https://aeonx.digital/2026/05/13/multi-tenant-ai-how-we-built-a-single-amazon-bedrock-integration-that-serves-five-business-units-with-isolated-data-security-and-costs/10/00/00/243287/aws/chandni-gadhvi/</loc></url>
   <url><loc>https://aeonx.digital/2026/05/21/sap-on-aws-meets-generative-ai-why-your-erp-is-the-most-underused-ai-data-source-in-the-enterprise/10/00/00/243271/aws/rajat-jindal/</loc></url>
+  <url><loc>https://aeonx.digital/2026/05/21/sap-on-aws-meets-generative-ai-why-your-erp-is-the-most-underused-ai-data-source-in-the-enterprise/10/00/00/243271/uncategorized/rajat-jindal/</loc></url>
   <url><loc>https://aeonx.digital/2026/05/27/agentic-ai-in-finance-how-we-built-an-autonomous-accounts-payable-agent-on-amazon-bedrock-that-processes-invoices-end-to-end/10/00/00/243288/aws/chandni-gadhvi/</loc></url>
   <url><loc>https://aeonx.digital/2026/06/10/building-a-self-healing-data-pipeline-on-aws-how-we-used-amazon-bedrock-to-diagnose-and-auto-remediate-etl-failures/10/00/00/243289/aws/chandni-gadhvi/</loc></url>
   <url><loc>https://aeonx.digital/2026/06/11/how-an-enterprise-apparel-company-cut-expense-claim-processing-from-45-minutes-to-under-5-using-agentic-ai-on-aws-architecture-deployment-and-what-broke/10/00/00/243274/aws/rajat-jindal/</loc></url>
+  <url><loc>https://aeonx.digital/2026/06/11/how-an-enterprise-apparel-company-cut-expense-claim-processing-from-45-minutes-to-under-5-using-agentic-ai-on-aws-architecture-deployment-and-what-broke/10/00/00/243274/uncategorized/rajat-jindal/</loc></url>
   <url><loc>https://aeonx.digital/2026/06/24/cost-aware-ai-architecture-how-we-reduced-amazon-bedrock-spend-by-52-without-sacrificing-output-quality/10/00/00/243290/aws/chandni-gadhvi/</loc></url>
   <url><loc>https://aeonx.digital/2026/07/02/how-an-fmcg-manufacturer-reduced-logistics-costs-by-24-using-agentic-ai-on-aws-architecture-deployment-and-what-broke/10/00/00/243275/aws/rajat-jindal/</loc></url>
+  <url><loc>https://aeonx.digital/2026/07/02/how-an-fmcg-manufacturer-reduced-logistics-costs-by-24-using-agentic-ai-on-aws-architecture-deployment-and-what-broke/10/00/00/243275/uncategorized/rajat-jindal/</loc></url>
   <url><loc>https://aeonx.digital/2026/07/08/guardrails-for-production-genai-how-we-stopped-prompt-injection-and-pii-leakage-before-it-reached-amazon-bedrock/10/00/00/243291/aws/chandni-gadhvi/</loc></url>
   <url><loc>https://aeonx.digital/alliances/</loc></url>
   <url><loc>https://aeonx.digital/alliances/aws-advanced-tier/</loc></url>
@@ -74,7 +81,6 @@
   <url><loc>https://aeonx.digital/insights/newsletter/</loc></url>
   <url><loc>https://aeonx.digital/insights/trust-security/</loc></url>
   <url><loc>https://aeonx.digital/investor-relations/</loc></url>
-  <url><loc>https://aeonx.digital/investor-relations/board-of-directors/</loc></url>
   <url><loc>https://aeonx.digital/investor-relations/shareholding-pattern/</loc></url>
   <url><loc>https://aeonx.digital/privacy-policy/</loc></url>
   <url><loc>https://aeonx.digital/products/</loc></url>

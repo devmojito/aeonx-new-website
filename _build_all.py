@@ -48,7 +48,6 @@ PAGES = [
     ("5255:17303", "insights/trust-security", "Trust & Security — AeonX Digital"),
 
     ("4904:7402",  "investor-relations", "Investor Relations — AeonX Digital"),
-    ("4560:5289",  "investor-relations/board-of-directors", "Board of Directors — AeonX Digital"),
     ("4965:26645", "investor-relations/shareholding-pattern", "Shareholding Pattern — AeonX Digital"),
 ]
 
