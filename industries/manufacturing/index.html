@@ -4089,6 +4089,19 @@ img.g-vec[src*="6138-26173"]{animation:ax-gear-ccw 104s linear infinite}
        white card next to a narrow peach one. Both colours are read off the design
        here and applied explicitly on every layout; never cleared to '', which
        resolves to transparent rather than back to the design's white. */
+    /* Figma draws the OPEN card's title at the top of the card and the collapsed
+       ones centred, and every title keeps the y its own card was drawn at. Cards
+       only ever moved along x, so opening a card left its title stranded at the
+       collapsed height and closing the default card left ITS title floating near
+       the top -- visible in the row as one title out of line with the other three.
+       Both heights are read off the design and the title travels to whichever one
+       matches its card's current state. */
+    var titleOpenT=open.title.t;
+    var titleRestT=(function(){
+      for(var i=0;i<cards.length;i++) if(cards[i]!==open) return cards[i].title.t;
+      return titleOpenT;
+    })();
+
     var OPEN_BG=getComputedStyle(open.plate.el).backgroundColor;
     var REST_BG=(function(){
       for(var i=0;i<cards.length;i++){
@@ -4113,9 +4126,12 @@ img.g-vec[src*="6138-26173"]{animation:ax-gear-ccw 104s linear infinite}
         c.plate.el.style.width=w+'vw';
         c.plate.el.style.backgroundColor=(c===active?OPEN_BG:REST_BG);
         c.plate.el.style.transform=dx?('translateX('+dx.toFixed(4)+'vw)'):'';
+        var dy=(c===active?titleOpenT:titleRestT)-c.title.t;
         c.parts.forEach(function(o){
           if(o.el===desc.el) return;
-          o.el.style.transform=dx?('translateX('+dx.toFixed(4)+'vw)'):'';
+          var ty=(o.el===c.title.el)?dy:0;
+          o.el.style.transform=(dx||ty)
+            ? ('translate('+dx.toFixed(4)+'vw,'+ty.toFixed(4)+'vw)') : '';
         });
         if(c===active){
           desc.el.textContent=DESC[c.key]||'';
