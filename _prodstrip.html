@@ -1,0 +1,161 @@
+<style id="ax-prodstrip-css">
+/* ---- MOBILE PRODUCT FILMSTRIP (homepage) ----
+   The mobile design lays the six product panels side by side inside one clipping
+   box, one panel wide, with a chip row above them. The export keeps the panels at
+   their design offsets (-459vw .. +3.7vw relative to the clip), so the LAST panel --
+   AeonX IQ -- is the one that happens to sit at x=0 and the other five are clipped
+   off-screen left with no way to reach them. The chips were inert too, so on a phone
+   five of the six products were simply unreachable.
+
+   The design's own default is the first chip: Figma paints the orange pill under
+   SupplierX and its label white. This drives the strip to match. */
+.ax-pstrip-m{transition:transform .32s cubic-bezier(.22,.61,.36,1)}
+.ax-pstrip-pill{transition:transform .32s cubic-bezier(.22,.61,.36,1),width .32s cubic-bezier(.22,.61,.36,1)}
+.ax-pstrip-tab{cursor:pointer;transition:color .2s ease;user-select:none;-webkit-user-select:none}
+@media (prefers-reduced-motion:reduce){
+  .ax-pstrip-m,.ax-pstrip-pill{transition:none}
+}
+</style>
+<script>
+(function(){
+  var NAMES=/^(supplierx|orderx|xpense|logystix|manufex|aeonx\s*\.?\s*iq|aeonxiq)$/i;
+
+  function txt(e){ return (e.textContent||'').replace(/\s+/g,' ').trim(); }
+  function num(el,p){ var m=/^(-?[\d.]+)vw$/.exec(String(el.style[p]||'').trim());
+    return m?parseFloat(m[1]):null; }
+
+  function build(strip){
+    var clip=strip.parentElement;
+    var pitch=num(clip,'width');
+    if(!pitch) return false;
+
+    var tabs=[].slice.call(strip.children)
+      .filter(function(e){ return /g-t/.test(e.className||'')&&NAMES.test(txt(e))&&num(e,'left')!==null; })
+      .map(function(e){ return {el:e,l:num(e,'left'),w:num(e,'width')||0}; })
+      .sort(function(a,b){ return a.l-b.l; });
+    if(tabs.length<3) return false;
+
+    /* the design's selected pill: the painted box behind the active chip */
+    var pill=[].slice.call(strip.children).filter(function(e){
+      if(!/g-b/.test(e.className||'')) return false;
+      var bg=getComputedStyle(e).backgroundColor;
+      return bg&&bg!=='rgba(0, 0, 0, 0)'&&bg!=='transparent'&&num(e,'width')<pitch*0.4;
+    })[0]||null;
+    var pillL0=pill?num(pill,'left'):0, pillW0=pill?num(pill,'width'):0;
+
+    /* Selected and unselected label colours, taken from the design. Both are resolved
+       to explicit values here and always written explicitly: an earlier version left
+       an unselected chip's colour to whatever was on the node, and by the time it ran
+       the inline colour was gone from some of them, so those chips inherited black. */
+    tabs.forEach(function(t){
+      var m=/(?:^|;)\s*color\s*:\s*([^;]+)/.exec(t.el.getAttribute('style')||'');
+      t.c0=(m?m[1]:'').trim()||getComputedStyle(t.el).color;
+    });
+    var ON=(pill?tabs.reduce(function(a,b){
+      return Math.abs(b.l-pillL0)<Math.abs(a.l-pillL0)?b:a; }):tabs[0]).c0
+      ||'rgb(255,255,255)';
+    var tally={},OFF='';
+    tabs.forEach(function(t){
+      if(!t.c0||t.c0===ON||t.c0==='rgb(0, 0, 0)') return;
+      tally[t.c0]=(tally[t.c0]||0)+1;
+      if(!OFF||tally[t.c0]>tally[OFF]) OFF=t.c0;
+    });
+    OFF=OFF||'rgb(134,149,170)';
+    tabs.forEach(function(t){ if(!t.c0||t.c0==='rgb(0, 0, 0)') t.c0=OFF; });
+
+    /* Panel content: every child of the clip except the chip strip. The strip sits
+       at the top of the box; panels start below it, which is what keeps the strip
+       out of the column maths (its left of 0 would otherwise read as column 5). */
+    var stripBot=(num(strip,'top')||0)+(num(strip,'height')||0);
+    var parts=[].slice.call(clip.children).filter(function(e){
+      return e!==strip&&num(e,'left')!==null&&(num(e,'top')||0)>=stripBot-0.5;
+    });
+    if(parts.length<tabs.length) return false;
+
+    var base=Math.min.apply(null,parts.map(function(e){ return num(e,'left'); }));
+    var cols=Math.round((Math.max.apply(null,parts.map(function(e){ return num(e,'left'); }))-base)/pitch)+1;
+    if(cols<2) return false;
+    var count=Math.min(cols,tabs.length);
+
+    parts.forEach(function(e){ e.classList.add('ax-pstrip-m'); });
+    if(pill) pill.classList.add('ax-pstrip-pill');
+    tabs.forEach(function(t,n){
+      t.el.classList.add('ax-pstrip-tab');
+      t.el.setAttribute('role','tab');
+      t.el.setAttribute('tabindex','0');
+      t.el.addEventListener('keydown',function(e){
+        if(e.key==='Enter'||e.key===' '){ e.preventDefault(); go(n); } });
+    });
+    /* Document capture, and matched by click POINT as well as target: the chrome's
+       CTA pass has already linkified these labels (a chip reading "SupplierX" routes
+       to /products/axiom/), and at the target phase its handler runs first whatever
+       the capture flag says -- tapping a chip navigated away instead of switching. */
+    document.addEventListener('click',function(e){
+      var t=e.target,hit=-1;
+      tabs.forEach(function(tb,n){
+        if(hit<0&&t&&t.nodeType===1&&(tb.el===t||tb.el.contains(t))) hit=n; });
+      if(hit<0&&(e.clientX||e.clientY)){
+        tabs.forEach(function(tb,n){
+          if(hit>=0) return;
+          var q=tb.el.getBoundingClientRect();
+          if(q.width&&e.clientX>=q.left-6&&e.clientX<=q.right+6&&
+             e.clientY>=q.top-6&&e.clientY<=q.bottom+6) hit=n;
+        });
+      }
+      if(hit<0) return;
+      e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+      go(hit);
+    },true);
+
+    var i=-1;
+    function go(n){
+      n=Math.max(0,Math.min(count-1,n));
+      if(n===i) return;
+      i=n;
+      var dx=-(base+i*pitch);
+      parts.forEach(function(e){ e.style.transform='translateX('+dx.toFixed(4)+'vw)'; });
+      if(pill){
+        pill.style.transform='translateX('+(tabs[i].l-pillL0).toFixed(4)+'vw)';
+        pill.style.width=(tabs[i].w+(pillW0-tabs[0].w)).toFixed(4)+'vw';
+      }
+      tabs.forEach(function(t,n2){
+        t.el.style.color=(n2===i?ON:(t.c0===ON?OFF:t.c0));
+        t.el.setAttribute('aria-selected',n2===i?'true':'false');
+      });
+    }
+
+    /* swipe: the panels fill the screen, so a drag is the obvious gesture */
+    var x0=null,y0=null;
+    clip.addEventListener('touchstart',function(e){
+      var t=e.touches[0]; x0=t.clientX; y0=t.clientY; },{passive:true});
+    clip.addEventListener('touchend',function(e){
+      if(x0===null) return;
+      var t=e.changedTouches[0], dx=t.clientX-x0, dy=t.clientY-y0;
+      x0=null;
+      if(Math.abs(dx)>40&&Math.abs(dx)>Math.abs(dy)) go(i+(dx<0?1:-1));
+    },{passive:true});
+
+    go(0);
+    return true;
+  }
+
+  function init(){
+    var mob=document.querySelector('.ax-mob');
+    if(!mob||mob.dataset.axProdstrip) return;
+    if(window.innerWidth>1024) return;
+    var strip=null;
+    [].slice.call(mob.querySelectorAll('.g-b')).some(function(e){
+      var hits=[].slice.call(e.children).filter(function(c){
+        return /g-t/.test(c.className||'')&&NAMES.test(txt(c)); });
+      if(hits.length>=3){ strip=e; return true; }
+      return false;
+    });
+    if(strip&&build(strip)) mob.dataset.axProdstrip='1';
+  }
+  if(document.readyState==='loading')
+    document.addEventListener('DOMContentLoaded',function(){ setTimeout(init,180); });
+  else setTimeout(init,180);
+  addEventListener('load',function(){ setTimeout(init,500); });
+  addEventListener('resize',function(){ setTimeout(init,200); });
+})();
+</script>

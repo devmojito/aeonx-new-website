@@ -1742,7 +1742,17 @@ document.addEventListener("DOMContentLoaded",function(){
       });
       rows.forEach(function(row){
         if (tabs || row.length < count) return;
+        /* Leave rows another fragment already drives. The homepage product filmstrip
+           is one clip holding six full-width panels, which this band engine cannot
+           page (its members test finds none), but it still recognised the chip row
+           and kept repainting the labels from its own index -- so the active label
+           snapped back to the first chip after every switch. */
+        if (row.some(function(b){ return /ax-pstrip-tab/.test(b.el.className || ''); })) return;
         tabs = row.slice().sort(function(a, b){ return a.L - b.L; }).slice(0, count);
+        /* Remember each label's own colour. Resetting an inactive tab with
+           style.color = '' REMOVES the inline colour Figma exported, so the label
+           fell back to the inherited default and every unselected tab went black. */
+        tabs.forEach(function(t){ t.c0 = t.el.style.color || ''; });
       });
       if (!tabs) return;
       var tTop = tabs[0].T;
@@ -1780,7 +1790,7 @@ document.addEventListener("DOMContentLoaded",function(){
     function paintTabs(){
       if (!tabs) return;
       tabs.forEach(function(t, n){
-        t.el.style.color = n === i ? '#fff' : '';
+        t.el.style.color = n === i ? '#fff' : (t.c0 || '');
         t.el.setAttribute('aria-selected', n === i ? 'true' : 'false');
       });
       if (pill) {

@@ -16,10 +16,12 @@
 /* every element on this page is absolutely positioned by the generator, and an
    absolutely positioned flex child is out of flow -- the track collapsed to 0 wide
    with all 150 logos stacked at x=0 until the images were forced back to static. */
+/* Logos carry their brands' own colours -- they are shown as supplied, not greyed
+   back. (They used to sit at grayscale(1)/opacity .72 and only regain colour under
+   the cursor, which read as a page still loading.) */
 .ax-plg__track img{position:static!important;height:60%;width:auto;flex:0 0 auto;
-  object-fit:contain;filter:grayscale(1);opacity:.72;
-  transition:filter .3s ease,opacity .3s ease;user-select:none;-webkit-user-drag:none}
-.ax-plg__track img:hover{filter:none;opacity:1}
+  object-fit:contain;transition:transform .3s ease;user-select:none;-webkit-user-drag:none}
+.ax-plg__track img:hover{transform:scale(1.06)}
 </style>
 <script>
 (function(){
@@ -78,25 +80,42 @@
     raf=requestAnimationFrame(frame);
 
     /* drag: pointer events cover mouse, pen and touch in one path */
+    var moved=false;
     wrap.addEventListener('pointerdown',function(e){
       if(e.button&&e.button!==0) return;
+      moved=false;
       drag={px:e.clientX, x0:x};
       wrap.classList.add('is-drag');
       try{ wrap.setPointerCapture(e.pointerId); }catch(err){}
     });
     wrap.addEventListener('pointermove',function(e){
       if(!drag) return;
+      if(Math.abs(e.clientX-drag.px)>4) moved=true;
       x=drag.x0+(e.clientX-drag.px); wrapX(); paint();
     });
+    /* Release on the WINDOW, not on the strip. Pointer capture is best-effort (it
+       throws in some browsers when the pointer is already gone), and with the
+       listeners bound to the strip a button released off the strip never ended the
+       drag -- the logo stayed glued to the cursor and re-grabbed on the way back in.
+       Window-level up/cancel, plus blur and visibility, close every one of those
+       exits. */
     function release(e){
       if(!drag) return;
       drag=null; last=0;
       wrap.classList.remove('is-drag');
-      try{ wrap.releasePointerCapture(e.pointerId); }catch(err){}
+      setTimeout(function(){ moved=false; },0);
+      if(e&&e.pointerId!=null){ try{ wrap.releasePointerCapture(e.pointerId); }catch(err){} }
     }
-    wrap.addEventListener('pointerup',release);
-    wrap.addEventListener('pointercancel',release);
+    addEventListener('pointerup',release);
+    addEventListener('pointercancel',release);
+    addEventListener('mouseup',release);
+    addEventListener('blur',release);
+    addEventListener('dragend',release);
+    document.addEventListener('visibilitychange',function(){ if(document.hidden) release(); });
     wrap.addEventListener('lostpointercapture',release);
+    /* a drag should not also fire the click the CTA pass would act on */
+    wrap.addEventListener('click',function(e){
+      if(moved){ e.preventDefault(); e.stopPropagation(); } },true);
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){ setTimeout(build,300); });
   else setTimeout(build,300);
