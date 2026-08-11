@@ -847,9 +847,14 @@ document.addEventListener('DOMContentLoaded',function(){
 'our story':'/who-we-are/foundation/','life at aeonx':'/who-we-are/culture/',
 'send your resume':'/who-we-are/career/','open positions':'/who-we-are/career/','view open roles':'/who-we-are/career/',
 'explore sap services':'/services/','explore aws services':'/services/aws/','explore all services':'/services/',
-'explore services':'/services/','explore supplierx':'/products/axiom/','explore orderx':'/products/axiom/',
-'explore xpense':'/products/axiom/','explore logystix':'/products/axiom/','explore manufex':'/products/axiom/',
-'explore aeonxiq':'/products/axiom/',
+'explore services':'/services/',
+/* Each product ships its own site, the same destinations the Products menu uses.
+   These CTAs used to land on /products/axiom/, which is the platform page, not the
+   product being explored. AeonX.IQ has no site of its own, so it keeps the platform
+   page rather than being pointed somewhere it does not belong. */
+'explore supplierx':'https://supplierx.cloud/','explore orderx':'https://orderx.cloud/',
+'explore xpense':'https://x-pense.cloud/','explore logystix':'https://logystix.cloud/',
+'explore manufex':'https://manufex.cloud/','explore aeonxiq':'/products/axiom/',
 /* AWS competency / delivery microsites, supplied in the mobile review doc.
    External hosts, so they are absolute URLs. AWS WAF Delivery is deliberately
    absent: the review says no microsite exists for it (two case studies under
@@ -885,7 +890,14 @@ function skipBtn(n){ return NOTBTN.test(n)||NOTBTN2.indexOf(n)>=0; }
   function make(el,href){
     if(el.dataset.cta)return; el.dataset.cta='1';
     el.style.cursor='pointer'; el.setAttribute('role','link'); el.setAttribute('tabindex','0');
-    function go(){location.href=href;}
+    /* Off-site destinations open in a new tab, as the same links do in the menu, so
+       a reader exploring a product does not lose the page they came from. */
+    var ext = /^https?:\/\//i.test(href) && href.indexOf(location.origin) !== 0;
+    if (ext) el.setAttribute('rel','noopener noreferrer');
+    function go(){
+      if (ext) window.open(href, '_blank', 'noopener');
+      else location.href = href;
+    }
     el.addEventListener('click',go);
     el.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();go();}});
   }
