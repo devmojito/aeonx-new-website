@@ -569,6 +569,21 @@ def render_box(n, ox, oy):
                 if wok: h = w * dim[1] / dim[0]
                 else:   w = h * dim[0] / dim[1]
                 return rb['x']-ox, rb['y']-oy, w, h
+            # NEITHER axis agrees: Figma clipped the render bounds against the page
+            # edge on two sides at once, so neither the clipped box nor the layout
+            # box describes the export. Drawing it in the clipped window squashed the
+            # art -- the /services/ hero put a 702x1175 DNA helix into 364x1205 (52%
+            # of its width) and a 1245x1325 wireframe into 1227x1113, which is why
+            # those graphics read as the wrong size and too saturated: compressed
+            # strokes pile on top of each other. Place the export at its true size,
+            # anchored to whichever edges were NOT clipped, and let the page's own
+            # overflow:hidden reproduce Figma's crop.
+            lclip = rb['x'] > bb['x'] + 0.5
+            tclip = rb['y'] > bb['y'] + 0.5
+            if lclip or tclip:
+                x = rb['x'] + rb['width'] - dim[0] if lclip else rb['x']
+                y = rb['y'] + rb['height'] - dim[1] if tclip else rb['y']
+                return x-ox, y-oy, dim[0], dim[1]
     return rb['x']-ox, rb['y']-oy, rb['width'], rb['height']
 
 def emit_vec_asset(n, left, top, w, h):
