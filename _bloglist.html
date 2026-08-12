@@ -173,13 +173,33 @@
       var el=lab.el;
       if(el.dataset.axBsearch) return;
       el.dataset.axBsearch='1';
+      /* The designed bar is a SIBLING .g-b on this flat sheet, not an ancestor --
+         el.parentElement here is main.ax-page itself, and hanging the click-to-focus
+         handler on it made EVERY click anywhere on the page yank focus into the
+         search field (nothing else on the page could be clicked first; card clicks
+         still navigated only because navigation happens before focus is observable).
+         Find the bar geometrically instead, and size the input to the bar's usable
+         span rather than the old label's 64px, so clicking and typing anywhere in
+         the drawn field works. */
+      var lr=rect(el), bar=null, barR=null;
+      s.page.querySelectorAll('.g-b').forEach(function(b){
+        if(bar||b.closest('.ax-mob')) return;
+        var r=b.getBoundingClientRect();
+        if(r.width>200&&r.width<700&&r.height>28&&r.height<90&&
+           r.left<lr.left&&r.right>lr.right&&Math.abs((r.top+r.height/2)-(lr.top+lr.height/2))<28){
+          bar=b; barR=r;
+        }
+      });
       var input=document.createElement('input');
       input.type='search';
       input.className='ax-bl-search';
       input.placeholder='Search posts…';
       input.setAttribute('aria-label','Search blog posts');
       var cs=getComputedStyle(el);
-      input.style.cssText='position:absolute;left:0;top:0;width:100%;height:100%;border:0;'+
+      /* stretch from the label's designed x to just short of the bar's right edge
+         (the ⌘K badge sits in the last ~80px) */
+      var w=barR ? Math.max(120,(barR.right-lr.left)-84) : lr.width;
+      input.style.cssText='position:absolute;left:0;top:0;width:'+Math.round(w)+'px;height:100%;border:0;'+
         'outline:none;background:transparent;padding:0;font-family:'+cs.fontFamily+
         ';font-size:'+cs.fontSize+';font-weight:'+cs.fontWeight+';color:'+cs.color;
       el.textContent='';
@@ -192,15 +212,23 @@
           query=input.value.toLowerCase().trim(); pageNo=0; render();
         },140);
       });
-      /* the badge says Cmd/Ctrl-K, so make that focus this field */
+      /* The badge on the bar says Cmd/Ctrl-K -- but the site chrome binds the same
+         shortcut to its own search overlay, registered before this fragment, and at
+         the same (document, bubble) level the earlier listener wins: the overlay
+         opened ON TOP of the freshly-focused field. Capture runs before any bubble
+         listener on the same node, so intercept there and stop it -- on this page
+         the shortcut belongs to the search bar the design draws. */
       document.addEventListener('keydown',function(e){
         if((e.metaKey||e.ctrlKey)&&(e.key==='k'||e.key==='K')){
-          e.preventDefault(); input.focus(); input.select();
+          e.preventDefault(); e.stopImmediatePropagation();
+          input.focus(); input.select();
         }
-      });
-      /* clicking anywhere on the designed bar focuses the field */
-      var bar=el.parentElement;
-      if(bar) bar.addEventListener('click',function(){ input.focus(); });
+      },true);
+      /* clicking the drawn field (and only the field) focuses the input */
+      if(bar){
+        bar.style.cursor='text';
+        bar.addEventListener('click',function(){ input.focus(); });
+      }
     }
 
     /* Hide every part of a card, not just its image: fill() bails on a missing post
@@ -235,10 +263,19 @@
     var numRow=s.texts.filter(function(t){ return /^(\d{1,3}|\u2026|\.\.\.)$/.test(t.t) && t.r.width; });
     var pagBar=null;
     if(numRow.length>=3){
-      var yy={};
-      numRow.forEach(function(t){ var k=Math.round(t.r.top/6); (yy[k]=yy[k]||[]).push(t); });
-      var best=Object.keys(yy).map(function(k){ return yy[k]; })
-        .sort(function(a,b){ return b.length-a.length; })[0];
+      /* Cluster by proximity, not Math.round(top/6): integer bucketing puts two
+         digits of the same drawn row in different buckets when they straddle a
+         multiple of 6 (sub-pixel layout jitter is enough), which silently dropped
+         one designed slot -- the pager rendered "1 2 3 4 \u2026 8" with a hole where
+         "5" belonged. */
+      numRow.sort(function(a,b){ return a.r.top-b.r.top||a.r.left-b.r.left; });
+      var rows=[];
+      numRow.forEach(function(t){
+        var row=rows.length?rows[rows.length-1]:null;
+        if(row && Math.abs(t.r.top-row[0].r.top)<=8) row.push(t);
+        else rows.push([t]);
+      });
+      var best=rows.sort(function(a,b){ return b.length-a.length; })[0];
       if(best&&best.length>=3){
         best.sort(function(a,b){ return a.r.left-b.r.left; });
         pagBar=best;
@@ -247,7 +284,9 @@
     var arrows=[];
     if(pagBar){
       var ry=pagBar[0].r.top;
-      s.page.querySelectorAll('.g-b').forEach(function(e){
+      /* the rebuilt export draws the ‹ › chevrons as VECTOR IMAGES, not bordered
+         .g-b boxes -- accept both; first/last by x are prev/next either way */
+      s.page.querySelectorAll('.g-b,img.g-vec').forEach(function(e){
         if(e.closest('.ax-mob')) return;
         var r=e.getBoundingClientRect();
         if(Math.abs(r.top-ry)<80 && r.width>24 && r.width<110 && r.height>24 && r.height<110)
@@ -256,16 +295,37 @@
       arrows.sort(function(a,b){ return a.r.left-b.r.left; });
     }
 
+    /* The design draws its own ellipsis ICON (a small vector) between the last
+       window slot and the final-page slot -- find it so it can be hidden when
+       every page number fits and no gap exists. The old code ALSO wrote a text
+       "\u2026" into a NUMBER slot, so the bar read "1 2 3 4 \u2026 \u2026 8" with page 5
+       unreachable by number. */
+    var gapIcon=null;
+    if(pagBar){
+      var f=pagBar[0].r, l=pagBar[pagBar.length-1].r;
+      s.page.querySelectorAll('img.g-vec').forEach(function(e){
+        if(gapIcon||e.closest('.ax-mob')) return;
+        var r=e.getBoundingClientRect();
+        if(r.width&&r.width<42&&Math.abs(r.top-f.top)<40&&r.left>f.left&&r.right<l.right)
+          gapIcon=e;
+      });
+    }
     function paintPager(total){
       if(!pagBar) return;
-      /* windowed numbering: 1..5 then an ellipsis then the last page, exactly the
-         shape the design draws */
-      var nums=[],i;
-      if(total<=pagBar.length){ for(i=1;i<=total;i++) nums.push(String(i)); }
-      else {
-        var start=Math.min(Math.max(1,pageNo),Math.max(1,total-4));
-        for(i=start;i<start+Math.min(5,pagBar.length-2)&&i<=total;i++) nums.push(String(i));
-        nums.push('\u2026'); nums.push(String(total));
+      /* numeric slots only: a window of consecutive pages in the first N-1 slots,
+         the final page in the last slot, the designed icon as the gap between */
+      var S=pagBar.length,nums=[],i;
+      if(total<=S){
+        for(i=1;i<=total;i++) nums.push(String(i));
+        if(gapIcon) gapIcon.style.display='none';
+      } else {
+        var win=S-1, p=pageNo+1;
+        var start=Math.max(1,Math.min(p-Math.floor(win/2),total-win));
+        for(i=start;i<start+win;i++) nums.push(String(i));
+        nums.push(String(total));
+        /* the icon reads "pages omitted here" -- when the window runs right up to
+           the final page there is nothing omitted, so it hides */
+        if(gapIcon) gapIcon.style.display = (start+win-1 < total-1) ? '' : 'none';
       }
       pagBar.forEach(function(t,idx){
         var v=nums[idx];
@@ -305,26 +365,71 @@
             el.addEventListener('keydown',function(e){
               if(e.key==='Enter'||e.key===' '){ e.preventDefault(); step(); } });
           }
-          el.style.opacity = ((dir<0&&pageNo<=0)) ? '.35' : '';
+          /* dim BOTH dead ends -- the next arrow used to stay full-strength on the
+             last page and clicking it did nothing, which reads as broken */
+          el.style.opacity = (dir<0&&pageNo<=0)||(dir>0&&pageNo>=total-1) ? '.35' : '';
         });
       }
     }
 
-    /* the designed category chips become the real filter */
-    var chipRow=s.texts.filter(function(t){ return /^(All|Product|Enterprise AI|Engineering|Other)$/.test(t.t); });
-    chipRow.forEach(function(t,i){
-      var label=CATS[i];
-      if(label===undefined){ t.el.style.display='none'; return; }
-      t.el.textContent=label;
-      t.el.classList.add('ax-bl-hit');
-      t.el.setAttribute('role','button');
-      t.el.setAttribute('tabindex','0');
-      var pick=function(){ active=label; pageNo=0; render(); };
-      t.el.addEventListener('click',pick);
-      t.el.addEventListener('keydown',function(e){
-        if(e.key==='Enter'||e.key===' '){ e.preventDefault(); pick(); }
+    /* The designed category chips become the real filter. The design draws five
+       placeholder labels (All / Product / Enterprise AI / Engineering / Other);
+       the blog has SEVEN real categories. The old pass rewrote each matched node's
+       text in DOCUMENT order -- which is not visual order on this flat sheet -- so
+       labels landed in the wrong boxes ("AWS" in the 19px-wide "All" slot,
+       "Digital Transformation" in the 52px "Other" slot, clipped to "Digital Tra"),
+       and the last two categories never got a chip at all. Lay the row out
+       properly instead: sort the matched chips by x, clone extras for the missing
+       categories, give every chip its real label at natural width, and re-chain
+       the lefts so the row reads All · AWS · … · Cloud with the design's own gap. */
+    /* Anchored to the "Browse by category:" label -- same baseline, to its right.
+       A grid CARD's designed category chip also reads "Product", and matching on
+       label text alone let it into this row: it displaced every real chip one
+       slot AND became chipRow[0], so the row's gap was measured from a card chip
+       three hundred pixels away and the re-chained lefts marched the whole row
+       off the right edge of the page. */
+    var chipRow=s.texts.filter(function(t){
+      return /^(All|Product|Enterprise AI|Engineering|Other)$/.test(t.t) &&
+             browse && Math.abs(t.r.top-browse.r.top)<14 && t.r.left>browse.r.left;
+    }).sort(function(a,b){ return a.r.left-b.r.left; });
+    if(chipRow.length){
+      var gap = chipRow.length>1 ? Math.max(24, chipRow[1].r.left-chipRow[0].r.right) : 40;
+      var baseLeft = parseFloat(chipRow[0].el.style.left) || 0;   /* authored vw */
+      var vwpx = (document.documentElement.clientWidth||1920)/100;
+      var chips = chipRow.map(function(t){ return t.el; });
+      while(chips.length<CATS.length){
+        var clone = chips[chips.length-1].cloneNode(false);
+        chips[chips.length-1].parentNode.appendChild(clone);
+        chips.push(clone);
+      }
+      var x = baseLeft;
+      chips.forEach(function(el,i){
+        var label=CATS[i];
+        if(label===undefined){ el.style.display='none'; return; }
+        el.textContent=label;
+        el.style.left=x.toFixed(4)+'vw';
+        el.style.width='auto';
+        el.style.whiteSpace='nowrap';
+        el.classList.add('ax-bl-hit');
+        el.setAttribute('role','button');
+        el.setAttribute('tabindex','0');
+        /* advance by the label's real ink, in vw so it survives resize */
+        var ink=el.getBoundingClientRect().width;
+        x += ink/vwpx + gap/vwpx;
+        var pick=function(){
+          active=label; pageNo=0; render();
+          chips.forEach(function(c,j){
+            c.style.fontWeight = (CATS[j]===active)?'700':'';
+            c.style.color = (CATS[j]===active)?'rgb(223,63,23)':'';
+          });
+        };
+        if(CATS[i]===active){ el.style.fontWeight='700'; el.style.color='rgb(223,63,23)'; }
+        el.addEventListener('click',pick);
+        el.addEventListener('keydown',function(e){
+          if(e.key==='Enter'||e.key===' '){ e.preventDefault(); pick(); }
+        });
       });
-    });
+    }
 
     wireSearch();
     render();
