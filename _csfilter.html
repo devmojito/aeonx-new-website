@@ -19,6 +19,23 @@
 .ax-csf-empty{position:absolute;font-family:'Nunito Sans',sans-serif;font-weight:400;color:rgb(134,149,170);white-space:nowrap}
 @media (prefers-reduced-motion:reduce){.ax-csf-card,.ax-csf-chip{transition:none}}
 @media (max-width:1024px){.ax-csf-input{font-size:4.6512vw;line-height:5.5814vw;height:6.5vw}}
+/* ---- ALL STORIES REACHABLE ----
+   Figma draws this grid as a fixed-height clipped box, and the fragment lays every
+   real case study into it -- 15 cards running well past the designed height, so
+   only the first two rows were ever visible and the remaining 11 were clipped away
+   with no way to reach them. Let the box scroll vertically instead of shortening it
+   or re-flowing the page: the cards are absolutely positioned, so the box already
+   reports the full scrollHeight and nothing about the pixel-locked layout changes.
+   Horizontal stays clipped -- only the vertical axis was ever overflowing. */
+.ax-csf-scroll{overflow-y:auto!important;overflow-x:hidden!important;
+  scroll-behavior:smooth;overscroll-behavior-y:contain;
+  scrollbar-width:thin;scrollbar-color:rgba(35,39,46,.18) transparent}
+.ax-csf-scroll::-webkit-scrollbar{width:6px}
+.ax-csf-scroll::-webkit-scrollbar-thumb{background:rgba(35,39,46,.18);border-radius:99px}
+.ax-csf-scroll::-webkit-scrollbar-thumb:hover{background:rgba(35,39,46,.30)}
+.ax-csf-scroll::-webkit-scrollbar-track{background:transparent}
+.ax-csf-scroll:focus-visible{outline:2px solid rgb(223,63,23);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.ax-csf-scroll{scroll-behavior:auto}}
 </style>
 <script>
 (function(){
@@ -239,6 +256,32 @@
       return true;
     }
     var empty=null;
+    /* Only scroll when the visible set actually overflows -- a filter that leaves
+       four cards must not leave a scrollbar on a box with room to spare. */
+    function scrollable(){
+      /* Hidden cards keep their box (visibility, not display), so scrollHeight
+         stays at the full grid height even when a filter leaves three results --
+         measuring it would leave a scrollbar that scrolls into empty space.
+         Measure the deepest VISIBLE card instead. */
+      var sr=sec.getBoundingClientRect(), deepest=0;
+      [].slice.call(sec.querySelectorAll('.g-t,.g-b,.g-img')).forEach(function(e){
+        if(e.style.visibility==='hidden') return;
+        var r=e.getBoundingClientRect();
+        if(!r.height) return;
+        var bot=(r.bottom-sr.top)+sec.scrollTop;
+        if(bot>deepest) deepest=bot;
+      });
+      var need = deepest > sec.clientHeight + 8;
+      sec.classList.toggle('ax-csf-scroll', need);
+      if(need){
+        if(!sec.hasAttribute('tabindex')) sec.setAttribute('tabindex','0');
+        sec.setAttribute('role','group');
+        sec.setAttribute('aria-label','Customer stories, scrollable');
+      } else {
+        sec.removeAttribute('tabindex'); sec.removeAttribute('role');
+        sec.removeAttribute('aria-label'); sec.scrollTop=0;
+      }
+    }
     function apply(){
       var shown=live.filter(matches);
       live.forEach(function(c){
@@ -250,6 +293,7 @@
         c.mem.forEach(function(m){ setv(m.el,'left',s.l+m.dl); setv(m.el,'top',s.t+m.dt); });
       });
       if(countLbl) countLbl.textContent=shown.length+(shown.length===1?' result':' results');
+      scrollable();
       if(!shown.length){
         if(!empty){
           empty=document.createElement('div');

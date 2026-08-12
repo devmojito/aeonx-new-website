@@ -3261,6 +3261,11 @@ document.addEventListener("DOMContentLoaded",function(){
    viewBox geometry (1728x40: dots at x17/73/89/105/121, prev at 1660, next 1708),
    so the design is untouched and the hit areas land exactly on what is drawn. */
 .ax-srp{position:absolute;pointer-events:none;z-index:3}
+/* The pager is counter-translated every scroll frame to hold its place. The
+   scroll-reveal class on the baked art carries a transform TRANSITION, so each
+   new value animated instead of applying -- the art lagged the scroll and still
+   drifted while the dots stayed put. Pinning must be instant. */
+.ax-srp,.ax-srp-art{transition:none!important}
 .ax-srp__dots{position:absolute;display:flex;align-items:center;pointer-events:auto;
   background:#ECEEF2;border-radius:99px}
 .ax-srp__dot{border:0;padding:0;cursor:pointer;background:#8695AA;border-radius:99px;
@@ -3365,6 +3370,7 @@ document.addEventListener("DOMContentLoaded",function(){
   function buildPager(box, img){
     if (img.dataset.axSrp) return;
     img.dataset.axSrp = '1';
+    img.classList.add('ax-srp-art');
     var host = img.parentElement;
     if (!host) return;
     if (getComputedStyle(host).position === 'static') host.style.position = 'relative';
@@ -3435,6 +3441,16 @@ document.addEventListener("DOMContentLoaded",function(){
       });
       prev.disabled = box.scrollLeft <= 4;
       next.disabled = box.scrollLeft >= max - 4;
+      /* Figma draws the pager INSIDE the row it controls, so once that row became a
+         real scroller the arrows and dots slid away with the cards -- scroll to the
+         end and the controls were off-screen. Counter-translate them by exactly the
+         scroll offset so they hold their designed position while the cards move
+         under them. Paint-level only: no re-parenting (moving a row element out of
+         its track lays out but never paints), and the pager is position:absolute so
+         a transform cannot reflow the row. */
+      var t = 'translateX(' + box.scrollLeft + 'px)';
+      wrap.style.transform = t;
+      img.style.transform = t;
     }
 
     prev.addEventListener('click', function(){
@@ -3782,6 +3798,50 @@ document.addEventListener("DOMContentLoaded",function(){
      Studies" overlapped by 8px. Rather than nudge that one button, re-centre the
      pair as a GROUP (ink + gap + arrow) inside the pill whenever they actually
      collide, which is what the design draws and is stable at any width. */
+  /* ---- TRAILING GLYPH SITTING ON TOP OF ITS LABEL ----
+     Figma sizes a label box to ITS OWN text metrics and parks the trailing chevron
+     at a fixed offset after that box. Nunito Sans renders a little wider here, so a
+     label overruns its box and the glyph lands on the last letters -- the insights
+     case-study cards showed "Read the story" with the chevron 12px INSIDE the ink.
+     spaceArrows() cannot do this job: it only walks .ax-hv-arrow, and it re-centres
+     the pair inside the surrounding box, which for a card CTA resolves to the whole
+     card. This nudges the GLYPH only, only when it actually overlaps, and only far
+     enough to restore the gap the design gave it after the box. Idempotent: once
+     moved the glyph already clears the ink, so a second run is a no-op. */
+  function clearTrailingGlyphs(){
+    var glyphs=[].slice.call(document.querySelectorAll('main.ax-page img.g-vec'))
+      .filter(function(g){
+        if(g.closest('.ax-mob')) return false;
+        var r=g.getBoundingClientRect();
+        return r.width && r.width<=60 && r.height<=60;
+      }).map(function(g){ return {el:g, r:g.getBoundingClientRect()}; });
+    if(!glyphs.length) return;
+    [].slice.call(document.querySelectorAll('main.ax-page .g-t')).forEach(function(l){
+      if(l.closest('.ax-mob')||l.children.length) return;
+      var s=txt(l); if(!s||s.length>40) return;
+      var lr=l.getBoundingClientRect(); if(!lr.width) return;
+      var rng=document.createRange(); rng.selectNodeContents(l);
+      var ink=rng.getBoundingClientRect(); if(!ink.width) return;
+      var mid=lr.top+lr.height/2;
+      var g=glyphs.filter(function(o){
+        return Math.abs((o.r.top+o.r.height/2)-mid)<Math.max(12,lr.height*0.8) &&
+               o.r.left>=lr.left && o.r.left<lr.right+70;
+      }).sort(function(a,b){ return a.r.left-b.r.left; })[0];
+      if(!g) return;
+      var el=g.el, st=el.getAttribute('style')||'';
+      var m=st.match(/left:\s*(-?[\d.]+)vw/); if(!m) return;
+      /* the gap the design drew AFTER the box, captured once */
+      if(el.dataset.axGap===undefined)
+        el.dataset.axGap=String(Math.max(2, g.r.left-lr.right));
+      var want=ink.right+parseFloat(el.dataset.axGap);
+      var d=want-g.r.left;
+      if(d<=0.5) return;                       /* label fits its box: leave alone */
+      var vwpx=(document.documentElement.clientWidth||1920)/100;
+      el.setAttribute('style', st.replace(/left:\s*-?[\d.]+vw/,
+        'left:'+(parseFloat(m[1])+d/vwpx).toFixed(4)+'vw'));
+    });
+  }
+
   function spaceArrows(){
     [].slice.call(document.querySelectorAll('.ax-hv-arrow')).forEach(function(a){
       var ar=a.getBoundingClientRect();
@@ -4204,6 +4264,7 @@ document.addEventListener("DOMContentLoaded",function(){
     bumpExplore();
     spaceArrows();
     balanceLabels();
+    clearTrailingGlyphs();
     armChrome();
     newsletter();
     productScroll();
@@ -4219,8 +4280,8 @@ document.addEventListener("DOMContentLoaded",function(){
     /* _hover.html creates the trailing arrows on load+140ms, so the arrow pass has
        to run after that or it finds nothing to measure. It is idempotent -- it only
        acts on a pair that actually overlaps -- so running it twice is free. */
-    setTimeout(function(){ spaceArrows(); balanceLabels(); },400);
-    setTimeout(function(){ spaceArrows(); balanceLabels(); },1000);
+    setTimeout(function(){ spaceArrows(); balanceLabels(); clearTrailingGlyphs(); },400);
+    setTimeout(function(){ spaceArrows(); balanceLabels(); clearTrailingGlyphs(); },1000);
     /* one late pass purely to re-centre: the newsletter column shift and the CTA
        linkifier's own pill auto-fit both move boxes after the first measurement,
        so the settled layout is the only one worth measuring. */
