@@ -24,45 +24,71 @@
   function txt(e){ return (e.textContent||'').replace(/\s+/g,' ').trim(); }
   function y(el){ var r=el.getBoundingClientRect(); return r.top+window.pageYOffset; }
 
+  /* Identify the row plate and the panel target from the DESIGN's own inline
+     left/top/width/height (vw), never from getBoundingClientRect(). This section
+     sits far down the page, so at init time (load+120ms) it is still held by the
+     scroll-reveal at translateY(1.4vw), off-screen and unrevealed -- a rect-based
+     search run at that instant can pick the wrong plate (SupplierX's row plate is
+     the FIRST in its column, and lost the containment test to the column's own
+     outer tile wrapper, which had no reveal transform of its own and so measured
+     as if it fully contained the still-shifted label). Inline style is authored
+     geometry: it never moves, so identification is correct however early this
+     runs. goTo()/the click hit-test still read live rects, which is exactly right
+     there -- by click time the section is always revealed. */
+  function num(el,p){ var v=el.style[p]; if(!v) return null;
+    var m=/^(-?[\d.]+)vw$/.exec(String(v).trim()); return m?parseFloat(m[1]):null; }
+  function box(el,root){
+    var l=num(el,'left'), t=num(el,'top'), w=num(el,'width'), h=num(el,'height');
+    if(l===null||t===null||w===null||h===null) return null;
+    var p=el.parentElement;
+    while(p&&p!==root){ var pl=num(p,'left'), pt=num(p,'top');
+      if(pl!==null) l+=pl; if(pt!==null) t+=pt; p=p.parentElement; }
+    return {el:el,l:l,t:t,w:w,h:h,r:l+w,b:t+h};
+  }
+
   function init(){
+    var root=document.querySelector('main.ax-page');
     var vis=[].slice.call(document.querySelectorAll('main.ax-page .g-t')).filter(function(e){
       return e.getBoundingClientRect().width>0 && !e.closest('.ax-mob');
     });
+    var vbox=vis.map(function(e){ return {el:e, b:box(e,root)}; }).filter(function(o){ return o.b; });
     /* the index: the big product names stacked in one column */
-    var items=vis.filter(function(e){
-      return NAMES.test(txt(e)) && parseFloat(getComputedStyle(e).fontSize) > 20;
+    var items=vbox.filter(function(o){
+      return NAMES.test(txt(o.el)) && parseFloat(getComputedStyle(o.el).fontSize) > 20;
     });
     if(items.length<4) return;
-    items.sort(function(a,b){ return y(a)-y(b); });
+    items.sort(function(a,b){ return a.b.t-b.b.t; });
+    items=items.map(function(o){ return o.el; });
 
     /* each product's panel: the eyebrow heading directly above its "Explore <name>"
        pill. Found by geometry so a Figma re-pull cannot break the mapping. */
     function panelFor(name){
       var key=name.replace(/[^a-z0-9]/gi,'').toLowerCase();
-      var pill=vis.filter(function(e){
-        var t=txt(e).toLowerCase();
+      var pill=vbox.filter(function(o){
+        var t=txt(o.el).toLowerCase();
         return t.indexOf('explore')===0 && t.replace(/[^a-z0-9]/g,'').indexOf(key)>6;
       })[0];
       if(!pill) return null;
-      var py=y(pill), best=null;
-      vis.forEach(function(e){
-        var ey=y(e);
-        if(ey>=py||py-ey>900) return;
-        if(parseFloat(getComputedStyle(e).fontSize)<26) return;
-        if(!best||ey>y(best)) best=e;
+      var py=pill.b.t, best=null;
+      vbox.forEach(function(o){
+        var ey=o.b.t;
+        if(ey>=py||py-ey>46.9) return;                 /* 900px at the 1920 design width */
+        if(parseFloat(getComputedStyle(o.el).fontSize)<26) return;
+        if(!best||ey>best.b.t) best=o;
       });
-      return best;
+      return best?best.el:null;
     }
 
     /* the row plate behind each name; the design paints the active one brand orange */
     function rowFor(el){
-      var r=el.getBoundingClientRect(), best=null, bestA=Infinity;
-      [].slice.call(document.querySelectorAll('main.ax-page .g-b')).forEach(function(b){
-        var q=b.getBoundingClientRect();
-        if(!q.width||q.width>600) return;
-        if(q.left>r.left+2||q.right<r.right-2||q.top>r.top+4||q.bottom<r.bottom-4) return;
-        var a=q.width*q.height;
-        if(a<bestA){ bestA=a; best=b; }
+      var r=box(el,root), best=null, bestA=Infinity;
+      if(!r) return null;
+      [].slice.call(document.querySelectorAll('main.ax-page .g-b')).forEach(function(candEl){
+        var q=box(candEl,root);
+        if(!q||!q.w||q.w>31.25) return;                /* 600px at the 1920 design width */
+        if(q.l>r.l+0.3||q.r<r.r-0.3||q.t>r.t+0.3||q.b<r.b-0.3) return;
+        var a=q.w*q.h;
+        if(a<bestA){ bestA=a; best=candEl; }
       });
       return best;
     }
