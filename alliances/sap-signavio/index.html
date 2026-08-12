@@ -2863,7 +2863,7 @@ document.addEventListener("DOMContentLoaded",function(){
       return best && best.g;
     }
 
-      document.addEventListener('mouseover', function(e){
+      function resolveAt(e){
         var g = groupFor(e.target);
         /* The smallest CARD under the pointer wins unless the pointer is on a button:
            card copy is armed by whichever group claimed it first, which on some cards
@@ -2872,7 +2872,24 @@ document.addEventListener("DOMContentLoaded",function(){
         if (t && (!g || (g.kind === 'tile' && t !== g))) g = t;
         if (g === current) return;
         setOn(current, false); current = g; setOn(g, true);
-      });
+      }
+      document.addEventListener('mouseover', resolveAt);
+      /* mouseover alone is not enough: it fires only when the pointer crosses into a
+         different ELEMENT. Several sections lay ONE full-width decorative vector over
+         a whole row of cards (services/multi-cloud-cms puts 4371-11676.svg over all
+         four "Four pillars" cards), so the pointer enters that vector once and then
+         moves between cards under it without firing anything -- the highlight stuck
+         to whichever card was entered first, and leaving a card into the gap never
+         cleared it. That is the hover "glitching" report. tileAt() already hit-tests
+         LIVE rects, so simply re-running it on movement fixes it; throttled on the
+         event timestamp exactly as _reasons.html and _flowfx.html do. */
+      var lastMove = 0;
+      document.addEventListener('mousemove', function(e){
+        var now = e.timeStamp || 0;
+        if (now && now - lastMove < 16) return;
+        lastMove = now;
+        resolveAt(e);
+      }, { passive: true });
       document.addEventListener('mouseleave', function(){ setOn(current, false); current = null; }, true);
     }
     document.addEventListener('focusin',  function(e){ setOn(groupFor(e.target), true); });
