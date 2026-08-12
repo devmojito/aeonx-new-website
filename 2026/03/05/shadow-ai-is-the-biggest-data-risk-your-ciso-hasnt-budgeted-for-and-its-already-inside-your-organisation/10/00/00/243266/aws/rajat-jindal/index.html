@@ -3462,6 +3462,16 @@ document.addEventListener("DOMContentLoaded",function(){
      merely happen to sit inside a painted box. Anything longer than a button label
      is skipped anyway. */
   var KEEP=/@|\bhttps?:|^\+?\d|·|©/;
+  /* The leadership department tabs ship as PRACTICE & PROGRAMME / SALES & GROWTH --
+     segmented-control labels, not sentence-case buttons, same register as the FY
+     chips and the AWS competency tabs elsewhere on the site. Only the ACTIVE tab is
+     exported with a fill (inPill() reads background-color), so this pass Title Cased
+     it while its unfilled sibling stayed authored-caps -- one tab visibly mismatched
+     the other. Worse, _leadtabs.html identifies both tabs by matching this EXACT
+     uppercase text; once mutated, its setup() no longer recognised them and neither
+     tab responded to a click. Keep both as authored so identification and casing
+     both stay correct. */
+  var KEEP_LIT=['PRACTICE & PROGRAMME','SALES & GROWTH'];
   function applyTitleCase(root){
     (root||document).querySelectorAll('.g-t,.ax-mm2__feat-btn,.ax-mm2__api-btn').forEach(function(e){
       if(e.children.length) return;                     /* leave rich labels alone */
@@ -3471,7 +3481,7 @@ document.addEventListener("DOMContentLoaded",function(){
       if(e.closest('header')||e.closest('.ax-nav')||e.closest('.ax-mnav')) return;
       if(e.closest('section.ax-footer')&&!isControl(e)) return;
       var t=txt(e);
-      if(!t||t.length>34||KEEP.test(t)) return;
+      if(!t||t.length>34||KEEP.test(t)||KEEP_LIT.indexOf(t)!==-1) return;
       /* A clickable CARD is not a button: its title is set at heading size. Compare
          in vw, not px -- the mobile block is authored against a 430px design, so its
          16px button label computes to ~54px when the desktop viewport is 1440 and a
@@ -3743,8 +3753,27 @@ document.addEventListener("DOMContentLoaded",function(){
     input.addEventListener('keydown',function(e){ if(e.key==='Enter') submit(e); });
 
     /* ---------- 4. NEWSLETTER COLUMN ALIGNMENT ----------
-       Retired 2026-08-11: the current Figma master lands the heading on the
-       Services column itself, so the nudge pulled it 250px off the design. */
+       Requested: the heading should sit in the same column as "About Us". Figma
+       puts it 1.35vw to the right, which reads as almost-but-not-quite aligned.
+       Measured against the real column so it survives a Figma re-pull. */
+    var head=[].slice.call(foot.querySelectorAll('.g-t')).filter(function(e){
+      return /^get the latest from aeonx/i.test(txt(e)); })[0];
+    var col=[].slice.call(foot.querySelectorAll('.g-t')).filter(function(e){
+      return /^about us$/i.test(txt(e)); })[0];
+    if(head&&col){
+      var hl=num(head,'left'), cl=num(col,'left');
+      if(hl!==null&&cl!==null){
+        var d=hl-cl;
+        if(Math.abs(d)>0.01){
+          setvw(head,'left',cl);
+          [box,pill,note].forEach(function(el){
+            var l=num(el,'left');
+            if(l!==null) setvw(el,'left',l-d);
+            else if(el===note){ note.style.left=(cl)+'vw'; }
+          });
+        }
+      }
+    }
   }
 
   /* ---------- 5. HOMEPAGE PRODUCT NAMES SCROLL IN PAGE ----------

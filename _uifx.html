@@ -174,6 +174,16 @@
      merely happen to sit inside a painted box. Anything longer than a button label
      is skipped anyway. */
   var KEEP=/@|\bhttps?:|^\+?\d|·|©/;
+  /* The leadership department tabs ship as PRACTICE & PROGRAMME / SALES & GROWTH --
+     segmented-control labels, not sentence-case buttons, same register as the FY
+     chips and the AWS competency tabs elsewhere on the site. Only the ACTIVE tab is
+     exported with a fill (inPill() reads background-color), so this pass Title Cased
+     it while its unfilled sibling stayed authored-caps -- one tab visibly mismatched
+     the other. Worse, _leadtabs.html identifies both tabs by matching this EXACT
+     uppercase text; once mutated, its setup() no longer recognised them and neither
+     tab responded to a click. Keep both as authored so identification and casing
+     both stay correct. */
+  var KEEP_LIT=['PRACTICE & PROGRAMME','SALES & GROWTH'];
   function applyTitleCase(root){
     (root||document).querySelectorAll('.g-t,.ax-mm2__feat-btn,.ax-mm2__api-btn').forEach(function(e){
       if(e.children.length) return;                     /* leave rich labels alone */
@@ -183,7 +193,7 @@
       if(e.closest('header')||e.closest('.ax-nav')||e.closest('.ax-mnav')) return;
       if(e.closest('section.ax-footer')&&!isControl(e)) return;
       var t=txt(e);
-      if(!t||t.length>34||KEEP.test(t)) return;
+      if(!t||t.length>34||KEEP.test(t)||KEEP_LIT.indexOf(t)!==-1) return;
       /* A clickable CARD is not a button: its title is set at heading size. Compare
          in vw, not px -- the mobile block is authored against a 430px design, so its
          16px button label computes to ~54px when the desktop viewport is 1440 and a
