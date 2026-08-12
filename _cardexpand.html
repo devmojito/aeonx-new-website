@@ -177,6 +177,13 @@
       hit.classList.add('ax-cardex-hit');
       hit.addEventListener('mouseenter',function(){ show(c); });
       c.parts.forEach(function(o){
+        /* The description belongs to no single card: layout() relocates it into
+           whichever card is open. It is authored inside the card Figma drew open,
+           so binding it here gave it a permanent "reopen card one" handler --
+           hovering the open card's own copy snapped the row back to SAP angle,
+           and the 120ms opacity-0 window before layout() runs is why the card was
+           caught wide but blank. layout() already skips desc.el for this reason. */
+        if(o.el===desc.el) return;
         o.el.addEventListener('mouseenter',function(){ show(c); });
       });
     });
