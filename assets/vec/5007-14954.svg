@@ -6,11 +6,11 @@
 <mask id="path-1-inside-1_4020_9394" fill="white">
 <path d="M-315.5 -1334.7H1604.5V242.1H-315.5V-1334.7Z"/>
 </mask>
-<path d="M-315.5 -1334.7H1604.5V242.1H-315.5V-1334.7Z" fill="#1D2025"/>
+
 <path d="M1604.5 242.1V241.1H-315.5V242.1V243.1H1604.5V242.1Z" fill="#ECEEF2" mask="url(#path-1-inside-1_4020_9394)"/>
 <g id="div.sap-frame">
 <g clip-path="url(#clip0_4020_9394)">
-<rect x="-55.5" y="-1264.7" width="1400" height="1436.8" fill="#23272E"/>
+
 <g id="div.diagram">
 <g id="Container">
 <g id="div.node">
@@ -37,7 +37,7 @@
 </g>
 </g>
 </g>
-<rect x="-55" y="-1264.2" width="1399" height="1435.8" stroke="white" stroke-opacity="0.14"/>
+
 </g>
 </g>
 </g>

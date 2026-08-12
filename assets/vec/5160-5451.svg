@@ -6,7 +6,7 @@
 <mask id="path-1-inside-1_4020_9394" fill="white">
 <path d="M-220.25 -273H1699.75V2285H-220.25V-273Z"/>
 </mask>
-<path d="M-220.25 -273H1699.75V2285H-220.25V-273Z" fill="#F6F7F9"/>
+
 <path d="M1699.75 2285V2284H-220.25V2285V2286H1699.75V2285Z" fill="#ECEEF2" mask="url(#path-1-inside-1_4020_9394)"/>
 <g id="Container">
 <mask id="path-3-inside-2_4020_9394" fill="white">

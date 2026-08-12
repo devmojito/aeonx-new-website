@@ -7,7 +7,7 @@
    transform cannot reflow anything, so the pixel-locked layout is untouched.
    Deliberately long (34s) and small (1.5% scale, 0.35vw travel) so it never
    competes with the headline or the CTAs painted on top of it. */
-main.ax-page img.g-vec[src$="5069-5380.svg"]{
+main.ax-page .g-vec[data-vec="5069:5380"]{
   transform-origin:50% 45%;
   animation:ax-gc-drift 34s ease-in-out infinite;
   will-change:transform;
@@ -17,6 +17,6 @@ main.ax-page img.g-vec[src$="5069-5380.svg"]{
   50%    {transform:scale(1.015) translate3d(0,-0.35vw,0)}
 }
 @media (prefers-reduced-motion:reduce){
-  main.ax-page img.g-vec[src$="5069-5380.svg"]{animation:none}
+  main.ax-page .g-vec[data-vec="5069:5380"]{animation:none}
 }
 </style>

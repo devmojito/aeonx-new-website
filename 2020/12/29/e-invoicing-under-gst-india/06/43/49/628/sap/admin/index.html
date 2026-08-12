@@ -794,9 +794,9 @@ document.addEventListener('DOMContentLoaded',function(){
 'talk to a sap-on-aws specialist':'/alliances/partners-hub/sap-on-aws/',
 'talk to product team':'/contact-us/','talk to security team':'/contact-us/','talk to the security team':'/contact-us/',
 'book an assessment':'/contact-us/','book a workshop':'/contact-us/','book a live demo':'/contact-us/',
-'book a fit-to-standard workshop':'/contact-us/','book a signavio diagnostic':'/alliances/sap-signavio/',
-'book a databridge pilot':'/services/google-cloud/','book a data bridge pilot':'/services/google-cloud/',
-'book a cloud ledger pilot':'/services/multi-cloud-cms/','request references':'/contact-us/',
+'book a fit-to-standard workshop':'/contact-us/','book a signavio diagnostic':'/contact-us/',
+'book a databridge pilot':'/contact-us/','book a data bridge pilot':'/contact-us/',
+'book a cloud ledger pilot':'/contact-us/','request references':'/contact-us/',
 'request the trust pack':'/insights/trust-security/','download the brochure':'/contact-us/',
 'read the story':'/insights/','read the case study':'/insights/','see case studies':'/insights/',
 'all case studies':'/insights/','view all':'/insights/','case studies':'/insights/',
@@ -816,18 +816,18 @@ document.addEventListener('DOMContentLoaded',function(){
    page rather than being pointed somewhere it does not belong. */
 'explore supplierx':'https://supplierx.cloud/','explore orderx':'https://orderx.cloud/',
 'explore xpense':'https://x-pense.cloud/','explore logystix':'https://logystix.cloud/',
-'explore manufex':'https://manufex.cloud/','explore aeonxiq':'/products/axiom/',
-/* AWS competency / delivery microsites, supplied in the mobile review doc.
-   External hosts, so they are absolute URLs. AWS WAF Delivery is deliberately
-   absent: the review says no microsite exists for it (two case studies under
-   AeonX Research Academy instead), so it stays inert rather than guessing. */
-'agentic ai competency':'https://agentic.axdigital.cloud/',
-'generative ai competency':'https://genai.axdigital.cloud/',
-'devops competency':'https://devops.axdigital.cloud/',
-'ecs delivery':'https://ecs.axdigital.cloud/',
-'amazon ecs service delivery':'https://ecs.axdigital.cloud/',
-'aws cloudformation delivery':'https://cloudformation.axdigital.cloud/',
-'aws cloudformation service delivery':'https://cloudformation.axdigital.cloud/'};
+'explore manufex':'https://manufex.cloud/','explore aeonxiq':'/products/axiom/'};
+/* AWS competency / delivery microsites used to live here too, keyed by the same
+   label text. They are DEAD by design -- every one of these badges is an IMAGE
+   (see "AWS COMPETENCY / DELIVERY BADGES" below, which matches on aria-label
+   because text pills can't reach them) and never a .g-t pill, so these entries
+   could only ever fire by accident. They did: "DevOps Competency" is also a
+   plain content-card heading on alliances/aws-advanced-tier/'s four-competency
+   grid, unrelated to the microsite badge, and this table's orphan-label pass
+   (below) linkified that heading and its card to https://devops.axdigital.cloud/
+   -- the one card in the grid with a hover treatment (button, not tile) that
+   didn't match its three siblings. Removed rather than guarded per-card, since
+   nothing here can ever legitimately match. */
 var NOTBTN=/^(your company name|your name|work email|email|phone|message|ind\(|xxxxx|[^@\s]+@[^@\s]+\.[a-z]+$|.*\|$)/;
 var NOTBTN2=['landing zone & foundation','cloud migration','devops platform','sap on aws','ai & ml on aws','multi-cloud cms',
 'source-to-pay','distribution management','travel & expense','logistics operations','production planning & execution',
@@ -850,7 +850,20 @@ function resolve(n){
 function skipBtn(n){ return NOTBTN.test(n)||NOTBTN2.indexOf(n)>=0; }
   function norm(s){return (s||'').replace(/[\u2192]/g,'').replace(/\s+/g,' ').trim().toLowerCase();}
   function make(el,href){
-    if(el.dataset.cta)return; el.dataset.cta='1';
+    if(el.dataset.cta)return;
+    /* A CTA that lands on the page it's already on is never real intent -- it's
+       a plain heading whose text happens to match a real nav link elsewhere
+       (LINKMAP is built from every same-origin <a>, so any page heading that
+       echoes a menu label collides with it). "SAP Gold Partner" is both the
+       mega-menu's link text AND this page's own first credential-card heading;
+       the orphan-label pass matched them and turned that one card into a button
+       (ax-hv-out) while its five siblings, none of which echo a real nav label,
+       stayed plain tiles (ax-hv-tileskin) -- the reported inconsistency. Same
+       shape as the self-referencing "book a ... pilot" routes fixed earlier;
+       skip here so every linkify pass (ROUTES, orphan-label, plain-text) is
+       covered by one check instead of guarding each site separately. */
+    if(!/^https?:\/\//i.test(href) && href.replace(/\/$/,'')===location.pathname.replace(/\/$/,''))return;
+    el.dataset.cta='1';
     el.style.cursor='pointer'; el.setAttribute('role','link'); el.setAttribute('tabindex','0');
     /* Off-site destinations open in a new tab, as the same links do in the menu, so
        a reader exploring a product does not lose the page they came from. */
@@ -1120,6 +1133,28 @@ document.addEventListener('DOMContentLoaded',function(){
     var bands = [].slice.call(document.querySelectorAll('.g-b')).map(function(e){
       return e.getBoundingClientRect();
     }).filter(function(r){ return r.width && r.width <= innerWidth * 1.02; });
+    /* The padding this button is DRAWN with, in px at the current viewport.
+       The Button component's own auto-layout padding is 28px, but almost every
+       instance on the canvas is layoutSizingHorizontal:FIXED -- the designer
+       resized it -- so 28 is the component default, not what the design shows.
+       Measured on the sap-signavio CTA band: the brand pill is drawn at 220px
+       around a 181px label (19.5px each side) and the outline pill at 138 around
+       93 (22.5px), and a flat 28px floor grew both, then shoved the second pill
+       right and ate the 12px gap between them.
+       The design's own inset is (pill width - label width) / 2, both authored in
+       vw and neither one touched by the label-centring passes (they only ever
+       move `left`). Read once and stashed, because fit() itself rewrites the
+       pill's width in px and a resize re-runs it. */
+    function designPad(p,lab){
+      var d=p.dataset.axPad;
+      if(d===undefined){
+        var pw=(p.getAttribute('style')||'').match(/width:\s*([\d.]+)vw/);
+        var lw=(lab.getAttribute('style')||'').match(/width:\s*([\d.]+)vw/);
+        d=p.dataset.axPad=(pw&&lw)?String(Math.max(0,(parseFloat(pw[1])-parseFloat(lw[1]))/2)):'';
+      }
+      var W=document.documentElement.clientWidth||1920;
+      return d==='' ? 28*W/1920 : parseFloat(d)*W/100;
+    }
     function bandFor(pr){
       var cy = pr.top + pr.height / 2, best = null;
       bands.forEach(function(r){
@@ -1140,11 +1175,8 @@ document.addEventListener('DOMContentLoaded',function(){
       var pr=p.getBoundingClientRect(); if(!pr.width)return;
       var rng=document.createRange(); rng.selectNodeContents(lab);
       var ink=rng.getBoundingClientRect().width;
-      /* Figma sets 28px auto-layout padding on these buttons (at the 1920 design
-         width), so scale that to the viewport and treat it as the floor. The old
-         14px floor left Title Cased labels looking cramped in their pill. */
-      var MINPAD=28*(document.documentElement.clientWidth||1920)/1920;
-      var pad=Math.max(MINPAD,(pr.width-ink)/2);      // symmetric, Figma's 28px floor
+      var MINPAD=designPad(p,lab);
+      var pad=Math.max(MINPAD,(pr.width-ink)/2);      // symmetric, on the design's own inset
       var need=Math.ceil(ink+pad*2);
       var delta=need-pr.width;
       if(delta>0.5){
@@ -2426,12 +2458,25 @@ document.addEventListener("DOMContentLoaded",function(){
     return null;
   }
 
+  /* `_gen.py` honours individualStrokeWeights: a card that shares an edge with its
+     neighbour (a row/grid of cards drawn seam-to-seam) is emitted with per-side
+     border-top/right/bottom declarations instead of the shorthand `border:`, so the
+     shared edge is not doubled. The old test only recognised the shorthand -- the
+     AWS service-stack grid's left-column cards (own border on all four sides) armed
+     for hover, every other card in the same grid (missing its shared left border)
+     did not, which is the "interaction not consistent" report against that section. */
+  var BORDERISH = /(^|;)\s*border(-top|-right|-bottom|-left)?:/;
   function buildTiles(root, boxes, texts){
     var U = (root.clientWidth || innerWidth) / 100;
     var cand = boxes.filter(function(b){
       var el = b.el, st = styled(el);
-      if (!b.w || chrome(el) || el.closest('a') || el.dataset.cta) return false;
-      if (!(/(^|;)\s*border:/.test(st) || /background-color:/.test(st))) return false;
+      /* axOwned: a page-scoped fragment (_reasons.html) already manages this exact
+         box as its own hit target with its own paint. Widening BORDERISH below to
+         catch per-side borders made this engine independently re-claim the same
+         box -- two owners painting one element, the dual-ownership bug documented
+         at length elsewhere in this codebase. Respect the opt-out. */
+      if (!b.w || chrome(el) || el.closest('a') || el.dataset.cta || el.dataset.axOwned) return false;
+      if (!(BORDERISH.test(st) || /background-color:/.test(st))) return false;
       if (b.w < TILE_MIN_W * U || b.w > TILE_MAX_W * U) return false;
       if (b.h < TILE_MIN_H * U || b.h > TILE_MAX_H * U) return false;
       var tin = texts.filter(function(t){ return t.w && inside(b, t); });
@@ -2516,15 +2561,38 @@ document.addEventListener("DOMContentLoaded",function(){
          in buildButtons because the label only behaves this way INSIDE a card. */
       var cta = mem.filter(function(m){
         return /g-t/.test(m.el.className || '') &&
-               /^(learn more|read more|explore|view all|see more)\b/i
+               /^(learn more|read more|explore|view all|see more|view practice)\b/i
                  .test((m.el.textContent || '').trim()); })[0];
       if (cta) {
         cta.el.classList.add('ax-hv-cta');
         mem.forEach(function(m){
           if (m === cta || !/g-vec/.test(m.el.className || '')) return;
           if (m.w <= cta.h * 2 && Math.abs(m.t - cta.t) < cta.h * 1.5 &&
-              m.l >= cta.l + cta.w - 2 && m.l < cta.l + cta.w + cta.h * 3)
+              m.l >= cta.l + cta.w - 2 && m.l < cta.l + cta.w + cta.h * 3){
             m.el.classList.add('ax-hv-cta-mate');
+            /* The 4px Figma gap between label and mate arrow is authored in vw, so it
+               scales exactly linearly with viewport width -- but glyph rendering does
+               not. Below ~1366px the label's real ink runs measurably wider than its
+               vw-scaled box (up to ~4.6px by 1025px), which eats the gap and then the
+               arrow itself, reading as the label's last letter being cut off. Can't
+               reuse spaceArrows() for this: that walks the SMALLEST BOX CONTAINING the
+               label, which for a card's internal CTA row is the whole card, and would
+               recentre "View Practice" into the card's middle (see the .ax-hv-arrow
+               comment above) -- so this nudges just the arrow, off the label's live ink
+               edge, every rescan (load, resize), never the label's own position. */
+            var ink = (function(){ var r = document.createRange(); r.selectNodeContents(cta.el); return r.getBoundingClientRect(); })();
+            var mr = m.el.getBoundingClientRect();
+            var curLeftM = (styled(m.el)).match(/left:\s*(-?[\d.]+)vw/);
+            if (ink.width && mr.width && curLeftM){
+              var vwpx = (document.documentElement.clientWidth || innerWidth || 1920) / 100;
+              var wantLeft = ink.right + 4 * (vwpx / 19.2);   /* 4px at Figma's 1920 reference */
+              var deltaPx = wantLeft - mr.left;
+              if (Math.abs(deltaPx) > 0.3){
+                var newLeft = parseFloat(curLeftM[1]) + deltaPx / vwpx;
+                m.el.setAttribute('style', styled(m.el).replace(/left:\s*-?[\d.]+vw/, 'left:' + newLeft.toFixed(4) + 'vw'));
+              }
+            }
+          }
         });
       }
       GROUPS.push({ kind:'tile', skin:skin, skinClass:'ax-hv-tileskin',
@@ -2569,7 +2637,7 @@ document.addEventListener("DOMContentLoaded",function(){
       /* The wash is clipped to the border box, so it is only safe on the element that IS
          the visible pill: on a square-cornered wrapper it paints a full rectangle that
          reads as colour bleeding out of the button. */
-      var boxy = (/(^|;)\s*border:/.test(st) || /background-color:/.test(st)) && rad > 0;
+      var boxy = (BORDERISH.test(st) || /background-color:/.test(st)) && rad > 0;
       var cls = filled ? 'ax-hv-fill' : (boxy ? 'ax-hv-out' : 'ax-hv-txt');
       /* A bare-text group with heading type is a card TITLE that the chrome's
          linkifier happened to mark as a link, not a text CTA. Colouring it on hover
@@ -3339,7 +3407,11 @@ document.addEventListener("DOMContentLoaded",function(){
           return part;                       /* keep the author's casing */
         }).join('-');
       }
-      return word.toLowerCase().replace(/[a-z0-9]+/g, function(w){
+      /* A possessive "'s" is part of the word it follows, not a new word --
+         splitting on the apostrophe capitalised it on its own: "Partner's Hub"
+         came out "Partner'S Hub". */
+      return word.toLowerCase().replace(/[a-z0-9]+/g, function(w, i, full){
+        if(w==='s' && /['’]/.test(full.charAt(i-1))) return w;
         return ACR[w] || (w.charAt(0).toUpperCase()+w.slice(1));
       });
     }).join('');

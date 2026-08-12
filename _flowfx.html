@@ -14,13 +14,129 @@
 /* the hover glow is ADDED to whatever shadow the design already gives the card,
    never substituted for it -- these cards ship with their own soft drop shadow */
 .ax-flow-t{transition:color .24s ease}
-@media (prefers-reduced-motion:reduce){.ax-flow-c,.ax-flow-t{transition:none}}
+/* Guided-tour dots: default-on, no hover needed. One dot per connector segment,
+   riding the SAME <path> the line itself draws (animateMotion + mpath), so it is
+   pixel-locked to the curve no matter what the curve is. Coloured per segment
+   from --dot-c, set in JS from the source card's own accent -- same "read the
+   colour off the DOM, don't hard-code it" rule the hover glow above already
+   follows. The line itself stays exactly as Figma draws it (grey for the two
+   downstream hops); only the travelling dot carries colour through those. */
+.ax-flow-dot{filter:drop-shadow(0 0 0.3125vw var(--dot-c))}
+@media (prefers-reduced-motion:reduce){.ax-flow-c,.ax-flow-t{transition:none}.ax-flow-dot{display:none}}
 </style>
 <script>
 (function(){
   function alpha(c, a){
     var m = /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/.exec(c || '');
     return m ? 'rgba(' + m[1] + ',' + m[2] + ',' + m[3] + ',' + a + ')' : null;
+  }
+  var SVGNS = 'http://www.w3.org/2000/svg';
+
+  /* Three waves, timed on one shared clock (same `dur`, no per-element `begin`
+     offset -- SMIL keeps them phase-locked forever, no JS ticking required):
+     orange dots leave SAP ECC first, then blue dots pick up from wherever they
+     land, then purple dots carry on to BigQuery/Looker. Each wave's dot is
+     parked and invisible outside its own slice of the cycle -- keyTimes/values
+     share one array so the fade and the motion always switch at the same instant. */
+  var DUR = '7s';
+  var WAVES = [
+    {keyTimes:'0;0.02;0.26;1',                   pts:'0;0;1;1',        op:'0;1;1;0'},
+    {keyTimes:'0;0.30;0.32;0.56;0.58;1',         pts:'0;0;0;1;1;1',    op:'0;0;1;1;0;0'},
+    {keyTimes:'0;0.60;0.62;0.88;0.90;1',         pts:'0;0;0;1;1;1',    op:'0;0;1;1;0;0'}
+  ];
+
+  function dotOn(path, i, color, wave){
+    path.id = 'ax-flow-p' + i;
+    var c = document.createElementNS(SVGNS, 'circle');
+    c.setAttribute('r', '4.5');
+    c.setAttribute('fill', color);
+    c.classList.add('ax-flow-dot');
+    c.style.setProperty('--dot-c', color);
+
+    var mo = document.createElementNS(SVGNS, 'animateMotion');
+    mo.setAttribute('dur', DUR);
+    mo.setAttribute('repeatCount', 'indefinite');
+    mo.setAttribute('calcMode', 'linear');
+    mo.setAttribute('keyTimes', wave.keyTimes);
+    mo.setAttribute('keyPoints', wave.pts);
+    var mp = document.createElementNS(SVGNS, 'mpath');
+    mp.setAttributeNS('http://www.w3.org/1999/xlink', 'href', '#' + path.id);
+    mo.appendChild(mp);
+
+    var op = document.createElementNS(SVGNS, 'animate');
+    op.setAttribute('attributeName', 'opacity');
+    op.setAttribute('dur', DUR);
+    op.setAttribute('repeatCount', 'indefinite');
+    op.setAttribute('calcMode', 'linear');
+    op.setAttribute('keyTimes', wave.keyTimes);
+    op.setAttribute('values', wave.op);
+
+    c.appendChild(mo);
+    c.appendChild(op);
+    path.parentNode.appendChild(c);
+  }
+
+  /* The connector art (SAP ECC -> Extractors/Model Templates -> Reconciliation ->
+     BigQuery/Looker) ships as one flattened <img>, opaque to CSS/JS. Fetch its
+     own SVG and swap it in place so each segment's real <path> -- the exact
+     curve already drawn -- can carry a dot. Two of the eight paths are filled
+     compound shapes (the decorative SAP-ECC-to-BigQuery arc through "14 Days"),
+     not simple strokes; only the six single-direction strokes that trace the
+     card-to-card story get a dot. Within those six, classification is by stroke
+     colour and the path's own bounding box (left/right half, upper/lower half
+     of the viewBox) rather than a hand-picked path index, so a re-export that
+     reorders the paths still lands each dot on the right segment and the right
+     colour -- but a redesign that changes the diagram's SHAPE (a fifth branch,
+     a re-routed line) needs this reworked, not just re-run. */
+  function inlineConnector(main, cards){
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    /* By node id, not geometry: a band/size search here (width>400, inside the
+       panel's vertical band) also matches the final-CTA rainbow-wash background
+       art (RAIN in the chrome tail script) sitting in the same region -- it is
+       FIRST in DOM order, so a loose filter swapped the wrong image in and left
+       the real connector art untouched (0 dots, no error, nothing to see).
+       5069:5380 is Figma's own id for this exact asset, confirmed against the
+       live file -- fixed unless the diagram is rebuilt under a new node. */
+    var img = main.querySelector('img.g-vec[data-vec="5069:5380"]');
+    if (!img) return;
+    function accentOf(name){
+      var c = cards.filter(function(x){ return x.cap && (x.cap.el.textContent || '').trim() === name; })[0];
+      return c ? getComputedStyle(c.el).borderTopColor : 'rgb(35,39,46)';
+    }
+    var orange = accentOf('SAP ECC'), recon = accentOf('Reconciliation');
+    fetch(img.src).then(function(r){ return r.text(); }).then(function(svgText){
+      var tmp = document.createElement('div');
+      tmp.innerHTML = svgText;
+      var svg = tmp.querySelector('svg');
+      if (!svg) return;
+      svg.setAttribute('class', 'g-vec');
+      if (img.dataset.vec) svg.setAttribute('data-vec', img.dataset.vec);
+      svg.setAttribute('style', img.getAttribute('style'));
+      svg.setAttribute('role', 'presentation');
+      svg.setAttribute('aria-hidden', 'true');
+      img.parentNode.replaceChild(svg, img);
+
+      var vb = (svg.getAttribute('viewBox') || '').split(/\s+/).map(parseFloat);
+      var H = vb[3];
+      if (!H) return;
+      var n = 0, grey = [];
+      [].slice.call(svg.querySelectorAll('path[stroke]')).forEach(function(p){
+        if (/^#?FF6A21$/i.test(p.getAttribute('stroke') || '')) dotOn(p, n++, orange, WAVES[0]);
+        else grey.push(p);
+      });
+      /* The four grey strokes split cleanly into a left pair (into Reconciliation)
+         and a right pair (out of it) -- sort by x and halve, rather than testing
+         against viewBox-midpoint: the two clusters are not centred on it (in the
+         current export they sit either side of x=~680, not the viewBox's own 608),
+         so a fixed fraction put both left-pair paths on the wrong side. Sorting is
+         self-calibrating to wherever the clusters actually are. */
+      grey.sort(function(a, b){ return a.getBBox().x - b.getBBox().x; });
+      grey.forEach(function(p, i){
+        var bb = p.getBBox();
+        if (i < grey.length / 2) dotOn(p, n++, accentOf(bb.y < H / 2 ? 'Extractors' : 'Model Templates'), WAVES[1]);
+        else dotOn(p, n++, recon, WAVES[2]);
+      });
+    }).catch(function(){});
   }
   function solid(c){
     var m = /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/.exec(c || '');
@@ -77,6 +193,8 @@
       })[0] || null;
       if (c.cap) c.cap.el.classList.add('ax-flow-t');
     });
+
+    inlineConnector(main, cards);
 
     var cur = null;
     function paint(c){

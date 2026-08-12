@@ -13,6 +13,10 @@
 textarea.ax-cf-in{resize:vertical;font-family:'Nunito Sans',sans-serif}
 select.ax-cf-in{cursor:pointer;appearance:none;-webkit-appearance:none}
 .ax-cf-err{border-color:rgb(220,38,38)!important}
+/* The country-code chip: the select fills the whole chip so the flag and the chevron
+   are part of its hit area (they are drawn as siblings ON TOP of it and are made
+   pointer-transparent in JS), and the label keeps its designed x via padding. */
+select.ax-cf-code{left:0!important;top:0!important;height:100%!important;cursor:pointer}
 .ax-cf-msg{position:absolute;font-family:'Nunito Sans',sans-serif;font-weight:500;
   color:rgb(2,51,89);transition:opacity .2s ease}
 </style>
@@ -50,7 +54,7 @@ select.ax-cf-in{cursor:pointer;appearance:none;-webkit-appearance:none}
     return el;
   }
 
-  function findLabelBox(scope, label){
+  function findLabelBox(scope, label, wantChip){
     var ts = scope.querySelectorAll('.g-t');
     for (var i = 0; i < ts.length; i++)
       if (txt(ts[i]) === label){
@@ -62,7 +66,8 @@ select.ax-cf-in{cursor:pointer;appearance:none;-webkit-appearance:none}
            in the 108px chip and left the number box showing its "XXXXX-XXXXX"
            filler, which is why that field looked a third the size of every other.
            Among the boxes on this field's row, take the WIDEST: for every other
-           field that is still the first one. */
+           field that is still the first one. `wantChip` returns the narrow one
+           instead, so the country-code chip itself can be wired as a real control. */
         /* Width comes from the INLINE style, not a rect: this runs once before the
            panel has been laid out, where every rect measures 0 and the chip would
            win by default -- then again after, giving two inputs for one field. */
@@ -74,6 +79,7 @@ select.ax-cf-in{cursor:pointer;appearance:none;-webkit-appearance:none}
           var m = (el.getAttribute('style') || '').match(/top:\s*([\d.]+)vw/);
           return m ? parseFloat(m[1]) : el.getBoundingClientRect().top;
         };
+        var chip = box;
         var best = box, bw = wOf(box), bt = tOf(box);
         var n = box.nextElementSibling;
         for (var k = 0; k < 4 && n; k++, n = n.nextElementSibling){
@@ -81,7 +87,7 @@ select.ax-cf-in{cursor:pointer;appearance:none;-webkit-appearance:none}
           if (Math.abs(tOf(n) - bt) > 0.4) break;            /* next row down */
           if (wOf(n) > bw && dummyIn(n)){ bw = wOf(n); best = n; }
         }
-        return best;
+        return wantChip ? chip : best;
       }
     return null;
   }
@@ -113,13 +119,14 @@ select.ax-cf-in{cursor:pointer;appearance:none;-webkit-appearance:none}
     return el;
   }
 
-  function selectField(scope, label, options){
-    var box = findLabelBox(scope, label);
+  function selectField(scope, label, options, opts){
+    opts = opts || {};
+    var box = findLabelBox(scope, label, opts.chip);
     if (!box) return null;
     var dummy = dummyIn(box);
     if (!dummy) return null;
     var el = swap(box, dummy, function(){ return document.createElement('select'); });
-    el.name = label;
+    el.name = opts.name || label;
     el.required = true;
     options.forEach(function(o){
       var opt = document.createElement('option');
@@ -219,6 +226,20 @@ select.ax-cf-in{cursor:pointer;appearance:none;-webkit-appearance:none}
        example number reads as an instruction instead of noise. */
     field(form, 'Phone Number', { required:true, type:'tel', placeholder:'98765 43210',
       pattern:'[0-9 ()+-]{6,}' });   /* a hyphen LAST needs no escape; the old \\-\\s made an invalid range, so browsers dropped the pattern and the field accepted letters */
+    /* The country-code chip beside Phone Number ("IND(+91)") was static Figma text --
+       flag + label + chevron drawn to look like a dropdown, wired to nothing. Same
+       region set the Region field already offers elsewhere on this form. */
+    var code = selectField(form, 'Phone Number', ['IND(+91)', 'UAE(+971)', 'Other'],
+      { chip:true, name:'Country Code' });
+    if (code){
+      code.classList.add('ax-cf-code');
+      code.style.paddingLeft = code.style.left;      /* label keeps its designed x */
+      /* the flag and the chevron are LATER siblings, so they paint over the select
+         and would otherwise eat clicks on two thirds of the chip */
+      [].slice.call(code.parentNode.querySelectorAll('.g-vec')).forEach(function(v){
+        v.style.pointerEvents = 'none';
+      });
+    }
 
     if (kind === 'A'){
       field(form, 'Role', { required:true, placeholder:'Your role' });

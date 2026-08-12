@@ -136,7 +136,11 @@
           return part;                       /* keep the author's casing */
         }).join('-');
       }
-      return word.toLowerCase().replace(/[a-z0-9]+/g, function(w){
+      /* A possessive "'s" is part of the word it follows, not a new word --
+         splitting on the apostrophe capitalised it on its own: "Partner's Hub"
+         came out "Partner'S Hub". */
+      return word.toLowerCase().replace(/[a-z0-9]+/g, function(w, i, full){
+        if(w==='s' && /['’]/.test(full.charAt(i-1))) return w;
         return ACR[w] || (w.charAt(0).toUpperCase()+w.slice(1));
       });
     }).join('');

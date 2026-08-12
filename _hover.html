@@ -432,12 +432,25 @@
     return null;
   }
 
+  /* `_gen.py` honours individualStrokeWeights: a card that shares an edge with its
+     neighbour (a row/grid of cards drawn seam-to-seam) is emitted with per-side
+     border-top/right/bottom declarations instead of the shorthand `border:`, so the
+     shared edge is not doubled. The old test only recognised the shorthand -- the
+     AWS service-stack grid's left-column cards (own border on all four sides) armed
+     for hover, every other card in the same grid (missing its shared left border)
+     did not, which is the "interaction not consistent" report against that section. */
+  var BORDERISH = /(^|;)\s*border(-top|-right|-bottom|-left)?:/;
   function buildTiles(root, boxes, texts){
     var U = (root.clientWidth || innerWidth) / 100;
     var cand = boxes.filter(function(b){
       var el = b.el, st = styled(el);
-      if (!b.w || chrome(el) || el.closest('a') || el.dataset.cta) return false;
-      if (!(/(^|;)\s*border:/.test(st) || /background-color:/.test(st))) return false;
+      /* axOwned: a page-scoped fragment (_reasons.html) already manages this exact
+         box as its own hit target with its own paint. Widening BORDERISH below to
+         catch per-side borders made this engine independently re-claim the same
+         box -- two owners painting one element, the dual-ownership bug documented
+         at length elsewhere in this codebase. Respect the opt-out. */
+      if (!b.w || chrome(el) || el.closest('a') || el.dataset.cta || el.dataset.axOwned) return false;
+      if (!(BORDERISH.test(st) || /background-color:/.test(st))) return false;
       if (b.w < TILE_MIN_W * U || b.w > TILE_MAX_W * U) return false;
       if (b.h < TILE_MIN_H * U || b.h > TILE_MAX_H * U) return false;
       var tin = texts.filter(function(t){ return t.w && inside(b, t); });
@@ -522,15 +535,38 @@
          in buildButtons because the label only behaves this way INSIDE a card. */
       var cta = mem.filter(function(m){
         return /g-t/.test(m.el.className || '') &&
-               /^(learn more|read more|explore|view all|see more)\b/i
+               /^(learn more|read more|explore|view all|see more|view practice)\b/i
                  .test((m.el.textContent || '').trim()); })[0];
       if (cta) {
         cta.el.classList.add('ax-hv-cta');
         mem.forEach(function(m){
           if (m === cta || !/g-vec/.test(m.el.className || '')) return;
           if (m.w <= cta.h * 2 && Math.abs(m.t - cta.t) < cta.h * 1.5 &&
-              m.l >= cta.l + cta.w - 2 && m.l < cta.l + cta.w + cta.h * 3)
+              m.l >= cta.l + cta.w - 2 && m.l < cta.l + cta.w + cta.h * 3){
             m.el.classList.add('ax-hv-cta-mate');
+            /* The 4px Figma gap between label and mate arrow is authored in vw, so it
+               scales exactly linearly with viewport width -- but glyph rendering does
+               not. Below ~1366px the label's real ink runs measurably wider than its
+               vw-scaled box (up to ~4.6px by 1025px), which eats the gap and then the
+               arrow itself, reading as the label's last letter being cut off. Can't
+               reuse spaceArrows() for this: that walks the SMALLEST BOX CONTAINING the
+               label, which for a card's internal CTA row is the whole card, and would
+               recentre "View Practice" into the card's middle (see the .ax-hv-arrow
+               comment above) -- so this nudges just the arrow, off the label's live ink
+               edge, every rescan (load, resize), never the label's own position. */
+            var ink = (function(){ var r = document.createRange(); r.selectNodeContents(cta.el); return r.getBoundingClientRect(); })();
+            var mr = m.el.getBoundingClientRect();
+            var curLeftM = (styled(m.el)).match(/left:\s*(-?[\d.]+)vw/);
+            if (ink.width && mr.width && curLeftM){
+              var vwpx = (document.documentElement.clientWidth || innerWidth || 1920) / 100;
+              var wantLeft = ink.right + 4 * (vwpx / 19.2);   /* 4px at Figma's 1920 reference */
+              var deltaPx = wantLeft - mr.left;
+              if (Math.abs(deltaPx) > 0.3){
+                var newLeft = parseFloat(curLeftM[1]) + deltaPx / vwpx;
+                m.el.setAttribute('style', styled(m.el).replace(/left:\s*-?[\d.]+vw/, 'left:' + newLeft.toFixed(4) + 'vw'));
+              }
+            }
+          }
         });
       }
       GROUPS.push({ kind:'tile', skin:skin, skinClass:'ax-hv-tileskin',
@@ -575,7 +611,7 @@
       /* The wash is clipped to the border box, so it is only safe on the element that IS
          the visible pill: on a square-cornered wrapper it paints a full rectangle that
          reads as colour bleeding out of the button. */
-      var boxy = (/(^|;)\s*border:/.test(st) || /background-color:/.test(st)) && rad > 0;
+      var boxy = (BORDERISH.test(st) || /background-color:/.test(st)) && rad > 0;
       var cls = filled ? 'ax-hv-fill' : (boxy ? 'ax-hv-out' : 'ax-hv-txt');
       /* A bare-text group with heading type is a card TITLE that the chrome's
          linkifier happened to mark as a link, not a text CTA. Colouring it on hover

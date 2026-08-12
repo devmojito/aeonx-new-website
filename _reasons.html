@@ -99,7 +99,16 @@
         var a = o.w * o.h;
         if (a < realA){ realA = a; realCard = o; }
       });
-      if (realCard) c.box = {l:realCard.l, r:realCard.r, t:realCard.t, b:realCard.b};
+      if (realCard){
+        c.box = {l:realCard.l, r:realCard.r, t:realCard.t, b:realCard.b};
+        /* _hover.html's own tile scan can independently recognise this same box
+           (painted border/background + a heading-weight line inside) and wrap it
+           in a second, competing hover skin -- the "interaction not consistent"
+           shape this codebase has hit before with other fragments. Opt it out,
+           and strip any claim already made if that scan won the race. */
+        realCard.el.dataset.axOwned = '1';
+        realCard.el.className = realCard.el.className.replace(/\bax-hv-\S+/g, '').trim();
+      }
       c.parts = boxes.filter(function(o){
         if (o.el === c.circle.el || o.el === c.num.el) return false;
         if (!/g-t/.test(o.el.className || '')) return false;
