@@ -4456,6 +4456,10 @@ document.addEventListener("DOMContentLoaded",function(){
         var t=(e.textContent||'').trim();
         var q=e.getBoundingClientRect();
         if(q.top<tr.top-20||q.top>tr.bottom+90) return;
+        /* and inside this card's own column -- host is main.ax-page on this flat
+           sheet, so without a horizontal bound this swept the whole ROW and could
+           stamp one post's date onto its neighbours */
+        if(q.left<tr.left-8||q.left>tr.right+8) return;
         if(/^John Smith$/i.test(t)) e.textContent=p.a||'AeonX Digital';
         else if(p.d&&/^[A-Z][a-z]+ \d{1,2}, \d{4}$/.test(t)&&e!==(slot.date&&slot.date.el)) e.textContent=p.d;
       });
@@ -4469,13 +4473,21 @@ document.addEventListener("DOMContentLoaded",function(){
     if(s.page.dataset.axBl) return;
     s.page.dataset.axBl='1';
 
+    /* Stay inside the card's OWN column. The byline sits at the title's left edge
+       but the date is right-aligned within the card (~+283px), and the old +/-520
+       window is wider than the 459px column pitch -- so every card also matched its
+       NEIGHBOUR's date. Cards claimed each other's slots left-to-right and the last
+       column's own date element was never claimed at all, leaving Figma's
+       placeholder "June 29, 2026" on screen. The title spans the full card width,
+       so its own horizontal span is exactly the column. */
     function nearBelow(title,test){
       if(!title) return null;
       var c=s.texts.filter(function(t){
         return t!==title && test(t.t) && t.r.top>=title.r.bottom-4 &&
-               t.r.top-title.r.bottom<90 && Math.abs(t.r.left-title.r.left)<520;
+               t.r.top-title.r.bottom<90 &&
+               t.r.left>=title.r.left-8 && t.r.left<title.r.left+title.r.width+8;
       });
-      c.sort(function(a,b){ return a.r.top-b.r.top; });
+      c.sort(function(a,b){ return (a.r.top-b.r.top)||(a.r.left-b.r.left); });
       return c[0];
     }
     var cards=s.imgs.map(function(img){
