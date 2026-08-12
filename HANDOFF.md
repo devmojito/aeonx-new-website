@@ -800,3 +800,305 @@ Two failure modes cost real time this session:
 - **A hidden pane reports `innerWidth: 0` and lays nothing out**, so every rect is 0.
   Parsing (`fetch` + `DOMParser`) still works; layout does not. Prefer inline-style
   geometry for assertions.
+
+---
+
+## 19. Third pre-launch pass (2026-08-12)
+
+A long client-feedback pass, mostly bug reports against the live preview rather than a
+fresh Figma diff. The one recurring shape worth internalising: **client-reported bugs
+this session kept tracing back to build-time geometry racing the scroll-reveal
+transform**, in three different fragments, plus one genuinely new failure mode (two
+independent systems owning the same elements). Read §19.7 and §19.8 before touching any
+fragment that identifies elements by position.
+
+### 19.1 Manufacturing card-expand row ("make this section proper")
+
+Three bugs in `_cardexpand.html`, found and fixed in sequence because each fix exposed
+the next:
+
+1. The peach fill stayed on whichever card Figma drew open by default, while the width
+   and description moved to whatever card was actually hovered — a wide white card next
+   to a narrow peach one. Both the open and rest background colours are now read off the
+   design at build time and written explicitly on every layout, never left to a stale
+   class.
+2. Once that was fixed, the expanded card rendered with no description at all: `layout()`
+   wrote coordinates from `box()` (which reports every element in the ROOT frame) straight
+   into the description element's inline `left`/`top`. An absolute offset resolves against
+   the nearest *positioned ancestor*, not the root, so the copy landed 300px right and
+   2115px down — over an unrelated section. Fixed by subtracting the positioned-ancestor
+   chain before writing, the same `box()`/`num()` pattern used elsewhere in this file.
+3. Each card's title sat at whatever height its OWN card was drawn at (Figma draws the
+   open card's title at the top, the collapsed ones centred), and titles only ever moved
+   along x — so in every state but the initial one, exactly one title was visibly out of
+   line with the other three. Titles now translate to the baseline their current state
+   (open/collapsed) calls for, read off the design the same way the fill colours are.
+
+`_cardexpand_check.py` still passes (wide 29.17vw, narrow 13.19vw, span 68.75vw) — it
+does not catch any of these three, since it asserts layout, not paint or copy. Worth
+extending if this file gets touched again.
+
+### 19.2 Footer synced to the current Figma master (`_footersync.py`, new)
+
+The built footer was a frozen snapshot of an older component instance. The master
+(`5323:12316`) has since moved the newsletter cluster right (heading onto the Services
+column) and added a "Get an AI summary of this page" row with Claude/ChatGPT/Perplexity
+links. `_footersync.py` applies just those two deltas in place — never regenerates the
+block — so the hand-added mailto/tel links and the Subscribe wiring survive; re-running
+it is a no-op once applied. Also retired a runtime nudge that used to drag the
+newsletter heading onto the *About Us* column (a deliberate deviation from an earlier
+session, back when the design had it merely close); the current design lands it on a
+column by itself, so the old nudge was pulling it 250px off-design.
+
+The AI-summary links use the **canonical host** (`https://aeonx.digital` + pathname),
+not `location.origin` — a share from staging or a local preview would otherwise hand the
+assistant a URL it cannot reach.
+
+Applied to `_chrome.html`, `index.html`, and spliced into all 97 generated pages plus
+the 7 legacy blog-post copies `_blog.py` no longer regenerates (see §14; those still
+need their own footer patched by hand since they predate `_footersync.py`).
+
+### 19.3 Homepage product panels — geometry AND assets, two separate bugs
+
+The six "SOURCE-TO-PAY" / "DISTRIBUTION MANAGEMENT" / etc. panels each have one Figma
+layout (container `5146:6719`): logo at rel 40,28, heading at 150,24, paragraph at
+150,76, screenshot at 74,\<per panel\>. Only SupplierX was built that way — the other
+five had the mark pinned to the panel's right edge with the heading and copy hard
+against the left. `_prodpanels.py` (new) re-applies that geometry and is idempotent.
+
+Separately — and this is the one that mattered more, caught only because the user
+insisted on checking the actual pixels rather than trusting the position fix — the
+OrderX and Xpense logo *fills* point at the full brand lockup (mark + wordmark,
+~1183×355), not just the mark. Figma crops each to the mark; the panel painted the raw
+fill with `background-size:cover` in a square box, which centres the WIDE image and
+shows the wordmark (or the middle of the word "xpense") instead of the mark. Fixed by
+swapping in Figma's own render of the two logo nodes — the exact crop the design
+paints — with `background-size:contain`.
+
+**Lesson for this file**: matching an element's *position* to Figma is not the same as
+matching its *content*. Pull the actual image (`Read` the PNG, or fetch the Figma node
+render) and look at it, every time an asset is in play — geometry-only verification
+missed this entirely on the first pass.
+
+Also removed one stray `<img class="g-vec" data-vec="5858:3740">` from the homepage
+(designer deleted it from Figma since the last sync) and deleted the now-unreferenced
+`assets/vec/5858-3740.svg`.
+
+### 19.4 The hover engine could let a card's own skin swallow its children
+
+The single most consequential fix this session, because it was a latent bug in
+`_hover.html` itself (used on every page), not a page-specific fragment.
+
+`membersOf(rect, all, skip)` is called with `skip=null` when building both tile and
+button groups, but the candidate list (`boxes.concat(texts, OTHER)`) includes the
+skin/pill element itself — it geometrically "contains itself", so without excluding it,
+the outermost-only filter treats the skin as a container that can swallow its own real
+DOM descendants. Most cards on this site are flat siblings (the established "flat DOM
+trap"), so this never showed up in practice — but the culture page's "Four pillars"
+nests its heading, copy and number badge directly inside the plate div. Every one of
+those measured as "contained by another member" and was dropped: the card lit on hover
+(the skin toggles independently regardless of membership) but its heading, copy and
+number badge never did. An earlier session had already patched around ONE symptom of
+this (pulling the bare digit back in with a colour-only `ax-hv-num` class), which is why
+the number went orange but the badge chip stayed grey instead of getting the full
+chip-fills / number-goes-white treatment the foundation page's (non-nested, so never
+affected) "Three principles" already had.
+
+Root-cause fix: both `membersOf()` call sites now pass `skin.el` / `s.el` as `skip`,
+excluding the skin from its own candidate pool. For the ordinary flat-sibling case this
+only removes a redundant self-membership — the skin's own `ax-hv-on` is already toggled
+separately in `setOn()` — confirmed no behaviour change on `/services/`, `/products/`,
+and the homepage CTA pills.
+
+**Side effect, same commit's aftermath**: the homepage's SaaS-suite index
+(`_suitenav.html`, §19.7) has an outer wrapper around all six product-name rows that is
+*exactly* this same shape — a painted, rounded `.g-b` with real DOM children. Once
+`membersOf()` could see through it, `_hover.html` started building its own tile group
+there too, with the six labels as members — a second, competing owner of elements
+`_suitenav.html` already fully manages. See §19.7 for the fix; the general lesson is in
+§19.8.
+
+### 19.5 Mobile-only fixes
+
+- **Sticky header.** The mobile nav bar is one exported SVG in the flat sheet, so it
+  scrolled away like any other element. Now translated on scroll (never re-parented —
+  a move would require rewriting every sibling's absolute `top`), keeping its hit area
+  since a transform carries that with it. The orange promo strip above it still scrolls
+  off, as designed.
+- **Timeline carousel's last card.** The row was already a working carousel (arrows step
+  through all seven cards), but the last slide is drawn as a clip box holding an image,
+  tag and copy — a wrapper, not a flat sibling like the other six — so the carousel
+  engine's parent test skipped it. It stayed put while the row slid underneath it and
+  bled into the window over whichever card should have been there. Slides are now also
+  collected by column band and reduced to outermost elements, so a wrapper and its
+  children never both get translated (which would move that one slide twice as far as
+  the rest).
+- **Foundation "Why we exist" resync.** The local mobile dump predated a Figma change:
+  both photo frames should be 398×319, but the build had the second at 398×339, 20px
+  too tall and overflowing its frame. Re-pulled with `_figsync.py` and re-ran
+  `_mobile.py` — only that one page changed.
+- **Culture page Info icon.** Moved 51px left in Figma since the last sync. Re-pulled
+  the whole frame (`4475:11727`) rather than hand-editing one coordinate, so anything
+  else the designer moved on that frame comes along too.
+- A vertical label-centring pass for mobile button pills was **built, then reverted in
+  the same session**: Figma already centres these labels exactly (verified: the
+  Explore pill's label sits at `top:8` in a 36px pill, 8px clearance both sides), and
+  the generator already emits that. The pass measured with a `Range`, which reports the
+  inline text-node box rather than the rendered glyphs, read a ~2.9px error that was not
+  there, and pushed every label down — which is what actually caused the "buttons look
+  worse" report. Confirm a defect against the design's own numbers before writing a
+  correction pass; do not trust that a `Range` measurement equals what the eye sees.
+- **`_mobile.py` overwrites `.ax-mob` wholesale on every run**, including on `index.html`
+  even though the desktop homepage is hand-managed — this silently reverted two already-
+  fixed things (the mobile Partner-section orbit geometry, and the removal of the
+  now-deleted stray vector from §19.3) the first time it ran again this session. Both
+  are now re-applied by `_postbuild.py` (`fix_mobile_home()`), which exists precisely
+  for fixups a rebuild wipes. If a mobile-specific fix on `index.html` ever needs
+  redoing after a `_mobile.py` run, that is why, and that is the fix pattern.
+
+### 19.6 Two more "measured too early" bugs, same shape as `_flowfx`/`_reasons` before
+
+- **DataBridge flow diagram and the numbered reason grid** (`_flowfx.html`,
+  `_reasons.html`) each measured their hover targets **once**, ~300ms after load, in
+  page coordinates — while the scroll-reveal still held those off-screen sections at
+  `translateY(1.4vw)`, roughly 27px. Every stored hit-box therefore sat ~27px off the
+  card it belonged to. The cards are tall enough that their middles still worked, which
+  is exactly why this read as "glitchy" rather than dead: edges did nothing, the strip
+  just below a card lit it, and moving between two cards crossed a gap belonging to
+  neither. Both files also blanked the highlight on scroll, which was a workaround for
+  the same drift and a flicker in its own right. Fixed by hit-testing against **live**
+  `getBoundingClientRect()` on every `mousemove` instead of a build-time cache — cheap
+  (a handful of rect reads on a 16ms throttle) and cannot go stale.
+- **The homepage suite index** (`_suitenav.html`) had the identification half of the
+  same bug: `rowFor()`/`panelFor()`/the sort-by-position all used
+  `getBoundingClientRect()` at init time, while the section was still off-screen and
+  transformed. SupplierX — first in its column — lost the containment test to the
+  column's own outer wrapper (no reveal transform of its own, so it measured as if it
+  fully contained the still-shifted label) and got misidentified. Fixed differently
+  from the two above, because identification (not live hit-testing) is what these
+  functions do: they now read the design's own inline `left`/`top`/`width`/`height`
+  (vw) via a `box()`/`num()` helper — the same technique `_cardexpand.html` already
+  uses — which the reveal transform never touches, so it is correct however early it
+  runs. `goTo()` and the click hit-test still read live rects, which is right, since by
+  click time the section is always revealed.
+
+**General lesson, worth remembering before writing any new fragment**: if a section can
+plausibly still be off-screen and untransformed when a fragment's `init()`/`build()`
+runs (roughly: anything below the first viewport height), do not cache
+`getBoundingClientRect()`-derived positions for later use. Either read live rects at the
+moment they are needed (hit-testing), or read authored inline-style geometry instead
+(identification/sorting). Both are immune to the transform; a cached rect is not.
+
+### 19.7 Suite index click bug, round two — two systems owning one row
+
+Even after §19.6's identification fix, SupplierX's row (but not its text) stopped
+answering clicks specifically **after switching to a different tab and back** — a
+state-dependent regression the position fix alone did not explain. Root cause turned
+out to be §19.4's aftermath: `_suitenav.html` already stripped `ax-hv-*` classes from
+each ROW plate (and cleared its inline paint) so the shared hover system could not
+repaint it mid-transition, but it never did the same for the LABEL, and never touched
+the one outer card wrapping all six rows. Once `_hover.html`'s `membersOf()` fix let it
+see through that wrapper, it built its own tile group there — the same six labels, a
+second owner — and its `load+60ms`/resize rescans kept re-imposing that group
+regardless of what `_suitenav.html` had stripped at init. SupplierX, topmost in the
+column and closest to the wrapper's own bounds, lost the most to the second owner.
+
+Fixed by having `_suitenav.html` find that wrapper (the smallest `.g-b` spanning every
+row) and do to it what it already did to each row: strip `ax-hv-*` classes, and clear
+its own inline `background-color`/`border` so `_hover.html`'s candidacy check — which
+requires one of those two in the element's own style — fails on every later rescan.
+Extended the per-row unhook to the label too, which had never been stripped anywhere.
+
+### 19.8 General lesson: two systems must never both own the same elements
+
+§19.4 and §19.7 are one bug with two symptoms. The rule going forward for any new
+page-scoped fragment that takes over elements `_hover.html` might independently
+recognise as a tile or button (painted, rounded box + text) is: **strip `ax-hv-*`
+classes from every element the fragment claims — including any outer wrapper, not just
+the innermost pieces — AND clear whatever inline paint (`background-color`/`border`)
+made it look like a candidate in the first place**, so a later `_hover.html` rescan
+(load, resize) cannot re-claim it. Stripping classes once at init is not enough by
+itself if the element still passes `_hover.html`'s own candidacy test — the next rescan
+just re-applies them.
+
+### 19.9 Smaller fixes
+
+- **CTA linkifier's substring fallback removed.** `resolve()` used to fall back to
+  scanning every same-origin link on the page and returning the first whose label
+  appeared *anywhere inside* the candidate text. Any element merely mentioning a
+  product or service became a link to it: "textiles · ManufeX" and "industrial ·
+  SupplierX" both went to `/products/axiom/`, "Manufacturing & industrial
+  conglomerates" to `/industries/manufacturing/`, and the footer's copyright line —
+  which contains the words "Google Cloud" — to `/services/google-cloud/`. Exact and
+  stem-exact lookups already cover every real CTA, so the fallback is gone; anything
+  unmapped now stays inert instead of guessing.
+- **Product panel Explore CTAs now go to each product's own site**
+  (supplierx.cloud / orderx.cloud / x-pense.cloud / logystix.cloud / manufex.cloud —
+  the same five destinations the Products mega-menu already links), not
+  `/products/axiom/` for all six. Off-site CTAs open in a new tab with
+  `rel="noopener noreferrer"`, matching the menu links. AeonX.IQ has no site of its own
+  and keeps the platform page.
+- **Stat counter ate leading zeros.** It animates any leading digit run above a size
+  threshold and writes the value back through `String()`, so a step label authored as
+  `"02"` rendered as `"2"` once the counter touched it — visible on mobile, where the
+  numbers are large enough to clear the threshold (desktop draws them smaller and was
+  never touched). A zero-padded number is a step label, not a stat — Figma draws
+  `01`–`04` static — so those are now skipped outright rather than counted and
+  re-padded. Real stats (`280+`, `15+`, `4X`, etc.) are unaffected.
+- **Leadership department tabs, one root cause for two symptoms.** Figma ships both
+  labels ALL CAPS, but only the active tab is exported with a fill; the runtime Title
+  Case pass treats any filled, rounded, button-sized box as a control, so it Title
+  Cased the active label while its unfilled sibling — never matching that test — stayed
+  authored-caps. That same mutation was why neither tab responded to clicks:
+  `_leadtabs.html` finds and wires both tabs by matching their exact uppercase text, and
+  once the case pass ran first and altered it, the wiring script no longer recognised
+  them and never attached a handler. Fixed by exempting both labels from title-casing
+  (same register as the FY chips and AWS competency tabs elsewhere on the site) —
+  restores the caps AND, as a consequence, the click wiring.
+- **Icon corner black wedges** (Foundation page, "Why CIOs pick us" style cards). Six
+  400×400 rasters were exported with the four canvas corners OUTSIDE the rounded card
+  opaque black instead of transparent, and each card's own rounding reaches further
+  into its corner than the site's CSS clip radius does — so `overflow:hidden` could
+  never fully hide it. None of the six use black anywhere in the real graphic, so
+  `_iconcorners.py` (new) does a blanket near-black-to-transparent pass on the six
+  known refs; idempotent. General technique if this recurs elsewhere: composite the
+  cleaned asset through the actual CSS clip in a canvas and sample the corner pixel,
+  rather than eyeballing the raw PNG.
+- **Board of Directors page removed.** The Figma Governance section no longer lists it
+  (Shareholding Pattern / BRSR / Investor Grievances only now). Removed the mega-menu
+  entry (desktop panel + mobile nav map) from `_chrome.html` and `index.html`, dropped
+  the page from `_build_all.py`'s list, deleted `investor-relations/board-of-directors/`.
+  No redirect stub — the route was introduced by this build and was never live.
+- **Homepage tagline removed** at the client's explicit request ("SAP, cloud, and AI for
+  India's enterprises from one accountable partner.") — a deliberate deviation from
+  Figma, not a bug fix. Both occurrences (desktop and mobile blocks) were standalone
+  leaf text nodes, so nothing else shifted.
+- **Reasons-grid hover generalised further, applied to the career page's "Five
+  reasons."** That grid is 3-over-2 (three cards top row, two wider ones bottom row,
+  both spanning the same full width) — `_reasons.html`'s existing cell-band math
+  assumed one column pitch for the whole grid (built for "Six reasons" and "Why buy the
+  suite", neither of which has a real per-cell box to fall back on) and, fed this
+  shape, read the gap *between* the two rows' x-positions as the pitch: every hit-band
+  came out roughly half the true card width. Where a real per-cell box exists in the
+  markup, `_reasons.html` now uses its authored bounds directly instead of the
+  synthetic pitch band. Guard added: a candidate real box is rejected if it also
+  contains another cell's own badge — without it, a shared *section* wrapper (which is
+  what "Six reasons" and "Why buy the suite" have instead of per-cell boxes) briefly
+  won for every cell and the whole grid regressed to one shared hit-zone. Scoped via
+  `_postbuild.py`'s `SCOPED` list to `who-we-are/career/index.html`.
+
+### 19.10 Verification notes
+
+- The Browser pane's `screenshot`/`zoom` tools were unreliable all session (tiny,
+  squished renders unrelated to actual page layout) and `computer`-driven real clicks
+  in this pane could not be trusted as a negative result — a real click that appeared
+  to do nothing was, on investigation, this pane's own rendering/coordinate issue, not
+  proof the site was broken. Verification this session was done almost entirely via
+  `javascript_exec`: dispatched events plus `getComputedStyle`/`getBoundingClientRect`
+  assertions, with `*{transition:none!important}` injected first per the existing
+  §18 lesson.
+- When a fix cannot be reproduced synthetically but a structural cause is clearly wrong
+  (§19.4/§19.7's dual-ownership), fix the structural cause and verify its *absence*
+  (zero `ax-hv-*` classes on the previously-contested elements, confirmed after a
+  genuine width-change resize forces the real rescan path) rather than chasing a
+  reproduction of the symptom itself.
