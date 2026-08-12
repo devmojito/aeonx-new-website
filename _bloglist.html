@@ -16,6 +16,18 @@
 .ax-bl-page button{border:1px solid rgb(213,218,226);background:#fff;border-radius:99px;
   width:2rem;height:2rem;cursor:pointer;color:rgb(35,39,46);font-size:1rem;line-height:1}
 .ax-bl-page button[disabled]{opacity:.35;cursor:default}
+/* Paging/filtering swapped every card's contents in one frame, which reads as a
+   hard jolt on a grid this size. Fade the cards out, swap, fade them back in --
+   opacity only, so nothing in the pixel-locked layout can move. The stagger runs
+   left-to-right across the row so the grid reads as re-flowing rather than
+   blinking. Chips and pager numbers get their own colour transition. */
+.ax-bl-card{transition:opacity .22s ease}
+.ax-bl-card.is-out{opacity:0}
+.ax-bl-chip,.ax-bl-pgnum{transition:color .2s ease,background-color .2s ease,font-weight .2s ease}
+.ax-bl-arrow{transition:opacity .2s ease}
+@media (prefers-reduced-motion:reduce){
+  .ax-bl-card,.ax-bl-chip,.ax-bl-pgnum,.ax-bl-arrow{transition:none}
+}
 </style>
 <script>
 /* ---- REAL POSTS IN THE DESIGNED BLOG SLOTS ---- */
@@ -72,6 +84,25 @@
     c.sort(function(a,b){ return b.r.bottom-a.r.bottom; });
     return c[0];
   }
+  /* The category chip is TWO elements: a painted .g-b plate and the .g-t label on
+     top of it. Hiding only the label left the brand-orange plate floating over an
+     otherwise empty cell whenever a filter or search shrank the pool -- the row of
+     stray orange rectangles in the sparse-results view. */
+  function plateFor(chip,page){
+    if(!chip) return null;
+    var best=null;
+    page.querySelectorAll('.g-b').forEach(function(b){
+      if(b.closest('.ax-mob')) return;
+      var st=b.getAttribute('style')||'';
+      if(!/background-color|border/.test(st)) return;
+      var q=b.getBoundingClientRect();
+      if(!q.width||q.width>360||q.height>60) return;
+      if(chip.r.left<q.left-6||chip.r.right>q.right+6) return;
+      if(chip.r.top<q.top-8||chip.r.bottom>q.bottom+8) return;
+      if(!best||q.width*q.height<best.a) best={el:b,a:q.width*q.height};
+    });
+    return best&&best.el;
+  }
 
   function wire(el,url){
     if(!el) return;
@@ -88,13 +119,40 @@
     });
   }
 
+  /* Fall back to the company mark for any thumbnail that will not actually paint.
+     A dead URL is the easy case; the one that shipped is subtler -- the oldest AWS
+     post points at revslider's dummy.png, which returns 200 and decodes fine but is
+     a 1x1 TRANSPARENT spacer, so onerror never fires and the card rendered as a
+     blank white box. Anything that small is a spacer, not a thumbnail. Results are
+     cached per URL so re-renders (filter, search, paging) do not re-probe. */
+  var LOGO='/assets/aeonx-logo.svg', IMGOK={};
+  function paintImg(el,url,isPh){
+    var st=(el.getAttribute('style')||'').replace(/background-image:[^;]*;?/,'');
+    el.setAttribute('style', st+';background-image:url("'+url+'")');
+    el.classList.add('ax-bl-img');
+    el.classList.toggle('ax-bl-img--ph', !!isPh);
+  }
+  function setImg(el,p){
+    if(p.ph||!p.i){ paintImg(el,LOGO,true); return; }
+    if(IMGOK[p.i]===false){ paintImg(el,LOGO,true); return; }
+    paintImg(el,p.i,false);
+    if(IMGOK[p.i]===true) return;
+    var im=new Image();
+    im.onload=function(){
+      var bad=(im.naturalWidth<=32||im.naturalHeight<=32);
+      IMGOK[p.i]=!bad;
+      if(bad&&(el.style.backgroundImage||'').indexOf(p.i)>-1) paintImg(el,LOGO,true);
+    };
+    im.onerror=function(){
+      IMGOK[p.i]=false;
+      if((el.style.backgroundImage||'').indexOf(p.i)>-1) paintImg(el,LOGO,true);
+    };
+    im.src=p.i;
+  }
+
   function fill(slot,p){
     if(!p){ return; }
-    var st=slot.img.el.getAttribute('style')||'';
-    st=st.replace(/background-image:[^;]*;?/,'');
-    slot.img.el.setAttribute('style', st+';background-image:url("'+p.i+'")');
-    slot.img.el.classList.add('ax-bl-img');
-    slot.img.el.classList.toggle('ax-bl-img--ph', !!p.ph);
+    setImg(slot.img.el,p);
     if(slot.title){
       slot.title.el.textContent=p.t;
       slot.title.el.style.whiteSpace='normal';
@@ -141,7 +199,8 @@
     }
     var cards=s.imgs.map(function(img){
       var t=titleFor(img,s.texts);
-      return {img:img, title:t, chip:chipFor(t,s.texts),
+      var ch=chipFor(t,s.texts);
+      return {img:img, title:t, chip:ch, chipPlate:plateFor(ch,s.page),
               author:nearBelow(t,function(x){ return /^[A-Z][a-z]+ [A-Z][a-z]+$/.test(x); }),
               date:nearBelow(t,function(x){ return /^[A-Z][a-z]+ \d{1,2}, \d{4}$/.test(x); })};
     }).filter(function(c){ return c.title; });
@@ -239,9 +298,19 @@
       ['img','title','chip','author','date'].forEach(function(k){
         if(c[k]&&c[k].el) c[k].el.style.visibility = on?'':'hidden';
       });
+      /* the painted plate under the category label is a separate element */
+      if(c.chipPlate) c.chipPlate.style.visibility = on?'':'hidden';
     }
 
-    function render(){
+    /* every element of a card fades as one unit */
+    function cardEls(c){
+      var a=['img','title','chip','author','date'].map(function(k){ return c[k]&&c[k].el; });
+      if(c.chipPlate) a.push(c.chipPlate);
+      return a.filter(Boolean);
+    }
+    var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var firstPaint=true, swapT=null;
+    function paint(){
       var list=pool();
       hero.forEach(function(c,i){ show(c,!!list[i]); fill(c,list[i]); });
       var off=hero.length+pageNo*grid.length;
@@ -253,6 +322,25 @@
       var total=Math.max(1,Math.ceil(Math.max(0,list.length-hero.length)/Math.max(1,grid.length)));
       if(pageNo>total-1){ pageNo=total-1; }
       paintPager(total);
+    }
+    function render(){
+      if(firstPaint||reduce){ firstPaint=false; paint(); return; }
+      var all=hero.concat(grid);
+      all.forEach(function(c){
+        cardEls(c).forEach(function(e){ e.classList.add('ax-bl-card','is-out'); });
+      });
+      clearTimeout(swapT);
+      swapT=setTimeout(function(){
+        paint();
+        /* stagger the return across the row so it re-flows rather than blinks */
+        all.forEach(function(c,i){
+          var d=Math.min(i,8)*22;
+          cardEls(c).forEach(function(e){
+            e.classList.add('ax-bl-card');
+            setTimeout(function(){ e.classList.remove('is-out'); }, d);
+          });
+        });
+      },230);
     }
 
     /* Wire the DESIGNED pagination row (\u2039 1 2 3 4 5 \u2026 40 \u203a) rather than adding
@@ -333,6 +421,7 @@
         t.el.style.display='';
         t.el.textContent=v;
         var isNum=/^\d+$/.test(v);
+        t.el.classList.add('ax-bl-pgnum');
         t.el.style.cursor=isNum?'pointer':'default';
         t.el.style.fontWeight=(isNum&&(+v-1)===pageNo)?'700':'';
         t.el.style.color=(isNum&&(+v-1)===pageNo)?'rgb(223,63,23)':'';
@@ -351,6 +440,7 @@
         [[a0,-1],[a1,1]].forEach(function(pair){
           var el=pair[0], dir=pair[1];
           el.style.cursor='pointer';
+          el.classList.add('ax-bl-arrow');
           if(!el.__axpg){
             el.__axpg=1;
             el.setAttribute('role','button');
@@ -393,42 +483,100 @@
              browse && Math.abs(t.r.top-browse.r.top)<14 && t.r.left>browse.r.left;
     }).sort(function(a,b){ return a.r.left-b.r.left; });
     if(chipRow.length){
-      var gap = chipRow.length>1 ? Math.max(24, chipRow[1].r.left-chipRow[0].r.right) : 40;
-      var baseLeft = parseFloat(chipRow[0].el.style.left) || 0;   /* authored vw */
-      var vwpx = (document.documentElement.clientWidth||1920)/100;
-      var chips = chipRow.map(function(t){ return t.el; });
-      while(chips.length<CATS.length){
-        var clone = chips[chips.length-1].cloneNode(false);
-        chips[chips.length-1].parentNode.appendChild(clone);
-        chips.push(clone);
+      var vwpx=(document.documentElement.clientWidth||1920)/100;
+      /* Each chip is a painted PLATE plus a label sitting on it. Moving only the
+         labels left every plate at its designed x, so boxes and text drifted apart
+         -- and because the design has five slots for seven real categories the row
+         also ran off the right edge ("Digital Transformation" clipped to "Digita").
+         Move plate and label together, size each plate to its own label, and END
+         the row where the design's last plate ended: it stays right-aligned to the
+         content column and grows leftward into the empty space after "Browse by
+         category:" instead of overflowing the page. */
+      var pairs=chipRow.map(function(t){ return {label:t.el, plate:plateFor(t,s.page)}; });
+      var padPx=34, gapPx=8, i0;
+      for(i0=0;i0<pairs.length;i0++){
+        if(!pairs[i0].plate) continue;
+        var pw=pairs[i0].plate.getBoundingClientRect().width;
+        if(pw>chipRow[i0].r.width){ padPx=pw-chipRow[i0].r.width; break; }
       }
-      var x = baseLeft;
-      chips.forEach(function(el,i){
+      for(i0=1;i0<pairs.length;i0++){
+        if(!pairs[i0].plate||!pairs[i0-1].plate) continue;
+        var g=pairs[i0].plate.getBoundingClientRect().left-pairs[i0-1].plate.getBoundingClientRect().right;
+        if(g>0){ gapPx=g; break; }
+      }
+      /* These chips sit inside a POSITIONED ancestor, so an absolute `left` is
+         resolved against that container -- writing the page-space x straight in
+         put the whole row ~1080px to the right and off the page. Place by DELTA
+         from where the element currently renders instead: works whatever the
+         containing block is, and stays in vw so it still scales with the layout
+         (left:Nvw always computes to N*vwpx, container notwithstanding). */
+      function placeX(el,targetX){
+        var cur=el.getBoundingClientRect().left;
+        var comp=parseFloat(getComputedStyle(el).left)||0;
+        el.style.left=((comp+(targetX-cur))/vwpx).toFixed(4)+'vw';
+      }
+      var lastPlate=pairs[pairs.length-1].plate;
+      var rowRight=lastPlate?lastPlate.getBoundingClientRect().right
+                            :chipRow[chipRow.length-1].r.right;
+      while(pairs.length<CATS.length){
+        var src=pairs[pairs.length-1];
+        var nl=src.label.cloneNode(false);
+        src.label.parentNode.appendChild(nl);
+        var np=src.plate?src.plate.cloneNode(false):null;
+        if(np) src.plate.parentNode.insertBefore(np,nl);
+        pairs.push({label:nl,plate:np});
+      }
+      /* measure every label at its natural width first, then place right-to-left */
+      var widths=pairs.map(function(pr,i){
+        if(CATS[i]===undefined) return 0;
+        pr.label.textContent=CATS[i];
+        pr.label.style.width='auto';
+        pr.label.style.whiteSpace='nowrap';
+        return pr.label.getBoundingClientRect().width+padPx;
+      });
+      var total=0;
+      widths.forEach(function(w,i){ if(w) total+=w+(i?gapPx:0); });
+      var x=rowRight-total;
+      /* selected vs idle styling read off the design's own first and second chip */
+      var selBg=pairs[0].plate?getComputedStyle(pairs[0].plate).backgroundColor:'';
+      var selFg=getComputedStyle(pairs[0].label).color;
+      var idleBg=(pairs[1]&&pairs[1].plate)?getComputedStyle(pairs[1].plate).backgroundColor:'';
+      var idleFg=pairs[1]?getComputedStyle(pairs[1].label).color:selFg;
+      function paintChips(){
+        pairs.forEach(function(pr,j){
+          if(CATS[j]===undefined) return;
+          var on=(CATS[j]===active);
+          if(pr.plate) pr.plate.style.backgroundColor = on?selBg:idleBg;
+          pr.label.style.color = on?selFg:idleFg;
+        });
+      }
+      pairs.forEach(function(pr,i){
         var label=CATS[i];
-        if(label===undefined){ el.style.display='none'; return; }
-        el.textContent=label;
-        el.style.left=x.toFixed(4)+'vw';
-        el.style.width='auto';
-        el.style.whiteSpace='nowrap';
-        el.classList.add('ax-bl-hit');
-        el.setAttribute('role','button');
-        el.setAttribute('tabindex','0');
-        /* advance by the label's real ink, in vw so it survives resize */
-        var ink=el.getBoundingClientRect().width;
-        x += ink/vwpx + gap/vwpx;
-        var pick=function(){
-          active=label; pageNo=0; render();
-          chips.forEach(function(c,j){
-            c.style.fontWeight = (CATS[j]===active)?'700':'';
-            c.style.color = (CATS[j]===active)?'rgb(223,63,23)':'';
-          });
-        };
-        if(CATS[i]===active){ el.style.fontWeight='700'; el.style.color='rgb(223,63,23)'; }
-        el.addEventListener('click',pick);
-        el.addEventListener('keydown',function(e){
+        if(label===undefined){
+          pr.label.style.display='none';
+          if(pr.plate) pr.plate.style.display='none';
+          return;
+        }
+        var w=widths[i];
+        if(pr.plate){
+          pr.plate.style.width=(w/vwpx).toFixed(4)+'vw';
+          placeX(pr.plate,x);
+          pr.plate.style.cursor='pointer';
+        }
+        placeX(pr.label,x+padPx/2);
+        pr.label.classList.add('ax-bl-hit','ax-bl-chip');
+        if(pr.plate) pr.plate.classList.add('ax-bl-chip');
+        pr.label.setAttribute('role','button');
+        pr.label.setAttribute('tabindex','0');
+        x+=w+gapPx;
+        var pick=function(){ active=label; pageNo=0; paintChips(); render(); };
+        pr.label.addEventListener('click',pick);
+        if(pr.plate) pr.plate.addEventListener('click',pick);
+        pr.label.addEventListener('keydown',function(e){
           if(e.key==='Enter'||e.key===' '){ e.preventDefault(); pick(); }
         });
       });
+      paintChips();
     }
 
     wireSearch();
