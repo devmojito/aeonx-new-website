@@ -69,13 +69,44 @@
          below it. */
       var bot = single ? c.circle.b + c.circle.h * 8 : c.circle.t + py - 40;
       c.box = {l:c.cx - px / 2, r:c.cx + px / 2, t:c.circle.t - 16, b:bot};
+      /* Prefer a REAL card box over the synthetic pitch band. The pitch band assumes
+         every row shares one column count, which breaks on an uneven grid -- the
+         careers page's "Five reasons" is 3 cards across the top and 2 across the
+         bottom, both spanning the same full width, so the top row's true pitch
+         (~467px) and the bottom row's (~700px) differ; the single global px picked
+         the smaller gap BETWEEN the two rows' x-positions (~233px) and every band
+         came out roughly half the true card width. Where Figma exports the card
+         itself as one box (it is not for "Six reasons" or "Why buy the suite",
+         hence the pitch fallback above still exists), use ITS bounds instead --
+         authored geometry, so it is correct regardless of how the grid is shaped. */
+      var realCard = null, realA = Infinity;
+      boxes.forEach(function(o){
+        if (!/g-b/.test(o.el.className || '') || o.el === c.circle.el) return;
+        if (o.l > c.circle.l + 2 || o.t > c.circle.t + 2 ||
+            o.r < c.circle.r - 2 || o.b < c.circle.b - 2) return;
+        if (o.w < c.circle.w * 3 || o.h < c.circle.h * 2) return;   /* the badge's own chip, not a card */
+        /* Must be THIS cell's own card, not a shared section/grid wrapper: reject
+         * anything that also contains another cell's badge. "Six reasons" has no
+         * per-cell box at all, only a section-wide background that swallows every
+         * circle -- without this check it "won" for all six cells and one card lit
+         * for the whole grid regardless of which badge was under the pointer. */
+        var swallowsAnother = cells.some(function(other){
+          return other !== c && other.circle &&
+                 other.circle.l >= o.l - 2 && other.circle.r <= o.r + 2 &&
+                 other.circle.t >= o.t - 2 && other.circle.b <= o.b + 2;
+        });
+        if (swallowsAnother) return;
+        var a = o.w * o.h;
+        if (a < realA){ realA = a; realCard = o; }
+      });
+      if (realCard) c.box = {l:realCard.l, r:realCard.r, t:realCard.t, b:realCard.b};
       c.parts = boxes.filter(function(o){
         if (o.el === c.circle.el || o.el === c.num.el) return false;
         if (!/g-t/.test(o.el.className || '')) return false;
         var mid = o.l + o.w / 2;
         return mid > c.box.l && mid < c.box.r && o.t > c.box.t && o.t < c.box.b;
       });
-      if (single && c.parts.length){
+      if (!realCard && single && c.parts.length){
         var deepest = c.parts.reduce(function(a, o){ return o.b > a ? o.b : a; }, c.circle.b);
         c.box.b = deepest + 12;
       }

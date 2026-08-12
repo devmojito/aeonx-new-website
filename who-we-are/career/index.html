@@ -4123,5 +4123,193 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 
+<style id="ax-reasons-css">
+/* ---- NUMBERED REASON GRID ----
+   The "Six reasons" grid (01..06 in outlined circles, each with a heading and a
+   line of copy) was completely static. This gives the cell the same hover language
+   the service cards use: the circle fills brand, its number goes white, the heading
+   goes brand, the body copy stays as it is.
+
+   Colour only, no transform. Every element here is absolutely positioned and also
+   carries the scroll-reveal's own transform, so moving anything would either fight
+   that or need the --ax-bt dance _hover.html does; a fill reads as clearly and
+   cannot shift the layout by a pixel. */
+.ax-rsn-c{transition:background-color .22s ease,box-shadow .22s ease}
+.ax-rsn-n,.ax-rsn-h{transition:color .22s ease}
+.ax-rsn-c.is-on{background-color:rgb(223,63,23)!important;
+  box-shadow:0 0.2083vw 0.625vw rgba(223,63,23,.28)}
+.ax-rsn-n.is-on{color:rgb(255,255,255)!important}
+.ax-rsn-h.is-on{color:rgb(223,63,23)!important}
+.ax-rsn-hit{cursor:default}
+@media (max-width:1024px){.ax-rsn-c,.ax-rsn-n,.ax-rsn-h{transition:none}}
+@media (prefers-reduced-motion:reduce){.ax-rsn-c,.ax-rsn-n,.ax-rsn-h{transition:none}}
+</style>
+<script>
+(function(){
+  function txt(e){ return (e.textContent||'').replace(/\s+/g,' ').trim(); }
+
+  function build(main){
+    var all = [].slice.call(main.querySelectorAll('.g-t,.g-b'));
+    var rect = function(e){ var r = e.getBoundingClientRect();
+      return r.width ? {el:e, l:r.left, t:r.top + scrollY, w:r.width, h:r.height,
+                        r:r.left + r.width, b:r.top + scrollY + r.height} : null; };
+    var boxes = all.map(rect).filter(Boolean);
+
+    /* a step circle: a round box with a two-digit number sitting in it */
+    var cells = [];
+    boxes.forEach(function(n){
+      if (!/g-t/.test(n.el.className || '') || !/^\d{2}$/.test(txt(n.el))) return;
+      var circle = null;
+      boxes.forEach(function(c){
+        if (!/g-b/.test(c.el.className || '') || c.w > 200) return;
+        if (c.w > c.h * 2 || c.h > c.w * 2) return;              /* a badge, not a bar */
+        /* circle (Six reasons, radius = half the width) or rounded rect (Why buy the
+           suite, 8px on 44px). Anything with square corners is not a step badge. */
+        if (parseFloat(getComputedStyle(c.el).borderRadius) < c.w * 0.12) return;
+        if (c.l > n.l + 4 || c.r < n.r - 4 || c.t > n.t + 4 || c.b < n.b - 4) return;
+        if (!circle || c.w < circle.w) circle = c;
+      });
+      if (circle) cells.push({num:n, circle:circle, cx:circle.l + circle.w / 2});
+    });
+    if (cells.length < 3) return false;
+
+    cells.sort(function(a, b){ return a.circle.t - b.circle.t || a.circle.l - b.circle.l; });
+    /* column and row pitch, from the grid itself */
+    var xs = cells.map(function(c){ return c.cx; }).sort(function(a, b){ return a - b; });
+    var px = 0, py = 0;
+    for (var i = 1; i < xs.length; i++){ var d = xs[i] - xs[i-1]; if (d > 20 && (!px || d < px)) px = d; }
+    for (var j = 1; j < cells.length; j++){
+      var dy = cells[j].circle.t - cells[0].circle.t;
+      if (dy > 40 && (!py || dy < py)) py = dy;
+    }
+    if (!px) px = cells[0].circle.w * 4;
+    if (!py) py = cells[0].circle.h * 4;
+
+    var single = cells.every(function(c){ return Math.abs(c.circle.t - cells[0].circle.t) < 8; });
+    cells.forEach(function(c){
+      /* the cell: this column, from the badge down to just short of the next row.
+         With a single row there is no next row to stop at, so the band runs to the
+         deepest text in the column -- "Why buy the suite" is four cells across, one
+         row, and a fixed guess either clipped the copy or spilled into the section
+         below it. */
+      var bot = single ? c.circle.b + c.circle.h * 8 : c.circle.t + py - 40;
+      c.box = {l:c.cx - px / 2, r:c.cx + px / 2, t:c.circle.t - 16, b:bot};
+      /* Prefer a REAL card box over the synthetic pitch band. The pitch band assumes
+         every row shares one column count, which breaks on an uneven grid -- the
+         careers page's "Five reasons" is 3 cards across the top and 2 across the
+         bottom, both spanning the same full width, so the top row's true pitch
+         (~467px) and the bottom row's (~700px) differ; the single global px picked
+         the smaller gap BETWEEN the two rows' x-positions (~233px) and every band
+         came out roughly half the true card width. Where Figma exports the card
+         itself as one box (it is not for "Six reasons" or "Why buy the suite",
+         hence the pitch fallback above still exists), use ITS bounds instead --
+         authored geometry, so it is correct regardless of how the grid is shaped. */
+      var realCard = null, realA = Infinity;
+      boxes.forEach(function(o){
+        if (!/g-b/.test(o.el.className || '') || o.el === c.circle.el) return;
+        if (o.l > c.circle.l + 2 || o.t > c.circle.t + 2 ||
+            o.r < c.circle.r - 2 || o.b < c.circle.b - 2) return;
+        if (o.w < c.circle.w * 3 || o.h < c.circle.h * 2) return;   /* the badge's own chip, not a card */
+        /* Must be THIS cell's own card, not a shared section/grid wrapper: reject
+         * anything that also contains another cell's badge. "Six reasons" has no
+         * per-cell box at all, only a section-wide background that swallows every
+         * circle -- without this check it "won" for all six cells and one card lit
+         * for the whole grid regardless of which badge was under the pointer. */
+        var swallowsAnother = cells.some(function(other){
+          return other !== c && other.circle &&
+                 other.circle.l >= o.l - 2 && other.circle.r <= o.r + 2 &&
+                 other.circle.t >= o.t - 2 && other.circle.b <= o.b + 2;
+        });
+        if (swallowsAnother) return;
+        var a = o.w * o.h;
+        if (a < realA){ realA = a; realCard = o; }
+      });
+      if (realCard) c.box = {l:realCard.l, r:realCard.r, t:realCard.t, b:realCard.b};
+      c.parts = boxes.filter(function(o){
+        if (o.el === c.circle.el || o.el === c.num.el) return false;
+        if (!/g-t/.test(o.el.className || '')) return false;
+        var mid = o.l + o.w / 2;
+        return mid > c.box.l && mid < c.box.r && o.t > c.box.t && o.t < c.box.b;
+      });
+      if (!realCard && single && c.parts.length){
+        var deepest = c.parts.reduce(function(a, o){ return o.b > a ? o.b : a; }, c.circle.b);
+        c.box.b = deepest + 12;
+      }
+      /* the heading is the heaviest, largest line under the circle */
+      c.head = c.parts.slice().sort(function(a, b){
+        return (parseFloat(getComputedStyle(b.el).fontSize) || 0) -
+               (parseFloat(getComputedStyle(a.el).fontSize) || 0);
+      })[0] || null;
+      c.circle.el.classList.add('ax-rsn-c');
+      c.num.el.classList.add('ax-rsn-n');
+      if (c.head) c.head.el.classList.add('ax-rsn-h');
+      /* the whole cell is the target, so the copy reacts too */
+      c.parts.concat([c.circle, c.num]).forEach(function(o){ o.el.classList.add('ax-rsn-hit'); });
+    });
+
+    var cur = null;
+    function paint(c){
+      if (c === cur) return;
+      if (cur){
+        cur.circle.el.classList.remove('is-on');
+        cur.num.el.classList.remove('is-on');
+        if (cur.head) cur.head.el.classList.remove('is-on');
+      }
+      cur = c;
+      if (cur){
+        cur.circle.el.classList.add('is-on');
+        cur.num.el.classList.add('is-on');
+        if (cur.head) cur.head.el.classList.add('is-on');
+      }
+    }
+    /* One pointer listener over the grid rather than listeners per element: the
+       cells are a flat sheet of absolutely positioned boxes with no wrapper to
+       attach to, and a point test is what "hovering this cell" actually means. */
+    /* The cell bands were measured at build, in page coordinates, while the
+       scroll-reveal still held this section translated -- so every band sat about
+       27px off the cell it belonged to: edges did nothing and the strip below a cell
+       lit it. Keep the band's SHAPE from the design but anchor it to the badge's live
+       rect on each move, which cannot drift. Same fix as the flow diagram. */
+    cells.forEach(function(c){
+      c.dx = { l: c.box.l - c.circle.l, r: c.box.r - c.circle.l,
+               t: c.box.t - c.circle.t, b: c.box.b - c.circle.t };
+    });
+    var last = 0;
+    addEventListener('mousemove', function(e){
+      /* Throttled on a timestamp rather than rAF: rAF does not fire while the tab
+         is not compositing, which makes this untestable in a headless pane for no
+         benefit -- the test is a couple of comparisons per move. */
+      var now = e.timeStamp || 0;
+      if (now && now - last < 16) return;
+      last = now;
+      if (innerWidth <= 1024) { paint(null); return; }
+      var x = e.clientX, y = e.clientY, hit = null;
+      for (var k = 0; k < cells.length; k++){
+        var cr = cells[k].circle.el.getBoundingClientRect();
+        if (!cr.width) continue;
+        var d = cells[k].dx;
+        if (x >= cr.left + d.l && x <= cr.left + d.r &&
+            y >= cr.top + d.t && y <= cr.top + d.b) { hit = cells[k]; break; }
+      }
+      paint(hit);
+    }, {passive:true});
+    /* No paint(null) on scroll: with live anchoring the pointer is still inside the
+       same cell after the page moves, and blanking it mid-scroll was itself a flicker. */
+    return true;
+  }
+
+  function init(){
+    var main = document.querySelector('main.ax-page');
+    if (!main || main.dataset.axReasons) return;
+    if (innerWidth && innerWidth <= 1024) return;
+    if (build(main)) main.dataset.axReasons = '1';
+  }
+  if (document.readyState === 'loading')
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(init, 260); });
+  else setTimeout(init, 260);
+  addEventListener('load', function(){ setTimeout(init, 700); });
+})();
+</script>
+
 </body>
 </html>

@@ -59,6 +59,7 @@ SCOPED = [
     ('industries/manufacturing/index.html', 'ax-cardex-css', '_cardexpand.html'),
     ('services/rise-with-sap/index.html', 'ax-reasons-css', '_reasons.html'),
     ('products/index.html',              'ax-reasons-css', '_reasons.html'),
+    ('who-we-are/career/index.html',     'ax-reasons-css', '_reasons.html'),
     ('services/google-cloud/index.html', 'ax-flowfx-css',  '_flowfx.html'),
     ('industries/metals-engineering/index.html', 'ax-caseread-css', '_caseread.html'),
     ('industries/energy-fertiliser-oil-gas/index.html', 'ax-caseread-css', '_caseread.html'),
