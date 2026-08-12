@@ -2790,7 +2790,19 @@ document.addEventListener("DOMContentLoaded",function(){
     Object.keys(seen).forEach(function(k){
       var stack = seen[k];
       var skin = stack[stack.length - 1];          /* topmost paints the ring */
-      var mem = membersOf(skin, boxes.concat(texts, OTHER), null);
+      /* Pass skin.el as `skip`, not null. boxes/texts includes every .g-b/.g-t on
+         the page, including the skin itself -- it geometrically "contains" itself,
+         so without excluding it here membersOf()'s outermost-only filter treats it
+         as a container that swallows any of ITS OWN children that happen to be real
+         DOM descendants (most cards are flat siblings per the "flat DOM trap", but
+         a few -- the culture page's "Four pillars" -- nest heading/copy/badge
+         directly inside the plate div). Every one of those children then measured
+         as "contained by another member" and was dropped: the card lit on hover but
+         its heading, copy and number badge never did, because mem held only the
+         skin. Excluding the skin from its own candidate pool costs nothing for the
+         normal flat-sibling case -- it was never anything but a redundant
+         self-membership there, and setOn() already toggles the skin separately. */
+      var mem = membersOf(skin, boxes.concat(texts, OTHER), skin.el);
       /* Step numbers drawn INSIDE their own chip. membersOf() keeps only the
          outermost elements, so such a digit is dropped (the chip contains it) and
          never gets `ax-hv-on` -- on the culture page's "Four pillars" the card lit
@@ -2949,7 +2961,7 @@ document.addEventListener("DOMContentLoaded",function(){
            between the two families with margin on both sides. */
         if (!isPill && lab && fsize(lab.el) < U * 0.60) return;
       }
-      var mem = membersOf(s, boxes.concat(texts, OTHER), null);
+      var mem = membersOf(s, boxes.concat(texts, OTHER), s.el);   /* see the tile call above */
       /* A small vector in the right half of the pill is its trailing arrow. It can be a
          flat sibling OR a child of a g-clip pill, and membersOf drops descendants of
          other members, so the children have to be collected separately. */
