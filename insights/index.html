@@ -3931,16 +3931,18 @@ document.addEventListener("DOMContentLoaded",function(){
    new value animated instead of applying -- the art lagged the scroll and still
    drifted while the dots stayed put. Pinning must be instant. */
 .ax-srp,.ax-srp-art{transition:none!important}
-.ax-srp__dots{position:absolute;display:flex;align-items:center;pointer-events:auto;
-  background:#ECEEF2;border-radius:99px}
-.ax-srp__dot{border:0;padding:0;cursor:pointer;background:#8695AA;border-radius:99px;
-  transition:width .28s cubic-bezier(.22,.61,.36,1),background-color .28s ease}
-.ax-srp__dot.is-on{background:#23272E}
+/* The dot strip is gone. It was drawn twice -- baked into the exported art AND
+   painted over as live buttons -- and the overlay only existed to mask the static
+   version underneath. With the overlay removed the baked dots would surface as a
+   fake indicator frozen on page 2, so clip them off the art too. The pager export
+   is one shared component (viewBox 1728x40: dot pill 0-138, prev 1640, next 1688 --
+   the same constants this file already places the buttons with), so the clip is
+   safe wherever it is armed. Prev/next and the scrollbar remain. */
+.ax-srp-art{clip-path:inset(0 0 0 7.99%)}
 .ax-srp__btn{position:absolute;pointer-events:auto;cursor:pointer;background:transparent;
   border:0;padding:0;border-radius:99px}
 .ax-srp__btn[disabled]{cursor:default;opacity:.45}
-.ax-srp__btn:focus-visible,.ax-srp__dot:focus-visible{outline:2px solid #23272E;outline-offset:2px}
-@media (prefers-reduced-motion:reduce){.ax-srp__dot{transition:none}}
+.ax-srp__btn:focus-visible{outline:2px solid #23272E;outline-offset:2px}
 </style>
 <script>
 /* ---- OVER-WIDE FIGMA ROWS -> REAL SCROLLERS ---- */
@@ -4053,15 +4055,6 @@ document.addEventListener("DOMContentLoaded",function(){
     var pct = function(v){ return (v / VB * 100) + '%'; };
     var vpct = function(v){ return (v / VH * 100) + '%'; };
 
-    /* dots, painted over the baked ones (same fill as the pill interior) */
-    var dots = document.createElement('div');
-    dots.className = 'ax-srp__dots';
-    dots.style.left = pct(8); dots.style.top = vpct(6);
-    dots.style.width = pct(122); dots.style.height = vpct(28);
-    dots.style.justifyContent = 'center';
-    dots.style.gap = pct(8);
-    wrap.appendChild(dots);
-
     function mkBtn(x0, x1, label){
       var b = document.createElement('button');
       b.type = 'button'; b.className = 'ax-srp__btn'; b.setAttribute('aria-label', label);
@@ -4073,37 +4066,11 @@ document.addEventListener("DOMContentLoaded",function(){
     var prev = mkBtn(1640, 1682, 'Previous');
     var next = mkBtn(1686, 1728, 'Next');
 
-    var pages = 1, cells = [];
     function step(){ return box.clientWidth * 0.9; }
     function maxScroll(){ return box.scrollWidth - box.clientWidth; }
 
     function render(){
       var max = maxScroll();
-      var want = Math.max(1, Math.min(6, Math.ceil(box.scrollWidth / Math.max(1, box.clientWidth))));
-      if (want !== pages){
-        pages = want; dots.innerHTML = ''; cells = [];
-        for (var i = 0; i < pages; i++){
-          (function(i){
-            var d = document.createElement('button');
-            d.type = 'button'; d.className = 'ax-srp__dot';
-            d.setAttribute('aria-label', 'Go to page ' + (i + 1));
-            d.style.height = vpct(8);
-            d.addEventListener('click', function(){
-              box.scrollTo({ left: pages > 1 ? max * i / (pages - 1) : 0,
-                behavior: REDUCED ? 'auto' : 'smooth' });
-            });
-            dots.appendChild(d); cells.push(d);
-          })(i);
-        }
-      }
-      var at = max > 0 ? box.scrollLeft / max : 0;
-      var active = Math.round(at * (pages - 1));
-      cells.forEach(function(d, i){
-        var on = i === active;
-        d.classList.toggle('is-on', on);
-        d.style.width = pct(on ? 41 : 8);
-        d.setAttribute('aria-current', on ? 'true' : 'false');
-      });
       prev.disabled = box.scrollLeft <= 4;
       next.disabled = box.scrollLeft >= max - 4;
       /* Figma draws the pager INSIDE the row it controls, so once that row became a
@@ -4987,14 +4954,14 @@ document.addEventListener("DOMContentLoaded",function(){
    reports the full scrollHeight and nothing about the pixel-locked layout changes.
    Horizontal stays clipped -- only the vertical axis was ever overflowing. */
 .ax-csf-scroll{overflow-y:auto!important;overflow-x:hidden!important;
-  scroll-behavior:smooth;overscroll-behavior-y:contain;
-  scrollbar-width:thin;scrollbar-color:rgba(35,39,46,.18) transparent}
-.ax-csf-scroll::-webkit-scrollbar{width:6px}
-.ax-csf-scroll::-webkit-scrollbar-thumb{background:rgba(35,39,46,.18);border-radius:99px}
-.ax-csf-scroll::-webkit-scrollbar-thumb:hover{background:rgba(35,39,46,.30)}
-.ax-csf-scroll::-webkit-scrollbar-track{background:transparent}
+  overscroll-behavior-y:contain;cursor:grab;
+  scrollbar-width:none;-ms-overflow-style:none}
+/* Dragged, not scrolled: the box still scrolls mechanically (that is what moves
+   the cards and keeps the PAGE height fixed) but its scrollbar is hidden, so the
+   only affordances are the drag and the slow auto-advance. */
+.ax-csf-scroll::-webkit-scrollbar{width:0;height:0;display:none}
+.ax-csf-scroll.is-drag{cursor:grabbing}
 .ax-csf-scroll:focus-visible{outline:2px solid rgb(223,63,23);outline-offset:2px}
-@media (prefers-reduced-motion:reduce){.ax-csf-scroll{scroll-behavior:auto}}
 </style>
 <script>
 (function(){
@@ -5217,6 +5184,76 @@ document.addEventListener("DOMContentLoaded",function(){
     var empty=null;
     /* Only scroll when the visible set actually overflows -- a filter that leaves
        four cards must not leave a scrollbar on a box with room to spare. */
+    /* Drag to pan, plus a slow downward drift so the shelf reads as alive. The
+       page height never changes -- only this box's own scrollTop moves. The drift
+       pauses while the pointer is inside, while dragging, and while anything in
+       here has focus, and never runs under prefers-reduced-motion. */
+    var REDUCED_CS = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var dragging = null, dragMoved = false, hovering = false, onScreen = true, raf = null;
+    var DRIFT = 0.012;                     /* px per ms -- ~12px a second */
+    function armDrag(){
+      if(sec.dataset.axCsfDrag) return;
+      sec.dataset.axCsfDrag = '1';
+      sec.addEventListener('pointerdown', function(e){
+        if(e.pointerType === 'mouse' && e.button !== 0) return;
+        dragging = { y:e.clientY, top:sec.scrollTop };
+        dragMoved = false;
+        sec.classList.add('is-drag');
+        try { sec.setPointerCapture(e.pointerId); } catch(_){}
+      });
+      sec.addEventListener('pointermove', function(e){
+        if(!dragging) return;
+        var d = e.clientY - dragging.y;
+        if(Math.abs(d) > 3) dragMoved = true;
+        sec.scrollTop = dragging.top - d;
+      });
+      ['pointerup','pointercancel'].forEach(function(ev){
+        sec.addEventListener(ev, function(){
+          if(!dragging) return;
+          dragging = null; sec.classList.remove('is-drag');
+          /* let the click guard below see the drag, then forget it */
+          setTimeout(function(){ dragMoved = false; }, 0);
+        });
+      });
+      /* a drag that ends on a card must not open that card */
+      sec.addEventListener('click', function(e){
+        if(dragMoved){ e.preventDefault(); e.stopPropagation(); }
+      }, true);
+      sec.addEventListener('pointerenter', function(){ hovering = true; });
+      sec.addEventListener('pointerleave', function(){ hovering = false; });
+      sec.addEventListener('focusin',  function(){ hovering = true; });
+      sec.addEventListener('focusout', function(){ hovering = false; });
+      if(window.IntersectionObserver){
+        new IntersectionObserver(function(es){ onScreen = es[0].isIntersecting; })
+          .observe(sec);
+      }
+    }
+    function drift(){
+      if(REDUCED_CS || raf) return;
+      var last = 0;
+      /* Keep the position in a float of our own. At ~12px/s a frame advances about
+         0.19px, and assigning a sub-pixel value to scrollTop snaps it straight back
+         to the integer it already was -- reading scrollTop back each frame meant the
+         drift accumulated nothing and the shelf sat perfectly still. Track the real
+         position here and only resync when something else (a drag, the keyboard, a
+         filter reset) has moved it. */
+      var pos = sec.scrollTop, applied = pos;
+      raf = requestAnimationFrame(function tick(ts){
+        if(!raf) return;
+        if(!last) last = ts;
+        var dt = Math.min(64, ts - last); last = ts;
+        var max = sec.scrollHeight - sec.clientHeight;
+        if(max > 0 && onScreen && !hovering && !dragging){
+          if(Math.abs(sec.scrollTop - applied) > 2) pos = sec.scrollTop;
+          pos += dt * DRIFT;
+          if(pos >= max - 0.5) pos = 0;                   /* loop back to the top */
+          sec.scrollTop = pos;
+          applied = sec.scrollTop;
+        }
+        raf = requestAnimationFrame(tick);
+      });
+    }
+    function stopDrift(){ if(raf){ cancelAnimationFrame(raf); raf = null; } }
     function scrollable(){
       /* Hidden cards keep their box (visibility, not display), so scrollHeight
          stays at the full grid height even when a filter leaves three results --
@@ -5235,8 +5272,10 @@ document.addEventListener("DOMContentLoaded",function(){
       if(need){
         if(!sec.hasAttribute('tabindex')) sec.setAttribute('tabindex','0');
         sec.setAttribute('role','group');
-        sec.setAttribute('aria-label','Customer stories, scrollable');
+        sec.setAttribute('aria-label','Customer stories, drag or use arrow keys');
+        armDrag(); drift();
       } else {
+        stopDrift();
         sec.removeAttribute('tabindex'); sec.removeAttribute('role');
         sec.removeAttribute('aria-label'); sec.scrollTop=0;
       }

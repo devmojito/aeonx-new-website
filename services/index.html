@@ -3135,16 +3135,18 @@ document.addEventListener("DOMContentLoaded",function(){
    new value animated instead of applying -- the art lagged the scroll and still
    drifted while the dots stayed put. Pinning must be instant. */
 .ax-srp,.ax-srp-art{transition:none!important}
-.ax-srp__dots{position:absolute;display:flex;align-items:center;pointer-events:auto;
-  background:#ECEEF2;border-radius:99px}
-.ax-srp__dot{border:0;padding:0;cursor:pointer;background:#8695AA;border-radius:99px;
-  transition:width .28s cubic-bezier(.22,.61,.36,1),background-color .28s ease}
-.ax-srp__dot.is-on{background:#23272E}
+/* The dot strip is gone. It was drawn twice -- baked into the exported art AND
+   painted over as live buttons -- and the overlay only existed to mask the static
+   version underneath. With the overlay removed the baked dots would surface as a
+   fake indicator frozen on page 2, so clip them off the art too. The pager export
+   is one shared component (viewBox 1728x40: dot pill 0-138, prev 1640, next 1688 --
+   the same constants this file already places the buttons with), so the clip is
+   safe wherever it is armed. Prev/next and the scrollbar remain. */
+.ax-srp-art{clip-path:inset(0 0 0 7.99%)}
 .ax-srp__btn{position:absolute;pointer-events:auto;cursor:pointer;background:transparent;
   border:0;padding:0;border-radius:99px}
 .ax-srp__btn[disabled]{cursor:default;opacity:.45}
-.ax-srp__btn:focus-visible,.ax-srp__dot:focus-visible{outline:2px solid #23272E;outline-offset:2px}
-@media (prefers-reduced-motion:reduce){.ax-srp__dot{transition:none}}
+.ax-srp__btn:focus-visible{outline:2px solid #23272E;outline-offset:2px}
 </style>
 <script>
 /* ---- OVER-WIDE FIGMA ROWS -> REAL SCROLLERS ---- */
@@ -3257,15 +3259,6 @@ document.addEventListener("DOMContentLoaded",function(){
     var pct = function(v){ return (v / VB * 100) + '%'; };
     var vpct = function(v){ return (v / VH * 100) + '%'; };
 
-    /* dots, painted over the baked ones (same fill as the pill interior) */
-    var dots = document.createElement('div');
-    dots.className = 'ax-srp__dots';
-    dots.style.left = pct(8); dots.style.top = vpct(6);
-    dots.style.width = pct(122); dots.style.height = vpct(28);
-    dots.style.justifyContent = 'center';
-    dots.style.gap = pct(8);
-    wrap.appendChild(dots);
-
     function mkBtn(x0, x1, label){
       var b = document.createElement('button');
       b.type = 'button'; b.className = 'ax-srp__btn'; b.setAttribute('aria-label', label);
@@ -3277,37 +3270,11 @@ document.addEventListener("DOMContentLoaded",function(){
     var prev = mkBtn(1640, 1682, 'Previous');
     var next = mkBtn(1686, 1728, 'Next');
 
-    var pages = 1, cells = [];
     function step(){ return box.clientWidth * 0.9; }
     function maxScroll(){ return box.scrollWidth - box.clientWidth; }
 
     function render(){
       var max = maxScroll();
-      var want = Math.max(1, Math.min(6, Math.ceil(box.scrollWidth / Math.max(1, box.clientWidth))));
-      if (want !== pages){
-        pages = want; dots.innerHTML = ''; cells = [];
-        for (var i = 0; i < pages; i++){
-          (function(i){
-            var d = document.createElement('button');
-            d.type = 'button'; d.className = 'ax-srp__dot';
-            d.setAttribute('aria-label', 'Go to page ' + (i + 1));
-            d.style.height = vpct(8);
-            d.addEventListener('click', function(){
-              box.scrollTo({ left: pages > 1 ? max * i / (pages - 1) : 0,
-                behavior: REDUCED ? 'auto' : 'smooth' });
-            });
-            dots.appendChild(d); cells.push(d);
-          })(i);
-        }
-      }
-      var at = max > 0 ? box.scrollLeft / max : 0;
-      var active = Math.round(at * (pages - 1));
-      cells.forEach(function(d, i){
-        var on = i === active;
-        d.classList.toggle('is-on', on);
-        d.style.width = pct(on ? 41 : 8);
-        d.setAttribute('aria-current', on ? 'true' : 'false');
-      });
       prev.disabled = box.scrollLeft <= 4;
       next.disabled = box.scrollLeft >= max - 4;
       /* Figma draws the pager INSIDE the row it controls, so once that row became a
