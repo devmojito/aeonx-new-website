@@ -5024,14 +5024,56 @@ document.addEventListener("DOMContentLoaded",function(){
     /* Unhook the plates from the shared hover system and from their own inline
        paint, so nothing else can write background-color on them mid-transition. */
     var rows=items.map(rowFor);
+    function unhook(el){
+      el.className=el.className.split(/\s+/).filter(function(c){
+        return c && c.indexOf('ax-hv')!==0; }).join(' ');
+    }
     rows.forEach(function(b,i){
       if(!b) return;
-      b.className=b.className.split(/\s+/).filter(function(c){
-        return c && c.indexOf('ax-hv')!==0; }).join(' ');
+      unhook(b);
       b.style.backgroundColor=''; b.style.opacity='';
       b.classList.add('ax-sn-row');
+      unhook(items[i]);
       items[i].classList.add('ax-sn-label');
     });
+
+    /* The six rows sit inside ONE outer card -- itself a painted, rounded .g-b that
+       _hover.html's generic tile scan also recognises as a candidate, with all six
+       labels as its members (row/label were only unhooked above, not the wrapper).
+       That gave every label a SECOND, competing owner: _hover.html's own tile group
+       toggles ax-hv-on/ax-hv-m on the whole six-item column as one unit, and its
+       load+60ms rescan re-applies that regardless of what this file strips at init.
+       The visible symptom was exactly this: SupplierX -- topmost in the column, so
+       the one row whose bounds the wrapper's own candidacy most easily re-covers --
+       stopped answering clicks anywhere but its own text once a tab switch had
+       triggered a rescan, while the label itself (matched by target identity,
+       independent of which group owns the row) kept working.
+       Find that wrapper (the smallest .g-b spanning every row) and strip it too,
+       then clear ITS OWN inline background/border so _hover.html's candidacy check
+       -- which requires background-color or border in the element's own style --
+       fails on every later rescan. Two independent systems must not both own the
+       same plates. */
+    (function unhookWrapper(){
+      var top=Infinity, left=Infinity, bottom=-Infinity, right=-Infinity;
+      rows.concat(items).forEach(function(el){
+        if(!el) return;
+        var b=box(el,root); if(!b) return;
+        if(b.l<left) left=b.l; if(b.t<top) top=b.t;
+        if(b.r>right) right=b.r; if(b.b>bottom) bottom=b.b;
+      });
+      if(!isFinite(top)) return;
+      var best=null, bestA=Infinity;
+      [].slice.call(document.querySelectorAll('main.ax-page .g-b')).forEach(function(candEl){
+        if(rows.indexOf(candEl)!==-1) return;
+        var q=box(candEl,root);
+        if(!q||q.l>left+0.3||q.t>top+0.3||q.r<right-0.3||q.b<bottom-0.3) return;
+        var a=q.w*q.h;
+        if(a<bestA){ bestA=a; best=candEl; }
+      });
+      if(!best) return;
+      unhook(best);
+      best.style.backgroundColor=''; best.style.borderColor=''; best.style.border='';
+    })();
 
     function select(i){
       rows.forEach(function(b,n){ if(b) b.classList.toggle('is-on', n===i); });
