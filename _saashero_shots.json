@@ -1,0 +1,44 @@
+[
+ {
+  "slug": "xpense",
+  "src": "/assets/gen/aa567cbcf88652b7fd70c928aa177cbe0a7d00a9.png",
+  "size": "59.0104vw 79.4826vw",
+  "pos": "0.0000vw -0.0017vw",
+  "ref": "aa567cbcf88652b7fd70c928aa177cbe0a7d00a9"
+ },
+ {
+  "slug": "supplierx",
+  "src": "/assets/gen/59aaccb6d152a67424f6bd4fbf46df577bdd9ff5.png",
+  "size": "59.0104vw 39.2583vw",
+  "pos": "0.0000vw -0.0458vw",
+  "ref": "59aaccb6d152a67424f6bd4fbf46df577bdd9ff5"
+ },
+ {
+  "slug": "logystix",
+  "src": "/assets/gen/59aaccb6d152a67424f6bd4fbf46df577bdd9ff5.png",
+  "size": "59.0104vw 39.2583vw",
+  "pos": "0.0000vw -0.0458vw",
+  "ref": "59aaccb6d152a67424f6bd4fbf46df577bdd9ff5"
+ },
+ {
+  "slug": "manufex",
+  "src": "/assets/gen/2714267af9e02b4b2ebcea0c1790f496f03e7899.png",
+  "size": "59.0104vw 39.2708vw",
+  "pos": "0.0933vw 0.0933vw",
+  "ref": "2714267af9e02b4b2ebcea0c1790f496f03e7899"
+ },
+ {
+  "slug": "orderx",
+  "src": "/assets/gen/7f4ebb15712b6e8306e590a80755af65f4e5b1e8.png",
+  "size": "59.0104vw 43.4375vw",
+  "pos": "0.0933vw 0.0933vw",
+  "ref": "7f4ebb15712b6e8306e590a80755af65f4e5b1e8"
+ },
+ {
+  "slug": "aeonxiq",
+  "src": "/assets/gen/e35ee9e51c72f197dcd30547c51270218a80b07b.png",
+  "size": "68.5417vw 32.9167vw",
+  "pos": "0.0933vw 0.0933vw",
+  "ref": "e35ee9e51c72f197dcd30547c51270218a80b07b"
+ }
+]

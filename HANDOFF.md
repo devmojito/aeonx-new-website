@@ -1102,3 +1102,150 @@ just re-applies them.
   (zero `ax-hv-*` classes on the previously-contested elements, confirmed after a
   genuine width-change resize forces the real rescan path) rather than chasing a
   reproduction of the symptom itself.
+
+---
+
+## 20. Homepage SaaS hero variant + culture gallery dialog (2026-08-13)
+
+Two Figma additions the designer made after the last dump. Neither node is reachable
+from `aeonx-node.json` (they are on frames the dumps do not cover), so both are pulled
+straight from REST and run through `_gen.build_body`, which keeps them on the repo's
+absolute-vw convention instead of being flattened to a screenshot.
+
+### 20.1 The homepage now carries two heroes
+
+Figma `Home/SaaS` (`6366:20873`) is the same page as `Home/SAP` with a different hero,
+plus a toggle pill (`Component 223`, `6366:29603`) placed on **both** frames.
+
+- `_saashero.py` — pulls `6366:28195` (the SaaS hero, 1920x894) and `6366:29603`,
+  flattens them, reports the assets to fetch. `--refetch` re-pulls; the cached JSON is
+  gitignored.
+- `_saashero_apply.py` — splices the result into `index.html` between two sentinel
+  comments. Idempotent: re-run to replace the block, so regenerate-and-re-apply is the
+  edit loop. It also tags the shipped hero `.ax-hero-sap` and adds
+  `'explore saas':'/products/'` to the CTA route table.
+- **SAP stays the default.** The SaaS frame is a variant, not a replacement. `#saas` /
+  `#sap` in the URL selects one, so either is linkable.
+- Hiding is `visibility`, never `display`: everything is absolutely positioned so
+  nothing reflows either way, the hero mosaic canvas keeps its measured size while
+  off-screen, and hidden controls drop out of the tab order on their own.
+
+**Geometry.** Figma's current `Home/SAP` and `Home/SaaS` frames both sit **69px lower**
+than the built page — the designer re-heroed both pages (the old `section.hero/Light
+Version` at rel 44 is now `visible:false`, `Component 44` at rel 113 replaced it) and
+shifted everything below it down. Rather than move 665vw of absolute page, the SaaS
+hero is dropped into the band `index.html` already reserves (`top:5.9375vw`,
+`height:42.9167vw`) and clipped to it. Its product screenshot bleeds off the bottom in
+the design too; only the bleed point differs. **The homepage is one full section-shift
+behind Figma — that resync is still owed.**
+
+### 20.2 `_gen.py` ignores Figma image `filters`
+
+The two brick canvases flanking the SaaS hero are one **pale-green** source bitmap that
+Figma recolours with fill `filters` (`contrast -0.3, saturation 1.0, temperature 0.55,
+tint 0.81, highlights -0.1, shadows -0.6`). `_gen.py` has no notion of those, so the raw
+fill lands on the page green — which is exactly what shipped in the first attempt at
+this hero. There is no faithful CSS `filter` equivalent for Figma's temperature/tint.
+Fix: `_saashero.bake()` exports each canvas as Figma's **own node render** (filters,
+rotation and crop all baked) and places it on `absoluteRenderBounds`, the same treatment
+vector clusters already get. **Any other node with `fills[].filters` has the same bug.**
+
+### 20.3 The six product tabs
+
+Figma ships **one** panel behind the six tabs (the Xpense dashboard); SupplierX,
+LogystiX, ManufeX, OrderX and AeonxIQ have no artwork in that component. The five reuse
+the screenshots already on this page's products showcase — Xpense keeps Figma's exact
+`background-size`, the borrowed five are `cover` from the top since their aspect ratios
+differ. Active-label colours come from each product's own mark; Xpense keeps the value
+Figma states outright (`rgb(41,93,160)`).
+
+Figma paints the active tab's orange rule onto the cell itself. It has to slide, so
+`_saashero_apply.py` strips it and re-emits it as one positioned `#ax-hp-underline`.
+
+### 20.4 Two more dual-ownership collisions (§19.8 again)
+
+- **CTA resolver vs the product tabs.** The orphan-label pass finds "Xpense",
+  "SupplierX", … in the Products mega-menu's own links and turns each tab label into a
+  `role="link"` — a second owner, an extra tab stop per product, and Enter navigating
+  away instead of switching the panel. Opt out with `data-cta="1"` in the markup (the
+  pass's own already-handled check). `data-ax-owned="1"` does the same for the hover
+  engine.
+- **`_scrollrow.html` vs the gallery dialog.** Every gallery photo card is a `.g-clip`
+  holding an oversized decorative gradient, so the row engine armed them as drag
+  scrollers and painted a 3vw white edge fade over the dialog's right margin. Opt out
+  with `data-ax-srow="1"`. Same shape as §19.7: the symptom was a pale strip, the cause
+  was a second owner.
+
+### 20.5 Culture gallery dialog
+
+`/who-we-are/culture/`'s expand glyph (`6018:28358`) opens Figma `6386:33167`: a
+1184x2207 clipped, scrollable frame of twelve photographs, no text.
+
+- `_gallery_build.py` writes `_gallery.html`, registered in `_postbuild.py`'s `SCOPED`
+  list. The culture page is **generated** — a direct edit to it does not survive
+  `_build_all.py`, which is what the first attempt at this did.
+- 1184px of a 1920px design is exactly `61.6667vw`, so every coordinate `_gen` emits
+  lands correctly inside a box of that width with no rescaling.
+- The trigger is promoted to a real button at runtime (it ships as a decorative `<img>`,
+  and the generated page is rewritten on every build). Figma's own close control is
+  dropped from the flattened markup and re-emitted as a real `<button>`, pinned rather
+  than scrolling 2200px away with the content.
+- On close, focus falls back to the trigger when `document.activeElement` was `<body>`
+  — a mouse click does not always leave focus on the element it hit.
+
+### 20.6 Run order
+
+```
+FIGMA_TOKEN=<tok> python3 _saashero.py && python3 _saashero_apply.py
+FIGMA_TOKEN=<tok> python3 _gallery_build.py && python3 _postbuild.py
+python3 _imgfetch.py _saashero.html _gallery.html   # needs /tmp/imgfills.json
+python3 _webp.py                                    # LAST -- it repoints *.png -> *.webp
+```
+
+`_webp.py` must come last: it rewrites `/assets/gen/*.png` across the built HTML with a
+plain regex, and re-running the apply scripts puts `.png` back. That regex is also why
+the product-tab shot map stores **full literal paths** rather than bare imageRefs — a
+URL assembled in JS would keep pointing at the multi-megabyte PNG forever.
+
+### 20.7 Two more bugs found after the first pass shipped
+
+**Real screenshots per product tab, not five borrowed ones.** `Section (SaaS
+Products)` (`6366:20841`) is a COMPONENT_SET — one variant per product
+(`Property 1=Xpense`, `=SupplierX`, ...) — and only the pinned variant sits on the
+canvas a REST pull walks. Trap 5 in HANDOFF §2 exactly. First pass here guessed which
+homepage products-showcase screenshot belonged to which tab and got two wrong
+(LogystiX and ManufeX showed each other's near-neighbours' art). `_saashero.py`'s
+`variant_shots()` now pulls all six components directly (`6366:20835/36/37/38/39/40`)
+and reads each one's own panel fill + exact `background-size`/`position` off the
+flattened output, instead of guessing from a different section's heading order.
+
+**The product tabs didn't respond to a real click — `data-cta` is a THREE-way
+contract, not a simple skip flag.** The tab labels ("Xpense", "SupplierX", ...) carry
+`data-cta="1"` so the CTA resolver's orphan-linkify pass leaves them alone (real
+`<a>SupplierX→supplierx.cloud</a>` etc. exist elsewhere on the page, so without this
+they get auto-linkified to the product's external site out from under the tab). But
+`data-cta` is ALSO what the sitewide **peel pass** (index.html tail script, "peel it
+off a real CTA") uses to decide what must never be occluded: it walks every
+`[data-cta]` element, and anything covering its center point that ISN'T itself a
+recognized CTA/chrome/control-holder gets `pointer-events:none`. My hit-target
+`<button>` sits on top of the label by design (a bigger, Figma-accurate click target)
+and carried no CTA marker of its own — so peel read the button as junk blocking the
+"real" CTA (the label) and disabled it. Real clicks landed on the label underneath,
+which has no click handler, so nothing happened; synthetic `dispatchEvent` calls in a
+headless probe don't run the peel pass's occlusion check the same way a live page load
+does, which is why the first verification pass missed it.
+
+Fix: `data-cta="1"` on the button too. `isCta(top)` already special-cases "another
+`[data-cta]` element on top" as legitimate and leaves it alone — the button and its
+label are the same logical control, so tagging both is correct, not a workaround.
+**Any future overlay-on-top-of-a-labeled-element pattern needs the same treatment on
+BOTH elements**, or the top one silently loses `pointer-events` on the page's next
+load/scroll/resize (peel re-runs on all three).
+
+Caught only by a REAL click through the Browser pane's `computer` tool (`ref`-based,
+going through actual hit-testing) after a full page reload with `#saas` already in the
+URL — a `dispatchEvent`-based synthetic click in a fresh headless run did not reproduce
+it, because the peel pass's one scheduled run (140ms after `load`) had already fired by
+the time the synthetic test's probe script ran its own separate reload. Re-verified
+sitewide: no page has another button-over-labeled-data-cta-element pattern, so this was
+scoped to the two elements it was fixed on.

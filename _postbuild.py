@@ -37,6 +37,7 @@ MOBFX = open(os.path.join(_HERE, '_mobfx.html'), encoding='utf-8').read()
 SCOPED = [
     # (path suffix, sentinel already-injected marker, fragment file)
     ('who-we-are/culture/index.html', 'ax-recogfx-css', '_recogfx.html'),
+    ('who-we-are/culture/index.html', 'ax-gallery-css', '_gallery.html'),
     ('contact-us/index.html',         'ax-maptabs-css', '_maptabs.html'),
     ('contact-us/index.html',         'ax-ftabs-css',   '_formtabs.html'),
     ('contact-us/index.html',         'ax-cform-css',   '_forminputs.html'),

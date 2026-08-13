@@ -27,3 +27,9 @@ _blogdata.json
 
 # Investor document library harvested from the public site (regenerable)
 _invdocs.json
+
+# Cached REST pulls for the homepage SaaS hero and the culture gallery dialog
+# (regenerable with `--refetch`)
+_saashero.json
+_gallery.json
+_saashero_variants.json
