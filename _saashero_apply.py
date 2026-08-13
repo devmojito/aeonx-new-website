@@ -82,20 +82,38 @@ CSS = '''<style id="ax-herovar-css">
    visibility (not display) does the hiding: every element here is absolutely
    positioned, so nothing reflows either way, and the hero mosaic canvas keeps its
    measured size instead of collapsing to 0 while it is off-screen. */
-.ax-herovar{visibility:hidden;pointer-events:none}
-html.ax-hero-saas .ax-herovar{visibility:visible;pointer-events:auto}
-html.ax-hero-saas .ax-hero-sap{visibility:hidden;pointer-events:none}
+/* Crossfade. visibility still does the real hiding (so hidden controls stay out
+   of the tab order and off the hit-test) but it is delayed by the fade duration
+   on the way out, otherwise the element vanishes before it has faded. The white
+   band behind both heroes is a separate sibling, so the dissolve happens against
+   solid white rather than ghosting over page content. */
+.ax-herovar,.ax-hero-sap{
+  transition:opacity .5s ease,transform .5s cubic-bezier(.22,.61,.36,1),visibility 0s}
+.ax-herovar{visibility:hidden;opacity:0;transform:translateY(0.6vw);pointer-events:none;
+  transition:opacity .5s ease,transform .5s cubic-bezier(.22,.61,.36,1),visibility 0s linear .5s}
+html.ax-hero-saas .ax-herovar{visibility:visible;opacity:1;transform:none;pointer-events:auto;
+  transition:opacity .5s ease,transform .5s cubic-bezier(.22,.61,.36,1),visibility 0s}
+html.ax-hero-saas .ax-hero-sap{visibility:hidden;opacity:0;transform:translateY(-0.6vw);
+  pointer-events:none;
+  transition:opacity .5s ease,transform .5s cubic-bezier(.22,.61,.36,1),visibility 0s linear .5s}
 
 /* toggle pill */
 .ax-hpill{display:flex;align-items:center;padding:0 0.6250vw;background:rgb(213,218,226);
-  border-radius:3.6458vw;box-sizing:border-box;z-index:6}
+  border-radius:3.6458vw;box-sizing:border-box;z-index:6;position:relative}
+/* the white capsule is ONE element that slides between the two labels, instead of
+   each button painting its own background on and off -- that read as a hard cut
+   however long the colour transition was */
+.ax-hpill__thumb{position:absolute;left:0;top:0;border-radius:0.4167vw;background:#fff;
+  box-shadow:0 0.0521vw 0.1563vw rgba(35,39,46,.10);pointer-events:none;
+  transition:transform .42s cubic-bezier(.22,.61,.36,1),width .42s cubic-bezier(.22,.61,.36,1)}
 .ax-hpill__b{appearance:none;-webkit-appearance:none;border:0;background:transparent;
   height:1.5625vw;padding:0 0.6250vw;margin:0;border-radius:0.4167vw;cursor:pointer;
   font-family:'Inter',sans-serif;font-weight:500;font-size:0.7812vw;line-height:1.1458vw;
   color:rgb(128,126,122);white-space:nowrap;
   transition:background-color .22s ease,color .22s ease}
 .ax-hpill__b+.ax-hpill__b{margin-left:0.5208vw}
-.ax-hpill__b[aria-selected="true"]{background:#fff;color:rgb(223,63,23)}
+.ax-hpill__b{position:relative;z-index:1}
+.ax-hpill__b[aria-selected="true"]{color:rgb(223,63,23)}
 .ax-hpill__b:focus-visible{outline:0.1042vw solid rgb(223,63,23);outline-offset:0.1042vw}
 
 /* product tabs inside the SaaS hero */
@@ -108,7 +126,9 @@ html.ax-hero-saas .ax-hero-sap{visibility:hidden;pointer-events:none}
 #ax-hp-shot{transition:opacity .22s ease}
 #ax-hp-shot.is-swapping{opacity:0}
 @media (prefers-reduced-motion:reduce){
-  .ax-hp-ul,.ax-hpill__b,.ax-hp-lbl,#ax-hp-shot{transition:none}
+  .ax-hp-ul,.ax-hpill__b,.ax-hp-lbl,#ax-hp-shot,
+  .ax-hpill__thumb,.ax-herovar,.ax-hero-sap{transition:none}
+  .ax-herovar,.ax-hero-sap{transform:none}
 }
 </style>'''
 
@@ -125,6 +145,23 @@ JS = '''<script>
   if(!pill||!saas) return;
   var root=document.documentElement;
   var btns=[].slice.call(pill.querySelectorAll('.ax-hpill__b'));
+  var thumb=pill.querySelector('.ax-hpill__thumb');
+
+  /* Measured in px off the live buttons rather than computed from the Figma vw
+     figures: the labels are text, so their widths move with the font once it
+     swaps in, and a hard-coded width would sit a few px off the glyphs. */
+  function moveThumb(animate){
+    if(!thumb) return;
+    var on=pill.querySelector('.ax-hpill__b[aria-selected="true"]');
+    if(!on) return;
+    if(!animate){ var prev=thumb.style.transition; thumb.style.transition='none'; }
+    thumb.style.width=on.offsetWidth+'px';
+    thumb.style.height=on.offsetHeight+'px';
+    thumb.style.transform='translate('+on.offsetLeft+'px,'+on.offsetTop+'px)';
+    if(!animate){ thumb.offsetWidth; thumb.style.transition=prev||''; }
+  }
+  addEventListener('resize',function(){ moveThumb(false); });
+  if(document.fonts&&document.fonts.ready) document.fonts.ready.then(function(){ moveThumb(false); });
 
   function setHero(which,push){
     root.classList.toggle('ax-hero-saas',which==='saas');
@@ -133,6 +170,7 @@ JS = '''<script>
       b.tabIndex=b.getAttribute('data-hero')===which?0:-1;
     });
     saas.setAttribute('aria-hidden',which==='saas'?'false':'true');
+    moveThumb(true);
     if(push){ try{ history.replaceState(null,'','#'+which); }catch(e){} }
   }
   btns.forEach(function(b,i){
@@ -146,6 +184,7 @@ JS = '''<script>
     });
   });
   setHero(location.hash.replace('#','')==='saas'?'saas':'sap',0);
+  moveThumb(false);   /* first paint: place it, do not animate in from 0 */
 
   /* ---- product tabs ---- */
   var shot=document.getElementById('ax-hp-shot');
@@ -345,6 +384,7 @@ def build_pill():
     return ('<div class="ax-hpill" id="ax-hero-pill" role="tablist" '
             'aria-label="Homepage hero version" style="position:absolute;'
             'left:44.2708vw;top:7.2396vw;width:11.4583vw;height:2.2917vw;">\n'
+            '<span class="ax-hpill__thumb" aria-hidden="true"></span>\n'
             '<button class="ax-hpill__b" type="button" role="tab" data-hero="saas" '
             'aria-selected="false" tabindex="-1">SaaS</button>\n'
             '<button class="ax-hpill__b" type="button" role="tab" data-hero="sap" '
