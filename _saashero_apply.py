@@ -194,33 +194,36 @@ JS = '''<script>
       n.focus(); setProduct(n.getAttribute('data-hp'));
     });
   });
-  /* ---- auto-advance every 5s ----
-     Pauses while the pointer is over the panel or a tab has keyboard focus, and
-     while the browser tab is hidden, so it never fights a reader who is looking
-     at one product. A manual click restarts the clock rather than switching
-     again 100ms later. Honours prefers-reduced-motion by not running at all. */
-  var ORDER=hits.map(function(h){return h.getAttribute('data-hp');});
-  var timer=null, paused=false;
+  /* ---- hero variant auto-switch every 5s ----
+     Alternates SaaS <-> SAP . AI . GCP, the pill the designer put on both Figma
+     frames. Pauses while the pointer is anywhere over the hero or the pill, while
+     a pill button holds keyboard focus, and while the browser tab is hidden, so it
+     never flips out from under someone reading. A manual click restarts the clock
+     instead of switching again a moment later. Honours prefers-reduced-motion by
+     not running at all. Auto-switches never touch the URL hash -- only a real
+     click does -- so history and back/forward stay the reader's.
+     The product tabs below are click-only: with the hero itself flipping every 5s
+     a second timer on the panel underneath just fights it. */
   var REDUCED=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var timer=null, paused=false;
   function stop(){ if(timer){ clearInterval(timer); timer=null; } }
   function start(){
-    if(REDUCED||paused||timer) return;
+    if(REDUCED||timer) return;
     timer=setInterval(function(){
-      if(paused||document.hidden||!root.classList.contains('ax-hero-saas')) return;
-      setProduct(ORDER[(ORDER.indexOf(cur)+1)%ORDER.length]);
+      if(paused||document.hidden) return;
+      setHero(root.classList.contains('ax-hero-saas')?'sap':'saas',0);
     },5000);
   }
   function restart(){ stop(); start(); }
-  var panel=shot.closest('.g-clip')||shot;
-  [panel,saas.querySelector('[role="tablist"]')].forEach(function(el){
+  [saas,pill,document.querySelector('.ax-hero-sap')].forEach(function(el){
     if(!el) return;
     el.addEventListener('mouseenter',function(){paused=true;});
     el.addEventListener('mouseleave',function(){paused=false;});
   });
-  hits.forEach(function(h){
-    h.addEventListener('focus',function(){paused=true;});
-    h.addEventListener('blur',function(){paused=false;});
-    h.addEventListener('click',restart);
+  btns.forEach(function(b){
+    b.addEventListener('focus',function(){paused=true;});
+    b.addEventListener('blur',function(){paused=false;});
+    b.addEventListener('click',restart);
   });
   document.addEventListener('visibilitychange',function(){ if(!document.hidden) restart(); });
 
