@@ -33,3 +33,7 @@ _invdocs.json
 _saashero.json
 _gallery.json
 _saashero_variants.json
+
+# Cached REST pull + scratch output for the mobile testimonials rebuild
+_testimonials_mobile.json
+_testimonials_mobile_out.html
