@@ -2043,8 +2043,15 @@ document.addEventListener("DOMContentLoaded",function(){
       if (!b.width) return;
       var top = b.top + scrollY;
       /* y0 band is the "Signup to LlamaParse" promo strip (bg + label); the nav
-         bar sits right under it */
-      if (top * S < 20) { promo.push(e); return; }
+         bar sits right under it. Several heroes have decorative background art
+         (a swoosh, a line-art cluster) that starts at/near the page's own y=0,
+         same as the promo strip, and is 300-2300px tall -- ungated, that art got
+         swept into `promo`, pinned position:fixed (stuck through the whole page,
+         not just its hero), and its huge .bottom became `promoBottom`, which the
+         real nav bar was then pinned BELOW -- shoving it thousands of px down,
+         off-screen ("the navbar disappears"). A promo/nav bar is always short;
+         cap out here same as the bar candidate check below does. */
+      if (top * S < 20 && b.height * S < 80) { promo.push(e); return; }
       if (top * S > 130) return;
       if (b.width * S < 380 || b.height * S > 70 || b.height * S < 30) return;
       if (top * S < best) { best = top * S; bar = e; }
