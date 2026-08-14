@@ -1934,7 +1934,25 @@ document.addEventListener("DOMContentLoaded",function(){
         /* de-dupe the stacked frame+fill pairs that share a left */
         var cols = [];
         g.forEach(function(b){ if (!cols.length || Math.abs(b.L - cols[cols.length-1]) > 8) cols.push(b.L); });
+        /* A full-bleed decorative sibling (a backdrop-blur panel, a section
+           background) can sit within 40px of T even though it is not a card --
+           chain-clustered into this row alongside the real ones. It is wider AND
+           starts further left than the cards (Figma stat rows: cards at x=15,
+           394, 772...; a backdrop at x=0, width=viewport), so it becomes an extra
+           leading/trailing column whose gap to its neighbour matches nothing else
+           here (15px vs the real 379px stride) -- which corrupted `stride` below
+           (computed from just cols[1]-cols[0]) and picked the backdrop itself as
+           the "home" slide, so the row silently never became a carousel at all
+           (Textiles & Apparel's stat cards: dots/arrows baked in Figma still
+           painted, just inert). A real card row has ONE consistent stride
+           throughout; trim any leading/trailing column whose gap breaks that. */
+        while (cols.length >= 3 && Math.abs((cols[2] - cols[1]) - (cols[1] - cols[0])) > (cols[2] - cols[1]) * 0.4) cols.shift();
+        while (cols.length >= 3 && Math.abs((cols[cols.length-2] - cols[cols.length-3]) - (cols[cols.length-1] - cols[cols.length-2])) > (cols[cols.length-2] - cols[cols.length-3]) * 0.4) cols.pop();
         if (cols.length < 2) return;
+        /* g[0]/g[last] feed `first` and the span calc below -- re-sync to the
+           trimmed cols so a dropped backdrop can't still be handed to build() as
+           if it were card 1. */
+        g = g.filter(function(b){ return cols.some(function(c){ return Math.abs(b.L - c) <= 8; }); });
         /* Wider than the screen = a carousel. Figma bakes some rows with the ACTIVE
            card at x~0 and the rest off to the LEFT (negative), so testing only for
            right-edge overflow missed the product panels entirely. */
