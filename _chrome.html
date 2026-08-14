@@ -1512,9 +1512,15 @@ document.addEventListener("DOMContentLoaded",function(){
        there are columns, plus a solid brand-orange pill marking the active one. */
     var tabs = null, pill = null, pillL0 = 0;
     (function(){
+      /* No `b.L < W` bound: a tab row can be WIDER than the screen. The homepage
+         hero ships six product tabs (Xpense ... AeonxIQ) spanning ~700px, so the
+         last two sat past the right edge, got dropped here, and the row then failed
+         the `row.length < count` test below -- no tabs were found, the row fell
+         through to the no-controls branch, and the product screenshots DRIFTED
+         continuously instead of being switched by the tabs. */
       var cands = box.filter(function(b){
         return /g-t/.test(b.el.className) && b.T < top && b.T > top - 170 &&
-               b.H < 40 && b.W < W * 0.45 && b.L >= 0 && b.L < W;
+               b.H < 40 && b.W < W * 0.45 && b.L >= 0;
       }).sort(function(a, b){ return a.T - b.T || a.L - b.L; });
       var rows = [], cur = null, prevT = -1e9;
       cands.forEach(function(b){
@@ -1529,7 +1535,18 @@ document.addEventListener("DOMContentLoaded",function(){
            and kept repainting the labels from its own index -- so the active label
            snapped back to the first chip after every switch. */
         if (row.some(function(b){ return /ax-pstrip-tab/.test(b.el.className || ''); })) return;
-        tabs = row.slice().sort(function(a, b){ return a.L - b.L; }).slice(0, count);
+        var byL = row.slice().sort(function(a, b){ return a.L - b.L; });
+        /* Now that labels beyond the right edge count, a row of PER-SLIDE headings
+           (one title per card, so one every `stride`) looks just like a tab row.
+           Tabs are packed together; per-slide titles repeat at the slide pitch --
+           if the median gap is near the stride, these are titles, not tabs. */
+        if (byL.length > 1) {
+          var gaps = [];
+          for (var gi = 1; gi < byL.length; gi++) gaps.push(byL[gi].L - byL[gi-1].L);
+          gaps.sort(function(a, b){ return a - b; });
+          if (Math.abs(gaps[Math.floor(gaps.length/2)] - stride) < stride * 0.25) return;
+        }
+        tabs = byL.slice(0, count);
         /* Remember each label's own colour. Resetting an inactive tab with
            style.color = '' REMOVES the inline colour Figma exported, so the label
            fell back to the inherited default and every unselected tab went black. */
@@ -1789,10 +1806,16 @@ document.addEventListener("DOMContentLoaded",function(){
      export of it. Put the same animation on top of that image. */
   function mosaic(box, W){
     if (typeof window.axMosaic !== 'function') return;
+    /* Match the mosaic artwork by its own imageRef ONLY. There used to be a
+       geometric fallback ("any g-img near the top, roughly hero-sized"), which was
+       fine while the mobile hero's only big image WAS the mosaic. Figma has since
+       replaced that hero with the SaaS variant, whose product screenshot sits at
+       the same place and size -- the fallback matched it and painted the animated
+       orange tiles straight over the screenshot. A hero image is not
+       interchangeable with the one specific decorative asset this effect is for. */
     var img = box.filter(function(b){
       var s = b.el.getAttribute && (b.el.getAttribute('style') || '');
-      return /75993b49bcdb6cc75e010ca20cabd9594d18ec91/.test(s) ||
-             (/g-img/.test(b.el.className) && b.T < W * 1.6 && b.W > W * 0.85 && b.H > W * 0.4 && b.H < W * 0.75);
+      return /75993b49bcdb6cc75e010ca20cabd9594d18ec91/.test(s);
     })[0];
     if (!img) return;
     var c = document.createElement('canvas');
