@@ -1771,14 +1771,26 @@ document.addEventListener("DOMContentLoaded",function(){
       return k >= 0 && k < count && Math.abs((b.L - cols[0]) - k * stride) < stride * 0.9;
     }).map(function(b){ return b.el; });
     members = members.concat(band).filter(function(e, i, a){ return a.indexOf(e) === i; });
-    /* Same row-wrapper-vs-own-content distinction as the frames filter in start()
-       (see its comment): only drop e for being contained by p when p sits in a
-       clearly different column, not when p is simply e's own close-by wrapper. */
+    /* Two distinct nestings show up here and they need OPPOSITE verdicts.
+       1. A row VIEWPORT: Figma clips the row to card 1's width, so the clip box
+          is card-sized, lands in the band at column 0, and contains every card.
+          It must NOT page -- it is the window the cards slide behind. Drop the
+          container (it holds a candidate a whole column away).
+       2. A slide's own CONTENT (a card and its photo, a few px apart): both pass
+          the size filter, and translating both moves the photo twice as far.
+          Drop the contained one.
+       Pass 1 removes viewports, pass 2 dedupes what is left. Doing only pass 1's
+       test with the verdicts swapped deleted cards 2+ and kept the viewport, so
+       the row paged to slides that were clipped out of sight (blank window). */
+    var LEFT = function(e){ return e.getBoundingClientRect().left; };
     members = members.filter(function(e){
-      var eL = e.getBoundingClientRect().left;
-      return !members.some(function(p){
-        return p !== e && p.contains(e) && Math.abs(p.getBoundingClientRect().left - eL) > 30;
+      var eL = LEFT(e);
+      return !members.some(function(c){
+        return c !== e && e.contains(c) && Math.abs(LEFT(c) - eL) > 30;
       });
+    });
+    members = members.filter(function(e){
+      return !members.some(function(p){ return p !== e && p.contains(e); });
     });
 
     if (members.length < 2) return;
