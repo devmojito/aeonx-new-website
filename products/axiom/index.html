@@ -1157,15 +1157,11 @@ document.addEventListener('DOMContentLoaded',function(){
 <style id="ax-mnav-fix">
 @media (max-width:768px){
  .ax-mnav__bar{display:none!important}
- /* Static estimate of the promo-strip + nav-bar combined height (430px-wide
-    reference scale, matches stickyHeader()'s own S factor), so the page's
-    real content starts clear of both fixed bars from first paint. stickyHeader()
-    overwrites this with the exact measured value once it runs -- this is only
-    the fallback for the gap before that, but it also has to be close enough
-    that stickyHeader()'s own geometry detection (a fixed 20/130 vw-scaled
-    threshold) doesn't misread the promo strip's shifted position as a nav-bar
-    candidate on its first pass. */
- .ax-mob{padding-top:92px}
+ /* Content is absolute-positioned from Figma's own coordinates, which already
+    clear the fixed nav band -- no reservation needed here, the fixed bars just
+    float on top (see stickyHeader()). !important beats the plain .ax-mob rule
+    above (56px, dead weight from an earlier layout, left as-is). */
+ .ax-mob{padding-top:0!important}
  .ax-mnav__panel{top:0!important;height:100vh!important}
  .ax-mnav__phdr{display:flex;align-items:center;height:56px;border-bottom:1px solid #E9ECF1;background:#fff;flex:0 0 auto}
  .ax-mnav__plogo{display:flex;align-items:center;padding:0 14px;height:100%;border-right:1px solid #E9ECF1}
@@ -2269,15 +2265,6 @@ document.addEventListener("DOMContentLoaded",function(){
      top rewritten) and keeps its own hit area, since a transform moves that too. */
   function stickyHeader(mob){
     if (mob.dataset.axStickDone) return;    /* this fires twice (a timer + load); only the first call does anything */
-    /* Detection thresholds below (top*S < 20 for the promo strip, 20-130 for
-       the nav bar) are authored assuming .ax-mob has ZERO top padding. Measure
-       against a momentarily zeroed padding so a CSS fallback that already
-       reserves space for the fixed bars (see #ax-mnav-fix) can't shift live
-       rects out from under these thresholds -- synchronous, so nothing paints
-       in between and there's no visible jump. */
-    var mobEl = document.querySelector('.ax-mob');
-    if (mobEl) mobEl.style.paddingTop = '0px';
-
     var S = 430 / (innerWidth || 430);
     var bar = null, best = 1e9, promo = [];
     [].slice.call(mob.querySelectorAll('.g-vec,.g-img,.g-b,.g-t')).forEach(function(e){
@@ -2291,7 +2278,7 @@ document.addEventListener("DOMContentLoaded",function(){
       if (b.width * S < 380 || b.height * S > 70 || b.height * S < 30) return;
       if (top * S < best) { best = top * S; bar = e; }
     });
-    if (!bar) return;    /* zero padding is still in effect -- leave it be and try again next call */
+    if (!bar) return;
     mob.dataset.axStickDone = '1';
 
     /* Real position:fixed, same as the desktop nav -- the old approach translated
@@ -2312,15 +2299,20 @@ document.addEventListener("DOMContentLoaded",function(){
       return r;
     }
     /* Promo strip pins first, flush at the very top, at its own natural
-       (zero-padding) position. The nav bar pins right under it. */
+       (zero-padding) position. The nav bar pins right under it. No padding-top
+       reservation on .ax-mob: content below is already positioned clear of the
+       nav band in Figma's own coordinates (everything here is absolute, not
+       normal flow), so the fixed bars simply float over the top of it -- same
+       as the single-bar version before the promo strip was added. Adding a
+       reservation double-counts that clearance and pushes every hero down an
+       extra nav-height's worth (the bug: a huge gap above every hero on mobile). */
     var promoBottom = 0;
     promo.forEach(function(e){
       var r0 = e.getBoundingClientRect();
       promoBottom = Math.max(promoBottom, r0.bottom);
       pinFixed(e, r0.top);
     });
-    var barRect = pinFixed(bar, promoBottom);
-    if (mobEl) mobEl.style.paddingTop = (promoBottom + barRect.height) + 'px';
+    pinFixed(bar, promoBottom);
   }
 
 
