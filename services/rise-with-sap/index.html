@@ -1749,6 +1749,21 @@ document.addEventListener("DOMContentLoaded",function(){
     var frames = box.filter(function(b){
       return b.W >= W * 0.55 && b.W <= W * 1.2 && b.H >= 120;
     });
+    /* A clipping wrapper sized to exactly its first card (Figma clips the row to
+       card 1's width, with cards 2+ overflowing off-screen until paged) is itself
+       card-sized and slips into `frames` too -- sorted-by-L it wins the `first`
+       slot ahead of the real card it wraps, `host` becomes ITS parent instead of
+       the row's, and the later containment pass (a real card is never allowed to
+       contain another `frames` box AT A DIFFERENT COLUMN) then deletes every
+       sibling card because the wrapper contains all of them. The >30 guard is
+       what tells a row wrapper (contains a sibling card tens/hundreds of px to
+       the right) apart from an ordinary card (contains its OWN photo, a few px
+       off from the card's own left edge) -- without it this also stripped every
+       card for containing its own photo. Drop only the row-wrapper case before
+       clustering starts. */
+    frames = frames.filter(function(f){
+      return !frames.some(function(o){ return o !== f && f.el.contains(o.el) && Math.abs(o.L - f.L) > 30; });
+    });
     /* Partition by parent, then chain-cluster on top with a tolerance: sibling cards
        differ by ~20px when one has taller copy, and fixed buckets split real rows
        while page-wide grouping merged unrelated sections. */
@@ -1869,8 +1884,14 @@ document.addEventListener("DOMContentLoaded",function(){
       return k >= 0 && k < count && Math.abs((b.L - cols[0]) - k * stride) < stride * 0.9;
     }).map(function(b){ return b.el; });
     members = members.concat(band).filter(function(e, i, a){ return a.indexOf(e) === i; });
+    /* Same row-wrapper-vs-own-content distinction as the frames filter in start()
+       (see its comment): only drop e for being contained by p when p sits in a
+       clearly different column, not when p is simply e's own close-by wrapper. */
     members = members.filter(function(e){
-      return !members.some(function(p){ return p !== e && p.contains(e); });
+      var eL = e.getBoundingClientRect().left;
+      return !members.some(function(p){
+        return p !== e && p.contains(e) && Math.abs(p.getBoundingClientRect().left - eL) > 30;
+      });
     });
 
     if (members.length < 2) return;

@@ -726,7 +726,12 @@ def emit_rotated(n, ox, oy):
     out.append('</div>')
     return ''.join(out)
 
-SKIP_NODES = {'5232:15038', '5246:15149'}  # baked navbar + announcement in Home hero (chrome provides these)
+SKIP_NODES = {
+    '5232:15038', '5246:15149',  # baked navbar + announcement in Home hero (chrome provides these)
+    '5637:52052',  # Leadership/mobile: unfilled 4th executive slot ("[NEEDS INPUT: Name]",
+                    # generic placeholder photo) -- shipping it added a phantom 4th carousel
+                    # slide, throwing off the dot count for the 3 real executives
+}
 
 def walk(n, ox, oy, out, depth=0):
     if n.get('visible', True) is False:
