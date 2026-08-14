@@ -1665,7 +1665,18 @@ document.addEventListener("DOMContentLoaded",function(){
         host.appendChild(c);
         return c;
       });
-      members.forEach(function(e){ e.classList.add('ax-carm--drag'); });
+      /* Deferred: build() already scheduled a setTimeout(fn,0) a few lines up that
+         strips ax-carm--drag from every member once the initial apply(false) paint
+         has settled. Adding it here, synchronously, loses that race -- the earlier
+         timeout runs after this and rips it back off, leaving .ax-carm's own
+         transform:.45s transition as the only rule in effect. Every ~16ms drift
+         frame then animates over 450ms instead of snapping, so each tick starts
+         easing toward a target that's already stale by the next tick -- visible as
+         a stutter/tear between elements (this is what "glitching" was: text and
+         photo drifting out of step). Scheduling this add for the SAME kind of
+         timeout guarantees it runs after that cleanup (same delay = FIFO), so it
+         is the add that's still standing once both have fired. */
+      setTimeout(function(){ members.forEach(function(e){ e.classList.add('ax-carm--drag'); }); }, 0);
       var x = 0, last = 0, run = false, raf = 0, dead = false;
       function frame(t){
         if (!run || dead) { raf = 0; return; }
