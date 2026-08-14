@@ -1688,6 +1688,10 @@ document.addEventListener("DOMContentLoaded",function(){
 (function(){
   var REDUCED = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   var page = null;
+  var rowSeq = 0;   /* pairs a .ax-cartrack with its .ax-cardots: both live to the same
+                        DOM depth (host / page, not each other) with nothing else linking
+                        them, which made "which dots belong to which row" a real question
+                        on any page with 2+ carousels -- tag both once, here. */
 
   function start(){
     /* resolve lazily: the .ax-mob block may sit AFTER this script in the document */
@@ -1798,6 +1802,7 @@ document.addEventListener("DOMContentLoaded",function(){
     var home = cols[startIdx];           /* the x of the visible slot */
     var top = first.T, bottom = first.T + first.H;
     var host = first.el.parentElement;
+    var rowId = 'r' + (rowSeq++);
 
     /* the control strip: one baked art element (IMG or image-fill DIV), roughly
        band-wide, sitting just under the cards */
@@ -1884,6 +1889,7 @@ document.addEventListener("DOMContentLoaded",function(){
 
     var track = document.createElement('div');
     track.className = 'ax-cartrack';
+    track.dataset.axRow = rowId;
     host.insertBefore(track, slides[0]);
     slides.forEach(function(e){ e.classList.add('ax-carm'); track.appendChild(e); });
 
@@ -1932,6 +1938,7 @@ document.addEventListener("DOMContentLoaded",function(){
       var mk = function(x0, x1, lbl){
         var b = document.createElement('button');
         b.className = 'ax-carh'; b.type = 'button';
+        b.dataset.axRow = rowId;
         b.setAttribute('aria-label', lbl);
         b.style.left = (ctrl.L + ctrl.W * x0 / vb) + 'px';
         b.style.top = ctrl.T + 'px';
@@ -1946,6 +1953,7 @@ document.addEventListener("DOMContentLoaded",function(){
 
       dots = document.createElement('div');
       dots.className = 'ax-cardots';
+      dots.dataset.axRow = rowId;
       dots.style.left = (ctrl.L + ctrl.W * 16 / vb) + 'px';
       dots.style.top = ctrl.T + 'px';
       dots.style.width = (ctrl.W * (153.6 - 16) / vb) + 'px';
