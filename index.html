@@ -155,10 +155,9 @@ html.ax-mm-swapping .ax-mm{transition:none!important}
 .ax-nav__chev{transition:transform .2s cubic-bezier(.22,.68,.28,1)}
 .ax-nav__link.is-open .ax-nav__chev{transform:rotate(180deg)}
 /* No-JS / no-GSAP fallback: without the timeline the panel must still be usable. */
-.ax-mm:not(.ax-mm--anim) .ax-mm2__panel{height:auto!important}
+
 @media (prefers-reduced-motion:reduce){
   .ax-mm,.ax-nav__chev{transition:none!important}
-  .ax-mm2__panel{height:auto!important}
   .ax-mm2__card,.ax-mm2__rail{opacity:1!important;transform:none!important}
 }
 @media (max-width:1024px){.ax-mm{display:none!important}}
@@ -221,9 +220,13 @@ document.addEventListener('DOMContentLoaded',function(){
     /* Measure at play time, not at build time: the panel's height depends on which
        category group is active, and the viewport can be resized between opens. */
     function fullHeight(){
+      /* Clear the inline height and read what the CSS gives us -- the panel is a
+         fixed 38.75vw (Figma's 744px box, identical for all four). Measuring
+         scrollHeight instead would grow the box to its own content, which is what
+         made the menu resize as the pointer moved along the nav. */
       var prev=panel.style.height;
-      panel.style.height='auto';
-      var h=panel.scrollHeight;
+      panel.style.height='';
+      var h=panel.offsetHeight;
       panel.style.height=prev;
       return h;
     }
@@ -243,7 +246,7 @@ document.addEventListener('DOMContentLoaded',function(){
                   stagger: swap?{each:0.03,from:(dir>0?'end':'start')}:0.08},
            swap?'-=0.30':'-=0.1');
       /* let the panel reflow freely once it is fully open */
-      t.eventCallback('onComplete',function(){panel.style.height='auto';});
+      t.eventCallback('onComplete',function(){panel.style.height='';});
       return t;
     }
 
@@ -257,7 +260,7 @@ document.addEventListener('DOMContentLoaded',function(){
       /* Hand off: stop tweening, drop back to natural height, clear transforms. */
       quiet:function(){
         if(tl){ tl.kill(); tl=null; }
-        panel.style.height='auto';
+        panel.style.height='';
         gsap.set(cards,{x:0,y:0,opacity:1});
       }
     };
