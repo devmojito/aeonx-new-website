@@ -807,7 +807,13 @@ document.addEventListener('DOMContentLoaded',function(){
     var bw=r.width||parseFloat(st.match(/width:([0-9.]+)vw/)?RegExp.$1*innerWidth/100:0);
     var bh=r.height||0;
     if(!bw||!bh)return;
-    if(bw>480||bh>480)return;                 // skip full-bleed / large art
+    /* Skip full-bleed / large art -- relative to the viewport, not an absolute px
+       cutoff: 480 assumed a 1920-wide desktop canvas. On the 430-wide mobile layout
+       a genuinely full-bleed hero photo (e.g. Culture's ~363x350 crowd shot) is
+       already under 480 on both axes, so it slipped past this guard and got
+       switched to contain -- letterboxed with huge blank bars top/bottom instead
+       of filling its box. */
+    if(bw>innerWidth*0.5||bh>innerWidth*0.5)return;
     var im=new Image();
     im.onload=function(){
       if(!im.naturalWidth||!im.naturalHeight)return;
