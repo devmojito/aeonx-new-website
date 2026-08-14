@@ -2719,6 +2719,16 @@ document.addEventListener("DOMContentLoaded",function(){
     return !!(el.querySelector && el.querySelector('input,textarea,select,button,a[href],[contenteditable]'));
   }
 
+  /* NEVER neutralise a box that itself wraps a live CTA. The SAP hero's small
+     "Request a Proposal" / "Talk to us" widget sits inside the big g-clip card
+     that is the hero's own background layer -- when THAT card's rect happened
+     to be on top of some other CTA's hit point, peeling it also killed pointer
+     events on its own nested pills (pointer-events is inherited). Same shape as
+     hasControls(), for synthetic role=link CTAs instead of real form controls. */
+  function hasCta(el){
+    return !!(el.querySelector && el.querySelector('[data-cta],[data-axcta]'));
+  }
+
   function run(){
     var ctas = document.querySelectorAll('[data-cta],[data-axcta]');
     for (var i = 0; i < ctas.length; i++){
@@ -2739,6 +2749,7 @@ document.addEventListener("DOMContentLoaded",function(){
         if (isCta(top)) break;                     /* another CTA legitimately on top */
         if (isChrome(top)) break;                  /* fixed header/footer: leave alone */
         if (hasControls(top)) break;               /* form card etc: peeling kills its fields */
+        if (hasCta(top)) break;                     /* box wraps its own live CTA: don't kill it */
         if (top === document.body || top === document.documentElement) break;
         top.style.pointerEvents = 'none';
       }
