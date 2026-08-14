@@ -595,9 +595,13 @@ def emit_vec_asset(n, left, top, w, h):
     fn = nid.replace(':', '-')
     style = (f"position:absolute;left:{vw(left)};top:{vw(top)};"
              f"width:{vw(w)};height:{vw(h)};")
-    op = n.get('opacity', 1)
-    if op < 1:
-        style += f"opacity:{op};"
+    # The REST image export renders the node's own opacity into the SVG itself (same
+    # reason blur is skipped below): a cluster with opacity 0.25 exports as
+    # <g opacity="0.25">...</g>, not a fully-opaque file needing 0.25 applied on top.
+    # Re-adding it here squared it -- 0.25 CSS x 0.25 baked-in = 0.0625, not 0.25 --
+    # which is why background line-art (e.g. the Services hero) rendered at a few
+    # percent opacity, effectively invisible, instead of the quarter-strength Figma
+    # actually shows.
     bl = blend_css(n)
     if bl:
         style += f"mix-blend-mode:{bl};"
