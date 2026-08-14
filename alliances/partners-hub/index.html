@@ -1834,6 +1834,10 @@ document.addEventListener("DOMContentLoaded",function(){
    baked into ONE svg image. These add the missing behaviour on top. */
 .ax-carm{transition:transform .45s cubic-bezier(.22,.68,.28,1)}
 .ax-carm--drag{transition:none}
+/* the one moving part of a carousel: a zero-size positioned box at the row's
+   own origin, so its slides keep the exact absolute lefts Figma gave them */
+.ax-cartrack{position:absolute;left:0;top:0;width:0;height:0;transition:transform .45s cubic-bezier(.22,.68,.28,1)}
+.ax-cartrack--drag{transition:none}
 /* real hit targets over the baked control art */
 .ax-carh{position:absolute;z-index:40;background:transparent;border:0;padding:0;
   -webkit-tap-highlight-color:transparent;cursor:pointer}
@@ -1987,68 +1991,50 @@ document.addEventListener("DOMContentLoaded",function(){
       if (pill) { pillL0 = pill.L; pill.el.style.transition = 'transform .3s ease, width .3s ease'; }
     })();
 
-    /* Members: everything that pages with the cards. With a tab row the per-column
-       content spans from just under the tabs down to the per-column CTA pills --
-       headings ABOVE the card top and buttons BELOW its bottom, which a band tied to
-       the card edges missed (the button read "Explore AeonxIQ" forever). Without
-       tabs the card edges are the honest band. */
+    /* ---- ONE TRACK PER ROW: the single mechanism every carousel uses ----
+       This used to choose a SUBSET of the row's elements ("members") and translate
+       each one individually, leaving every other box where it was. Whether that
+       worked depended entirely on how deeply Figma happened to nest that row, and
+       it broke a different way for each shape: a slide whose wrapper was left
+       behind got clipped to nothing by its own overflow:hidden, a wrapper that
+       moved along WITH its slides shifted them twice, and a card whose photo sits
+       far off its own edge (cover-crop bleed) looked exactly like a row viewport.
+       Three separate bugs, one cause: deciding which boxes move.
+       Nothing decides any more. Every top-level box of the row is moved ONCE into
+       a single track element and only that track is transformed. A slide's inner
+       content is a descendant, so it travels with its slide by construction --
+       there is no second thing to keep in sync and no way to move anything twice.
+       Only DIRECT children of host are moved: an absolutely positioned element's
+       left resolves against its offsetParent, so re-parenting a NESTED node would
+       rewrite its coordinates, while moving a direct child carries its whole
+       subtree with its layout intact. The track is a zero-size positioned box at
+       host's own origin, so the slides keep the exact lefts Figma gave them.
+       Transform rather than native overflow scrolling, because these rows are not
+       one shape: a homepage row is baked with its slides at NEGATIVE offsets
+       (content left of the origin is unreachable by a real scroller) and several
+       rows have no clipping box at all -- their slides sit straight on the page. */
     var mTop = top - 6, mBot = bottom + 6;
     if (tabs) {
       mTop = tabs[0].T + tabs[0].H + 4;
       mBot = ctrl ? ctrl.T - 4 : bottom + 140;
     }
-    var members = box.filter(function(b){
-      return b.el.parentElement === host && b !== first &&
-             (!ctrl || b.el !== ctrl.el) &&
-             b.T >= mTop && b.T < mBot && b.H <= Math.max(first.H * 1.2, mBot - mTop) &&
-             b.W <= W * 1.25;
-    }).map(function(b){ return b.el; });
-    members.unshift(first.el);
-
-    /* A slide drawn as a wrapper with its own children -- the timeline's last card
-       is a clip box holding an image, a tag and its copy -- is not a sibling of the
-       others, so the parent test above skips it and it stayed put while the row
-       slid, bleeding into the window over the slide that should be there. Pull in
-       anything standing in a column band, then keep only the outermost elements so
-       a wrapper and its children never both get translated (that moved such a card
-       twice as far as the rest). */
-    var band = box.filter(function(b){
+    var slides = box.filter(function(b){
+      if (b.el.parentElement !== host) return false;
+      if (ctrl && b.el === ctrl.el) return false;
       if (b.T < mTop || b.T > mBot) return false;
       var k = Math.round((b.L - cols[0]) / stride);
       return k >= 0 && k < count && Math.abs((b.L - cols[0]) - k * stride) < stride * 0.9;
     }).map(function(b){ return b.el; });
-    members = members.concat(band).filter(function(e, i, a){ return a.indexOf(e) === i; });
-    /* Two distinct nestings show up here and they need OPPOSITE verdicts.
-       1. A row VIEWPORT: Figma clips the row to card 1's width, so the clip box
-          is card-sized, lands in the band at column 0, and DIRECTLY parents every
-          card. It must NOT page -- it is the window the cards slide behind. Drop
-          the container (it directly holds a candidate a whole column away).
-       2. A slide's own CONTENT (a card and its photo, a few px apart): both pass
-          the size filter, and translating both moves the photo twice as far.
-          Drop the contained one.
-       Pass 1 removes viewports, pass 2 dedupes what is left. Doing only pass 1's
-       test with the verdicts swapped deleted cards 2+ and kept the viewport, so
-       the row paged to slides that were clipped out of sight (blank window).
-       Pass 1 checks DIRECT parentage, not any-depth containment: a cover-fit
-       photo is deliberately oversized/re-centred to crop within its box, so it
-       can sit 50+px off its OWN card's edge. A gallery card whose photo is
-       nested a few levels down (clip > clip > shadow-clip > img) contained that
-       distant photo under an any-depth check and got wrongly dropped as if IT
-       were the viewport, leaving zero members and the row never becoming a
-       carousel at all (Culture's "Real spaces. Real people." gallery). */
-    var LEFT = function(e){ return e.getBoundingClientRect().left; };
-    members = members.filter(function(e){
-      var eL = LEFT(e);
-      return !members.some(function(c){
-        return c !== e && c.parentElement === e && Math.abs(LEFT(c) - eL) > 30;
-      });
-    });
-    members = members.filter(function(e){
-      return !members.some(function(p){ return p !== e && p.contains(e); });
+    if (slides.length < 2) return;
+    /* DOM order, so moving them into the track cannot change what paints over what */
+    slides.sort(function(a, b){
+      return (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) ? -1 : 1;
     });
 
-    if (members.length < 2) return;
-    members.forEach(function(e){ e.classList.add('ax-carm'); });
+    var track = document.createElement('div');
+    track.className = 'ax-cartrack';
+    host.insertBefore(track, slides[0]);
+    slides.forEach(function(e){ e.classList.add('ax-carm'); track.appendChild(e); });
 
     var i = tabs ? 0 : startIdx;         /* tabbed bands open on the FIRST tab */
     var userTook = false;
@@ -2065,11 +2051,16 @@ document.addEventListener("DOMContentLoaded",function(){
         pill.el.style.width = (tabs[i].W + 14) + 'px';
       }
     }
+    /* anim=false means "place it, do not animate there": the class carries
+       transition:none, so there is no separate teardown step to lose a race with
+       (an earlier version stripped that class on a setTimeout that fired AFTER
+       drift re-added it, leaving a .45s ease on a 60fps loop -- the row tore). */
+    function setX(x, anim){
+      track.classList.toggle('ax-cartrack--drag', !anim);
+      track.style.transform = 'translateX(' + x + 'px)';
+    }
     function apply(anim){
-      members.forEach(function(e){
-        e.classList.toggle('ax-carm--drag', !anim);
-        e.style.transform = 'translateX(' + (home - cols[i]) + 'px)';
-      });
+      setX(home - cols[i], anim);
       if (dots) [].forEach.call(dots.children, function(d, n){ d.classList.toggle('on', n === i); });
       paintTabs();
       if (prev) prev.disabled = i === 0;
@@ -2124,10 +2115,7 @@ document.addEventListener("DOMContentLoaded",function(){
     page.addEventListener('touchmove', function(e){
       if (!dragging) return;
       dx = e.touches[0].clientX - x0;
-      members.forEach(function(el){
-        el.classList.add('ax-carm--drag');
-        el.style.transform = 'translateX(' + (home - cols[i] + dx) + 'px)';
-      });
+      setX(home - cols[i] + dx, false);
     }, {passive:true});
     page.addEventListener('touchend', function(){
       if (!dragging) return;
@@ -2136,36 +2124,21 @@ document.addEventListener("DOMContentLoaded",function(){
     }, {passive:true});
 
     apply(false);
-    setTimeout(function(){ members.forEach(function(e){ e.classList.remove('ax-carm--drag'); }); }, 0);
 
     /* A band with no arrows, dots or tabs just sits there with its last card cut
-       off. Drift it continuously right-to-left instead (seamless loop via one set
-       of clones), pausing offscreen and handing over for good on first touch. */
+       off. Drift it continuously right-to-left instead (seamless loop via one
+       cloned track), pausing offscreen and handing over for good on first touch. */
     var driftStop = null;
     function stopDrift(){ if (driftStop) { driftStop(); driftStop = null; } }
     if (!ctrl && !tabs && !REDUCED) (function(){
       var cycle = stride * count;
-      var clones = members.map(function(e){
-        var c = e.cloneNode(true);
-        c.setAttribute('aria-hidden', 'true');
-        c.removeAttribute('id');
-        c.classList.add('ax-carm--drag');
-        c.setAttribute('data-ax-drift', '1');
-        host.appendChild(c);
-        return c;
-      });
-      /* Deferred: build() already scheduled a setTimeout(fn,0) a few lines up that
-         strips ax-carm--drag from every member once the initial apply(false) paint
-         has settled. Adding it here, synchronously, loses that race -- the earlier
-         timeout runs after this and rips it back off, leaving .ax-carm's own
-         transform:.45s transition as the only rule in effect. Every ~16ms drift
-         frame then animates over 450ms instead of snapping, so each tick starts
-         easing toward a target that's already stale by the next tick -- visible as
-         a stutter/tear between elements (this is what "glitching" was: text and
-         photo drifting out of step). Scheduling this add for the SAME kind of
-         timeout guarantees it runs after that cleanup (same delay = FIFO), so it
-         is the add that's still standing once both have fired. */
-      setTimeout(function(){ members.forEach(function(e){ e.classList.add('ax-carm--drag'); }); }, 0);
+      var clone = track.cloneNode(true);
+      clone.setAttribute('aria-hidden', 'true');
+      clone.setAttribute('data-ax-drift', '1');
+      [].forEach.call(clone.querySelectorAll('[id]'), function(e){ e.removeAttribute('id'); });
+      host.insertBefore(clone, track.nextSibling);
+      track.classList.add('ax-cartrack--drag');
+      clone.classList.add('ax-cartrack--drag');
       var x = 0, last = 0, run = false, raf = 0, dead = false;
       function frame(t){
         if (!run || dead) { raf = 0; return; }
@@ -2174,11 +2147,11 @@ document.addEventListener("DOMContentLoaded",function(){
         x -= (t - last) * 0.025;               /* ~25px per second */
         last = t;
         if (-x >= cycle) x += cycle;
-        members.forEach(function(e){ e.style.transform = 'translateX(' + x + 'px)'; });
-        clones.forEach(function(e){ e.style.transform = 'translateX(' + (x + cycle) + 'px)'; });
+        track.style.transform = 'translateX(' + x + 'px)';
+        clone.style.transform = 'translateX(' + (x + cycle) + 'px)';
       }
-      /* observe the untransformed HOST -- observing a member the drift itself moves
-         off-screen froze the old version seconds in */
+      /* observe the untransformed HOST -- observing the track the drift itself
+         moves off-screen froze the old version seconds in */
       new IntersectionObserver(function(es){
         var vis = es[es.length-1].isIntersecting;
         if (vis && !run) { run = true; last = 0; if (!raf) raf = requestAnimationFrame(frame); }
@@ -2186,10 +2159,9 @@ document.addEventListener("DOMContentLoaded",function(){
       }, { threshold: 0 }).observe(host);
       driftStop = function(){
         dead = true; run = false;
-        clones.forEach(function(c){ c.parentNode && c.parentNode.removeChild(c); });
+        clone.parentNode && clone.parentNode.removeChild(clone);
         /* snap back to the nearest whole column so the stepped drag takes over cleanly */
         var n = Math.round(-x / stride) % count; if (n < 0) n += count;
-        members.forEach(function(e){ e.classList.remove('ax-carm--drag'); });
         i = Math.max(0, Math.min(count - 1, n));
         apply(false);
       };
