@@ -1755,13 +1755,19 @@ document.addEventListener("DOMContentLoaded",function(){
        the row's, and the later containment pass (a real card is never allowed to
        contain another `frames` box AT A DIFFERENT COLUMN) then deletes every
        sibling card because the wrapper contains all of them. The >30 guard is
-       what tells a row wrapper (contains a sibling card tens/hundreds of px to
-       the right) apart from an ordinary card (contains its OWN photo, a few px
-       off from the card's own left edge) -- without it this also stripped every
-       card for containing its own photo. Drop only the row-wrapper case before
-       clustering starts. */
+       what tells a row wrapper (DIRECTLY parents a sibling card tens/hundreds of
+       px to the right) apart from an ordinary card. Checking direct parentage
+       (not just any-depth containment) matters: a cover-fit photo is deliberately
+       oversized and re-centred to crop within its box, so it can sit 50+px off
+       the card's own edge -- a gallery card whose photo is nested a few levels
+       down (clip > clip > shadow-clip > img) "contained" that distant photo under
+       an any-depth check and got wrongly excluded as if IT were the row wrapper,
+       fragmenting a real 4-photo row into four undetected single cards (Culture's
+       "Real spaces. Real people." gallery). Only a DIRECT child that's a whole
+       column away means "this is the row's viewport", not "this card's own art
+       bleeds past its crop box". */
     frames = frames.filter(function(f){
-      return !frames.some(function(o){ return o !== f && f.el.contains(o.el) && Math.abs(o.L - f.L) > 30; });
+      return !frames.some(function(o){ return o !== f && o.el.parentElement === f.el && Math.abs(o.L - f.L) > 30; });
     });
     /* Partition by parent, then chain-cluster on top with a tolerance: sibling cards
        differ by ~20px when one has taller copy, and fixed buckets split real rows
@@ -1885,20 +1891,27 @@ document.addEventListener("DOMContentLoaded",function(){
     members = members.concat(band).filter(function(e, i, a){ return a.indexOf(e) === i; });
     /* Two distinct nestings show up here and they need OPPOSITE verdicts.
        1. A row VIEWPORT: Figma clips the row to card 1's width, so the clip box
-          is card-sized, lands in the band at column 0, and contains every card.
-          It must NOT page -- it is the window the cards slide behind. Drop the
-          container (it holds a candidate a whole column away).
+          is card-sized, lands in the band at column 0, and DIRECTLY parents every
+          card. It must NOT page -- it is the window the cards slide behind. Drop
+          the container (it directly holds a candidate a whole column away).
        2. A slide's own CONTENT (a card and its photo, a few px apart): both pass
           the size filter, and translating both moves the photo twice as far.
           Drop the contained one.
        Pass 1 removes viewports, pass 2 dedupes what is left. Doing only pass 1's
        test with the verdicts swapped deleted cards 2+ and kept the viewport, so
-       the row paged to slides that were clipped out of sight (blank window). */
+       the row paged to slides that were clipped out of sight (blank window).
+       Pass 1 checks DIRECT parentage, not any-depth containment: a cover-fit
+       photo is deliberately oversized/re-centred to crop within its box, so it
+       can sit 50+px off its OWN card's edge. A gallery card whose photo is
+       nested a few levels down (clip > clip > shadow-clip > img) contained that
+       distant photo under an any-depth check and got wrongly dropped as if IT
+       were the viewport, leaving zero members and the row never becoming a
+       carousel at all (Culture's "Real spaces. Real people." gallery). */
     var LEFT = function(e){ return e.getBoundingClientRect().left; };
     members = members.filter(function(e){
       var eL = LEFT(e);
       return !members.some(function(c){
-        return c !== e && e.contains(c) && Math.abs(LEFT(c) - eL) > 30;
+        return c !== e && c.parentElement === e && Math.abs(LEFT(c) - eL) > 30;
       });
     });
     members = members.filter(function(e){
