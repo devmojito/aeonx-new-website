@@ -1980,7 +1980,7 @@ document.addEventListener("DOMContentLoaded",function(){
 
     /* Tab row: a line of labels above the band with the SAME number of entries as
        there are columns, plus a solid brand-orange pill marking the active one. */
-    var tabs = null, pill = null, pillL0 = 0;
+    var tabs = null, pill = null, pillL0 = 0, ind = null;
     (function(){
       /* No `b.L < W` bound: a tab row can be WIDER than the screen. The homepage
          hero ships six product tabs (Xpense ... AeonxIQ) spanning ~700px, so the
@@ -2029,6 +2029,18 @@ document.addEventListener("DOMContentLoaded",function(){
                getComputedStyle(b.el).backgroundColor === 'rgb(223, 63, 23)' && b.W < W * 0.5;
       })[0] || null;
       if (pill) { pillL0 = pill.L; pill.el.style.transition = 'transform .3s ease, width .3s ease'; }
+      /* The other way Figma marks the active tab (the hero's product tabs): not a
+         separate bar at all, but a brand-orange BORDER-BOTTOM on the active tab's
+         own container. Nothing to slide -- move it by handing the border to
+         whichever tab is current. */
+      tabs.forEach(function(t){
+        t.box = t.el.closest ? t.el.closest('.g-b') : null;
+        if (!t.box || ind) return;
+        var cs = getComputedStyle(t.box);
+        if (parseFloat(cs.borderBottomWidth) > 0 && /223,\s*63,\s*23/.test(cs.borderBottomColor)) {
+          ind = cs.borderBottomWidth + ' solid ' + cs.borderBottomColor;
+        }
+      });
     })();
 
     /* ---- ONE TRACK PER ROW: the single mechanism every carousel uses ----
@@ -2081,16 +2093,38 @@ document.addEventListener("DOMContentLoaded",function(){
     var userTook = false;
     function takeover(){ userTook = true; stopDrift(); }
 
+    /* Active-tab colour is READ FROM THE DESIGN, not hardcoded. It used to be
+       '#fff', which is right only for the style where a solid orange pill slides
+       behind the label. The hero's product tabs have no pill -- they sit on a pale
+       tint and Figma colours the active one brand orange -- so painting it white
+       made the selected tab invisible. Figma ships exactly one tab already in the
+       active colour, so the odd colour out IS the active colour; if every tab
+       shares one colour there is no such cue and white (the pill style) stands. */
+    var tabOn = '#fff', tabOff = '';
+    if (tabs) {
+      var freq = {};
+      tabs.forEach(function(t){ var c = t.c0 || ''; freq[c] = (freq[c] || 0) + 1; });
+      var keys = Object.keys(freq);
+      if (keys.length === 2) {
+        keys.sort(function(a, b){ return freq[b] - freq[a]; });
+        tabOff = keys[0];            /* the majority colour = inactive */
+        tabOn  = keys[1];            /* the single odd one   = active  */
+      }
+    }
     function paintTabs(){
       if (!tabs) return;
       tabs.forEach(function(t, n){
-        t.el.style.color = n === i ? '#fff' : (t.c0 || '');
+        t.el.style.color = n === i ? tabOn : (tabOff || t.c0 || '');
         t.el.setAttribute('aria-selected', n === i ? 'true' : 'false');
       });
       if (pill) {
         pill.el.style.transform = 'translateX(' + (tabs[i].L - pillL0 - 7) + 'px)';
         pill.el.style.width = (tabs[i].W + 14) + 'px';
       }
+      /* Hand the underline to the current tab, or it stays under Xpense for ever. */
+      if (ind) tabs.forEach(function(t, n){
+        if (t.box) t.box.style.borderBottom = (n === i) ? ind : '0';
+      });
     }
     /* anim=false means "place it, do not animate there": the class carries
        transition:none, so there is no separate teardown step to lose a race with
@@ -2109,11 +2143,64 @@ document.addEventListener("DOMContentLoaded",function(){
     }
     function go(n){ i = Math.max(0, Math.min(count - 1, n)); apply(true); }
 
-    if (tabs) tabs.forEach(function(t, n){
-      t.el.style.cursor = 'pointer';
-      t.el.setAttribute('role', 'tab');
-      t.el.addEventListener('click', function(){ takeover(); go(n); });
-    });
+    if (tabs) {
+      var tabEls = tabs.map(function(t){ return t.el; });
+      tabEls.forEach(function(el){
+        el.style.cursor = 'pointer';
+        el.setAttribute('role', 'tab');
+        el.dataset.axTab = '1';
+      });
+      /* A tab SWITCHES the row; it must never navigate. The CTA pass linkifies any
+         short label sitting in a rounded, filled pill -- which is exactly what a
+         product tab is -- so "Xpense" / "SupplierX" had already been given a
+         destination and a click handler (on the PILL, so a click on the label
+         bubbles into it). That pass runs before the carousels are built, so a
+         data-attribute for it to skip would be set too late to help.
+         Listening on document in the CAPTURE phase settles it by ordering rather
+         than by timing: capture runs top-down, so this fires before anything bound
+         to the tab or its pill and stopPropagation() keeps the event from ever
+         reaching them. Matches the pill too (it CONTAINS the label), since that is
+         what actually carries the CTA handler. */
+      var onTab = function(ev){
+        var tgt = ev.target;
+        if (!tgt || !tgt.contains) return;
+        for (var n = 0; n < tabEls.length; n++) {
+          var el = tabEls[n];
+          if (el === tgt || el.contains(tgt) || tgt.contains(el)) {
+            ev.preventDefault(); ev.stopPropagation();
+            takeover(); go(n);
+            return;
+          }
+        }
+      };
+      document.addEventListener('click', onTab, true);
+      document.addEventListener('keydown', function(ev){
+        if (ev.key === 'Enter' || ev.key === ' ' || ev.key === 'Spacebar') onTab(ev);
+      }, true);
+
+      /* The tint band behind the tabs is authored at one screen's width (366) and
+         parked inside a clipping box, so it stopped mid-ManufeX while the tab row
+         itself runs ~600 wide through AeonxIQ. Stretch it (and whatever clips it)
+         to cover the whole row. */
+      var lastTab = tabs[tabs.length - 1];
+      var tint = box.filter(function(b){
+        return /g-b/.test(b.el.className) && Math.abs(b.T - tabs[0].T) < 30 &&
+               getComputedStyle(b.el).backgroundColor === 'rgb(254, 245, 238)';
+      })[0];
+      if (tint) {
+        var need = (lastTab.L + lastTab.W + 12) - tint.L;
+        if (need > tint.W) {
+          var vwNeed = (need / (innerWidth || W) * 100) + 'vw';
+          tint.el.style.width = vwNeed;
+          var p = tint.el.parentElement, hops = 0;
+          while (p && hops < 3) {
+            if (getComputedStyle(p).overflowX !== 'visible' &&
+                p.getBoundingClientRect().width < need) p.style.width = vwNeed;
+            p = p.parentElement; hops++;
+          }
+        }
+      }
+    }
 
     var prev, next, dots;
     if (ctrl) {

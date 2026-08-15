@@ -142,3 +142,9 @@ print('\nre-injecting mobile layouts (_mobile.py)...')
 subprocess.run([_sys.executable, '_mobile.py'], check=False)
 print('applying post-build fixups (_postbuild.py)...')
 subprocess.run([_sys.executable, '_postbuild.py'], check=False)
+# The hero's second variant lives in a COMPONENT SET, not in the page dump, so
+# _mobile.py cannot know about it -- and _mobile.py rewrites the whole .ax-mob
+# block, wiping anything injected into it. Re-inject after that, or the homepage
+# toggle has nothing to switch to.
+print('injecting mobile hero SAP variant (_herosap.py)...')
+subprocess.run([_sys.executable, '_herosap.py'], check=False)
