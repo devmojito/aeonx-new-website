@@ -1975,10 +1975,19 @@ document.addEventListener("DOMContentLoaded",function(){
         if (need > tint.W) {
           var vwNeed = (need / (innerWidth || W) * 100) + 'vw';
           tint.el.style.width = vwNeed;
+          /* Only the tight box that clips the tint may grow with it. The first
+             version walked three ancestors and widened any that clipped and was
+             narrower -- which reached main.ax-page and set the PAGE to 140vw.
+             That in turn broke the button-label widener further down, whose growth
+             is bounded by its container's right edge: with the page suddenly
+             oversized it had room to stretch "Talk to us" to 388px. Stop at an
+             ancestor that is not roughly tint-sized, and never touch the page or
+             the mobile root. */
           var p = tint.el.parentElement, hops = 0;
-          while (p && hops < 3) {
-            if (getComputedStyle(p).overflowX !== 'visible' &&
-                p.getBoundingClientRect().width < need) p.style.width = vwNeed;
+          while (p && hops < 2 && p !== page && !p.classList.contains('ax-mob')) {
+            var pw = p.getBoundingClientRect().width;
+            if (pw > tint.W * 1.6) break;
+            if (getComputedStyle(p).overflowX !== 'visible' && pw < need) p.style.width = vwNeed;
             p = p.parentElement; hops++;
           }
         }
