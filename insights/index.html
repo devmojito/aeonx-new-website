@@ -2787,7 +2787,14 @@ document.addEventListener("DOMContentLoaded",function(){
         if (!tgt || !tgt.contains) return;
         for (var n = 0; n < tabEls.length; n++) {
           var el = tabEls[n];
-          if (el === tgt || el.contains(tgt) || tgt.contains(el)) {
+          /* Match the whole PILL, not just the label. The pill also holds the
+             product icon, and a tap landing on that icon matched neither the label
+             nor an ancestor of it -- so the guard let it through and the CTA
+             handler bound to the pill navigated away. That is the redirect that
+             kept coming back: it only happened when the tap missed the text. */
+          var pill = tabs[n].box || el;
+          if (el === tgt || el.contains(tgt) || tgt.contains(el) ||
+              pill === tgt || pill.contains(tgt) || tgt.contains(pill)) {
             ev.preventDefault(); ev.stopPropagation();
             takeover(); go(n);
             /* keep the chosen tab on screen -- the strip is wider than the phone,
@@ -2827,21 +2834,34 @@ document.addEventListener("DOMContentLoaded",function(){
              all the way to main.ax-page and set the PAGE to 140vw -- that removed
              the bound the button-label widener uses and stretched "Talk to us" to
              388px. Never touch the page or the mobile root. */
-          tint.el.style.width = (need / (innerWidth || W) * 100) + 'vw';
+          /* Size the tint to the WHOLE strip, not to tabs[count-1]. `tabs` is sliced
+             to the carousel's column count, so on a row where fewer columns are
+             detected than there are labels (4 vs 6) the tint stopped dead at
+             ManufeX and OrderX / AeonxIQ sat on bare white. The strip's own
+             scrollWidth is the honest full width -- measured BEFORE the tint grows,
+             so it reflects the tab row rather than the tint itself. */
           var p = tint.el.parentElement, hops = 0;
           while (p && hops < 2 && p !== page && !p.classList.contains('ax-mob')) {
             var pw = p.getBoundingClientRect().width;
             if (pw > tint.W * 1.6) break;
             if (getComputedStyle(p).overflowX !== 'visible' && pw < need) {
+              need = Math.max(need, p.scrollWidth - (tint.L - p.getBoundingClientRect().left));
               p.style.overflowX = 'auto';
               p.style.overflowY = 'hidden';
               p.style.touchAction = 'pan-x';
               p.style.scrollbarWidth = 'none';
               p.style.webkitOverflowScrolling = 'touch';
               tabScroller = p;
+              /* Stop at the tab strip's OWN window. Continuing up also matched the
+                 carousel's clip, whose scrollWidth spans every product screenshot
+                 (2372px), and the tint inherited that -- a 2364px band behind a
+                 602px row. It also left the carousel natively scrollable while its
+                 track is transform-driven, which is two mechanisms for one row. */
+              break;
             }
             p = p.parentElement; hops++;
           }
+          tint.el.style.width = (need / (innerWidth || W) * 100) + 'vw';
         }
       }
     }
