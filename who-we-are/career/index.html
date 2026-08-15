@@ -2033,6 +2033,12 @@ document.addEventListener("DOMContentLoaded",function(){
           if (el === tgt || el.contains(tgt) || tgt.contains(el)) {
             ev.preventDefault(); ev.stopPropagation();
             takeover(); go(n);
+            /* keep the chosen tab on screen -- the strip is wider than the phone,
+               so tapping the last visible one used to leave the new active tab
+               (and everything after it) off past the right edge */
+            if (tabScroller && el.scrollIntoView) {
+              el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            }
             return;
           }
         }
@@ -2047,6 +2053,7 @@ document.addEventListener("DOMContentLoaded",function(){
          itself runs ~600 wide through AeonxIQ. Stretch it (and whatever clips it)
          to cover the whole row. */
       var lastTab = tabs[tabs.length - 1];
+      var tabScroller = null;
       var tint = box.filter(function(b){
         return /g-b/.test(b.el.className) && Math.abs(b.T - tabs[0].T) < 30 &&
                getComputedStyle(b.el).backgroundColor === 'rgb(254, 245, 238)';
@@ -2054,21 +2061,28 @@ document.addEventListener("DOMContentLoaded",function(){
       if (tint) {
         var need = (lastTab.L + lastTab.W + 12) - tint.L;
         if (need > tint.W) {
-          var vwNeed = (need / (innerWidth || W) * 100) + 'vw';
-          tint.el.style.width = vwNeed;
-          /* Only the tight box that clips the tint may grow with it. The first
-             version walked three ancestors and widened any that clipped and was
-             narrower -- which reached main.ax-page and set the PAGE to 140vw.
-             That in turn broke the button-label widener further down, whose growth
-             is bounded by its container's right edge: with the page suddenly
-             oversized it had room to stretch "Talk to us" to 388px. Stop at an
-             ancestor that is not roughly tint-sized, and never touch the page or
-             the mobile root. */
+          /* The tint only backs one screen's width while the row runs ~600 through
+             AeonxIQ, so it stopped mid-ManufeX. Widen the tint itself -- but do NOT
+             widen the box that clips it: that box is the row's window, and the six
+             tabs are its other child. Making it SCROLL instead fixes both halves at
+             once (tint behind every tab, and the tabs past the right edge become
+             reachable). An earlier version widened ancestors instead, which walked
+             all the way to main.ax-page and set the PAGE to 140vw -- that removed
+             the bound the button-label widener uses and stretched "Talk to us" to
+             388px. Never touch the page or the mobile root. */
+          tint.el.style.width = (need / (innerWidth || W) * 100) + 'vw';
           var p = tint.el.parentElement, hops = 0;
           while (p && hops < 2 && p !== page && !p.classList.contains('ax-mob')) {
             var pw = p.getBoundingClientRect().width;
             if (pw > tint.W * 1.6) break;
-            if (getComputedStyle(p).overflowX !== 'visible' && pw < need) p.style.width = vwNeed;
+            if (getComputedStyle(p).overflowX !== 'visible' && pw < need) {
+              p.style.overflowX = 'auto';
+              p.style.overflowY = 'hidden';
+              p.style.touchAction = 'pan-x';
+              p.style.scrollbarWidth = 'none';
+              p.style.webkitOverflowScrolling = 'touch';
+              tabScroller = p;
+            }
             p = p.parentElement; hops++;
           }
         }
@@ -4330,6 +4344,11 @@ document.addEventListener("DOMContentLoaded",function(){
   function bumpExplore(){
     [].slice.call(document.querySelectorAll('.g-t')).forEach(function(e){
       if(e.children.length) return;
+      /* Desktop-only. The mobile block is authored against a 430px design where
+         Figma already sets these pill labels to 12px (2.7907vw); .ax-fx-xl's
+         !important 2.4419vw drags that down to 10.5px, which also pushes the
+         glyphs off-centre in a pill whose padding is otherwise exactly 12/12. */
+      if(e.closest('.ax-mob')) return;
       if(!/^explore(\s|$)/i.test(txt(e))) return;
       var host=e.parentElement;
       var hs=host?(host.getAttribute('style')||''):'';
