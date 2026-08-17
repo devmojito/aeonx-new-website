@@ -1,44 +1,50 @@
 [
  {
   "slug": "xpense",
-  "src": "/assets/gen/aa567cbcf88652b7fd70c928aa177cbe0a7d00a9.png",
-  "size": "59.0104vw 79.4826vw",
-  "pos": "0.0000vw -0.0017vw",
-  "ref": "aa567cbcf88652b7fd70c928aa177cbe0a7d00a9"
+  "node": "6530:24259",
+  "ref": "d83a82a0c1c27d516c98188e00a3cee13f56e86d",
+  "src": "/assets/gen/d83a82a0c1c27d516c98188e00a3cee13f56e86d.png",
+  "size": "cover",
+  "pos": "center"
  },
  {
   "slug": "supplierx",
-  "src": "/assets/gen/59aaccb6d152a67424f6bd4fbf46df577bdd9ff5.png",
-  "size": "59.0104vw 39.2583vw",
-  "pos": "0.0000vw -0.0458vw",
-  "ref": "59aaccb6d152a67424f6bd4fbf46df577bdd9ff5"
+  "node": "6530:24187",
+  "ref": "19b2a06d5749ee3dc9e516921df8bd7c155b0122",
+  "src": "/assets/gen/19b2a06d5749ee3dc9e516921df8bd7c155b0122.png",
+  "size": "cover",
+  "pos": "center"
  },
  {
   "slug": "logystix",
-  "src": "/assets/gen/59aaccb6d152a67424f6bd4fbf46df577bdd9ff5.png",
-  "size": "59.0104vw 39.2583vw",
-  "pos": "0.0000vw -0.0458vw",
-  "ref": "59aaccb6d152a67424f6bd4fbf46df577bdd9ff5"
+  "node": "6530:24331",
+  "ref": "e8d22d975f2697dd3490f92aac75e05b6b355575",
+  "src": "/assets/gen/e8d22d975f2697dd3490f92aac75e05b6b355575.png",
+  "size": "cover",
+  "pos": "center"
  },
  {
   "slug": "manufex",
-  "src": "/assets/gen/2714267af9e02b4b2ebcea0c1790f496f03e7899.png",
-  "size": "59.0104vw 39.2708vw",
-  "pos": "0.0933vw 0.0933vw",
-  "ref": "2714267af9e02b4b2ebcea0c1790f496f03e7899"
+  "node": "6530:24403",
+  "ref": "94d8ee820081df4a95384f2b45e4c0892d857aa0",
+  "src": "/assets/gen/94d8ee820081df4a95384f2b45e4c0892d857aa0.png",
+  "size": "cover",
+  "pos": "center"
  },
  {
   "slug": "orderx",
+  "node": "6530:24475",
+  "ref": "7f4ebb15712b6e8306e590a80755af65f4e5b1e8",
   "src": "/assets/gen/7f4ebb15712b6e8306e590a80755af65f4e5b1e8.png",
-  "size": "59.0104vw 43.4375vw",
-  "pos": "0.0933vw 0.0933vw",
-  "ref": "7f4ebb15712b6e8306e590a80755af65f4e5b1e8"
+  "size": "cover",
+  "pos": "center"
  },
  {
   "slug": "aeonxiq",
-  "src": "/assets/gen/e35ee9e51c72f197dcd30547c51270218a80b07b.png",
-  "size": "68.5417vw 32.9167vw",
-  "pos": "0.0933vw 0.0933vw",
-  "ref": "e35ee9e51c72f197dcd30547c51270218a80b07b"
+  "node": "6530:24547",
+  "ref": "5bedfe52e3e7be53cb84ba45538a328cc2d0879c",
+  "src": "/assets/gen/5bedfe52e3e7be53cb84ba45538a328cc2d0879c.png",
+  "size": "cover",
+  "pos": "center"
  }
 ]

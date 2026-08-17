@@ -283,17 +283,20 @@ def build_hero(frag):
 
     lines = hero.split('\n')
 
-    # The six tab cells: same top, same height, differing only in x.
-    cells = []
+    # The six tab cells: same top, same height, differing only in x. The row's own
+    # top is read off the fragment, not hard-coded -- Figma re-cut this hero from a
+    # full-width stack (tabs at 19.6875vw) to two columns (tabs at 5.7292vw), and a
+    # constant here simply found zero cells and stopped the build.
+    by_top = {}
     for i, ln in enumerate(lines):
         if 'class="g-b"' not in ln:
             continue
         m = GEO.search(ln)
-        # same top and height as each other; the wider box on that line is the
-        # row's own bottom rule, the sliver is a 1px artefact
-        if (m and abs(num(m, 2) - 19.6875) < 0.01
-                and 3.7 <= num(m, 4) < 3.9 and 10 < num(m, 3) < 12):
-            cells.append((i, num(m, 1), num(m, 3), num(m, 4)))
+        # the wider box on that row is its own bottom rule, the sliver a 1px artefact
+        if m and 3.7 <= num(m, 4) < 3.9 and 10 < num(m, 3) < 12:
+            by_top.setdefault(round(num(m, 2), 3), []).append(
+                (i, num(m, 1), num(m, 3), num(m, 4)))
+    row_top, cells = max(by_top.items(), key=lambda kv: len(kv[1])) if by_top else (0, [])
     cells.sort(key=lambda c: c[1])
     if len(cells) != len(PRODUCTS):
         raise SystemExit('expected %d tab cells, found %d' % (len(PRODUCTS), len(cells)))
@@ -339,7 +342,7 @@ def build_hero(frag):
     body = '\n'.join(lines)
 
     # Sliding active rule + one hit target per tab, over the flat cells.
-    top = 19.6875 + cells[0][3]
+    top = row_top + cells[0][3]
     extra = ['<div class="ax-hp-ul" id="ax-hp-underline" style="position:absolute;'
              'left:%.4fvw;top:%.4fvw;width:%.4fvw;height:0.1042vw;"></div>'
              % (cells[0][1], top, cells[0][2])]
@@ -357,10 +360,10 @@ def build_hero(frag):
         extra.append(
             '<button class="ax-hp-hit" type="button" role="tab" data-hp="%s" '
             'data-cta="1" data-ax-owned="1" aria-selected="%s" tabindex="%d" '
-            'aria-label="Show %s" style="position:absolute;left:%.4fvw;top:19.6875vw;'
+            'aria-label="Show %s" style="position:absolute;left:%.4fvw;top:%.4fvw;'
             'width:%.4fvw;height:%.4fvw;"></button>'
             % (slug, 'true' if slug == 'xpense' else 'false',
-               0 if slug == 'xpense' else -1, label, left, w, h))
+               0 if slug == 'xpense' else -1, label, left, row_top, w, h))
     extra.append('</div>')
 
     # Full literal paths, not bare refs: _webp.py repoints /assets/gen/*.png across

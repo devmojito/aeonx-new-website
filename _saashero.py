@@ -24,7 +24,11 @@ import urllib.request
 import _gen
 
 KEY = 'oskhBYvi1Q7GGPqrqABZQp'
-HERO = '6366:28195'      # Component 224 -- the SaaS hero (1920x894)
+HERO = '6530:24682'      # Component 225 -- the SaaS hero (1920x894)
+# Figma re-cut this hero in Aug 2026: Component 224 stacked the copy across the
+# full width with the product panel below it; Component 225 is two columns --
+# copy left (651 wide), tab row + panel right (998) -- and its panel comes from
+# the new `Section (SaaS Products)/Video` set rather than the /Dashboard one.
 PILL = '6366:29603'      # Component 223 -- the SaaS / SAP . AI . GCP toggle
 CACHE = '_saashero.json'
 OUT = '_saashero.html'
@@ -35,14 +39,14 @@ OUT = '_saashero.html'
 # no artwork -- the un-instantiated-variant trap (HANDOFF §2 trap 5). The set has to
 # be fetched separately to get each product's real screenshot and its exact fill
 # sizing, which differs per variant (STRETCH vs FILL, and three different heights).
-PRODSET = '6366:20841'
+PRODSET = '6530:24186'   # Section (SaaS Products)/Video
 VARIANTS = [                      # slug -> component id, in tab order
-    ('xpense',    '6366:20840'),
-    ('supplierx', '6366:20836'),
-    ('logystix',  '6366:20839'),
-    ('manufex',   '6366:20838'),
-    ('orderx',    '6366:20837'),
-    ('aeonxiq',   '6366:20835'),
+    ('xpense',    '6530:24259'),
+    ('supplierx', '6530:24187'),
+    ('logystix',  '6530:24331'),
+    ('manufex',   '6530:24403'),
+    ('orderx',    '6530:24475'),
+    ('aeonxiq',   '6530:24547'),
 ]
 SHOTS_OUT = '_saashero_shots.json'
 
@@ -53,10 +57,10 @@ SHOTS_OUT = '_saashero_shots.json'
 # the raw fill lands on the page green. Figma's own node render bakes the filters,
 # the rotation and the crop, so each canvas is exported as a finished PNG and
 # placed on its render bounds instead, the same way vector clusters are handled.
-BAKED = [
-    ('6366:28268', 'hero-bricks-left'),
-    ('6366:28270', 'hero-bricks-right'),
-]
+# ...and Component 225 drops them: both `Container` parents ship visible:false, so
+# the new hero is plain white behind the copy. Left empty rather than deleted --
+# repoint HERO at a brick-bearing frame again and the list is all this needs.
+BAKED = []
 BAKED_REF = '40a13f9939ec0e5cb23c499a4b70c3a9aac6e239'
 
 
@@ -189,7 +193,7 @@ def main():
     for nid, name in ((HERO, 'hero'), (PILL, 'pill')):
         node = d['nodes'][nid]['document']
         body, h, _ = _gen.build_body(node)
-        if nid == HERO:
+        if nid == HERO and BAKED:
             body = bake(node, body)
         bb = node['absoluteBoundingBox']
         out.append((name, nid, bb, body, h))
