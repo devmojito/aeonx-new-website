@@ -1967,7 +1967,16 @@ document.addEventListener("DOMContentLoaded",function(){
          own container. Nothing to slide -- move it by handing the border to
          whichever tab is current. */
       tabs.forEach(function(t){
-        t.box = t.el.closest ? t.el.closest('.g-b') : null;
+        var bx = t.el.closest ? t.el.closest('.g-b') : null;
+        /* Only this tab's OWN pill counts. Where Figma wraps the whole row in one
+           rounded container (the lower SaaS tabs: six plain labels inside a single
+           .g-b, with a separate orange pill marking the active one) closest('.g-b')
+           returns that shared wrapper for every tab -- so the hit test below, which
+           accepts a click anywhere inside the pill, matched tab 0 no matter which
+           label was tapped. Every tap re-selected SupplierX and the panel never
+           moved. A box that contains another tab's label is not a per-tab pill. */
+        if (bx && tabs.some(function(o){ return o !== t && bx.contains(o.el); })) bx = null;
+        t.box = bx;
         if (!t.box || ind) return;
         var cs = getComputedStyle(t.box);
         if (parseFloat(cs.borderBottomWidth) > 0 && /223,\s*63,\s*23/.test(cs.borderBottomColor)) {
