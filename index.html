@@ -1132,12 +1132,16 @@ html.ax-hero-saas .ax-hero-sap{visibility:hidden;opacity:0;transform:translateY(
 </div>
 <div class="g-b g-clip" style="position:absolute;left:1.6667vw;top:0.0000vw;width:54.5833vw;height:15.6250vw;overflow:hidden;">
 <div class="g-b g-clip" style="position:absolute;left:1.6667vw;top:1.6667vw;width:51.2500vw;height:12.2917vw;overflow:hidden;">
-<div class="g-t" style="position:absolute;left:2.2917vw;top:0.0000vw;width:46.6667vw;height:6.8750vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:1.8750vw;line-height:2.2917vw;color:rgb(35,39,46);text-align:left;white-space:pre-wrap;">Our field reps see their reimbursement within two weeks. It is a small thing. It changed how they feel about the company.</div>
+<div class="g-t" id="ax-fr-q" style="position:absolute;left:2.2917vw;top:0.0000vw;width:46.6667vw;height:6.8750vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:1.8750vw;line-height:2.2917vw;color:rgb(35,39,46);text-align:left;white-space:pre-wrap;">Our field reps see their reimbursement within two weeks. It is a small thing. It changed how they feel about the company.</div>
 <div class="g-b g-clip" style="position:absolute;left:2.2917vw;top:10.4688vw;width:46.6667vw;height:1.8229vw;overflow:hidden;">
-<div class="g-t" style="position:absolute;left:0.0000vw;top:0.2865vw;width:3.3333vw;height:1.2500vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:1.0417vw;line-height:1.2500vw;color:rgb(223,63,23);text-align:left;white-space:nowrap;">01 / 03</div>
+<div class="g-t" id="ax-fr-n" style="position:absolute;left:0.0000vw;top:0.2865vw;width:3.3333vw;height:1.2500vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:1.0417vw;line-height:1.2500vw;color:rgb(223,63,23);text-align:left;white-space:nowrap;">01 / 03</div>
 <div class="g-b g-clip" style="position:absolute;left:3.9583vw;top:0.8854vw;width:38.2292vw;height:0.0521vw;background-color:rgb(177,186,200);opacity:0.15000000596046448;overflow:hidden;">
 </div>
 <img class="g-vec" src="/assets/vec/6552-16672.svg" data-vec="6552:16672" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:42.8125vw;top:0.0000vw;width:3.8542vw;height:1.8229vw;">
+<!-- Figma draws both pager arrows as ONE svg, so neither is clickable on its own.
+     Two transparent buttons over its halves, sized to the circles they cover. -->
+<button type="button" id="ax-fr-prev" aria-label="Previous review" data-cta="1" data-ax-owned="1" style="position:absolute;left:42.8125vw;top:0.0000vw;width:1.8229vw;height:1.8229vw;padding:0;border:0;background:transparent;cursor:pointer;border-radius:50%;"></button>
+<button type="button" id="ax-fr-next" aria-label="Next review" data-cta="1" data-ax-owned="1" style="position:absolute;left:44.8438vw;top:0.0000vw;width:1.8229vw;height:1.8229vw;padding:0;border:0;background:transparent;cursor:pointer;border-radius:50%;"></button>
 </div>
 <div class="g-b" style="position:absolute;left:1.7708vw;top:1.5104vw;width:1.7708vw;height:1.3021vw;transform:matrix(-1.000000,0.000000,-0.000000,-1.000000,0,0);transform-origin:0 0;"><div class="g-img" data-ref="f12ef3c1b7de1516a779ad3792b9b1eb2deafc76" role="img" aria-label="Container" style="position:absolute;left:0.0000vw;top:0.0000vw;width:1.7708vw;height:1.3021vw;background-image:url(/assets/gen/f12ef3c1b7de1516a779ad3792b9b1eb2deafc76.webp);background-size:1.7708vw 1.3021vw;background-position:-0.0000vw -0.0000vw;background-repeat:no-repeat;"></div></div>
 </div>
@@ -6705,5 +6709,62 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 
+
+<script>
+/* ---- FEATURED REVIEW: PREV / NEXT ----
+   The section Figma replaced here carried these two quotes in a working carousel;
+   the new design draws a "01 / 03" pager and two arrows but wires neither. Only two
+   real stories exist (Figma's own component set authored exactly two, and its four
+   review cards below are still "Alex Johnson / lorem ipsum" placeholders), so the
+   count reads 01 / 02 rather than the design's 03 -- an honest denominator beats a
+   third slide invented to match the mock. Both quotes carry the same attribution,
+   which is what the source had; the name and company under the photo never change,
+   so only the quote is swapped. */
+(function(){
+  var STORIES = [
+    'Our field reps see their reimbursement within two weeks. It is a small thing. ' +
+    'It changed how they feel about the company.',
+    'We appreciate how simple SAP managed services and SAP S/4HANA cloud migration ' +
+    'were to implement. For our company, this has been a game-changer, and I could ' +
+    'not be happier with the outcomes. Working with AeonX Digital has been a ' +
+    'fantastic experience for us, and we would gladly recommend them as one of the ' +
+    'industry’s top providers.'
+  ];
+  function init(){
+    var q=document.getElementById('ax-fr-q'), n=document.getElementById('ax-fr-n'),
+        prev=document.getElementById('ax-fr-prev'), next=document.getElementById('ax-fr-next');
+    if(!q||!n||!prev||!next) return;
+    var i=0, DESIGN=1.8750, MIN=0.9500, MAXH=9.8;   /* vw */
+    q.setAttribute('aria-live','polite');
+    /* The design's box holds three lines at 1.875vw. The second quote is 5x longer,
+       and there is room to grow down to the pager but not enough for it at full
+       size -- so shrink the type until it fits rather than clipping a customer
+       mid-sentence. The first quote fits as drawn and never shrinks. */
+    function fit(){
+      var px=innerWidth/100, size=DESIGN;
+      q.style.height='auto';
+      while(size>MIN){
+        q.style.fontSize=size+'vw';
+        q.style.lineHeight=(size*1.2222)+'vw';
+        if(q.scrollHeight<=MAXH*px) break;
+        size-=0.05;
+      }
+    }
+    function paint(){
+      q.textContent=STORIES[i];
+      n.textContent=(i+1<10?'0':'')+(i+1)+' / 0'+STORIES.length;
+      fit();
+    }
+    function go(d){ i=(i+d+STORIES.length)%STORIES.length; paint(); }
+    prev.addEventListener('click',function(e){ e.preventDefault(); go(-1); });
+    next.addEventListener('click',function(e){ e.preventDefault(); go(1); });
+    addEventListener('resize',function(){ clearTimeout(window.__frT);
+      window.__frT=setTimeout(fit,150); });
+    paint();
+  }
+  if(document.readyState!=='loading') init();
+  else document.addEventListener('DOMContentLoaded',init);
+})();
+</script>
 </body>
 </html>
