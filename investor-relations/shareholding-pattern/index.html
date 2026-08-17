@@ -1941,11 +1941,30 @@ document.addEventListener("DOMContentLoaded",function(){
               pill === tgt || pill.contains(tgt) || tgt.contains(pill)) {
             ev.preventDefault(); ev.stopPropagation();
             takeover(); go(n);
-            /* keep the chosen tab on screen -- the strip is wider than the phone,
-               so tapping the last visible one used to leave the new active tab
-               (and everything after it) off past the right edge */
-            if (tabScroller && el.scrollIntoView) {
-              el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            /* Keep the chosen tab on screen -- the strip is wider than the phone,
+               so tapping the last visible one used to leave the new active tab off
+               past the right edge. Scroll the STRIP directly rather than calling
+               scrollIntoView: that walks every scrollable ancestor, and
+               main.ax-page is overflow:hidden -- which still scrolls
+               programmatically -- so it dragged the whole page sideways and the
+               hero rendered with its left edge cut off. It also fought the strip's
+               own scroll, which is the jerk-back after the first move. */
+            if (tabScroller) {
+              var sr = tabScroller.getBoundingClientRect();
+              var er = (tabs[n].box || el).getBoundingClientRect();
+              var max = tabScroller.scrollWidth - tabScroller.clientWidth;
+              var want = tabScroller.scrollLeft +
+                         ((er.left + er.width / 2) - (sr.left + sr.width / 2));
+              want = Math.max(0, Math.min(max, want));
+              if (tabScroller.scrollTo) tabScroller.scrollTo({ left: want, behavior: 'smooth' });
+              else tabScroller.scrollLeft = want;
+            }
+            /* If anything did shift an ancestor sideways, put it back: a horizontal
+               offset on the page is never intended in this fixed-width layout. */
+            for (var q = el.parentElement; q; q = q.parentElement) {
+              if (q === tabScroller) continue;
+              if (q.scrollLeft) q.scrollLeft = 0;
+              if (q === page || (q.classList && q.classList.contains('ax-mob'))) break;
             }
             return;
           }
