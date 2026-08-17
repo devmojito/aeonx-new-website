@@ -1255,6 +1255,22 @@ document.addEventListener('DOMContentLoaded',function(){
         layers.forEach(function(L){
           L.el.style.width=Math.max(0,need-L.inset*2)+'px';
         });
+        /* Re-centre the label in the pill that just grew. The label is absolutely
+           positioned at its own Figma inset, so widening the pill moves the RIGHT
+           gap only and the text ends up visibly left of centre. Barely noticeable
+           at the design's own text size, obvious as soon as the text is bigger than
+           the design assumed -- Firefox's minimum-font-size setting, or its
+           zoom-text-only mode -- which is exactly when this pass grows a pill most.
+           Only a centred label moves: a left-aligned one is drawn at its own inset
+           on purpose and growth belongs on the right. */
+        if(getComputedStyle(lab).textAlign==='center'){
+          /* Centre on whichever is wider, the label's own box or its glyphs.
+             text-align:center only centres a line that FITS: once nowrap text is
+             wider than the box it starts at the content edge and all the overflow
+             goes right, so centring the box there leaves the text hard against the
+             left of the pill -- which is the bug, not the fix. */
+          lab.style.left=((need-Math.max(ink,lab.getBoundingClientRect().width))/2)+'px';
+        }
         var key=Math.round((pr.top+scrollY)/6);        // same visual row
         (rows[key]=rows[key]||[]).push({left:pr.left,delta:delta});
       }
