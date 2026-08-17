@@ -1860,7 +1860,11 @@ document.addEventListener('DOMContentLoaded',function(){
     var st=e.getAttribute('style')||'';
     var l=num(st,'left'),t=num(st,'top'),w=num(st,'width')||0,h=num(st,'height')||0;
     if(l===null||t===null)return;
-    if(l<19.5||l>23||t<168||t>201||w>18)return;
+    /* 204, not 201: the sixth cell (AeonxIQ) sits at 201.35 and its label at
+       203.26. A 201 cut-off dropped both from the rail, so while the other five
+       tabs were position:fixed those two stayed absolute and scrolled up
+       through the pinned rail -- AeonxIQ ended up overlapping LogystiX. */
+    if(l<19.5||l>23||t<168||t>204||w>18)return;
     var item={el:e,t:t,h:h};
     rail.push(item);
     if(e.classList.contains('g-t')&&l>21&&l<23){labels.push(item);}
@@ -1911,9 +1915,13 @@ document.addEventListener('DOMContentLoaded',function(){
       scrollTo({top:(firstPanel+i*panelH-stickyTop-1)*innerWidth/100,behavior:'smooth'});
     });
   });
+  /* Index a cell by its own top, not by its position in `rows`: the active cell
+     is pulled out into `indicator`, so rows[0] is OrderX's cell while labels[0]
+     is SupplierX -- every cell click selected the tab above it. */
   rows.forEach(function(R,i){
+    var k=indicator?Math.round((R.t-indicator.t)/5.7292):i;
     R.el.style.cursor='pointer';
-    R.el.addEventListener('click',function(){ if(labels[i])labels[i].el.click(); });
+    R.el.addEventListener('click',function(){ if(labels[k])labels[k].el.click(); });
   });
   addEventListener('scroll',onScroll,{passive:true});
   addEventListener('resize',function(){mode=null;act=-1;onScroll();});
