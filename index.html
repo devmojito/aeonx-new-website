@@ -1101,17 +1101,17 @@ html.ax-hero-saas .ax-hero-sap{visibility:hidden;opacity:0;transform:translateY(
 <!-- ==== TESTIMONIAL SECTION (Figma 6552:16619) ==== -->
 <div class="g-b g-clip ax-tst" style="position:absolute;left:0.0000vw;top:472.8646vw;width:100.0000vw;height:75.9896vw;overflow:hidden;background-color:rgb(236,238,242);">
 <div class="g-b g-clip" style="position:absolute;left:18.2517vw;top:-1.0772vw;width:31.2500vw;height:31.2500vw;transform:matrix(0.375416,0.926857,-0.926857,0.375416,0,0);transform-origin:0 0;overflow:hidden;"><div class="g-img" data-ref="5b235ddbe70d573660dca6ce0000421c2f3f7d3e" role="presentation" aria-hidden="true" style="position:absolute;left:0.0000vw;top:0.0000vw;width:31.2500vw;height:31.2500vw;background-image:url(/assets/gen/5b235ddbe70d573660dca6ce0000421c2f3f7d3e.webp);background-size:cover;background-position:center;background-repeat:no-repeat;"></div></div>
-<div class="g-b g-clip" style="position:absolute;left:14.8438vw;top:-13.2604vw;width:0.0521vw;height:105.8438vw;background-color:rgb(134,149,170);border-radius:1.0417vw;overflow:hidden;">
+<div class="g-b g-clip" style="position:absolute;left:14.8438vw;top:-13.2604vw;width:0.0521vw;height:105.8438vw;background-color:rgb(134,149,170);opacity:0.1000;border-radius:1.0417vw;overflow:hidden;">
 </div>
-<div class="g-b g-clip" style="position:absolute;left:28.8958vw;top:-13.2604vw;width:0.0521vw;height:105.8438vw;background-color:rgb(134,149,170);border-radius:1.0417vw;overflow:hidden;">
+<div class="g-b g-clip" style="position:absolute;left:28.8958vw;top:-13.2604vw;width:0.0521vw;height:105.8438vw;background-color:rgb(134,149,170);opacity:0.1000;border-radius:1.0417vw;overflow:hidden;">
 </div>
-<div class="g-b g-clip" style="position:absolute;left:42.9479vw;top:-13.2604vw;width:0.0521vw;height:105.8438vw;background-color:rgb(134,149,170);border-radius:1.0417vw;overflow:hidden;">
+<div class="g-b g-clip" style="position:absolute;left:42.9479vw;top:-13.2604vw;width:0.0521vw;height:105.8438vw;background-color:rgb(134,149,170);opacity:0.1000;border-radius:1.0417vw;overflow:hidden;">
 </div>
-<div class="g-b g-clip" style="position:absolute;left:57.0000vw;top:-13.2604vw;width:0.0521vw;height:105.8438vw;background-color:rgb(134,149,170);border-radius:1.0417vw;overflow:hidden;">
+<div class="g-b g-clip" style="position:absolute;left:57.0000vw;top:-13.2604vw;width:0.0521vw;height:105.8438vw;background-color:rgb(134,149,170);opacity:0.1000;border-radius:1.0417vw;overflow:hidden;">
 </div>
-<div class="g-b g-clip" style="position:absolute;left:71.0521vw;top:-13.2604vw;width:0.0521vw;height:105.8438vw;background-color:rgb(134,149,170);border-radius:1.0417vw;overflow:hidden;">
+<div class="g-b g-clip" style="position:absolute;left:71.0521vw;top:-13.2604vw;width:0.0521vw;height:105.8438vw;background-color:rgb(134,149,170);opacity:0.1000;border-radius:1.0417vw;overflow:hidden;">
 </div>
-<div class="g-b g-clip" style="position:absolute;left:85.1042vw;top:-13.2604vw;width:0.0521vw;height:105.8438vw;background-color:rgb(134,149,170);border-radius:1.0417vw;overflow:hidden;">
+<div class="g-b g-clip" style="position:absolute;left:85.1042vw;top:-13.2604vw;width:0.0521vw;height:105.8438vw;background-color:rgb(134,149,170);opacity:0.1000;border-radius:1.0417vw;overflow:hidden;">
 </div>
 <div class="g-t" style="position:absolute;left:40.6250vw;top:5.9375vw;width:18.7500vw;height:2.7604vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:1.2500vw;line-height:1.8750vw;color:rgb(223,63,23);text-align:center;white-space:nowrap;">IN THEIR WORDS</div>
 <h1 class="g-t" style="position:absolute;left:14.9219vw;top:9.4271vw;width:70.1562vw;height:3.7500vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:3.3333vw;line-height:3.7500vw;color:rgb(35,39,46);text-align:center;white-space:nowrap;">What customers say after go-live.</h1>
@@ -6693,6 +6693,17 @@ document.addEventListener("DOMContentLoaded",function(){
 </script>
 
 
+<style id="ax-fr-css">
+/* Featured review: the quote and its counter cross-fade when the pager moves. */
+#ax-fr-q,#ax-fr-n{transition:opacity .26s ease,transform .26s cubic-bezier(.22,.61,.36,1)}
+.is-swap #ax-fr-q,.is-swap #ax-fr-n{opacity:0;transform:translateY(0.5vw)}
+#ax-fr-prev:focus-visible,#ax-fr-next:focus-visible{
+  outline:0.1042vw solid rgb(223,63,23);outline-offset:0.1042vw}
+@media (prefers-reduced-motion:reduce){
+  #ax-fr-q,#ax-fr-n{transition:none}
+  .is-swap #ax-fr-q,.is-swap #ax-fr-n{opacity:1;transform:none}
+}
+</style>
 <script>
 /* ---- FEATURED REVIEW: PREV / NEXT ----
    The section Figma replaced here carried these two quotes in a working carousel;
@@ -6718,6 +6729,11 @@ document.addEventListener("DOMContentLoaded",function(){
         prev=document.getElementById('ax-fr-prev'), next=document.getElementById('ax-fr-next');
     if(!q||!n||!prev||!next) return;
     var i=0, DESIGN=1.8750, MIN=0.9500, MAXH=9.8;   /* vw */
+    /* the fade is driven from a shared ancestor so the quote and the counter move
+       together; nearest one that holds both */
+    var card=q.parentElement;
+    while(card&&!card.contains(n)) card=card.parentElement;
+    if(!card) card=q;
     q.setAttribute('aria-live','polite');
     /* The design's box holds three lines at 1.875vw. The second quote is 5x longer,
        and there is room to grow down to the pager but not enough for it at full
@@ -6738,7 +6754,23 @@ document.addEventListener("DOMContentLoaded",function(){
       n.textContent=(i+1<10?'0':'')+(i+1)+' / 0'+STORIES.length;
       fit();
     }
-    function go(d){ i=(i+d+STORIES.length)%STORIES.length; paint(); }
+    /* Swap under a fade, not in front of the reader. The quote also resizes between
+       slides (see fit above), so it has to be invisible while that happens --
+       otherwise the type visibly steps down a size mid-read. */
+    var swapping=false;
+    var REDUCED=matchMedia('(prefers-reduced-motion: reduce)').matches;
+    function go(d){
+      if(swapping) return;
+      i=(i+d+STORIES.length)%STORIES.length;
+      if(REDUCED){ paint(); return; }
+      swapping=true;
+      card.classList.add('is-swap');
+      setTimeout(function(){
+        paint();
+        card.classList.remove('is-swap');
+        setTimeout(function(){ swapping=false; },260);
+      },260);
+    }
     prev.addEventListener('click',function(e){ e.preventDefault(); go(-1); });
     next.addEventListener('click',function(e){ e.preventDefault(); go(1); });
     addEventListener('resize',function(){ clearTimeout(window.__frT);
