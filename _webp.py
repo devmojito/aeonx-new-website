@@ -39,7 +39,13 @@ def encode(name):
         im = Image.open(src)
         im.load()
         if im.mode not in ('RGB', 'RGBA'):
-            im = im.convert('RGBA' if 'A' in im.getbands() else 'RGB')
+            # A palette PNG carries its transparency in info['transparency'], not in
+            # a band, so an 'A' in getbands() test says RGB and convert() paints every
+            # transparent pixel in whatever colour the palette happens to hold there.
+            # That is how the testimonial section's white petal graphic came out as a
+            # dark slate blob: its transparent pixels are (76,105,113).
+            alpha = 'A' in im.getbands() or im.info.get('transparency') is not None
+            im = im.convert('RGBA' if alpha else 'RGB')
         # Small marks and logos have hard edges that lossy q82 visibly softens
         # (measured: mean per-pixel error 10/255 on a 120px badge vs ~1 on photos).
         # They are tiny anyway, so encode those losslessly and keep them exact.
