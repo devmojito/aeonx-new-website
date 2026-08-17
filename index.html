@@ -6901,28 +6901,13 @@ document.addEventListener("DOMContentLoaded",function(){
        is a fabricated photograph of someone who exists, so it goes -- same call as
        the desktop cards. Matched geometrically: the small image on the name's own
        line, to its left. */
-    /* Same problem the desktop cards had: the body window sits at the card's foot
-       with a block of dead space above it, because the placeholder was written to
-       overflow and be clipped. Give it that space, then step the type down only if
-       a quote still does not fit. */
-    bodies.forEach(function(e,i){
-      var clip=e.parentElement; if(!clip) return;
-      var kr=clip.getBoundingClientRect(), nr=names[i].getBoundingClientRect();
-      var vw=innerWidth/100, want=nr.bottom+10;
-      var delta=(kr.top-want)/vw;
-      if(delta<=0) return;
-      var t=/top:\s*(-?[\d.]+)vw/.exec(clip.getAttribute('style')||'');
-      var h=/height:\s*([\d.]+)vw/.exec(clip.getAttribute('style')||'');
-      if(!t||!h) return;
-      var newH=parseFloat(h[1])+delta;
-      clip.style.top=(parseFloat(t[1])-delta)+'vw';
-      clip.style.height=newH+'vw';
-      e.style.height=newH+'vw';
-      var size=parseFloat(getComputedStyle(e).fontSize)/vw;
-      while(size>1.8 && e.scrollHeight>newH*vw){
-        size-=0.05; e.style.fontSize=size+'vw'; e.style.lineHeight=(size*1.5)+'vw';
-      }
-    });
+    /* NOTE: an earlier version of this moved each body window up into the dead space
+       above it, the way the desktop cards do. It mixed viewport rects with the clip's
+       own parent-relative vw offsets, and the scroll-reveal's translateY between them
+       made the delta wrong -- at 402px the body landed on top of the name at 8px type.
+       The card keeps Figma's own window here; a long quote clips at the card foot,
+       which is what the design does. Do not reintroduce without measuring in the
+       clip's own coordinate space. */
     names.forEach(function(nm){
       var nr=nm.getBoundingClientRect();
       [].forEach.call(root.querySelectorAll('.g-img'),function(img){
@@ -6984,10 +6969,45 @@ document.addEventListener("DOMContentLoaded",function(){
     next.addEventListener('click',function(e){ e.preventDefault(); go(1); });
   }
 
+  function marquee(root){
+    /* The window and the track both measure over 300vw and both contain the logos,
+       so take the WIDEST match -- the window wraps the track, and animating the
+       window just slides the whole row off the page. */
+    var track=null, best=0;
+    [].forEach.call(root.querySelectorAll('.g-b'),function(e){
+      var m=/width:\s*([\d.]+)vw/.exec(e.getAttribute('style')||'');
+      if(!m) return;
+      var w=parseFloat(m[1]);
+      if(w<300||w<=best) return;
+      if(e.querySelectorAll('.g-img').length<8) return;
+      track=e; best=w;
+    });
+    if(!track||track.dataset.axMq) return;
+    var kids=[].slice.call(track.children), strip=0;
+    kids.forEach(function(el){
+      var g=/left:\s*(-?[\d.]+)vw;top:\s*(-?[\d.]+)vw;width:\s*([\d.]+)vw/
+              .exec(el.getAttribute('style')||'');
+      if(g) strip=Math.max(strip,parseFloat(g[1])+parseFloat(g[3]));
+    });
+    if(!strip) return;
+    track.dataset.axMq='1';
+    kids.forEach(function(el){
+      var g=/left:\s*(-?[\d.]+)vw/.exec(el.getAttribute('style')||'');
+      if(!g) return;
+      var c=el.cloneNode(true);
+      c.setAttribute('aria-hidden','true');
+      c.style.left=(parseFloat(g[1])+strip)+'vw';
+      track.appendChild(c);
+    });
+    track.style.width=(strip*2)+'vw';
+    track.style.setProperty('--ax-mq-strip',strip+'vw');
+    track.classList.add('ax-mqm');
+  }
+
   function run(){
     var root=document.querySelector('.ax-mob');
     if(!root) return;
-    cards(root); pager(root);
+    cards(root); pager(root); marquee(root);
   }
   if(document.readyState!=='loading') run();
   else document.addEventListener('DOMContentLoaded',run);
@@ -7000,6 +7020,15 @@ document.addEventListener("DOMContentLoaded",function(){
    solid slate lines. Keyed off the inline geometry because _mobile.py rewrites the
    whole .ax-mob block on every build. */
 .ax-mob .g-b[style*="width:0.2326vw"][style*="height:472.6047vw"]{opacity:0.1}
+/* Trusted Companies, mobile: same as desktop -- Figma authors ten columns inside a
+   window the phone can only ever show two of, so the row is built to travel. The
+   strip width is measured from the tiles rather than hard-coded, because the mobile
+   factor differs and _mobile.py can re-emit the row at any time. */
+.ax-mob .ax-mqm{will-change:transform;animation:ax-mqm-roll 45s linear infinite}
+@keyframes ax-mqm-roll{from{transform:translateX(0)}
+  to{transform:translateX(calc(var(--ax-mq-strip) * -1))}}
+.ax-mob .ax-mqm:hover{animation-play-state:paused}
+@media (prefers-reduced-motion:reduce){.ax-mob .ax-mqm{animation:none}}
 </style>
 </body>
 </html>
