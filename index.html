@@ -6862,5 +6862,144 @@ document.addEventListener("DOMContentLoaded",function(){
     rgba(233,237,243,0.18) 70%,
     rgba(246,247,249,0) 78%)}
 </style>
+<script id="ax-mobtst">
+/* ---- MOBILE TESTIMONIAL SECTION ----
+   The mobile block is a separate DOM subtree that _mobile.py rewrites wholesale on
+   every build, so nothing can be edited into it: it still ships Figma's placeholder
+   cards and a "01 / 03" pager with no handler behind it, which is why the arrows did
+   nothing. Both are fixed here at runtime instead, from the same source the desktop
+   section uses. Anything keyed off .ax-mob has to work this way or it is gone on the
+   next _build_all.py. */
+(function(){
+  var CARDS = [{"q": "We were able to properly deploy SAP from the ground up thanks to AeonX. They were there for us every step of the journey, providing assistance and knowledge. We wouldn’t have been able to achieve it without them! Their assistance has been crucial to us, and we cannot express how grateful we are. We strongly recommend working with AeonX Digital!", "name": "Ashish Desai", "org": "CFO, Ashapura"}, {"q": "When it came to understanding our expectations, the team was incredibly supportive and conducted a stellar job. We are thankful to AeonX Digital for providing us with a new Disaster Recovery System and implementing SAP modules, which is helping our business run smoothly. It was a pleasure to work with AeonX. They’re a fantastic team and I loved getting to collaborate with them personally!", "name": "Bhushan Puranik", "org": "Head IT & SAP, BVG India"}, {"q": "We had heard that AeonX Digital is a terrific service provider with a strong focus on customer support, and now we can confidently pass that information on. Thank you for all of your assistance with SAP Managed Services (AMS), Team AeonX. You’ve been quite helpful in getting everything up and running. We sincerely appreciate all of your efforts!", "name": "Ajay Arora", "org": "CFO, BFN Forgings"}, {"q": "We appreciate how simple SAP managed services and SAP S/4HANA cloud migration were to implement. For our company, this has been a game-changer, and I couldn’t be happier with the outcomes. Working with AeonX Digital has been a fantastic experience for us, and we would gladly recommend them as one of the industry’s top providers.", "name": "Mitali Biswas", "org": "CIO, CK Birla Hospitals"}];
+  var FEATURED = 'Our field reps see their reimbursement within two weeks. It is a small ' +
+                 'thing. It changed how they feel about the company.';
+  function txt(e){ return (e.textContent||'').replace(/\s+/g,' ').trim(); }
+
+  function cards(root){
+    var names=[], orgs=[], bodies=[];
+    [].forEach.call(root.querySelectorAll('.g-t'),function(e){
+      var t=txt(e);
+      if(t==='Alex Johnson'||t==='Tyler Brooks') names.push(e);
+      else if(t==='PixelCore Studio'||t==='Launchify') orgs.push(e);
+      else if(/^[A-Z]orem ipsum dolor sit amet/.test(t)) bodies.push(e);
+    });
+    /* The mobile row carries the four cards twice -- it is a cloned carousel track --
+       so assign cyclically rather than demanding an exact count. */
+    if(!names.length||names.length!==orgs.length||names.length!==bodies.length) return;
+    if(names.length%CARDS.length) return;
+    names.forEach(function(e,i){ e.textContent=CARDS[i%CARDS.length].name; });
+    orgs.forEach(function(e,i){ e.textContent=CARDS[i%CARDS.length].org; });
+    bodies.forEach(function(e,i){
+      e.textContent=CARDS[i%CARDS.length].q;
+      /* the placeholder was written to overflow and be clipped; a real quote should
+         not be, and the card has room below the copy on mobile */
+      e.style.height='auto';
+      e.style.whiteSpace='normal';
+    });
+    /* The stock portrait belonged to "Alex Johnson". Beside a real person's name it
+       is a fabricated photograph of someone who exists, so it goes -- same call as
+       the desktop cards. Matched geometrically: the small image on the name's own
+       line, to its left. */
+    /* Same problem the desktop cards had: the body window sits at the card's foot
+       with a block of dead space above it, because the placeholder was written to
+       overflow and be clipped. Give it that space, then step the type down only if
+       a quote still does not fit. */
+    bodies.forEach(function(e,i){
+      var clip=e.parentElement; if(!clip) return;
+      var kr=clip.getBoundingClientRect(), nr=names[i].getBoundingClientRect();
+      var vw=innerWidth/100, want=nr.bottom+10;
+      var delta=(kr.top-want)/vw;
+      if(delta<=0) return;
+      var t=/top:\s*(-?[\d.]+)vw/.exec(clip.getAttribute('style')||'');
+      var h=/height:\s*([\d.]+)vw/.exec(clip.getAttribute('style')||'');
+      if(!t||!h) return;
+      var newH=parseFloat(h[1])+delta;
+      clip.style.top=(parseFloat(t[1])-delta)+'vw';
+      clip.style.height=newH+'vw';
+      e.style.height=newH+'vw';
+      var size=parseFloat(getComputedStyle(e).fontSize)/vw;
+      while(size>1.8 && e.scrollHeight>newH*vw){
+        size-=0.05; e.style.fontSize=size+'vw'; e.style.lineHeight=(size*1.5)+'vw';
+      }
+    });
+    names.forEach(function(nm){
+      var nr=nm.getBoundingClientRect();
+      [].forEach.call(root.querySelectorAll('.g-img'),function(img){
+        var r=img.getBoundingClientRect();
+        if(!r.width||r.width>80) return;
+        if(Math.abs((r.top+r.height/2)-(nr.top+nr.height/2))>40) return;
+        if(r.right>nr.left+2) return;
+        img.style.display='none';
+      });
+    });
+  }
+
+  function pager(root){
+    /* Figma bakes both arrows into ONE svg here too, so there is nothing to click:
+       lay two transparent buttons over its halves. */
+    var art=root.querySelector('img.g-vec[src*="6564-26288"]');
+    if(!art||art.dataset.axWired) return;
+    var host=art.parentElement; if(!host) return;
+    var count=null, quote=null;
+    [].forEach.call(root.querySelectorAll('.g-t'),function(e){
+      var t=txt(e);
+      if(/^\d+\s*\/\s*\d+$/.test(t)&&!count) count=e;
+      if(t.indexOf('Our field reps see their')===0&&!quote) quote=e;
+    });
+    if(!count||!quote) return;
+    art.dataset.axWired='1';
+    quote.textContent=FEATURED;
+    var STORIES=[FEATURED];
+    count.textContent='01 / 0'+STORIES.length;
+
+    var g=/left:\s*([\d.]+)vw;top:\s*([\d.]+)vw;width:\s*([\d.]+)vw;height:\s*([\d.]+)vw/
+            .exec(art.getAttribute('style')||'');
+    if(!g) return;
+    var L=parseFloat(g[1]), T=parseFloat(g[2]), W=parseFloat(g[3]), H=parseFloat(g[4]);
+    function hit(dx,label){
+      var b=document.createElement('button');
+      b.type='button'; b.setAttribute('aria-label',label);
+      b.dataset.cta='1'; b.dataset.axOwned='1';
+      b.style.cssText='position:absolute;left:'+(L+dx)+'vw;top:'+T+'vw;width:'+(W/2)+
+        'vw;height:'+H+'vw;padding:0;border:0;background:transparent;cursor:pointer;border-radius:50%';
+      host.appendChild(b); return b;
+    }
+    var prev=hit(0,'Previous review'), next=hit(W/2,'Next review');
+    var i=0;
+    function go(d){
+      if(STORIES.length<2) return;
+      i=(i+d+STORIES.length)%STORIES.length;
+      quote.textContent=STORIES[i];
+      count.textContent=(i+1<10?'0':'')+(i+1)+' / 0'+STORIES.length;
+    }
+    if(STORIES.length<2){
+      /* one real featured quote exists; dead-looking controls beat silent ones */
+      [prev,next].forEach(function(b){
+        b.disabled=true; b.setAttribute('aria-disabled','true'); b.style.cursor='default';
+      });
+      art.style.opacity='.35';
+    }
+    prev.addEventListener('click',function(e){ e.preventDefault(); go(-1); });
+    next.addEventListener('click',function(e){ e.preventDefault(); go(1); });
+  }
+
+  function run(){
+    var root=document.querySelector('.ax-mob');
+    if(!root) return;
+    cards(root); pager(root);
+  }
+  if(document.readyState!=='loading') run();
+  else document.addEventListener('DOMContentLoaded',run);
+  addEventListener('load',function(){ setTimeout(run,120); });
+})();
+</script>
+<style id="ax-mobtst-css">
+/* Mobile testimonial grid rules: Figma holds them in a 0.1-opacity frame
+   (6564:26239) that _gen flattens away, exactly as on desktop, so they painted as
+   solid slate lines. Keyed off the inline geometry because _mobile.py rewrites the
+   whole .ax-mob block on every build. */
+.ax-mob .g-b[style*="width:0.2326vw"][style*="height:472.6047vw"]{opacity:0.1}
+</style>
 </body>
 </html>
