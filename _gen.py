@@ -776,7 +776,18 @@ def walk(n, ox, oy, out, depth=0):
     if t in ('FRAME', 'GROUP', 'INSTANCE', 'COMPONENT') and bb:
         hv, ht, hi = subtree_flags(n)
         if hv and not ht and not hi:
-            if n.get('absoluteRenderBounds'):
+            # Null absoluteRenderBounds usually does mean "nothing is painted", and
+            # that check suppresses a lot of genuinely empty clusters -- dropping it
+            # outright resurrected 158 of them, 156 with no exported asset, i.e. 156
+            # broken images. But it is not ALWAYS true: Figma reports null render
+            # bounds for some plainly visible instances. The homepage trinity cards
+            # are the case -- card 1's icon carries render bounds while cards 2 and 3
+            # (identical instances, visible:true, drawn in the prototype) have null,
+            # so only the first icon survived. Emit on null only when the node's SVG
+            # has ALREADY been exported: that is positive evidence there is real art
+            # here, and it cannot invent a broken <img> for a cluster we have no file
+            # for. render_box() falls back to the layout bbox for placement.
+            if n.get('absoluteRenderBounds') or svg_intrinsic(n['id']):
                 l, t2, w, h = render_box(n, ox, oy)
                 out.append(emit_vec_asset(n, l, t2, w, h))
             return
