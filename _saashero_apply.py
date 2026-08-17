@@ -72,6 +72,19 @@ PRODUCTS = [
 ]
 INACTIVE = 'rgb(82,96,119)'
 
+# Each product's demo reel, re-encoded to 720p by hand (the sources are 1080p and
+# ~150 MB each; the panel never paints wider than 1133px). ManufeX and OrderX have
+# no reel of their own yet and borrow a neighbour's -- drop the real file in at
+# assets/video/<slug>.mp4 and this map is the only thing that needs editing.
+VIDEOS = {
+    'xpense':    'xpense',
+    'supplierx': 'supplierx',
+    'logystix':  'logystix',
+    'manufex':   'logystix',      # placeholder
+    'orderx':    'supplierx',     # placeholder
+    'aeonxiq':   'aeonxiq',
+}
+
 SHOTS = {s['slug']: s for s in json.load(io.open('_saashero_shots.json', encoding='utf-8'))}
 
 GEO = re.compile(r'left:(-?[\d.]+)vw;top:(-?[\d.]+)vw;width:([\d.]+)vw;height:([\d.]+)vw')
@@ -124,6 +137,12 @@ html.ax-hero-saas .ax-hero-sap{visibility:hidden;opacity:0;transform:translateY(
 .ax-hp-hit:focus-visible{outline:0.1042vw solid rgb(223,63,23);outline-offset:-0.1042vw}
 .ax-hp-lbl{transition:color .22s ease}
 #ax-hp-shot{transition:opacity .22s ease}
+/* The reel sits ON the panel rather than replacing it, so the still stays the
+   poster: it is already the right crop for every variant and it is what paints
+   before the first frame decodes (and all that paints if the file 404s or the
+   browser refuses to autoplay). */
+.ax-hp-vid{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover;
+  display:block;border-radius:inherit;background:transparent}
 #ax-hp-shot.is-swapping{opacity:0}
 @media (prefers-reduced-motion:reduce){
   .ax-hp-ul,.ax-hpill__b,.ax-hp-lbl,#ax-hp-shot,
@@ -188,6 +207,7 @@ JS = '''<script>
 
   /* ---- product tabs ---- */
   var shot=document.getElementById('ax-hp-shot');
+  var vid=document.getElementById('ax-hp-video');
   var ul=document.getElementById('ax-hp-underline');
   var hits=[].slice.call(saas.querySelectorAll('.ax-hp-hit'));
   if(!shot||!ul||!hits.length) return;
@@ -220,6 +240,15 @@ JS = '''<script>
       shot.style.backgroundImage='url('+s.src+')';
       shot.style.backgroundSize=s.size;
       shot.style.backgroundPosition=s.pos;
+      /* Swap the source under the fade, not across it: assigning src alone leaves
+         the old frames up until the new file has enough data, so the panel would
+         show the previous product's reel over the new product's poster. */
+      if(vid&&s.vid){
+        if(vid.getAttribute('src')!==s.vid){
+          vid.pause(); vid.setAttribute('src',s.vid); vid.load();
+        }
+        var pr=vid.play(); if(pr&&pr.catch) pr.catch(function(){});
+      }
       shot.classList.remove('is-swapping');
     },160);
   }
@@ -267,7 +296,12 @@ JS = '''<script>
   document.addEventListener('visibilitychange',function(){ if(!document.hidden) restart(); });
 
   cur='xpense';   /* the state the markup already paints -- do not re-run the swap */
-  start();
+  /* The 5s auto-flip predates the product reels. Each reel runs 2-3 minutes, so a
+     hero that swaps itself out every five seconds never gets past the opening
+     frames of one -- and the flip is what a reader sees instead of the demo they
+     just picked. The pill still switches instantly by hand; drop the `!vid &&`
+     to put the carousel back. */
+  if(!vid) start();
 })();
 </script>'''
 
@@ -338,6 +372,14 @@ def build_hero(frag):
         raise SystemExit('panel screenshot not found')
     lines[shot[0]] = lines[shot[0]].replace('<div class="g-img"',
                                             '<div class="g-img" id="ax-hp-shot" data-ax-owned="1"', 1)
+    # muted + playsinline are what make autoplay legal on every current browser;
+    # loop because the reels are product demos with no ending to land on.
+    vid = ('<video class="ax-hp-vid" id="ax-hp-video" autoplay muted loop playsinline '
+           'preload="metadata" tabindex="-1" aria-hidden="true" '
+           'src="/assets/video/%s.mp4"></video>' % VIDEOS[PRODUCTS[0][0]])
+    lines[shot[0]] = lines[shot[0]].rstrip()
+    assert lines[shot[0]].endswith('</div>'), lines[shot[0]][-40:]
+    lines[shot[0]] = lines[shot[0]][:-len('</div>')] + vid + '</div>'
 
     body = '\n'.join(lines)
 
@@ -372,8 +414,9 @@ def build_hero(frag):
     # multi-megabyte PNG forever. Xpense carries no src/size/pos -- the DOM already
     # has its real (instance-specific) values baked in and setProduct() reads those.
     shots = '{' + ','.join(
-        '"%s":{"src":"%s","size":%s,"pos":%s}'
-        % (slug, SHOTS[slug]['src'], json.dumps(SHOTS[slug]['size']), json.dumps(SHOTS[slug]['pos']))
+        '"%s":{"src":"%s","size":%s,"pos":%s,"vid":"/assets/video/%s.mp4"}'
+        % (slug, SHOTS[slug]['src'], json.dumps(SHOTS[slug]['size']),
+           json.dumps(SHOTS[slug]['pos']), VIDEOS[slug])
         for slug, _, _ in PRODUCTS) + '}'
 
     return ('<div class="ax-herovar" id="ax-hero-saas" aria-hidden="true" '

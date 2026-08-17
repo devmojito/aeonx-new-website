@@ -37,3 +37,7 @@ _saashero_variants.json
 # Cached REST pull + scratch output for the mobile testimonials rebuild
 _testimonials_mobile.json
 _testimonials_mobile_out.html
+
+# raw product reels handed over by the client: 1080p, ~150 MB each. The 720p
+# encodes that actually ship live in assets/video/ and ARE tracked.
+assets/videos/

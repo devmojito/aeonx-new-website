@@ -787,6 +787,12 @@ html.ax-hero-saas .ax-hero-sap{visibility:hidden;opacity:0;transform:translateY(
 .ax-hp-hit:focus-visible{outline:0.1042vw solid rgb(223,63,23);outline-offset:-0.1042vw}
 .ax-hp-lbl{transition:color .22s ease}
 #ax-hp-shot{transition:opacity .22s ease}
+/* The reel sits ON the panel rather than replacing it, so the still stays the
+   poster: it is already the right crop for every variant and it is what paints
+   before the first frame decodes (and all that paints if the file 404s or the
+   browser refuses to autoplay). */
+.ax-hp-vid{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover;
+  display:block;border-radius:inherit;background:transparent}
 #ax-hp-shot.is-swapping{opacity:0}
 @media (prefers-reduced-motion:reduce){
   .ax-hp-ul,.ax-hpill__b,.ax-hp-lbl,#ax-hp-shot,
@@ -794,7 +800,7 @@ html.ax-hero-saas .ax-hero-sap{visibility:hidden;opacity:0;transform:translateY(
   .ax-herovar,.ax-hero-sap{transform:none}
 }
 </style>
-<div class="ax-herovar" id="ax-hero-saas" aria-hidden="true" data-hp-shots='{"xpense":{"src":"/assets/gen/d83a82a0c1c27d516c98188e00a3cee13f56e86d.webp","size":"cover","pos":"center"},"supplierx":{"src":"/assets/gen/19b2a06d5749ee3dc9e516921df8bd7c155b0122.webp","size":"cover","pos":"center"},"logystix":{"src":"/assets/gen/e8d22d975f2697dd3490f92aac75e05b6b355575.webp","size":"cover","pos":"center"},"manufex":{"src":"/assets/gen/94d8ee820081df4a95384f2b45e4c0892d857aa0.webp","size":"cover","pos":"center"},"orderx":{"src":"/assets/gen/7f4ebb15712b6e8306e590a80755af65f4e5b1e8.webp","size":"cover","pos":"center"},"aeonxiq":{"src":"/assets/gen/5bedfe52e3e7be53cb84ba45538a328cc2d0879c.webp","size":"cover","pos":"center"}}' style="position:absolute;left:0.0000vw;top:5.9375vw;width:100.0000vw;height:42.9167vw;overflow:hidden;background-color:rgb(255,255,255);">
+<div class="ax-herovar" id="ax-hero-saas" aria-hidden="true" data-hp-shots='{"xpense":{"src":"/assets/gen/d83a82a0c1c27d516c98188e00a3cee13f56e86d.webp","size":"cover","pos":"center","vid":"/assets/video/xpense.mp4"},"supplierx":{"src":"/assets/gen/19b2a06d5749ee3dc9e516921df8bd7c155b0122.webp","size":"cover","pos":"center","vid":"/assets/video/supplierx.mp4"},"logystix":{"src":"/assets/gen/e8d22d975f2697dd3490f92aac75e05b6b355575.webp","size":"cover","pos":"center","vid":"/assets/video/logystix.mp4"},"manufex":{"src":"/assets/gen/94d8ee820081df4a95384f2b45e4c0892d857aa0.webp","size":"cover","pos":"center","vid":"/assets/video/logystix.mp4"},"orderx":{"src":"/assets/gen/7f4ebb15712b6e8306e590a80755af65f4e5b1e8.webp","size":"cover","pos":"center","vid":"/assets/video/supplierx.mp4"},"aeonxiq":{"src":"/assets/gen/5bedfe52e3e7be53cb84ba45538a328cc2d0879c.webp","size":"cover","pos":"center","vid":"/assets/video/aeonxiq.mp4"}}' style="position:absolute;left:0.0000vw;top:5.9375vw;width:100.0000vw;height:42.9167vw;overflow:hidden;background-color:rgb(255,255,255);">
 <div class="g-b" style="position:absolute;left:5.2083vw;top:1.5625vw;width:89.5833vw;height:45.0000vw;box-sizing:border-box;border-left:0.0521vw solid rgb(236,238,242);"></div>
 <div class="g-b g-clip" style="position:absolute;left:5.2604vw;top:6.9792vw;width:33.9062vw;height:39.5833vw;overflow:hidden;">
 <h1 class="g-t" style="position:absolute;left:1.2500vw;top:6.4583vw;width:29.9479vw;height:7.5000vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:3.3333vw;line-height:3.7500vw;color:rgb(24,24,27);text-align:left;white-space:pre-wrap;">SaaS, on top of SAP.</h1>
@@ -835,7 +841,7 @@ html.ax-hero-saas .ax-hero-sap{visibility:hidden;opacity:0;transform:translateY(
 <div class="g-b g-clip" style="position:absolute;left:35.8854vw;top:10.0521vw;width:65.8333vw;height:33.3333vw;background-color:rgb(255,255,255);border-radius:0.4167vw;box-sizing:border-box;border:0.0417vw solid rgb(236,238,242);overflow:hidden;">
 <div class="g-b g-clip" style="position:absolute;left:0.2083vw;top:0.0000vw;width:65.4167vw;height:33.4375vw;overflow:hidden;">
 <div class="g-b g-clip" style="position:absolute;left:3.1553vw;top:1.1687vw;width:59.1062vw;height:32.9750vw;background-color:rgb(213,218,226);box-sizing:border-box;border:0.0415vw solid rgb(236,238,242);box-shadow:0.0000vw 1.6073vw 3.5775vw rgba(0,0,0,0.100),0.0000vw 6.4809vw 6.4809vw rgba(0,0,0,0.090),0.0000vw 14.5691vw 8.7622vw rgba(0,0,0,0.050),0.0000vw 25.9237vw 10.3695vw rgba(0,0,0,0.010),0.0000vw 40.4929vw 11.3546vw rgba(0,0,0,0.000),0.0000vw 0.0000vw 0.0000vw 0.0518vw rgba(0,0,0,0.080);overflow:hidden;">
-<div class="g-img" id="ax-hp-shot" data-ax-owned="1" data-ref="d83a82a0c1c27d516c98188e00a3cee13f56e86d" role="presentation" aria-hidden="true" style="position:absolute;left:0.0933vw;top:0.0933vw;width:59.0104vw;height:32.9167vw;background-image:url(/assets/gen/d83a82a0c1c27d516c98188e00a3cee13f56e86d.webp);background-size:cover;background-position:center;background-repeat:no-repeat;"></div>
+<div class="g-img" id="ax-hp-shot" data-ax-owned="1" data-ref="d83a82a0c1c27d516c98188e00a3cee13f56e86d" role="presentation" aria-hidden="true" style="position:absolute;left:0.0933vw;top:0.0933vw;width:59.0104vw;height:32.9167vw;background-image:url(/assets/gen/d83a82a0c1c27d516c98188e00a3cee13f56e86d.webp);background-size:cover;background-position:center;background-repeat:no-repeat;"><video class="ax-hp-vid" id="ax-hp-video" autoplay muted loop playsinline preload="metadata" tabindex="-1" aria-hidden="true" src="/assets/video/xpense.mp4"></video></div>
 </div>
 </div>
 </div>
@@ -910,6 +916,7 @@ html.ax-hero-saas .ax-hero-sap{visibility:hidden;opacity:0;transform:translateY(
 
   /* ---- product tabs ---- */
   var shot=document.getElementById('ax-hp-shot');
+  var vid=document.getElementById('ax-hp-video');
   var ul=document.getElementById('ax-hp-underline');
   var hits=[].slice.call(saas.querySelectorAll('.ax-hp-hit'));
   if(!shot||!ul||!hits.length) return;
@@ -942,6 +949,15 @@ html.ax-hero-saas .ax-hero-sap{visibility:hidden;opacity:0;transform:translateY(
       shot.style.backgroundImage='url('+s.src+')';
       shot.style.backgroundSize=s.size;
       shot.style.backgroundPosition=s.pos;
+      /* Swap the source under the fade, not across it: assigning src alone leaves
+         the old frames up until the new file has enough data, so the panel would
+         show the previous product's reel over the new product's poster. */
+      if(vid&&s.vid){
+        if(vid.getAttribute('src')!==s.vid){
+          vid.pause(); vid.setAttribute('src',s.vid); vid.load();
+        }
+        var pr=vid.play(); if(pr&&pr.catch) pr.catch(function(){});
+      }
       shot.classList.remove('is-swapping');
     },160);
   }
@@ -989,7 +1005,12 @@ html.ax-hero-saas .ax-hero-sap{visibility:hidden;opacity:0;transform:translateY(
   document.addEventListener('visibilitychange',function(){ if(!document.hidden) restart(); });
 
   cur='xpense';   /* the state the markup already paints -- do not re-run the swap */
-  start();
+  /* The 5s auto-flip predates the product reels. Each reel runs 2-3 minutes, so a
+     hero that swaps itself out every five seconds never gets past the opening
+     frames of one -- and the flip is what a reader sees instead of the demo they
+     just picked. The pill still switches instantly by hand; drop the `!vid &&`
+     to put the carousel back. */
+  if(!vid) start();
 })();
 </script>
 <!-- ==== /HOME HERO VARIANTS ==== -->
