@@ -1237,8 +1237,8 @@ html.ax-hero-saas .ax-hero-sap{visibility:hidden;opacity:0;transform:translateY(
 <div class="g-t" style="position:absolute;left:0.7292vw;top:0.0000vw;width:9.0625vw;height:1.8229vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:1.0417vw;line-height:1.2500vw;color:rgb(223,63,23);text-align:center;white-space:nowrap;">Trusted Companies</div>
 </div>
 </div>
-<div class="g-b g-clip" style="position:absolute;left:28.9062vw;top:57.1875vw;width:56.2500vw;height:12.9167vw;overflow:hidden;">
-<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:155.4167vw;height:12.9167vw;overflow:hidden;">
+<div class="g-b g-clip ax-tcmq" style="position:absolute;left:28.9062vw;top:57.1875vw;width:56.2500vw;height:12.9167vw;overflow:hidden;">
+<div class="g-b g-clip ax-tcmq__track" style="position:absolute;left:0.0000vw;top:0.0000vw;width:155.4167vw;height:12.9167vw;overflow:hidden;">
 <div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:14.0625vw;height:6.4583vw;background-color:rgb(255,255,255);overflow:hidden;">
 <div class="g-img g-clip" data-ref="95bfcc2845fd5c292dc583a96a2c64f63468e750" role="presentation" aria-hidden="true" style="position:absolute;left:1.6667vw;top:0.7292vw;width:10.7292vw;height:5.0000vw;background-image:url(/assets/gen/95bfcc2845fd5c292dc583a96a2c64f63468e750.webp);background-size:contain;background-position:center;background-repeat:no-repeat;overflow:hidden;">
 </div>
@@ -6812,5 +6812,55 @@ document.addEventListener("DOMContentLoaded",function(){
   else document.addEventListener('DOMContentLoaded',boot);
 })();
 </script>
+<style id="ax-tcmq-css">
+/* Trusted Companies: Figma already draws ten columns of logos inside a four-column
+   window (a 140.6vw strip clipped to 56.25vw), so the row is authored to travel --
+   it just had no motion. Run it as a marquee. The tiles are absolutely positioned
+   in vw, so the loop is seamless by duplicating the strip once at +140.625vw and
+   translating the track by exactly one strip width. */
+.ax-tcmq__track{will-change:transform;animation:ax-tcmq-roll 60s linear infinite}
+@keyframes ax-tcmq-roll{from{transform:translateX(0)}to{transform:translateX(-140.625vw)}}
+.ax-tcmq:hover .ax-tcmq__track,.ax-tcmq:focus-within .ax-tcmq__track{animation-play-state:paused}
+@media (prefers-reduced-motion:reduce){.ax-tcmq__track{animation:none}}
+</style>
+<script>
+(function(){
+  function init(){
+    var track=document.querySelector('.ax-tcmq__track');
+    if(!track||track.dataset.axCloned) return;
+    track.dataset.axCloned='1';
+    var STRIP=140.625;                       /* ten columns at 14.0625vw */
+    var kids=[].slice.call(track.children);
+    kids.forEach(function(el){
+      var c=el.cloneNode(true);
+      c.setAttribute('aria-hidden','true');
+      var m=/left:\s*(-?[\d.]+)vw/.exec(c.getAttribute('style')||'');
+      if(!m) return;
+      c.style.left=(parseFloat(m[1])+STRIP)+'vw';
+      track.appendChild(c);
+    });
+    track.style.width=(STRIP*2)+'vw';
+  }
+  if(document.readyState!=='loading') init();
+  else document.addEventListener('DOMContentLoaded',init);
+})();
+</script>
+<style id="ax-ptglow-css">
+/* Partner tiers, mobile: Figma renders a thick blurred blue-grey donut inside this
+   disc with a bright white core. It is an inner shadow, and the REST API reports
+   effects:[] for that node (the same quirk that hid it the first time) -- an export
+   of the node alone comes back flat, while an export of the whole section shows the
+   glow. So it is painted here instead of fetched. Matched on the disc's own inline
+   geometry rather than a class, because _mobile.py rewrites the whole .ax-mob block
+   on every build and would drop any class added to it. */
+.ax-mob .g-b[style*="width:135.2663vw"][style*="border-radius:4651"]{
+  background-image:radial-gradient(circle at 50% 50%,
+    #ffffff 0%, #ffffff 25%,
+    rgba(255,255,255,0.97) 31%,
+    rgba(188,201,222,0.88) 47%,
+    rgba(206,216,232,0.55) 60%,
+    rgba(233,237,243,0.18) 70%,
+    rgba(246,247,249,0) 78%)}
+</style>
 </body>
 </html>
