@@ -6819,8 +6819,11 @@ document.addEventListener("DOMContentLoaded",function(){
    in vw, so the loop is seamless by duplicating the strip once at +140.625vw and
    translating the track by exactly one strip width. */
 .ax-tcmq__track{will-change:transform;animation:ax-tcmq-roll 60s linear infinite}
-@keyframes ax-tcmq-roll{from{transform:translateX(0)}to{transform:translateX(-140.625vw)}}
-.ax-tcmq:hover .ax-tcmq__track,.ax-tcmq:focus-within .ax-tcmq__track{animation-play-state:paused}
+@keyframes ax-tcmq-roll{from{transform:translateX(0)}
+  to{transform:translateX(calc(var(--ax-mq-strip) * -1))}}
+/* No hover pause. The row is meant to run continuously, and a cursor left
+   resting anywhere over it stopped the marquee outright -- which reads as the
+   loop having ended. Nothing pauses it now except reduced-motion. */
 @media (prefers-reduced-motion:reduce){.ax-tcmq__track{animation:none}}
 </style>
 <script>
@@ -6837,9 +6840,23 @@ document.addEventListener("DOMContentLoaded",function(){
       var m=/left:\s*(-?[\d.]+)vw/.exec(c.getAttribute('style')||'');
       if(!m) return;
       c.style.left=(parseFloat(m[1])+STRIP)+'vw';
+      c.dataset.axClone='1';
       track.appendChild(c);
     });
     track.style.width=(STRIP*2)+'vw';
+    /* Measure the loop distance off the laid-out clone rather than trusting the vw
+       literal. The tiles' left values are emitted rounded to 4 decimals, so a
+       keyframe of -140.625vw lands 3px away from where the clone actually sits and
+       the row visibly hitches once per cycle. offsetLeft is the browser's own
+       layout, so first-clone minus first-original is exact by construction. */
+    function measure(){
+      var a=kids[0], b=track.querySelector('[data-ax-clone]');
+      if(!a||!b) return;
+      track.style.setProperty('--ax-mq-strip',(b.offsetLeft-a.offsetLeft)+'px');
+    }
+    measure();
+    addEventListener('resize',function(){ clearTimeout(window.__tcmqT);
+      window.__tcmqT=setTimeout(measure,150); });
   }
   if(document.readyState!=='loading') init();
   else document.addEventListener('DOMContentLoaded',init);
@@ -6997,11 +7014,19 @@ document.addEventListener("DOMContentLoaded",function(){
       var c=el.cloneNode(true);
       c.setAttribute('aria-hidden','true');
       c.style.left=(parseFloat(g[1])+strip)+'vw';
+      c.dataset.axClone='1';
       track.appendChild(c);
     });
     track.style.width=(strip*2)+'vw';
-    track.style.setProperty('--ax-mq-strip',strip+'vw');
     track.classList.add('ax-mqm');
+    /* px off the laid-out clone, not the vw figure -- see the desktop row for why */
+    function measure(){
+      var a=kids[0], b=track.querySelector('[data-ax-clone]');
+      if(a&&b) track.style.setProperty('--ax-mq-strip',(b.offsetLeft-a.offsetLeft)+'px');
+    }
+    measure();
+    addEventListener('resize',function(){ clearTimeout(window.__mqmT);
+      window.__mqmT=setTimeout(measure,150); });
   }
 
   function run(){
@@ -7027,7 +7052,6 @@ document.addEventListener("DOMContentLoaded",function(){
 .ax-mob .ax-mqm{will-change:transform;animation:ax-mqm-roll 45s linear infinite}
 @keyframes ax-mqm-roll{from{transform:translateX(0)}
   to{transform:translateX(calc(var(--ax-mq-strip) * -1))}}
-.ax-mob .ax-mqm:hover{animation-play-state:paused}
 @media (prefers-reduced-motion:reduce){.ax-mob .ax-mqm{animation:none}}
 </style>
 </body>
