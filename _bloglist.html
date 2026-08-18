@@ -160,13 +160,18 @@
      The plate must be matched on its BRAND FILL, not merely on being the smallest
      box under the label -- without that test this latched onto a card's own border
      box and resized that instead, which made the row less consistent than the
-     hand-drawn widths it replaced. */
+     hand-drawn widths it replaced.
+     Search the whole document, not just main.ax-page -- the mobile block
+     (.ax-mob) is a SEPARATE subtree (see CLAUDE.md), so a desktop-scoped search
+     found no plate for a mobile chip and silently left it at its raw, unnormalised
+     width. Safe to widen: whichever tree isn't showing is display:none, so its
+     boxes measure 0 width and are already filtered out below. */
   var CHIP_PAD=22/1920, CHIP_BG='rgb(223, 63, 23)';
   function fitChip(el){
     var r=el.getBoundingClientRect();
     if(!r.width) return;
     var plate=null,best=1e9;
-    [].slice.call(document.querySelectorAll('main.ax-page .g-b')).forEach(function(e){
+    [].slice.call(document.querySelectorAll('.g-b')).forEach(function(e){
       if(getComputedStyle(e).backgroundColor!==CHIP_BG) return;
       var q=e.getBoundingClientRect();
       if(!q.width||q.width>400||q.height>60) return;
@@ -183,6 +188,27 @@
     var l0=parseFloat(plate.style.left)||0;             /* current css left, vw */
     plate.style.left=(l0+((ink.left-pad)-pr.left)/W*100).toFixed(4)+'vw';
     plate.style.width=((ink.width+pad*2)/W*100).toFixed(4)+'vw';
+  }
+
+  /* The plate-normalize rule above only ever fires from fill(), which is desktop-
+     only (see slots() above -- explicitly skips .ax-mob). The mobile block's own
+     category chips are static Figma output with the same hand-drawn-width problem
+     and nothing ever touches them, so the inconsistency survived there even after
+     fitChip() shipped. One sweep, run once on load, over the whole document (both
+     trees -- whichever tree isn't showing is display:none and measures 0, so it is
+     free to include) fixes every chip regardless of which tree it lives in or how
+     its text got there. Scoped to the six real category labels and to the small
+     font size chips are always drawn at, so this cannot latch onto an unrelated
+     orange CTA pill that happens to share a word. */
+  var CHIP_LABELS=/^(AWS|SAP|Cloud|Insights|Success Stories|Digital Transformation)$/;
+  function normalizeAllChips(){
+    [].slice.call(document.querySelectorAll('.g-t')).forEach(function(e){
+      if(e.children.length) return;
+      var t=(e.textContent||'').trim();
+      if(!CHIP_LABELS.test(t)) return;
+      if((parseFloat(getComputedStyle(e).fontSize)||0)>=15) return;
+      fitChip(e);
+    });
   }
 
   function fill(slot,p){
@@ -654,5 +680,18 @@
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init);
   else init();
   addEventListener('load',function(){ setTimeout(init,150); });
+
+  /* independent of init()'s own guards -- this must run whichever tree (desktop
+     or mobile) is actually visible, even when init() bails because slots()
+     found nothing in the hidden one */
+  /* One shot at DOMContentLoaded is not enough: this page has a THIRD chip source
+     -- a small "recent posts" list beside the hero -- whose text lands via the same
+     geometric fill() pass as everything else, but at whatever tick that pass
+     settles on, which can be after DOMContentLoaded has already fired and this
+     sweep has already run once and found placeholder text that did not match
+     CHIP_LABELS. Re-run on the same load+150ms tick init() itself retries on. */
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',normalizeAllChips);
+  else normalizeAllChips();
+  addEventListener('load',function(){ setTimeout(normalizeAllChips,200); });
 })();
 </script>
