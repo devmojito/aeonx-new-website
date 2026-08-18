@@ -1472,7 +1472,12 @@ document.addEventListener('DOMContentLoaded',function(){
 'open partner’s hub':'/alliances/partners-hub/','open partners hub':'/alliances/partners-hub/',
 'back to alliances':'/alliances/','see manufacturing template':'/industries/manufacturing/',
 'our story':'/who-we-are/foundation/','life at aeonx':'/who-we-are/culture/',
-'send your resume':'/who-we-are/career/','open positions':'/who-we-are/career/','view open roles':'/who-we-are/career/',
+/* send-your-resume only lives on /who-we-are/career/ itself -- routing it back to
+   that same page hit make()'s self-reference guard (below) and the button went
+   permanently inert, no role/cursor/handler at all. No careers@ inbox exists
+   sitewide (grepped), so this reuses the site's one working mailto-backed form
+   rather than fabricate an address. */
+'send your resume':'/contact-us/','open positions':'/who-we-are/career/','view open roles':'/who-we-are/career/',
 'explore sap services':'/services/','explore aws services':'/services/aws/','explore all services':'/services/',
 'explore services':'/services/','explore saas':'/products/',
 /* Each product ships its own site, the same destinations the Products menu uses.
