@@ -1147,7 +1147,7 @@ html.ax-hero-saas .ax-hero-sap{visibility:hidden;opacity:0;transform:translateY(
 </div>
 </div>
 </div>
-<div class="g-b g-clip" style="position:absolute;left:56.2500vw;top:0.0000vw;width:14.0625vw;height:15.6250vw;overflow:hidden;">
+<div class="g-b g-clip" id="ax-fr-media" style="position:absolute;left:56.2500vw;top:0.0000vw;width:14.0625vw;height:15.6250vw;overflow:hidden;">
 <div class="g-b g-clip" style="position:absolute;left:-0.0521vw;top:-0.0521vw;width:14.1667vw;height:15.7292vw;overflow:hidden;">
 <div class="g-b g-clip" style="position:absolute;left:-0.0521vw;top:-0.0521vw;width:14.2708vw;height:15.8333vw;overflow:hidden;">
 <div class="g-img g-clip" data-ref="adb07600433e5c0e255d0833edf5d892177ec6db" role="presentation" aria-hidden="true" style="position:absolute;left:0.0000vw;top:0.0000vw;width:14.2708vw;height:15.8333vw;background-image:url(/assets/gen/adb07600433e5c0e255d0833edf5d892177ec6db.webp);background-size:cover;background-position:center;background-repeat:no-repeat;overflow:hidden;">
@@ -1165,8 +1165,8 @@ html.ax-hero-saas .ax-hero-sap{visibility:hidden;opacity:0;transform:translateY(
 </div>
 </div>
 <div class="g-b g-clip" style="position:absolute;left:1.0417vw;top:12.1250vw;width:11.9792vw;height:2.4583vw;overflow:hidden;">
-<div class="g-t" style="position:absolute;left:1.2500vw;top:-0.0209vw;width:9.4792vw;height:1.1458vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:1.0417vw;line-height:1.1458vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">Debi Prasad Patra</div>
-<div class="g-t" style="position:absolute;left:1.9271vw;top:1.4375vw;width:8.1250vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.8333vw;line-height:1.0000vw;color:rgb(236,238,242);text-align:center;white-space:nowrap;"> MCPI Private Limited</div>
+<div class="g-t" id="ax-fr-name" style="position:absolute;left:1.2500vw;top:-0.0209vw;width:9.4792vw;height:1.1458vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:1.0417vw;line-height:1.1458vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">Debi Prasad Patra</div>
+<div class="g-t" id="ax-fr-org" style="position:absolute;left:1.9271vw;top:1.4375vw;width:8.1250vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.8333vw;line-height:1.0000vw;color:rgb(236,238,242);text-align:center;white-space:nowrap;"> MCPI Private Limited</div>
 </div>
 </div>
 </div>
@@ -6696,12 +6696,15 @@ document.addEventListener("DOMContentLoaded",function(){
 <style id="ax-fr-css">
 /* Featured review: the quote and its counter cross-fade when the pager moves. */
 #ax-fr-q,#ax-fr-n{transition:opacity .26s ease,transform .26s cubic-bezier(.22,.61,.36,1)}
+#ax-fr-name,#ax-fr-org,#ax-fr-media{transition:opacity .26s ease}
 .is-swap #ax-fr-q,.is-swap #ax-fr-n{opacity:0;transform:translateY(0.5vw)}
+.is-swap #ax-fr-name,.is-swap #ax-fr-org,.is-swap #ax-fr-media{opacity:0}
 #ax-fr-prev:focus-visible,#ax-fr-next:focus-visible{
   outline:0.1042vw solid rgb(223,63,23);outline-offset:0.1042vw}
 @media (prefers-reduced-motion:reduce){
   #ax-fr-q,#ax-fr-n{transition:none}
   .is-swap #ax-fr-q,.is-swap #ax-fr-n{opacity:1;transform:none}
+  .is-swap #ax-fr-name,.is-swap #ax-fr-org,.is-swap #ax-fr-media{opacity:1}
 }
 </style>
 <script>
@@ -6715,25 +6718,79 @@ document.addEventListener("DOMContentLoaded",function(){
    which is what the source had; the name and company under the photo never change,
    so only the quote is swapped. */
 (function(){
-  /* Down to one. The second quote that used to page in here -- "We appreciate how
-     simple SAP managed services..." -- is attributed on the client's own live site
-     to Mitali Biswas, CIO of CK Birla Hospitals, NOT to the person whose photograph
-     and name this card carries. It now sits in the fourth review card below under
-     its real author. Putting it back here would have been a misattribution.
-     Add a second entry and the arrows re-enable themselves. */
+  /* Three real, correctly attributed stories. Only the first has a photograph of
+     its author (Figma's own node for it is named "Image (John Doe)", so even that
+     attribution is worth confirming with the client). The other two show their
+     company's mark instead: a stock face, or this face, beside another person's
+     name would be a fabricated portrait of someone who exists. The logos are the
+     same files the Trusted Companies row uses. */
   var STORIES = [
-    'Our field reps see their reimbursement within two weeks. It is a small thing. ' +
-    'It changed how they feel about the company.'
+    { q:'Our field reps see their reimbursement within two weeks. It is a small ' +
+        'thing. It changed how they feel about the company.',
+      name:'Debi Prasad Patra', org:'MCPI Private Limited',
+      src:'/assets/gen/b37073c68847391f585f54faaeece11b349cd172.webp', mode:'photo' },
+    { q:'We were able to properly deploy SAP from the ground up thanks to AeonX. ' +
+        'They were there for us every step of the journey, providing assistance ' +
+        'and knowledge. We strongly recommend working with AeonX Digital!',
+      name:'Ashish Desai', org:'CFO, Ashapura',
+      src:'/assets/gen/5778d345b890c25bb14d315e1a30f033b6a187d0.webp', mode:'logo' },
+    { q:'We appreciate how simple SAP managed services and SAP S/4HANA cloud ' +
+        'migration were to implement. Working with AeonX Digital has been a ' +
+        'fantastic experience, and we would gladly recommend them as one of the ' +
+        'industry\u2019s top providers.',
+      name:'Mitali Biswas', org:'CIO, CK Birla Hospitals',
+      src:'/assets/gen/e4a692c1cd086c806650e3419d44bff8cc67db80.webp', mode:'logo' }
   ];
   function init(){
     var q=document.getElementById('ax-fr-q'), n=document.getElementById('ax-fr-n'),
-        prev=document.getElementById('ax-fr-prev'), next=document.getElementById('ax-fr-next');
+        prev=document.getElementById('ax-fr-prev'), next=document.getElementById('ax-fr-next'),
+        media=document.getElementById('ax-fr-media'), nameEl=document.getElementById('ax-fr-name'),
+        orgEl=document.getElementById('ax-fr-org');
     if(!q||!n||!prev||!next) return;
+    /* One layer over the baked photo stack rather than editing it: the panel is
+       four stacked images deep and the caption sits on top of them. A logo needs a
+       light ground AND the same bottom scrim the photo has, or the white caption
+       under it is unreadable. */
+    var layer=null;
+    if(media){
+      layer=document.createElement('div');
+      layer.setAttribute('aria-hidden','true');
+      /* ABOVE the baked photo stack, below the caption. Getting this backwards
+         left Figma's portrait showing under another person's name -- a fabricated
+         portrait of someone who exists, which is the one thing this must not do. */
+      layer.style.cssText='position:absolute;left:0;top:0;right:0;bottom:0;z-index:2;'+
+        'background-repeat:no-repeat;background-position:center;';
+      media.appendChild(layer);
+      [].forEach.call(media.children,function(el){
+        if(el===layer||!el.classList||!el.classList.contains('g-b')) return;
+        /* the caption lives inside one of these boxes; a stacking context of its
+           own means bumping the name alone leaves it trapped under the layer */
+        el.style.zIndex=(nameEl&&el.contains(nameEl))?'3':'1';
+      });
+      if(nameEl) nameEl.style.zIndex='3';
+      if(orgEl) orgEl.style.zIndex='3';
+    }
+    function paintMedia(s){
+      if(!layer) return;
+      var scrim='linear-gradient(to bottom,rgba(20,24,31,0) 55%,rgba(20,24,31,.62) 100%)';
+      if(s.mode==='logo'){
+        layer.style.backgroundImage=scrim+',url('+s.src+')';
+        layer.style.backgroundSize='100% 100%, 62% auto';
+        layer.style.backgroundColor='rgb(236,238,242)';
+      }else{
+        layer.style.backgroundImage=scrim+',url('+s.src+')';
+        layer.style.backgroundSize='100% 100%, cover';
+        layer.style.backgroundColor='';
+      }
+    }
     var i=0, DESIGN=1.8750, MIN=0.9500, MAXH=9.8;   /* vw */
     /* the fade is driven from a shared ancestor so the quote and the counter move
        together; nearest one that holds both */
     var card=q.parentElement;
     while(card&&!card.contains(n)) card=card.parentElement;
+    /* the media panel and its caption sit outside the quote's own box, so keep
+       climbing until one ancestor holds all of them */
+    while(card&&media&&!card.contains(media)) card=card.parentElement;
     if(!card) card=q;
     q.setAttribute('aria-live','polite');
     /* The design's box holds three lines at 1.875vw. The second quote is 5x longer,
@@ -6751,7 +6808,11 @@ document.addEventListener("DOMContentLoaded",function(){
       }
     }
     function paint(){
-      q.textContent=STORIES[i];
+      var s=STORIES[i];
+      q.textContent=s.q;
+      if(nameEl) nameEl.textContent=s.name;
+      if(orgEl) orgEl.textContent=s.org;
+      paintMedia(s);
       n.textContent=(i+1<10?'0':'')+(i+1)+' / 0'+STORIES.length;
       fit();
     }
@@ -6779,8 +6840,29 @@ document.addEventListener("DOMContentLoaded",function(){
         b.style.opacity='.35'; b.style.cursor='default';
       });
     }
-    prev.addEventListener('click',function(e){ e.preventDefault(); go(-1); });
-    next.addEventListener('click',function(e){ e.preventDefault(); go(1); });
+    prev.addEventListener('click',function(e){ e.preventDefault(); go(-1); restart(); });
+    next.addEventListener('click',function(e){ e.preventDefault(); go(1); restart(); });
+
+    /* Auto-advance. Held while the pointer is over the card or a control has focus
+       -- nobody wants a quote pulled out from under them mid-sentence -- and while
+       the tab is hidden. A manual click restarts the clock instead of letting the
+       timer fire again a moment later. */
+    var timer=null, held=false;
+    function restart(){
+      if(REDUCED||STORIES.length<2) return;
+      clearInterval(timer);
+      timer=setInterval(function(){ if(!held&&!document.hidden) go(1); },7000);
+    }
+    if(card){
+      card.addEventListener('mouseenter',function(){held=true;});
+      card.addEventListener('mouseleave',function(){held=false;});
+    }
+    [prev,next].forEach(function(b){
+      b.addEventListener('focus',function(){held=true;});
+      b.addEventListener('blur',function(){held=false;});
+    });
+    document.addEventListener('visibilitychange',function(){ if(!document.hidden) restart(); });
+    restart();
     addEventListener('resize',function(){ clearTimeout(window.__frT);
       window.__frT=setTimeout(fit,150); });
     paint();
