@@ -4781,15 +4781,12 @@ document.addEventListener("DOMContentLoaded",function(){
   }
 
 
-  /* Every category tag gets the SAME plate rule: the label's own width plus a
-     constant inset either side. Figma drew each card's plate by hand -- 64px, 74,
-     103, 115 -- so two cards tagged AWS could differ by 40px, and a long category
-     ran its white label off the orange onto white ("Success Sto..."). PAD is the
-     inset the most common designed plate uses (22px at the 1920 design width), so
-     the canonical tags keep the size they were drawn at. The plate's LEFT moves
-     too: growing a box around a fixed label would just push the padding to one
-     side. */
-  var CHIP_PAD=22/1920;
+  /* The category tag sits on a fixed-width plate from Figma, sized for whatever
+     category the mock happened to show. Swapping in a longer one -- "Success
+     Stories" against "AWS" -- ran its white label off the orange and onto white,
+     which reads as the tag being chopped in half. Grow the plate to the label,
+     mirroring the design's own left inset on the right, and never shrink it below
+     what Figma drew (slots are reused across pages). */
   function fitChip(el){
     var r=el.getBoundingClientRect();
     var plate=null,best=1e9;
@@ -4802,13 +4799,13 @@ document.addEventListener("DOMContentLoaded",function(){
       if(a<best){ best=a; plate=e; }
     });
     if(!plate) return;
-    var W=innerWidth||1920, pad=CHIP_PAD*W;
+    var pr=plate.getBoundingClientRect();
+    if(plate.dataset.axW0===undefined) plate.dataset.axW0=String(pr.width);
     var rg=document.createRange(); rg.selectNodeContents(el);
     var ink=rg.getBoundingClientRect().width;
-    var pr=plate.getBoundingClientRect();
-    var l0=parseFloat(plate.style.left)||0;              /* current css left, vw */
-    plate.style.left=(l0+((r.left-pad)-pr.left)/W*100).toFixed(4)+'vw';
-    plate.style.width=((ink+pad*2)/W*100).toFixed(4)+'vw';
+    var pad=Math.max(0,r.left-pr.left);
+    var want=Math.max(parseFloat(plate.dataset.axW0)||0, Math.ceil(ink+pad*2));
+    plate.style.width=(want/(innerWidth||1920)*100).toFixed(4)+'vw';
   }
 
   function fill(slot,p){
