@@ -3398,18 +3398,11 @@ document.addEventListener("DOMContentLoaded",function(){
    change: the children are absolutely positioned, so the box already reports the full
    scrollWidth -- it just was not allowed to scroll. */
 .ax-srow{overflow-x:auto!important;overflow-y:hidden!important;
-  scrollbar-width:thin;scrollbar-color:rgba(35,39,46,.12) transparent;scroll-behavior:smooth;overscroll-behavior-x:contain;
+  scrollbar-width:none;scroll-behavior:smooth;overscroll-behavior-x:contain;
   -webkit-overflow-scrolling:touch;cursor:grab}
 .ax-srow.is-drag{cursor:grabbing;scroll-behavior:auto}
-/* The bar used to sit hard against the cards and read too dark. Reserve space for
-   it below the row and lighten the thumb. padding-bottom is safe here: this box is
-   the scroll container itself, and its children are absolutely positioned, so the
-   extra space cannot push anything around. */
-.ax-srow{padding-bottom:0.9vw}
-.ax-srow::-webkit-scrollbar{height:5px}
-.ax-srow::-webkit-scrollbar-thumb{background:rgba(35,39,46,.12);border-radius:99px}
-.ax-srow::-webkit-scrollbar-thumb:hover{background:rgba(35,39,46,.22)}
-.ax-srow::-webkit-scrollbar-track{background:transparent}
+/* Draggable, not scrollbar-able: the bar is drawn nowhere, on any engine. */
+.ax-srow::-webkit-scrollbar{display:none}
 /* edge fades hint that there is more to the right */
 .ax-srow-wrap{position:relative}
 .ax-srow-fade{position:absolute;top:0;bottom:0;width:3vw;pointer-events:none;z-index:3;
