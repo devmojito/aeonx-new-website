@@ -1324,7 +1324,17 @@ document.addEventListener('DOMContentLoaded',function(){
              wider than the box it starts at the content edge and all the overflow
              goes right, so centring the box there leaves the text hard against the
              left of the pill -- which is the bug, not the fix. */
-          lab.style.left=((need-Math.max(ink,lab.getBoundingClientRect().width))/2)+'px';
+          var newLeft=(need-Math.max(ink,lab.getBoundingClientRect().width))/2;
+          var icon=[].slice.call(p.children).filter(function(k){ return k.tagName==='IMG' && k!==lab; })[0];
+          if(icon){
+            var im=(icon.getAttribute('style')||'').match(/left:\s*([\d.]+)vw/);
+            if(im){
+              var iconLeftPx=parseFloat(im[1])*(document.documentElement.clientWidth||1920)/100;
+              var labelW=Math.max(ink,lab.getBoundingClientRect().width);
+              newLeft=Math.min(newLeft,iconLeftPx-labelW-4);
+            }
+          }
+          lab.style.left=newLeft+'px';
         }
         var key=Math.round((pr.top+scrollY)/6);        // same visual row
         (rows[key]=rows[key]||[]).push({left:pr.left,delta:delta});
