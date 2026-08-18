@@ -33,9 +33,9 @@ ICONS = [
 ]
 
 AI_ROW = (
-    '\n<div class="g-t" style="position:absolute;left:14.5833vw;top:37.2917vw;'
-    'width:12.0313vw;height:1.2500vw;font-family:\'Nunito Sans\',sans-serif;'
-    'font-weight:600;font-size:0.8333vw;line-height:1.2500vw;color:rgb(35,39,46);'
+    '\n<div class="g-t" style="position:absolute;left:12.8646vw;top:37.2917vw;'
+    'width:13.5352vw;height:1.4583vw;font-family:\'Nunito Sans\',sans-serif;'
+    'font-weight:600;font-size:0.9375vw;line-height:1.4583vw;color:rgb(35,39,46);'
     'text-align:left;white-space:nowrap;">Get an AI summary of this page</div>'
     + ''.join(
         '\n<a class="ax-ai" data-ai="%s" href="#" target="_blank" rel="noopener noreferrer"'
