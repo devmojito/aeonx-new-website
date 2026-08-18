@@ -27,14 +27,14 @@ MOVES = [
 # "Get an AI summary of this page" + the three assistant icons, from
 # 6287:17121 (label 6287:17126, links 6287:17128 / :17131 / :17138).
 ICONS = [
-    ('claude',     '6287-17129', 535, 'Claude'),
-    ('chatgpt',    '6287-17132', 583, 'ChatGPT'),
-    ('perplexity', '6287-17139', 631, 'Perplexity'),
+    ('claude',     '6287-17129', 564, 'Claude'),
+    ('chatgpt',    '6287-17132', 612, 'ChatGPT'),
+    ('perplexity', '6287-17139', 660, 'Perplexity'),
 ]
 
 AI_ROW = (
-    '\n<div class="g-t" style="position:absolute;left:12.8646vw;top:37.2917vw;'
-    'width:13.5352vw;height:1.4583vw;font-family:\'Nunito Sans\',sans-serif;'
+    '\n<div class="g-t" style="position:absolute;left:14.5833vw;top:37.1875vw;'
+    'width:13.5417vw;height:1.4583vw;font-family:\'Nunito Sans\',sans-serif;'
     'font-weight:600;font-size:0.9375vw;line-height:1.4583vw;color:rgb(35,39,46);'
     'text-align:left;white-space:nowrap;">Get an AI summary of this page</div>'
     + ''.join(
