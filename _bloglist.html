@@ -151,31 +151,38 @@
   }
 
 
-  /* The category tag sits on a fixed-width plate from Figma, sized for whatever
-     category the mock happened to show. Swapping in a longer one -- "Success
-     Stories" against "AWS" -- ran its white label off the orange and onto white,
-     which reads as the tag being chopped in half. Grow the plate to the label,
-     mirroring the design's own left inset on the right, and never shrink it below
-     what Figma drew (slots are reused across pages). */
+  /* One rule for every category tag: the label's own width plus a constant inset
+     either side. Figma drew each plate by hand -- 64px, 74, 103, 115 -- so two
+     cards tagged AWS differed by 40px, and a long category ran its white label off
+     the orange onto white ("Success Sto..."). PAD is the inset the canonical plate
+     uses at the 1920 design width. The plate's LEFT moves too: growing a box around
+     a fixed label just pushes the padding to one side.
+     The plate must be matched on its BRAND FILL, not merely on being the smallest
+     box under the label -- without that test this latched onto a card's own border
+     box and resized that instead, which made the row less consistent than the
+     hand-drawn widths it replaced. */
+  var CHIP_PAD=22/1920, CHIP_BG='rgb(223, 63, 23)';
   function fitChip(el){
     var r=el.getBoundingClientRect();
+    if(!r.width) return;
     var plate=null,best=1e9;
     [].slice.call(document.querySelectorAll('main.ax-page .g-b')).forEach(function(e){
+      if(getComputedStyle(e).backgroundColor!==CHIP_BG) return;
       var q=e.getBoundingClientRect();
-      if(!q.width||q.width>320) return;
-      if(q.left>r.left+2||q.right<r.left+2) return;
-      if(q.top>r.top+2||q.bottom<r.bottom-2) return;
+      if(!q.width||q.width>400||q.height>60) return;
+      if(q.left>r.left+3||q.right<r.left+3) return;
+      if(q.top>r.top+3||q.bottom<r.bottom-3) return;
       var a=q.width*q.height;
       if(a<best){ best=a; plate=e; }
     });
     if(!plate) return;
-    var pr=plate.getBoundingClientRect();
-    if(plate.dataset.axW0===undefined) plate.dataset.axW0=String(pr.width);
+    var W=innerWidth||1920, pad=CHIP_PAD*W;
     var rg=document.createRange(); rg.selectNodeContents(el);
-    var ink=rg.getBoundingClientRect().width;
-    var pad=Math.max(0,r.left-pr.left);
-    var want=Math.max(parseFloat(plate.dataset.axW0)||0, Math.ceil(ink+pad*2));
-    plate.style.width=(want/(innerWidth||1920)*100).toFixed(4)+'vw';
+    var ink=rg.getBoundingClientRect();
+    var pr=plate.getBoundingClientRect();
+    var l0=parseFloat(plate.style.left)||0;             /* current css left, vw */
+    plate.style.left=(l0+((ink.left-pad)-pr.left)/W*100).toFixed(4)+'vw';
+    plate.style.width=((ink.width+pad*2)/W*100).toFixed(4)+'vw';
   }
 
   function fill(slot,p){
