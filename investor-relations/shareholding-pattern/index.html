@@ -4195,44 +4195,18 @@ document.addEventListener("DOMContentLoaded",function(){
          (pill.contains(e.target)||subLabel.contains(e.target))) submit(e); },true);
     input.addEventListener('keydown',function(e){ if(e.key==='Enter') submit(e); });
 
-    /* ---------- 4. NEWSLETTER COLUMN ALIGNMENT ----------
-       Requested: the heading should sit in the same column as "About Us". Figma
-       puts it 1.35vw to the right, which reads as almost-but-not-quite aligned.
-       Measured against the real column so it survives a Figma re-pull. */
-    var head=[].slice.call(foot.querySelectorAll('.g-t')).filter(function(e){
-      return /^get the latest from aeonx/i.test(txt(e)); })[0];
-    var col=[].slice.call(foot.querySelectorAll('.g-t')).filter(function(e){
-      return /^about us$/i.test(txt(e)); })[0];
-    if(head&&col){
-      var hl=num(head,'left'), cl=num(col,'left');
-      if(hl!==null&&cl!==null){
-        /* Clear the AI-summary row on the left, which sits in the SAME footer band
-           and grew rightward when its own label was widened to Figma's current
-           18px size (previously ended around 655px; now ends near 684px). Aligning
-           blind to the About Us column (682px) put the Perplexity icon flush
-           against the "G" of this heading with no visible gap. Never align tighter
-           than the AI row's own right edge, plus a real gap. */
-        var target=cl;
-        var aiRow=[].slice.call(foot.querySelectorAll('.ax-ai'));
-        if(aiRow.length){
-          var vwpx=(document.documentElement.clientWidth||1920)/100;
-          var farRight=Math.max.apply(null,aiRow.map(function(a){
-            return a.getBoundingClientRect().right; }));
-          var minLeftPx=farRight+32;                 // 32px clearance, in page px
-          var pageLeft=foot.getBoundingClientRect().left;
-          target=Math.max(cl,(minLeftPx-pageLeft)/vwpx);
-        }
-        var d=hl-target;
-        if(Math.abs(d)>0.01){
-          setvw(head,'left',target);
-          [box,pill,note].forEach(function(el){
-            var l=num(el,'left');
-            if(l!==null) setvw(el,'left',l-d);
-            else if(el===note){ note.style.left=(target)+'vw'; }
-          });
-        }
-      }
-    }
+    /* ---------- 4. NEWSLETTER COLUMN ALIGNMENT (removed) ----------
+       An earlier session force-aligned this heading under "About Us" (682px) on a
+       request made against that session's Figma state. Re-checked directly against
+       BOTH the master component (5323:12316) and the actual footer INSTANCE placed
+       on the live Home page (5323:14151, rendered as a PNG, not just read as
+       coordinates) -- Figma's own authored position for "Get the latest from
+       AeonX" is 932px, under "Services"/"Products", nowhere near "About Us". The
+       override was moving this row further from Figma, not closer, and the
+       collision it was patched to avoid (this heading crowding the AI-summary
+       icons at 682px) does not exist at the real 932px position -- there is 248px
+       of clear margin. Left un-shifted; the raw inline styles already carry
+       Figma's true numbers. */
   }
 
   /* ---------- 5. HOMEPAGE PRODUCT NAMES SCROLL IN PAGE ----------
