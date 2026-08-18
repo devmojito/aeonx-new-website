@@ -2067,18 +2067,57 @@ document.addEventListener('DOMContentLoaded',function(){
   });
 });
 </script>
-<style id="ax-ptm-css">.ax-ptm-ring{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:6;transform-origin:50% 50.00%;animation:ax-ptm-spin 72s linear infinite;}.ax-ptm-badge{position:absolute;width:17.907vw;height:17.907vw;border-radius:50%;background:#fff;box-shadow:0 0.6vw 1.6vw rgba(35,39,46,.12);display:flex;align-items:center;justify-content:center;overflow:hidden;transform-origin:50% 50%;animation:ax-ptm-spin-rev 72s linear infinite;}.ax-ptm-badge img{width:49.4%!important;height:49.4%!important;object-fit:contain;display:block!important;position:static!important;left:auto!important;top:auto!important;}@keyframes ax-ptm-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}@keyframes ax-ptm-spin-rev{from{transform:rotate(0deg)}to{transform:rotate(-360deg)}}@media (prefers-reduced-motion: reduce){.ax-ptm-ring,.ax-ptm-badge{animation:none!important;}}</style><script>
-/* mobile partner ring: clean disc + real partner badges */
+<style id="ax-ptm-css">.ax-ptm-ring{pointer-events:none;z-index:6;transform-origin:50% 50%;animation:ax-ptm-spin 72s linear infinite;}.ax-ptm-badge2{transform-origin:50% 50%;animation:ax-ptm-spin-rev 72s linear infinite;}.ax-ptm-badge{position:absolute;width:17.907vw;height:17.907vw;border-radius:50%;background:#fff;box-shadow:0 0.6vw 1.6vw rgba(35,39,46,.12);display:flex;align-items:center;justify-content:center;overflow:hidden;transform-origin:50% 50%;animation:ax-ptm-spin-rev 72s linear infinite;}.ax-ptm-badge img{width:49.4%!important;height:49.4%!important;object-fit:contain;display:block!important;position:static!important;left:auto!important;top:auto!important;}@keyframes ax-ptm-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}@keyframes ax-ptm-spin-rev{from{transform:rotate(0deg)}to{transform:rotate(-360deg)}}@media (prefers-reduced-motion: reduce){.ax-ptm-ring,.ax-ptm-badge{animation:none!important;}}</style><script>
+/* mobile partner ring: spin the real badges the Partner Tiers rebuild baked in.
+   This used to inject 10 hand-written stand-in logos around a disc <img>, found by
+   matching that image's Figma node id in its src. The rebuild replaced the disc
+   with a plain colour g-b div (no <img>, nothing to match) and placed 12 REAL
+   partner logos directly at Figma's own coordinates -- static siblings, not
+   wrapped in anything that could rotate. The old script's search target no longer
+   exists, so it silently found nothing every time: the ring has been standing
+   still since that rebuild, not just on mobile animation settings.
+   Found here by shape, not by a node id that will just go stale again: the disc
+   is the one large light-grey circle in the section, the badges are its ~12vw
+   white-circle siblings that each hold exactly one image. Wrapping only the
+   badges (not the disc) matches the desktop ring, which also keeps its glow
+   static and rotates only the logos. */
 document.addEventListener("DOMContentLoaded",function(){
   var mob=document.querySelector(".ax-mob"); if(!mob)return;
-  var imgs=Array.prototype.slice.call(mob.querySelectorAll("img")), img=null;
-  for(var i=0;i<imgs.length;i++){ if((imgs[i].getAttribute("src")||"").indexOf("5637-48885")>=0){img=imgs[i];break;} }
-  if(!img)return;
-  img.setAttribute("src","/assets/partners/ring-disc.svg");
-  var p=img.parentElement; if(p.querySelector(".ax-ptm-ring"))return;
-  var wrap=document.createElement("div");
-  wrap.innerHTML="<div class=\"ax-ptm-ring\" aria-label=\"Technology partners\"><span class=\"ax-ptm-badge\" style=\"left:-19.187vw;top:50.925vw;\"><img src=\"/assets/partners/logo-sap.svg\" alt=\"SAP\"></span><span class=\"ax-ptm-badge\" style=\"left:9.302vw;top:17.363vw;\"><img src=\"/assets/partners/logo-aws.svg\" alt=\"Amazon Web Services\"></span><span class=\"ax-ptm-badge\" style=\"left:43.339vw;top:8.936vw;\"><img src=\"/assets/partners/logo-gcp.svg\" alt=\"Google Cloud\"></span><span class=\"ax-ptm-badge\" style=\"left:76.396vw;top:19.257vw;\"><img src=\"/assets/partners/logo-anthropic.svg\" alt=\"Anthropic\"></span><span class=\"ax-ptm-badge\" style=\"left:98.249vw;top:40.060vw;\"><img src=\"/assets/partners/logo-sap.svg\" alt=\"SAP\"></span><span class=\"ax-ptm-badge\" style=\"left:107.813vw;top:65.820vw;\"><img src=\"/assets/partners/logo-aws.svg\" alt=\"Amazon Web Services\"></span><span class=\"ax-ptm-badge\" style=\"left:101.829vw;top:102.946vw;\"><img src=\"/assets/partners/logo-gcp.svg\" alt=\"Google Cloud\"></span><span class=\"ax-ptm-badge\" style=\"left:77.447vw;top:132.622vw;\"><img src=\"/assets/partners/logo-anthropic.svg\" alt=\"Anthropic\"></span><span class=\"ax-ptm-badge\" style=\"left:42.838vw;top:142.886vw;\"><img src=\"/assets/partners/logo-sap.svg\" alt=\"SAP\"></span><span class=\"ax-ptm-badge\" style=\"left:9.477vw;top:135.794vw;\"><img src=\"/assets/partners/logo-aws.svg\" alt=\"Amazon Web Services\"></span></div>";
-  p.appendChild(wrap.firstChild);
+  var disc=null;
+  Array.prototype.forEach.call(mob.querySelectorAll(".g-b.g-clip"),function(e){
+    if(disc)return;
+    var st=e.getAttribute("style")||"";
+    if(!/background-color:\s*rgb\(246,\s*247,\s*249\)/.test(st))return;
+    var w=(st.match(/width:([\d.]+)vw/)||[])[1];
+    if(w&&parseFloat(w)>100&&parseFloat(w)<160) disc=e;
+  });
+  if(!disc||disc.parentElement.querySelector(".ax-ptm-ring"))return;
+  var host=disc.parentElement;
+  var badges=Array.prototype.filter.call(host.children,function(e){
+    if(!e.classList||!e.classList.contains("g-clip"))return false;
+    if(e===disc)return false;
+    var st=e.getAttribute("style")||"";
+    var w=(st.match(/width:([\d.]+)vw/)||[])[1];
+    return w&&parseFloat(w)>10&&parseFloat(w)<16&&e.querySelector(".g-img");
+  });
+  if(badges.length<6)return;
+  var NUMRE={left:/left:\s*(-?[\d.]+)vw/,top:/top:\s*(-?[\d.]+)vw/,width:/width:\s*([\d.]+)vw/,height:/height:\s*([\d.]+)vw/};
+  function num(e,p){var m=(e.getAttribute("style")||"").match(NUMRE[p]);return m?parseFloat(m[1]):0;}
+  var l0=Math.min.apply(null,badges.map(function(b){return num(b,"left");}));
+  var t0=Math.min.apply(null,badges.map(function(b){return num(b,"top");}));
+  var r1=Math.max.apply(null,badges.map(function(b){return num(b,"left")+num(b,"width");}));
+  var b1=Math.max.apply(null,badges.map(function(b){return num(b,"top")+num(b,"height");}));
+  var ring=document.createElement("div");
+  ring.className="ax-ptm-ring";
+  ring.setAttribute("aria-label","Technology partners");
+  ring.style.cssText="position:absolute;left:"+l0+"vw;top:"+t0+"vw;width:"+(r1-l0)+"vw;height:"+(b1-t0)+"vw;";
+  badges.forEach(function(b){
+    b.style.left=(num(b,"left")-l0)+"vw";
+    b.style.top=(num(b,"top")-t0)+"vw";
+    b.classList.add("ax-ptm-badge2");
+    ring.appendChild(b);
+  });
+  host.appendChild(ring);
 });
 </script>
 <script>
