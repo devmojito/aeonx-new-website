@@ -150,6 +150,34 @@
     im.src=p.i;
   }
 
+
+  /* The category tag sits on a fixed-width plate from Figma, sized for whatever
+     category the mock happened to show. Swapping in a longer one -- "Success
+     Stories" against "AWS" -- ran its white label off the orange and onto white,
+     which reads as the tag being chopped in half. Grow the plate to the label,
+     mirroring the design's own left inset on the right, and never shrink it below
+     what Figma drew (slots are reused across pages). */
+  function fitChip(el){
+    var r=el.getBoundingClientRect();
+    var plate=null,best=1e9;
+    [].slice.call(document.querySelectorAll('main.ax-page .g-b')).forEach(function(e){
+      var q=e.getBoundingClientRect();
+      if(!q.width||q.width>320) return;
+      if(q.left>r.left+2||q.right<r.left+2) return;
+      if(q.top>r.top+2||q.bottom<r.bottom-2) return;
+      var a=q.width*q.height;
+      if(a<best){ best=a; plate=e; }
+    });
+    if(!plate) return;
+    var pr=plate.getBoundingClientRect();
+    if(plate.dataset.axW0===undefined) plate.dataset.axW0=String(pr.width);
+    var rg=document.createRange(); rg.selectNodeContents(el);
+    var ink=rg.getBoundingClientRect().width;
+    var pad=Math.max(0,r.left-pr.left);
+    var want=Math.max(parseFloat(plate.dataset.axW0)||0, Math.ceil(ink+pad*2));
+    plate.style.width=(want/(innerWidth||1920)*100).toFixed(4)+'vw';
+  }
+
   function fill(slot,p){
     if(!p){ return; }
     setImg(slot.img.el,p);
@@ -160,7 +188,7 @@
       slot.title.el.classList.add('ax-bl-t');
       wire(slot.title.el,p.u);
     }
-    if(slot.chip) slot.chip.el.textContent=p.c;
+    if(slot.chip){ slot.chip.el.textContent=p.c; fitChip(slot.chip.el); }
     if(slot.author) slot.author.el.textContent=p.a||'AeonX Digital';
     if(slot.date) slot.date.el.textContent=p.d;
     /* The byline/date detector keys on geometry and misses a card whose byline sits
