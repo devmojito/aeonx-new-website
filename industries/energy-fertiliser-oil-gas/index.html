@@ -992,7 +992,12 @@ document.addEventListener('DOMContentLoaded',function(){
        already under 480 on both axes, so it slipped past this guard and got
        switched to contain -- letterboxed with huge blank bars top/bottom instead
        of filling its box. */
-    if(bw>innerWidth*0.5||bh>innerWidth*0.5)return;
+    /* 0.4, not 0.5: the Foundation and Leadership hero panels are 863x911 at
+       1920 -- just under half the viewport on both axes, so they slipped past
+       this guard and were switched to contain. Their art is 3:2 in a nearly
+       square box, so contain letterboxed it with white bands top and bottom.
+       Real thumbnails and avatars here are ~400px, well under 0.4. */
+    if(bw>innerWidth*0.4||bh>innerWidth*0.4)return;
     var im=new Image();
     im.onload=function(){
       if(!im.naturalWidth||!im.naturalHeight)return;
