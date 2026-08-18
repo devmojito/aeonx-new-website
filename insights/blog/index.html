@@ -2684,6 +2684,12 @@ document.addEventListener("DOMContentLoaded",function(){
    owns the lift; the pill only moves when it is itself hovered. */
 .ax-hv-tile.ax-hv-btn.ax-hv-on:not(.ax-hv-selfon){transform:var(--ax-bt,translateZ(0))}
 .ax-hv-btn.ax-hv-selfon {transform:translateY(-0.1042vw) var(--ax-bt,translateZ(0))}
+/* A pill is two boxes: a filled one that CLIPS, and its outline nested inside.
+   The lift above moves the outline 2px up, which put its top border outside that
+   clip -- the pill lost its top line for as long as you hovered it. Let the clip
+   breathe while the pointer is on it (!important: the clip is an inline style).
+   Only the outline and the label are inside, so nothing else can spill. */
+.g-b.g-clip.ax-hv-f:hover{overflow:visible!important}
 
 /* tile: soft lift + brand-tinted hairline drawn as a shadow ring, so it shows
    even when a coincident white fill box paints over the real border. The ring is

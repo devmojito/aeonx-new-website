@@ -4211,6 +4211,12 @@ document.addEventListener("DOMContentLoaded",function(){
    owns the lift; the pill only moves when it is itself hovered. */
 .ax-hv-tile.ax-hv-btn.ax-hv-on:not(.ax-hv-selfon){transform:var(--ax-bt,translateZ(0))}
 .ax-hv-btn.ax-hv-selfon {transform:translateY(-0.1042vw) var(--ax-bt,translateZ(0))}
+/* A pill is two boxes: a filled one that CLIPS, and its outline nested inside.
+   The lift above moves the outline 2px up, which put its top border outside that
+   clip -- the pill lost its top line for as long as you hovered it. Let the clip
+   breathe while the pointer is on it; the only things inside are the outline and
+   the label, so nothing else can spill. */
+.g-b.g-clip.ax-hv-f:hover{overflow:visible!important}   /* inline style sets hidden */
 
 /* tile: soft lift + brand-tinted hairline drawn as a shadow ring, so it shows
    even when a coincident white fill box paints over the real border. The ring is
@@ -7135,6 +7141,16 @@ document.addEventListener("DOMContentLoaded",function(){
 @keyframes ax-mqm-roll{from{transform:translateX(0)}
   to{transform:translateX(calc(var(--ax-mq-strip) * -1))}}
 @media (prefers-reduced-motion:reduce){.ax-mob .ax-mqm{animation:none}}
+</style>
+<style id="ax-petal-css">
+/* The petal watermark turns, slowly. It carries the scroll-reveal's transform
+   transition, so the animation has to own transform outright -- animations beat
+   the transitioned value, and the reveal's end state is transform:none anyway. */
+.ax-tst .g-img[data-ref="5b235ddbe70d573660dca6ce0000421c2f3f7d3e"]{
+  animation:ax-petal-spin 120s linear infinite;transform-origin:50% 50%;will-change:transform}
+@keyframes ax-petal-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){
+  .ax-tst .g-img[data-ref="5b235ddbe70d573660dca6ce0000421c2f3f7d3e"]{animation:none}}
 </style>
 </body>
 </html>
