@@ -1857,6 +1857,13 @@ document.addEventListener("DOMContentLoaded",function(){
            and kept repainting the labels from its own index -- so the active label
            snapped back to the first chip after every switch. */
         if (row.some(function(b){ return /ax-pstrip-tab/.test(b.el.className || ''); })) return;
+        /* ax-pstrip tags its own tabs after webfonts/layout settle, so it always
+           loses this race and the class check above never catches it in time --
+           this engine claims the row first, wraps its panels in a track, and
+           ax-pstrip's own scan then finds nothing to page. Catch it by what the
+           label SAYS instead, which is known immediately, not by a class added
+           later. */
+        if (row.some(function(b){ return /^(supplierx|orderx|xpense|logystix|manufex|aeonx\s*\.?\s*iq|aeonxiq)$/i.test((b.el.textContent || '').replace(/\s+/g, ' ').trim()); })) return;
         tabs = row.slice().sort(function(a, b){ return a.L - b.L; }).slice(0, count);
         /* Remember each label's own colour. Resetting an inactive tab with
            style.color = '' REMOVES the inline colour Figma exported, so the label
