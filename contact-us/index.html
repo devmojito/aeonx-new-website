@@ -5332,7 +5332,7 @@ select.ax-cf-code{left:0!important;top:0!important;height:100%!important;cursor:
       var code = swap(codeBox, codeDummy, function(){ return document.createElement('input'); });
       code.type = 'text';
       code.name = 'Country Code';
-      code.value = 'IND(+91)';
+      code.placeholder = 'IND(+91)';
       code.required = true;
       var icons = [].slice.call(codeBox.querySelectorAll('.g-vec'))
         .sort(function(a, b){ return parseFloat(a.style.left) - parseFloat(b.style.left); });
