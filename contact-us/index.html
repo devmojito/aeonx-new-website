@@ -5322,10 +5322,9 @@ select.ax-cf-code{left:0!important;top:0!important;height:100%!important;cursor:
       pattern:'[0-9 ()+-]{6,}' });   /* a hyphen LAST needs no escape; the old \\-\\s made an invalid range, so browsers dropped the pattern and the field accepted letters */
     /* The country-code chip beside Phone Number ("IND(+91)") was static Figma text --
        flag + label + chevron drawn to look like a dropdown, wired to nothing. Made a
-       plain editable box instead of a picker: keeps its own designed geometry (no
-       stretching to fill the chip), so the flag stays put to its left. The chevron
-       only ever meant "this opens a list" -- with no list to open it is now just a
-       false affordance, so it is the one icon actually removed. */
+       plain editable box instead of a picker: neither icon means anything without a
+       list to open or a country actually chosen, so both are hidden and the field
+       takes over the flag's own left inset instead of leaving a gap where it was. */
     var codeBox = findLabelBox(form, 'Phone Number', true);
     var codeDummy = codeBox && dummyIn(codeBox);
     if (codeDummy){
@@ -5334,9 +5333,11 @@ select.ax-cf-code{left:0!important;top:0!important;height:100%!important;cursor:
       code.name = 'Country Code';
       code.placeholder = 'IND(+91)';
       code.required = true;
-      var icons = [].slice.call(codeBox.querySelectorAll('.g-vec'))
-        .sort(function(a, b){ return parseFloat(a.style.left) - parseFloat(b.style.left); });
-      if (icons.length > 1) icons[icons.length - 1].style.display = 'none';   /* the chevron */
+      var icons = [].slice.call(codeBox.querySelectorAll('.g-vec'));
+      if (icons.length){
+        code.style.left = icons[0].style.left;
+        icons.forEach(function(v){ v.style.display = 'none'; });
+      }
     }
 
     if (kind === 'A'){
