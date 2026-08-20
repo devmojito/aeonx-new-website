@@ -5321,18 +5321,22 @@ select.ax-cf-code{left:0!important;top:0!important;height:100%!important;cursor:
     field(form, 'Phone Number', { required:true, type:'tel', placeholder:'98765 43210',
       pattern:'[0-9 ()+-]{6,}' });   /* a hyphen LAST needs no escape; the old \\-\\s made an invalid range, so browsers dropped the pattern and the field accepted letters */
     /* The country-code chip beside Phone Number ("IND(+91)") was static Figma text --
-       flag + label + chevron drawn to look like a dropdown, wired to nothing. Same
-       region set the Region field already offers elsewhere on this form. */
-    var code = selectField(form, 'Phone Number', ['IND(+91)', 'UAE(+971)', 'Other'],
-      { chip:true, name:'Country Code' });
-    if (code){
-      code.classList.add('ax-cf-code');
-      code.style.paddingLeft = code.style.left;      /* label keeps its designed x */
-      /* the flag and the chevron are LATER siblings, so they paint over the select
-         and would otherwise eat clicks on two thirds of the chip */
-      [].slice.call(code.parentNode.querySelectorAll('.g-vec')).forEach(function(v){
-        v.style.pointerEvents = 'none';
-      });
+       flag + label + chevron drawn to look like a dropdown, wired to nothing. Made a
+       plain editable box instead of a picker: keeps its own designed geometry (no
+       stretching to fill the chip), so the flag stays put to its left. The chevron
+       only ever meant "this opens a list" -- with no list to open it is now just a
+       false affordance, so it is the one icon actually removed. */
+    var codeBox = findLabelBox(form, 'Phone Number', true);
+    var codeDummy = codeBox && dummyIn(codeBox);
+    if (codeDummy){
+      var code = swap(codeBox, codeDummy, function(){ return document.createElement('input'); });
+      code.type = 'text';
+      code.name = 'Country Code';
+      code.value = 'IND(+91)';
+      code.required = true;
+      var icons = [].slice.call(codeBox.querySelectorAll('.g-vec'))
+        .sort(function(a, b){ return parseFloat(a.style.left) - parseFloat(b.style.left); });
+      if (icons.length > 1) icons[icons.length - 1].style.display = 'none';   /* the chevron */
     }
 
     if (kind === 'A'){
