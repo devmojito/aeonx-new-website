@@ -1,8 +1,12 @@
 # AeonX backend
 
-Django + DRF service behind the static marketing site. Phase 1 covers the
-**investor document library**: the IR team uploads filings through an admin, and
-the live site picks them up without a rebuild or a deploy.
+Django + DRF service behind the static marketing site.
+
+- **Investor documents** — the IR team uploads filings through an admin and the
+  live site picks them up without a rebuild or a deploy.
+- **Contact submissions** — enquiries are recorded in the database and emailed
+  to sales, replacing a `mailto:` handoff that lost the lead outright on any
+  device with no mail client configured.
 
 ## Why this exists
 
@@ -80,12 +84,16 @@ Result of the migration performed on 2026-08-25:
 | Outcome | Count | Notes |
 |---|---|---|
 | Stored in our storage | 247 | downloaded from WordPress |
-| Listed but unavailable | 32 | on `ashokalcochem.com`, which no longer resolves |
+| Listed but unavailable | 31 | on `ashokalcochem.com`, which no longer resolves |
 | Failed | 1 | see below |
-| Duplicates collapsed | 2 | identical rows in the harvest |
-| **Total unique** | **278** | from 280 harvested rows |
+| Duplicates collapsed | 3 | identical rows in the harvest |
+| **Total unique** | **277** | from 280 harvested rows |
 
-**Needs the client:** the 32 unavailable documents cannot be recovered by
+The third duplicate was `LIST OF COMMITTEE MEMBERS`, which the live WordPress
+page lists twice -- once under a working URL and once under the retired domain.
+The working copy was already imported, so the dead twin was removed.
+
+**Needs the client:** the 31 unavailable documents cannot be recovered by
 anyone but AeonX — the host is gone. They stay listed (they are part of the
 public disclosure record; hiding them would misrepresent the filing history) and
 render as visible, non-clickable rows. Upload a file against one and it clears
@@ -118,6 +126,40 @@ rendering the baked snapshot — which is what staging wants, and means Vercel
 previews never point at a backend that may not exist yet.
 
 Add the API's origin to `CORS_ALLOWED_ORIGINS` (see `.env.example`).
+
+## Contact form
+
+`POST /api/contact/` — the site's form posts here; the panel kind (`talk` /
+`enquiry`) selects which extra fields are required. Submissions appear under
+*Admin → Contact submissions*, with a **handled** flag so a lead can be cleared
+from the queue without being deleted.
+
+The submission is saved **before** the notification email is attempted, and a
+mail failure never fails the request: the lead is already safe, the failure is
+logged, and `notify_email_sent` stays false so it is visible in the admin.
+
+If the API is unreachable the form falls back to the original `mailto:`
+behaviour rather than losing the enquiry. A rate limit of
+`CONTACT_THROTTLE_RATE` (default 10/hour per IP) applies; over it, the visitor
+is told to email instead.
+
+**Email is not configured by default.** Local and staging use Django's console
+backend, which prints the message to `docker compose logs api` instead of
+sending it. For production set:
+
+```ini
+EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+EMAIL_HOST=<smtp host>          # e.g. AWS SES
+EMAIL_HOST_USER=<user>
+EMAIL_HOST_PASSWORD=<password>
+DEFAULT_FROM_EMAIL=website@aeonx.digital
+CONTACT_NOTIFY_EMAIL=sales@aeonx.digital
+```
+
+Rate limiting counts through Django's cache, which is configured as
+`DatabaseCache` on purpose: the default in-memory cache is per-process, and
+with three gunicorn workers each would keep its own count, letting a caller
+exceed the limit roughly threefold. `createcachetable` runs at startup.
 
 ## Users and roles
 
@@ -200,5 +242,7 @@ genuinely outgrows a single instance — nothing here would need rewriting.
 - [ ] Local `admin` account deleted or given a real password
 - [ ] `CORS_ALLOW_ALL_ORIGINS=false` with real origins listed
 - [ ] S3 bucket policy grants `GetObject` only
-- [ ] The 32 unavailable documents chased with the client
+- [ ] The 31 unavailable documents chased with the client
+      (list in MISSING_DOCUMENTS.txt)
 - [ ] `window.AX_API_BASE` set on the production site build
+- [ ] SMTP configured, or contact notifications go nowhere

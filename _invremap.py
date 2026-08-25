@@ -54,7 +54,18 @@ def variants(name):
     for v in (re.sub(r'[_-]+', '-', base), re.sub(r'_-', '_', base), base.replace('_', '-')):
         if v not in out:
             out.append(v)
-    return out
+    # WordPress appends -1, -2, ... itself when a file of that sanitised name
+    # already exists in the target month's folder -- confirmed against a real
+    # file: "List of Committee Members.pdf" landed as
+    # "List-of-Committee-Members-1.pdf". Without trying the suffix, a
+    # collision-renamed file is indistinguishable from one that was never
+    # re-uploaded at all, which is exactly the false negative this produced.
+    suffixed = []
+    for v in out:
+        stem, dot, ext = v.rpartition('.')
+        if dot:
+            suffixed.extend(f'{stem}-{n}.{ext}' for n in range(1, 6))
+    return out + suffixed
 
 
 def head(url):

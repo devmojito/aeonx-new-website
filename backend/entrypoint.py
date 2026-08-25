@@ -119,6 +119,7 @@ def main():
     ensure_bucket()
 
     run("python", "manage.py", "migrate", "--noinput")
+    run("python", "manage.py", "createcachetable")
     run("python", "manage.py", "bootstrap_roles")
 
     if not os.environ.get("DJANGO_DEBUG", "").lower() in ("1", "true", "yes", "on"):

@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "rest_framework",
     "investors",
+    "contacts",
 ]
 
 MIDDLEWARE = [
@@ -102,6 +103,20 @@ DATABASES = {
 }
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# DRF's rate throttling reads/writes the cache. The default LocMemCache is
+# per-PROCESS, and gunicorn runs multiple worker processes -- each would keep
+# its own separate count, so a caller hitting different workers across
+# requests could exceed the configured rate by roughly the worker count before
+# any single worker's counter crossed the limit. A shared cache is required
+# for the limit to mean what it says; DatabaseCache reuses Postgres rather
+# than adding Redis/Memcached for one small counter table.
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.db.DatabaseCache",
+        "LOCATION": "django_cache",
+    }
+}
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
@@ -192,6 +207,12 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
 REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.AllowAny"],
     "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
+    "DEFAULT_THROTTLE_RATES": {
+        # Generous enough that a real visitor never notices; tight enough that
+        # a script cannot flood the inbox or the database. Per-IP, so one
+        # aggressive caller cannot exhaust the budget for everyone else.
+        "contact": env("CONTACT_THROTTLE_RATE", "10/hour"),
+    },
 }
 
 if DEBUG:
@@ -206,6 +227,27 @@ CORS_ALLOWED_ORIGIN_REGEXES = env_list("CORS_ALLOWED_ORIGIN_REGEXES")
 CORS_ALLOW_ALL_ORIGINS = env_bool("CORS_ALLOW_ALL_ORIGINS", DEBUG)
 # GET-only public API: no cookies cross-origin, so no credentialed CORS.
 CORS_ALLOW_CREDENTIALS = False
+
+# ---------------------------------------------------------------- email
+
+# Local/staging default to the console backend so nothing tries to reach a
+# real SMTP server that was never configured -- a submission still fails
+# closed to "logged, not sent" rather than raising. Set EMAIL_BACKEND to
+# django.core.mail.backends.smtp.EmailBackend in production.
+EMAIL_BACKEND = env(
+    "EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend"
+)
+EMAIL_HOST = env("EMAIL_HOST", "")
+EMAIL_PORT = int(env("EMAIL_PORT", "587"))
+EMAIL_HOST_USER = env("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = env_bool("EMAIL_USE_TLS", True)
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", "website@aeonx.digital")
+
+# Where a new contact-form lead is sent. Empty disables the notification (the
+# submission is still saved -- see contacts/views.py) rather than raising, so
+# a missing env var cannot take the whole endpoint down.
+CONTACT_NOTIFY_EMAIL = env("CONTACT_NOTIFY_EMAIL", "sales@aeonx.digital")
 
 LOGGING = {
     "version": 1,

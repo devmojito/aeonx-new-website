@@ -21,9 +21,23 @@ select.ax-cf-code{left:0!important;top:0!important;height:100%!important;cursor:
   color:rgb(2,51,89);transition:opacity .2s ease}
 </style>
 <script>
-/* ---- CONTACT FORM: REAL FIELDS + MAILTO SUBMIT ---- */
+/* ---- CONTACT FORM: REAL FIELDS + LIVE SUBMIT (mailto FALLBACK) ---- */
 (function(){
   var MAILTO = 'sales@aeonx.digital';
+  /* Same resolution _invdocs.html uses: window.AX_API_BASE set explicitly, or
+     localhost during local dev, or nothing (staging keeps the old behaviour
+     rather than pointing at a backend that may not exist there yet). */
+  var API_BASE=(window.AX_API_BASE||
+    (/^(localhost|127\.0\.0\.1)$/.test(location.hostname)?'http://localhost:8000':''))
+    .replace(/\/+$/,'');
+  /* Figma's own labels, mapped to what the API expects. A lead must never be
+     silently dropped over a naming mismatch, so this list is the single
+     place that mapping lives -- not duplicated per field below. */
+  var API_FIELD={'Company name':'company_name','Full name':'full_name','Email ID':'email',
+    'Country Code':'country_code','Phone Number':'phone_number','Role':'role',
+    'Additional Information':'additional_information','Region':'region',
+    'Type of engagement':'type_of_engagement','Timeline':'timeline',
+    'Brief Description':'brief_description'};
 
   function txt(e){ return (e.textContent || '').replace(/\s+/g,' ').replace(/[*]$/,'').trim(); }
   function styleOf(el){ return el.getAttribute('style') || ''; }
@@ -83,6 +97,16 @@ select.ax-cf-code{left:0!important;top:0!important;height:100%!important;cursor:
         var best = box, bw = wOf(box), bt = tOf(box);
         var n = box.nextElementSibling;
         for (var k = 0; k < 4 && n; k++, n = n.nextElementSibling){
+          /* Stop at the next field's LABEL. Skipping over it (as this used to)
+             let the widest-box search cross into a box that belongs to another
+             question: on the desktop enquiry panel, Region and "Type of
+             engagement" sit side by side on one row, so Region's search walked
+             past the "Type of engagement" label, found its wider box and
+             claimed it -- leaving that question with no control at all and
+             dropping it from every submission. The phone chip + number pair
+             this search exists for has no label between the two boxes, so it
+             is unaffected. */
+          if (n.classList && n.classList.contains('g-t')) break;
           if (!(n.classList && n.classList.contains('g-b'))) continue;
           if (Math.abs(tOf(n) - bt) > 0.4) break;            /* next row down */
           if (wOf(n) > bw && dummyIn(n)){ bw = wOf(n); best = n; }
@@ -121,6 +145,16 @@ select.ax-cf-code{left:0!important;top:0!important;height:100%!important;cursor:
 
   function selectField(scope, label, options, opts){
     opts = opts || {};
+    /* Same guard field() carries, and for a worse failure than a duplicate.
+       init() runs twice (DOMContentLoaded and load). On the second pass this
+       field's own box no longer holds a dummy -- it was replaced by the select
+       on pass one -- so findLabelBox's "widest box on this row" search walks on
+       and returns the NEXT field's box instead, which still has one. That put a
+       second Region select into the "Type of engagement" slot and left that
+       question with no control at all, silently dropping it from every
+       submission. */
+    var already = scope.querySelector('[name="' + (opts.name || label).replace(/"/g, '') + '"]');
+    if (already) return already;
     var box = findLabelBox(scope, label, opts.chip);
     if (!box) return null;
     var dummy = dummyIn(box);
@@ -173,10 +207,37 @@ select.ax-cf-code{left:0!important;top:0!important;height:100%!important;cursor:
     return best || label;
   }
 
-  function wireSubmit(form, subjectPrefix){
-    var msgHost = null;
+  function wireSubmit(form, subjectPrefix, kind){
+    var msgHost = null, prev = null, busy = false;
+
+    function say(text, hold){
+      if (!msgHost){
+        msgHost = form.querySelector('.g-t:last-of-type');
+        if (msgHost) prev = msgHost.textContent;
+      }
+      if (!msgHost) return;
+      msgHost.textContent = text;
+      if (hold) setTimeout(function(){ if (msgHost) msgHost.textContent = prev; }, hold);
+    }
+
+    /* The original behaviour, kept as the fallback path. It is also the reason
+       this whole endpoint exists: mailto: silently loses the enquiry on any
+       device with no mail client configured, which is most work laptops. */
+    function mailto(){
+      var lines = [];
+      [].slice.call(form.elements).forEach(function(el){
+        if (!el.name || !el.value) return;
+        lines.push(el.name + ': ' + el.value);
+      });
+      var subject = encodeURIComponent(subjectPrefix + ' -- ' + (form.querySelector('[name="Full name"]') || {}).value);
+      var body = encodeURIComponent(lines.join('\n'));
+      window.location.href = 'mailto:' + MAILTO + '?subject=' + subject + '&body=' + body;
+      say('Opening your email client with this message ready to send...', 6000);
+    }
+
     form.addEventListener('submit', function(e){
       e.preventDefault();
+      if (busy) return;                     /* double-submit = duplicate lead */
       var bad = [].slice.call(form.querySelectorAll('.ax-cf-err'));
       bad.forEach(function(b){ b.classList.remove('ax-cf-err'); });
       if (!form.checkValidity()){
@@ -190,24 +251,39 @@ select.ax-cf-code{left:0!important;top:0!important;height:100%!important;cursor:
         if (first) first.focus();
         return;
       }
-      var lines = [];
-      [].slice.call(form.elements).forEach(function(el){
-        if (!el.name || !el.value) return;
-        lines.push(el.name + ': ' + el.value);
-      });
-      var subject = encodeURIComponent(subjectPrefix + ' -- ' + (form.querySelector('[name="Full name"]') || {}).value);
-      var body = encodeURIComponent(lines.join('\n'));
-      window.location.href = 'mailto:' + MAILTO + '?subject=' + subject + '&body=' + body;
 
-      if (!msgHost){
-        var disclaimer = form.querySelector('.g-t:last-of-type');
-        msgHost = disclaimer;
-      }
-      if (msgHost){
-        var prev = msgHost.textContent;
-        msgHost.textContent = 'Opening your email client with this message ready to send...';
-        setTimeout(function(){ if (msgHost) msgHost.textContent = prev; }, 6000);
-      }
+      if (!API_BASE || !window.fetch){ mailto(); return; }
+
+      var payload = { kind: kind === 'A' ? 'talk' : 'enquiry', source_page: location.pathname };
+      [].slice.call(form.elements).forEach(function(el){
+        var key = API_FIELD[el.name];
+        if (key && el.value) payload[key] = el.value;
+      });
+
+      busy = true;
+      say('Sending...');
+      fetch(API_BASE + '/api/contact/', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+      }).then(function(r){
+        if (r.ok){
+          form.reset();
+          say('Thank you — we have your enquiry and will be in touch shortly.', 8000);
+          return;
+        }
+        /* 429 is the rate limiter, and it is the one failure where retrying
+           via email would just re-send what we already rejected. Everything
+           else means we did not record the enquiry, so fall back rather than
+           lose it. */
+        if (r.status === 429){
+          say('You have sent several enquiries already — please email ' + MAILTO + '.', 10000);
+          return;
+        }
+        mailto();
+      }).catch(function(){
+        mailto();                            /* offline / API down / CORS */
+      }).then(function(){ busy = false; });
     });
   }
 
@@ -319,7 +395,7 @@ select.ax-cf-code{left:0!important;top:0!important;height:100%!important;cursor:
       sendPill.addEventListener('keydown', function(e){
         if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); doSend(); } });
     }
-    wireSubmit(form, kind === 'A' ? 'Talk to AeonX' : 'Project enquiry');
+    wireSubmit(form, kind === 'A' ? 'Talk to AeonX' : 'Project enquiry', kind);
   }
 
   function scan(){
