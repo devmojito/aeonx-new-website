@@ -456,7 +456,7 @@ main.ax-post{position:relative;max-width:100vw;overflow-x:hidden;background:#fff
 <div class="ax-post__eyebrow">Aws</div>
 <h1 class="ax-post__title">Building a Self-Healing Data Pipeline on AWS: How We Used Amazon Bedrock to Diagnose and Auto-Remediate ETL Failures</h1>
 <div class="ax-post__meta">June 10, 2026 &middot; Chandni Gadhvi</div>
-<img class="ax-post__hero" src="http://localhost:9000/aeonx-documents/blog/2026/4832685bdf1a-aws-blog6-diagram.png" alt="Building a Self-Healing Data Pipeline on AWS: How We Used Amazon Bedrock to Diagnose and Auto-Remediate ETL Failures">
+<img class="ax-post__hero" src="https://www.aeonx.digital/wp-content/uploads/2026/07/aws-blog6-diagram.png" alt="Building a Self-Healing Data Pipeline on AWS: How We Used Amazon Bedrock to Diagnose and Auto-Remediate ETL Failures">
 <div class="ax-post__body">
 <h2 style="margin-top: 32px; margin-bottom: 12px; padding-bottom: 6px; color: #02103E; font-size: 24px; font-weight: 700;" id="the-2am-problem-why-data-pipeline-failures-are-the-most-expensive-operational-problem-nobody-has-solved">The 2am Problem: Why Data Pipeline Failures Are the Most Expensive Operational Problem Nobody Has Solved</h2>
 <p style="line-height: 1.7; margin-bottom: 8px;">Every data engineering team has a version of the same story. A Glue job fails at 2am. CloudWatch fires an alarm. A data engineer gets paged. They log in, read the error logs, identify the root cause a schema change upstream, a malformed record in the source file, a partition that doesn&#x27;t exist yet — apply the fix, rerun the job, and go back to sleep. The whole incident takes 45 minutes and costs the organization one disrupted night and one day of delayed downstream reports.</p>
@@ -494,7 +494,7 @@ main.ax-post{position:relative;max-width:100vw;overflow-x:hidden;background:#fff
 </ul>
 <p style="line-height: 1.7; margin-bottom: 8px;">The goal was not to eliminate all manual intervention — some failure classes genuinely require human judgment. The goal was to eliminate manual intervention for the failure classes that do not, and to dramatically improve the quality of escalations for the ones that do.</p>
 <h2 style="margin-top: 32px; margin-bottom: 12px; padding-bottom: 6px; color: #02103E; font-size: 24px; font-weight: 700;" id="technical-architecture">Technical Architecture</h2>
-<p><img decoding="async" src="http://localhost:9000/aeonx-documents/blog/inline/dce367eef449-aws-blog6-diagram.png" alt="Building a Self-Healing Data Pipeline on AWS: How We Used Amazon Bedrock to Diagnose and Auto-Remediate ETL Failures" style="width:100%;max-width:100%;height:auto;margin:12px 0;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,0.12);" loading="lazy" /></p>
+<p><img decoding="async" src="https://www.aeonx.digital/wp-content/uploads/2026/07/aws-blog6-diagram.png" alt="Building a Self-Healing Data Pipeline on AWS: How We Used Amazon Bedrock to Diagnose and Auto-Remediate ETL Failures" style="width:100%;max-width:100%;height:auto;margin:12px 0;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,0.12);" loading="lazy" /></p>
 <p style="line-height: 1.7; margin-bottom: 8px;"><em>Figure 1: Self-Healing Data Pipeline — Closed-Loop Failure Detection, Bedrock Diagnosis, and Auto-Remediation on AWS</em></p>
 <p style="line-height: 1.7; margin-bottom: 8px;"><strong>AWS Services Used:</strong></p>
 <ul style="margin: 8px 0; padding-left: 24px;">

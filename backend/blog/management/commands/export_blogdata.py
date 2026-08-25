@@ -17,10 +17,24 @@ import io
 import json
 import re
 from pathlib import Path
+from urllib.parse import urlparse
 
 from django.core.management.base import BaseCommand
+from django.core.management.base import CommandError
 
-from blog.models import Post
+from blog.models import BodyImage, Post
+
+# Hostnames that resolve only from this machine (or the compose network), never
+# from the internet. A build exported while storage is configured against one
+# of these must not bake that URL into the static HTML it writes -- that HTML
+# gets committed and pushed, and "works on my machine" for an <img src> shipped
+# to every visitor is not a caveat, it is a broken image for all of them.
+LOCAL_HOSTS = {"localhost", "127.0.0.1", "minio", "0.0.0.0"}
+
+
+def is_public(url):
+    host = (urlparse(url).hostname or "").lower()
+    return bool(host) and host not in LOCAL_HOSTS
 
 
 # Images on the retired WordPress host. Verified 404 there already, and the
@@ -67,8 +81,34 @@ class Command(BaseCommand):
         )
         parser.add_argument("--include-drafts", action="store_true",
                             help="Also export unpublished posts (for previewing a build).")
+        parser.add_argument(
+            "--allow-local-storage", action="store_true",
+            help="Bake in local-only storage URLs anyway. For inspecting output "
+                 "on this machine only -- never commit or push what this produces: "
+                 "the images will be broken for every other visitor.",
+        )
 
     def handle(self, *args, **opts):
+        from django.core.files.storage import default_storage
+        try:
+            storage_is_public = is_public(default_storage.url("__probe__"))
+        except Exception:  # noqa: BLE001
+            storage_is_public = False
+
+        # Map our own (possibly non-public) file URL back to the untouched
+        # external source, so the export can still ship something that
+        # resolves for a real visitor even though our copy does not yet.
+        external_of = {}
+        for p in Post.objects.exclude(cover="").exclude(cover_external=""):
+            external_of[p.cover.url] = p.cover_external
+        for b in BodyImage.objects.exclude(original_url=""):
+            external_of[b.image.url] = b.original_url
+
+        def public_url(local_url, external_url):
+            if storage_is_public or not local_url:
+                return local_url or external_url
+            return external_url or local_url
+
         qs = Post.objects.select_related("category").order_by("-published_at")
         if not opts["include_drafts"]:
             qs = qs.published()
@@ -76,12 +116,27 @@ class Command(BaseCommand):
         posts = []
         for p in qs:
             body = strip_dead_srcset(p.body_html or "")
+            # Computed before the local->external fallback below: at this point
+            # any surviving aeonx.digital src is one migration never touched
+            # (a genuine fetch failure), so it is safe to call dead. Computing
+            # it after would also catch images this same export just reverted
+            # to aeonx.digital for the fallback -- those still resolve, and
+            # _blog.py deletes the whole <img> for anything listed here.
+            broken = dead_in(body)
+            if not storage_is_public:
+                for local, external in external_of.items():
+                    if external:
+                        # Bare replace, not just src="...": the same local URL
+                        # can also survive inside srcset (strip_dead_srcset only
+                        # drops the retired-host candidates there), and a
+                        # src=-only replace leaves that copy unfixed.
+                        body = body.replace(local, external)
             posts.append({
                 "id": p.legacy_id or str(p.pk),
                 "url": "https://aeonx.digital" + p.path,
                 "path": p.path,
                 "title": p.title,
-                "thumb": p.cover_url,
+                "thumb": public_url(p.cover_url, p.cover_external),
                 # _bloglist_build.py uses textLen to pick an excerpt length; keep
                 # it honest rather than shipping a constant.
                 "textLen": len(re.sub(r"<[^>]+>", " ", body)),
@@ -101,8 +156,24 @@ class Command(BaseCommand):
                 # listed: they refuse our crawler but may well render fine for
                 # a real visitor, and silently deleting a working image would
                 # be the worse mistake.
-                "brokenInline": sorted(dead_in(body)),
+                "brokenInline": sorted(broken),
             })
+
+        leaked = [
+            (p["title"], u) for p in posts
+            for u in re.findall(r'https?://[^"\s]+', p["html"] + " " + p["thumb"])
+            if not is_public(u)
+        ]
+        if leaked and not opts["allow_local_storage"]:
+            lines = "\n".join(f"    {t[:50]!r}: {u}" for t, u in leaked[:10])
+            raise CommandError(
+                f"{len(leaked)} reference(s) to local-only storage would be baked "
+                f"into the exported file -- broken for every real visitor, exactly "
+                f"as already happened once:\n{lines}\n"
+                "Fix the underlying image (no external_url on record to fall back "
+                "to), or pass --allow-local-storage to write it anyway for LOCAL "
+                "inspection only. Never commit or push that output."
+            )
 
         out = Path(opts["out"])
         io.open(out, "w", encoding="utf-8").write(

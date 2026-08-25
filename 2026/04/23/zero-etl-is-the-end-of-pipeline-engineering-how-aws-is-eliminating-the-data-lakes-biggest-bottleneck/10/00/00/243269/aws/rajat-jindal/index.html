@@ -456,7 +456,7 @@ main.ax-post{position:relative;max-width:100vw;overflow-x:hidden;background:#fff
 <div class="ax-post__eyebrow">Aws</div>
 <h1 class="ax-post__title">Zero-ETL Is the End of Pipeline Engineering: How AWS Is Eliminating the Data Lake’s Biggest Bottleneck</h1>
 <div class="ax-post__meta">April 23, 2026 &middot; Rajat Jindal</div>
-<img class="ax-post__hero" src="http://localhost:9000/aeonx-documents/blog/2026/4f9ed25d086b-diagram8_1.png" alt="Zero-ETL Is the End of Pipeline Engineering: How AWS Is Eliminating the Data Lake’s Biggest Bottleneck">
+<img class="ax-post__hero" src="https://www.aeonx.digital/wp-content/uploads/diagram8_1.png" alt="Zero-ETL Is the End of Pipeline Engineering: How AWS Is Eliminating the Data Lake’s Biggest Bottleneck">
 <div class="ax-post__body">
 <h2 style="margin-top: 32px; margin-bottom: 12px; padding-bottom: 6px; color: #02103E; font-size: 24px; font-weight: 700;" id="the-pipeline-problem-nobody-talks-about-in-board-meetings">The Pipeline Problem Nobody Talks About in Board Meetings</h2>
 <p style="line-height: 1.7; margin-bottom: 8px;">Every enterprise I work with has the same invisible cost centre: ETL pipelines. Hundreds of them. Running nightly. Breaking silently. Consuming 30-40% of data engineering capacity not to create value, but to move data from where it is to where it needs to be.</p>
@@ -490,7 +490,7 @@ main.ax-post{position:relative;max-width:100vw;overflow-x:hidden;background:#fff
 <p style="line-height: 1.7; margin-bottom: 8px;">Zero-ETL is not &#8220;better ETL.&#8221; It is the architectural elimination of the pipeline layer entirely.</p>
 <p style="line-height: 1.7; margin-bottom: 8px;">With Zero-ETL integrations, data replicates continuously from the operational source to the analytics or AI destination using native AWS infrastructure. There is no pipeline code to write. No scheduler to configure. No failure modes to handle. No transformation jobs to maintain.</p>
 <h3 style="margin-top: 20px; margin-bottom: 8px; color: #02103E; font-size: 18px; font-weight: 700;" id="how-it-works-architecturally">How It Works (Architecturally)</h3>
-<p><img decoding="async" src="http://localhost:9000/aeonx-documents/blog/inline/5e90f9ee3538-diagram8_1.png" alt="Traditional ETL vs Zero-ETL Comparison" style="width:100%;max-width:100%;height:auto;margin:12px 0;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,0.12);" loading="lazy" /></p>
+<p><img decoding="async" src="https://www.aeonx.digital/wp-content/uploads/diagram8_1.png" alt="Traditional ETL vs Zero-ETL Comparison" style="width:100%;max-width:100%;height:auto;margin:12px 0;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,0.12);" loading="lazy" /></p>
 <h3 style="margin-top: 20px; margin-bottom: 8px; color: #02103E; font-size: 18px; font-weight: 700;" id="available-zero-etl-integrations-on-aws-as-of-early-2026">Available Zero-ETL Integrations on AWS (as of early 2026)</h3>
 <table style="width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px;">
 <thead>
@@ -548,7 +548,7 @@ main.ax-post{position:relative;max-width:100vw;overflow-x:hidden;background:#fff
 <h3 style="margin-top: 20px; margin-bottom: 8px; color: #02103E; font-size: 18px; font-weight: 700;" id="velocity-enables-ai-experimentation">Velocity Enables AI Experimentation</h3>
 <p style="line-height: 1.7; margin-bottom: 8px;">The most expensive property of AI development is iteration speed. When every new AI use case requires a new ETL pipeline to get data into the right format and place, the cycle time for each experiment is weeks. When data is already available in Redshift and OpenSearch via Zero-ETL, a new AI use case requires only a Bedrock Knowledge Base configuration — deployable in hours.</p>
 <h3 style="margin-top: 20px; margin-bottom: 8px; color: #02103E; font-size: 18px; font-weight: 700;" id="example-crm-data-flowing-to-ai-without-pipelines">Example: CRM Data Flowing to AI Without Pipelines</h3>
-<p><img decoding="async" src="http://localhost:9000/aeonx-documents/blog/inline/64edab5c833e-diagram8_2.png" alt="CRM Data to AI Zero-ETL Pipeline on AWS" style="width:100%;max-width:100%;height:auto;margin:12px 0;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,0.12);" loading="lazy" /></p>
+<p><img decoding="async" src="https://www.aeonx.digital/wp-content/uploads/diagram8_2.png" alt="CRM Data to AI Zero-ETL Pipeline on AWS" style="width:100%;max-width:100%;height:auto;margin:12px 0;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,0.12);" loading="lazy" /></p>
 <p style="line-height: 1.7; margin-bottom: 8px;">In this pattern, CRM data flows from Aurora to Redshift via Zero-ETL (zero code), then from Redshift to S3 via scheduled UNLOAD (one command), then into Bedrock Knowledge Bases for AI consumption. Total custom pipeline code: zero. Total latency: minutes, not hours.</p>
 <h2 style="margin-top: 32px; margin-bottom: 12px; padding-bottom: 6px; color: #02103E; font-size: 24px; font-weight: 700;" id="implementation-setting-up-zero-etl-aurora-%e2%86%92-redshift">Implementation: Setting Up Zero-ETL (Aurora → Redshift)</h2>
 <h3 style="margin-top: 20px; margin-bottom: 8px; color: #02103E; font-size: 18px; font-weight: 700;" id="step-1-configure-the-aurora-source">Step 1: Configure the Aurora Source</h3>
