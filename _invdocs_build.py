@@ -309,8 +309,37 @@ JS = r'''<style id="ax-invdocs-css">
       try{ build(e); }catch(err){}
     });
   }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){ setTimeout(init,80); });
-  else setTimeout(init,80);
+
+  /* ---- LIVE LIBRARY ----
+     The DATA blob above is a build-time snapshot. It is the FALLBACK, not the
+     source of truth: the IR team publishes through the backend admin, and a
+     filing has to reach the site without waiting on a rebuild and a deploy.
+     Load order is deliberate -- fetch first, render once. Rendering the snapshot
+     and then re-rendering over it would show visitors a stale list that silently
+     rearranges itself, and on a page of regulatory filings that reads as the
+     record changing under them.
+     Set window.AX_API_BASE (see backend/README.md) to point at the API; with it
+     unset the page keeps rendering the snapshot, which is what staging wants. */
+  var API_BASE=(window.AX_API_BASE||
+    (/^(localhost|127\.0\.0\.1)$/.test(location.hostname)?'http://localhost:8000':''))
+    .replace(/\/+$/,'');
+
+  function start(){
+    if(!API_BASE||!window.fetch){ init(); return; }
+    var done=false;
+    function go(){ if(done) return; done=true; init(); }
+    /* A hanging API must not hold the document list hostage; the snapshot is
+       right there and a visitor waiting on a spinner is strictly worse. */
+    var timer=setTimeout(go,4000);
+    fetch(API_BASE+'/api/investor-documents/',{credentials:'omit'})
+      .then(function(r){ return r.ok?r.json():null; })
+      .then(function(live){ if(live&&Object.keys(live).length) DATA=live; })
+      .catch(function(){})
+      .then(function(){ clearTimeout(timer); go(); });
+  }
+
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){ setTimeout(start,80); });
+  else setTimeout(start,80);
 })();
 </script>
 '''

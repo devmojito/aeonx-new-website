@@ -18,3 +18,8 @@ __pycache__/
 *.py
 *.bak*
 assets.zip
+
+# The Django backend is deployed to AWS, not Vercel (Vercel serves the
+# static site only, and its filesystem is read-only so uploads cannot land
+# there anyway). Shipping it in the static bundle is pure weight.
+backend/

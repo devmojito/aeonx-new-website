@@ -1,0 +1,204 @@
+# AeonX backend
+
+Django + DRF service behind the static marketing site. Phase 1 covers the
+**investor document library**: the IR team uploads filings through an admin, and
+the live site picks them up without a rebuild or a deploy.
+
+## Why this exists
+
+The site used to hotlink every investor document to
+`www.aeonx.digital/wp-content/uploads/…` — the WordPress install this project
+replaces. Those links work only until DNS cuts over, at which point the entire
+public disclosure record 404s. Documents now live in object storage we control.
+
+## Stack
+
+| Concern     | Local                  | Production (AWS)             |
+|-------------|------------------------|------------------------------|
+| App         | Django 5.2 LTS + DRF   | same image                   |
+| Database    | Postgres 16 (container)| RDS Postgres, or a container |
+| Documents   | MinIO (S3 API)         | S3, ideally behind CloudFront|
+| Serving     | gunicorn               | gunicorn behind nginx/Caddy  |
+
+Storage goes through `django-storages`' S3 backend in both, so the S3 code path
+is exercised in development rather than first meeting it on deploy.
+
+Django 5.2 is the LTS line (security support to April 2028). It is pinned
+deliberately: AeonX runs this themselves, and a non-LTS release would strand
+them on an unsupported version inside a year.
+
+## Run it locally
+
+Needs Docker and Compose **v2** (`docker compose`). The retired `docker-compose`
+v1 crashes with `KeyError: 'ContainerConfig'` against Docker Engine 29.
+
+```bash
+cd backend
+cp .env.example .env        # defaults already work for local
+docker compose up -d
+```
+
+That waits for Postgres, creates the MinIO bucket with a public-read policy,
+applies migrations, creates the two permission groups, and starts gunicorn.
+
+| Service       | URL                            | Credentials                          |
+|---------------|--------------------------------|--------------------------------------|
+| Admin         | http://localhost:8000/admin/   | `admin` / `aeonx-local-admin-2026`   |
+| Public API    | http://localhost:8000/api/investor-documents/ | — |
+| MinIO console | http://localhost:9001          | `aeonxminio` / `aeonxminio_secret`   |
+| Postgres      | `localhost:5434`               | `aeonx` / `aeonx`                    |
+
+Postgres is on host port **5434** because 5432 and 5433 were already taken on the
+original dev machine. Only the host mapping is unusual; inside the network it is
+the normal 5432.
+
+### Running `manage.py` from the host
+
+The service names `db` and `minio` only resolve on the compose network, so a
+host-side command needs the overrides in `.env.host`:
+
+```bash
+set -a; . ./.env; . ./.env.host; set +a
+./.venv/bin/python manage.py <command>
+```
+
+## Importing the WordPress library
+
+One-time (but safely repeatable) migration of the harvested library:
+
+```bash
+python manage.py import_wordpress_docs --dry-run   # report only
+python manage.py import_wordpress_docs --limit 5   # trial run
+python manage.py import_wordpress_docs             # the real thing
+```
+
+Idempotent — a document that already has a stored file is skipped, so a run
+interrupted by a network wobble is resumed by running it again.
+
+Result of the migration performed on 2026-08-25:
+
+| Outcome | Count | Notes |
+|---|---|---|
+| Stored in our storage | 247 | downloaded from WordPress |
+| Listed but unavailable | 32 | on `ashokalcochem.com`, which no longer resolves |
+| Failed | 1 | see below |
+| Duplicates collapsed | 2 | identical rows in the harvest |
+| **Total unique** | **278** | from 280 harvested rows |
+
+**Needs the client:** the 32 unavailable documents cannot be recovered by
+anyone but AeonX — the host is gone. They stay listed (they are part of the
+public disclosure record; hiding them would misrepresent the filing history) and
+render as visible, non-clickable rows. Upload a file against one and it clears
+itself automatically.
+
+One document 404s **on the live WordPress site too**, so nothing was lost here:
+
+```
+BSE NEWSPAPER PUBLICATION RESULTS 31.03.2023.PDF
+https://www.aeonx.digital/241233-2-2/BSE%20Newspaper%20Publication%20Results%2031.03.2023.pdf
+```
+
+Its URL is a page-slug path rather than an uploads path — a pre-existing broken
+link in the WordPress content.
+
+## Connecting the website
+
+The document browser fetches the API at runtime and falls back to its build-time
+snapshot if the API is unreachable, so an outage degrades to slightly stale data
+rather than an empty page.
+
+Point it at the API by setting `window.AX_API_BASE` before the fragment runs:
+
+```html
+<script>window.AX_API_BASE = 'https://api.aeonx.digital';</script>
+```
+
+With it unset, `localhost` uses `http://localhost:8000` and everything else keeps
+rendering the baked snapshot — which is what staging wants, and means Vercel
+previews never point at a backend that may not exist yet.
+
+Add the API's origin to `CORS_ALLOWED_ORIGINS` (see `.env.example`).
+
+## Users and roles
+
+`bootstrap_roles` runs on every start and creates two groups:
+
+- **IR Contributor** — add and edit documents; cannot publish or delete. Work is
+  staged with *published* off and stays invisible to the public.
+- **IR Publisher** — the above, plus publishing and deleting.
+
+To add someone: *Admin → Users → Add user*, tick **Staff status**, assign one
+group. Staff status only opens the admin; the group decides what they can do
+inside it.
+
+Every change is recorded in Django's admin log (who, what, when), and each
+document keeps the user who first uploaded it.
+
+## Deploying to AWS
+
+Recommended shape: **EC2 + Docker Compose**. It is the same compose file that
+runs locally, one box for the AeonX team to manage, and the cheapest option at
+this volume (~300 documents, ~90 MB). Move to ECS/Fargate only if the admin
+genuinely outgrows a single instance — nothing here would need rewriting.
+
+1. **S3 bucket** for documents. Objects must be publicly readable — these are
+   public filings, and investors, exchanges and regulators bookmark and cite the
+   URLs. That is also why `querystring_auth` is off: a presigned URL expires and
+   would turn every saved link into an error.
+
+   ```json
+   {
+     "Version": "2012-10-17",
+     "Statement": [{
+       "Effect": "Allow",
+       "Principal": "*",
+       "Action": "s3:GetObject",
+       "Resource": "arn:aws:s3:::aeonx-documents/*"
+     }]
+   }
+   ```
+
+   Grant only `GetObject` — never `ListBucket`, or the whole filing history
+   becomes enumerable.
+
+2. **Instance role** with `s3:PutObject`/`GetObject`/`DeleteObject` on that
+   bucket. Then leave `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` **empty** and
+   boto3 picks the role up automatically — no long-lived keys on the box.
+
+3. **`.env` for production:**
+
+   ```ini
+   DJANGO_DEBUG=false
+   DJANGO_SECRET_KEY=<50+ random chars, not the dev one>
+   DJANGO_ALLOWED_HOSTS=api.aeonx.digital
+   DJANGO_CSRF_TRUSTED_ORIGINS=https://api.aeonx.digital
+
+   POSTGRES_HOST=<rds endpoint>
+   POSTGRES_PASSWORD=<strong>
+
+   USE_S3=true
+   AWS_STORAGE_BUCKET_NAME=aeonx-documents
+   AWS_S3_REGION_NAME=ap-south-1
+   AWS_S3_CUSTOM_DOMAIN=docs.aeonx.digital   # CloudFront in front of the bucket
+   # delete AWS_S3_ENDPOINT_URL and AWS_S3_PATH_STYLE — those are MinIO-only
+   # delete the DJANGO_SUPERUSER_* lines and run createsuperuser by hand
+
+   CORS_ALLOW_ALL_ORIGINS=false
+   CORS_ALLOWED_ORIGINS=https://aeonx.digital,https://www.aeonx.digital
+   ```
+
+4. **TLS** — terminate at Caddy, nginx, or an ALB. Django already trusts
+   `X-Forwarded-Proto`, and turns on HSTS and secure cookies whenever
+   `DJANGO_DEBUG=false`.
+
+5. **Backups** — RDS snapshots plus S3 versioning. The documents *are* the
+   product; the database only indexes them.
+
+### Before going live
+
+- [ ] `DJANGO_SECRET_KEY` regenerated, `DJANGO_DEBUG=false`
+- [ ] Local `admin` account deleted or given a real password
+- [ ] `CORS_ALLOW_ALL_ORIGINS=false` with real origins listed
+- [ ] S3 bucket policy grants `GetObject` only
+- [ ] The 32 unavailable documents chased with the client
+- [ ] `window.AX_API_BASE` set on the production site build

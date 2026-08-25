@@ -4,7 +4,7 @@
 Run after _gen.py / _build_all.py (which already calls this via _mobile.py's
 sibling step). Everything here is idempotent.
 """
-import glob, os, re
+import glob, os, re, sys
 
 # Figma ships the Great Place To Work badge as a 1606x663 banner (badge plus
 # decorative corner art) but the design slot is portrait (AR ~0.59), so the raw
@@ -70,7 +70,8 @@ SCOPED = [
     ('investor-relations/index.html',                     'ax-invdocs-css', '_invdocs.html'),
     ('investor-relations/shareholding-pattern/index.html','ax-invdocs-css', '_invdocs.html'),
 ]
-SCOPED = [(sfx, sent, open(os.path.join(_HERE, fn), encoding='utf-8').read())
+# 4th element is the source filename, kept so `--refresh <file>` can name it.
+SCOPED = [(sfx, sent, open(os.path.join(_HERE, fn), encoding='utf-8').read(), fn)
           for sfx, sent, fn in SCOPED]
 # Preloader is three pieces on purpose: the CSS + opt-in decision must run before first
 # paint (head), the overlay markup must exist in the HTML so there is no flash of
@@ -151,8 +152,34 @@ def fix_gptw_sizing(s):
         return 'style="%s"' % st
     return re.sub(r'style="([^"]*)"', sub, s)
 
+def strip_fragment(s, sentinel):
+    """Cut an already-injected fragment out of a page so it can be re-injected.
+
+    Injection is guarded by `sentinel not in s`, which makes the whole pass
+    idempotent but also means an EDITED fragment never reaches a page that
+    already has the old one. Every fragment is emitted as
+    `<style id="<sentinel>"> ... </script>` with exactly one closing script tag,
+    so that span is the unit to remove.
+    """
+    start = s.find('<style id="%s">' % sentinel)
+    if start == -1:
+        return s, False
+    end = s.find('</script>', start)
+    if end == -1:                      # not the expected shape -- leave it alone
+        return s, False
+    end += len('</script>')
+    while s[end:end + 1] == '\n':
+        end += 1
+    return s[:start] + s[end:], True
+
+
 def main():
-    stats = {'gptw': 0, 'mobnav': 0, 'ctawash': 0, 'burst': 0, 'cursor': 0, 'preload': 0, 'navload': 0, 'counters': 0, 'mobfx': 0, 'scoped': 0, 'hover': 0, 'scrollrow': 0}
+    # `--refresh` re-injects scoped fragments whose source file has been edited.
+    # Off by default: a plain run stays idempotent, which is what every other
+    # caller of this script expects.
+    refresh = '--refresh' in sys.argv
+    only = [a for a in sys.argv[1:] if not a.startswith('-')]
+    stats = {'gptw': 0, 'mobnav': 0, 'ctawash': 0, 'burst': 0, 'cursor': 0, 'preload': 0, 'navload': 0, 'counters': 0, 'mobfx': 0, 'scoped': 0, 'hover': 0, 'scrollrow': 0, 'refreshed': 0}
     bids = burst_ids()
     for f in glob.glob('**/index.html', recursive=True) + ['_chrome.html']:
         try:
@@ -194,8 +221,14 @@ def main():
             s = s.replace('<body>', '<body>\n' + PRE_BODY, 1)
             s = s.replace('</body>', PRE_JS + '\n</body>', 1)
             stats['preload'] += 1
-        for sfx, sent, frag in SCOPED:
-            if f.replace(os.sep, '/').endswith(sfx) and sent not in s and '</body>' in s:
+        for sfx, sent, frag, fn in SCOPED:
+            if not f.replace(os.sep, '/').endswith(sfx):
+                continue
+            if refresh and (not only or sent in only or fn in only):
+                s, cut = strip_fragment(s, sent)
+                if cut:
+                    stats['refreshed'] += 1
+            if sent not in s and '</body>' in s:
                 s = s.replace('</body>', frag + '\n</body>', 1)
                 stats['scoped'] += 1
         if f.replace(os.sep, '/').endswith('index.html') and DISC_VEC in s:
@@ -217,7 +250,7 @@ def main():
                 stats['burst'] += 1
         if s != o:
             open(f, 'w', encoding='utf-8').write(s)
-    print(f"postbuild: gptw {stats['gptw']}, mobile-nav {stats['mobnav']}, "
+    print(f"postbuild: refreshed {stats['refreshed']}, gptw {stats['gptw']}, mobile-nav {stats['mobnav']}, "
           f"cta-wash {stats['ctawash']}, hero-burst-blur {stats['burst']}, "
           f"cursor {stats['cursor']}, preloader {stats['preload']}, "
           f"nav-loader {stats['navload']}, counters {stats['counters']}, "

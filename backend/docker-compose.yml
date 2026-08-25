@@ -1,0 +1,45 @@
+# Needs Docker Compose v2+ (`docker compose`, not the retired `docker-compose`
+# v1, which crashes with KeyError: 'ContainerConfig' against Docker Engine 29).
+#
+# Ordering is handled by entrypoint.py rather than `depends_on`, because a
+# container reporting "up" is not the same as Postgres being ready to accept a
+# query -- and that gap does not exist in compose on AWS either way.
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-aeonx}
+      POSTGRES_USER: ${POSTGRES_USER:-aeonx}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aeonx}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"        # host port only for psql access; 5432/5433 already taken here
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${AWS_ACCESS_KEY_ID:-aeonxminio}
+      MINIO_ROOT_PASSWORD: ${AWS_SECRET_ACCESS_KEY:-aeonxminio_secret}
+    volumes:
+      - miniodata:/data
+    ports:
+      - "9000:9000"        # S3 API
+      - "9001:9001"        # web console
+    restart: unless-stopped
+
+  api:
+    build: .
+    env_file: .env
+    volumes:
+      - .:/app           # live reload while developing
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  miniodata:

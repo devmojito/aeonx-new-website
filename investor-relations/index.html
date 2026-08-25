@@ -4425,24 +4425,7 @@ document.addEventListener("DOMContentLoaded",function(){
 .ax-inv-input{position:absolute;left:0;top:0;width:100%;height:100%;border:0;outline:none;
   background:transparent;padding:0;font-family:'Nunito Sans',sans-serif;color:rgb(35,39,46)}
 .ax-inv-empty{position:absolute;font-family:'Nunito Sans',sans-serif;color:rgb(134,149,170)}
-/* The selected look is baked into whichever item Figma drew as selected -- the
-   Annual Report rail plate and the "All" year chip -- so the highlight sat on the
-   first item forever. The colours are lifted off those elements at build time and
-   re-applied inline as the selection moves. Deliberately NOT done with a custom
-   property: background-color:var(--x) computed to transparent here even with the
-   property inheriting a valid rgb(), and an invalid var takes the declaration with
-   it, so the plate just went blank. */
-.ax-inv-plate{transition:background-color .18s ease,border-color .18s ease}
-.ax-inv-chip{cursor:pointer;transition:background-color .18s ease,border-color .18s ease}
-.ax-inv-chip.is-off,.ax-inv-chiptx.is-off{opacity:.4;cursor:default}
-.ax-inv-chiptx{cursor:pointer;transition:color .18s ease}
-.ax-inv-badge{transition:background-color .18s ease}
-.ax-inv-badgetx{transition:color .18s ease}
-/* These are controls: without this the labels take the text I-beam and a click
-   drag-selects "FY 2024-25" instead of feeling like a button. */
-.ax-inv-cat,.ax-inv-plate,.ax-inv-chip,.ax-inv-chiptx,.ax-inv-badge,.ax-inv-badgetx{
-  user-select:none;-webkit-user-select:none}
-@media (prefers-reduced-motion:reduce){.ax-inv-row,.ax-inv-cat,.ax-inv-plate,.ax-inv-chip,.ax-inv-badge{transition:none}}
+@media (prefers-reduced-motion:reduce){.ax-inv-row,.ax-inv-cat{transition:none}}
 </style>
 <script>
 (function(){
@@ -4506,34 +4489,6 @@ document.addEventListener("DOMContentLoaded",function(){
     if(railTexts.length<2) return;
     railTexts.sort(function(a,b){ return a.b.t-b.b.t; });
     counts.sort(function(a,b){ return a.b.t-b.b.t; });
-
-    /* --- the fiscal-year chip row under the search bar ---
-       Chips are a HORIZONTAL row ("All  FY 2024-25  FY 2023-24 ..."), which is how
-       they are told apart from the vertical rail: same top, two or more of them, at
-       least one an FY. Without that test "All" reads as a rail category (its right
-       edge falls left of the search LABEL, which is inset inside the search bar) and
-       it was silently joining the rail as a fourth category. */
-    var chipRE=/^(all|fy\s*\d{4}\s*[-–]\s*\d{2,4})$/i;
-    var chipTexts=[];
-    kids.forEach(function(k,i){
-      var b=boxes[i]; if(!b||!/g-t/.test(k.className||'')) return;
-      if(b.t<sb.t-1.6||b.t>sb.t+18) return;
-      if(chipRE.test(txt(k))) chipTexts.push({el:k,b:b,t:txt(k)});
-    });
-    var rowsByTop={};
-    chipTexts.forEach(function(c){
-      var key=Math.round(c.b.t*4); (rowsByTop[key]||(rowsByTop[key]=[])).push(c); });
-    var chips=null;
-    Object.keys(rowsByTop).forEach(function(key){
-      var g=rowsByTop[key];
-      if(g.length>=2&&g.some(function(x){ return /^fy/i.test(x.t); })) chips=g;
-    });
-    if(chips){
-      chips.sort(function(a,b){ return a.b.l-b.b.l; });
-      railTexts=railTexts.filter(function(r){ return chips.indexOf(r)<0&&!chips.some(
-        function(c){ return c.el===r.el; }); });
-      if(railTexts.length<2) return;
-    }
 
     var ds=datasetFor(railTexts.map(function(r){ return r.t; }));
     if(!ds) return;
@@ -4640,51 +4595,7 @@ document.addEventListener("DOMContentLoaded",function(){
       return frag;
     }
 
-    /* Every painted box that snugly wraps a label, smallest first. Figma exports a
-       pill as a fill box AND a border box on the identical rect, so a caller that
-       takes only the smallest paints half the control. Anything more than 3x the
-       smallest is a container, not the plate. */
-    function platesAround(lb){
-      var hits=[];
-      kids.forEach(function(k,ki){
-        var b=boxes[ki]; if(!b||!/g-b/.test(k.className||'')) return;
-        if(lb.l<b.l-0.3||lb.r>b.r+0.3||lb.t<b.t-0.5||lb.b>b.b+0.5) return;
-        hits.push({el:k,a:b.w*b.h});
-      });
-      hits.sort(function(x,y){ return x.a-y.a; });
-      if(!hits.length) return [];
-      var lim=hits[0].a*3;
-      return hits.filter(function(h){ return h.a<=lim; }).map(function(h){ return h.el; });
-    }
-
-    var active=0, query='', year=null, chipWired=[];
-    /* selected-state paint, captured from the design (see the CSS note) */
-    var PLATE_ON='rgb(254,245,238)', CHIP_ON='rgb(253,231,215)',
-        CHIP_ON_BD='rgb(223,63,23)', CHIP_OFF_BD='rgb(236,238,242)',
-        CHIP_ON_TX='rgb(223,63,23)', CHIP_OFF_TX='',
-        /* the orange accent bar on the rail plate's left edge, and the count
-           badge's pill + number -- all baked onto the design-selected item too */
-        PLATE_BD_ON='rgb(223,63,23)', PLATE_BD_OFF='rgb(213,218,226)',
-        BADGE_ON='rgb(253,231,215)', BADGE_OFF='rgb(236,238,242)',
-        BADGE_TX_ON='rgb(223,63,23)', BADGE_TX_OFF='rgb(82,96,119)';
-
-    /* A document's fiscal year: the one named in its title when it names one
-       ("Annual Report 2024-25"), else the Indian FY (Apr-Mar) of its date. Titles
-       win because most of this library was re-uploaded to WordPress in one batch,
-       so the dates cluster on the upload month, not the reporting period. */
-    var MON=['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
-    function fyOf(d){
-      var m=/^([A-Za-z]{3})[a-z]*\s+(\d{4})$/.exec((d||'').trim()); if(!m) return null;
-      var mo=MON.indexOf(m[1].toLowerCase())+1; if(!mo) return null;
-      var y=parseInt(m[2],10); return mo>=4?y:y-1;
-    }
-    function inFY(doc,fy){
-      if(fy==null) return true;
-      var t=doc.t||'', s2=String(fy+1).slice(2);
-      if(t.indexOf(fy+'-'+s2)>-1||t.indexOf(fy+'-'+(fy+1))>-1) return true;
-      return fyOf(doc.d)===fy;
-    }
-
+    var active=0, query='';
     function docsFor(i){
       var r=railTexts[i]; if(!r) return [];
       if(norm(r.t)==='all'){
@@ -4696,26 +4607,8 @@ document.addEventListener("DOMContentLoaded",function(){
       return hit?hit.docs:[];
     }
     function render(){
-      var base=docsFor(active).filter(function(d){
+      var list0=docsFor(active).filter(function(d){
         return !query||d.t.toLowerCase().indexOf(query)>-1; });
-      /* A year that has nothing in the newly-picked category would otherwise strand
-         the visitor on an empty list with a chip they cannot see is dead. Fall back
-         to All. */
-      if(year!=null&&!base.some(function(d){ return inFY(d,year); })) year=null;
-      var list0=base.filter(function(d){ return inFY(d,year); });
-      chipWired.forEach(function(c){
-        c.dead=(c.fy!=null&&!base.some(function(d){ return inFY(d,c.fy); }));
-        var on=(c.fy===year&&!c.dead);
-        (c.pills||[]).forEach(function(p){
-          p.classList.toggle('is-off',c.dead);
-          p.style.backgroundColor=on?CHIP_ON:'transparent';
-          if(getComputedStyle(p).borderTopWidth!=='0px')
-            p.style.borderColor=on?CHIP_ON_BD:CHIP_OFF_BD;
-        });
-        c.el.classList.toggle('is-off',c.dead);
-        c.el.style.color=on?CHIP_ON_TX:CHIP_OFF_TX;
-        c.el.style.fontWeight=on?'700':'';
-      });
       host.innerHTML='';
       list0.forEach(function(d,i){ host.appendChild(makeRow(d,i,i===0&&!query)); });
       if(!list0.length){
@@ -4727,19 +4620,7 @@ document.addEventListener("DOMContentLoaded",function(){
         host.appendChild(e);
       }
       if(footer) footer.textContent=list0.length+(list0.length===1?' document':' documents');
-      railTexts.forEach(function(r,i){
-        var on=(i===active);
-        r.el.classList.toggle('is-on',on);
-        (r.plates||[]).forEach(function(p){
-          p.style.backgroundColor=(on?PLATE_ON:'transparent'); });
-        (r.bdPlates||[]).forEach(function(p){
-          p.style.borderLeftColor=(on?PLATE_BD_ON:PLATE_BD_OFF); });
-        if(r.badge){
-          r.badge.pills.forEach(function(p){
-            p.style.backgroundColor=(on?BADGE_ON:BADGE_OFF); });
-          r.badge.el.style.color=(on?BADGE_TX_ON:BADGE_TX_OFF);
-        }
-      });
+      railTexts.forEach(function(r,i){ r.el.classList.toggle('is-on',i===active); });
       host.scrollTop=0;
     }
 
@@ -4753,31 +4634,14 @@ document.addEventListener("DOMContentLoaded",function(){
          as its words, so a click on the rest of the row -- most of it, and where the
          highlight makes it look clickable -- landed on nothing. Take the row plate
          behind the label when there is one, and hit-test against that. */
-      /* Figma stacks a fill box and a border box on the same rect, so "the plate" is
-         usually TWO elements -- painting only the smaller one left the other still
-         showing the baked peach. Take every box that snugly bounds the label. */
-      var plates=platesAround(r.b), row=plates[0]||null;
+      var row=null, rowA=Infinity;
+      kids.forEach(function(k,ki){
+        var b=boxes[ki]; if(!b||!/g-b/.test(k.className||'')) return;
+        if(r.b.l<b.l-0.3||r.b.r>b.r+0.3||r.b.t<b.t-0.5||r.b.b>b.b+0.5) return;
+        var a=b.w*b.h; if(a<rowA){ rowA=a; row=k; }
+      });
       var hitEl=row||r.el;
       hitEl.classList.add('ax-inv-cat');
-      /* Lift the design's selected look off whichever category Figma drew as
-         selected, then clear it: from here the highlight is driven by render().
-         The look is THREE things, not one -- the plate fill, the orange accent bar
-         on the plate's left edge, and the count badge (peach pill, orange number).
-         Moving only the fill left the accent and the badge stuck on Annual Report. */
-      var wasOn=false;
-      plates.forEach(function(p){
-        var pbg=getComputedStyle(p).backgroundColor;
-        if(pbg&&pbg!=='rgba(0, 0, 0, 0)'&&pbg!=='transparent'){ PLATE_ON=pbg; wasOn=true; }
-        p.style.backgroundColor='';
-        p.classList.add('ax-inv-plate');
-      });
-      r.plates=plates;
-      r.bdPlates=plates.filter(function(p){
-        var cs=getComputedStyle(p);
-        if(cs.borderLeftWidth==='0px') return false;
-        if(wasOn) PLATE_BD_ON=cs.borderLeftColor; else PLATE_BD_OFF=cs.borderLeftColor;
-        return true;
-      });
       /* document capture: the chrome CTA pass owns these labels already */
       document.addEventListener('click',function(e){
         var t=e.target, hit=(t&&t.nodeType===1&&(hitEl===t||hitEl.contains(t)||r.el===t||r.el.contains(t)));
@@ -4795,55 +4659,7 @@ document.addEventListener("DOMContentLoaded",function(){
         if(badge) return;
         if(c.b.t+c.b.h/2>=r.b.t-0.4&&c.b.t+c.b.h/2<=r.b.b+0.4) badge=c;
       });
-      if(badge){
-        badge.el.textContent=String(docsFor(i).length);
-        badge.el.classList.add('ax-inv-badgetx');
-        var btx=getComputedStyle(badge.el).color;
-        var bpills=platesAround(badge.b).filter(function(p){ return plates.indexOf(p)<0; });
-        var bbg=null;
-        bpills.forEach(function(p){
-          var bg=getComputedStyle(p).backgroundColor;
-          if(bg&&bg!=='rgba(0, 0, 0, 0)'&&bg!=='transparent') bbg=bg;
-          p.classList.add('ax-inv-badge');
-        });
-        if(wasOn){ if(bbg) BADGE_ON=bbg; BADGE_TX_ON=btx; }
-        else     { if(bbg) BADGE_OFF=bbg; BADGE_TX_OFF=btx; }
-        r.badge={el:badge.el,pills:bpills};
-      }
-    });
-
-    /* --- year chips: filter the list, and carry the selected pill with them --- */
-    (chips||[]).forEach(function(c){
-      var pills=platesAround(c.b), pill=pills[0]||null;
-      pills.forEach(function(p){
-        var cs=getComputedStyle(p), bg=cs.backgroundColor;
-        if(bg&&bg!=='rgba(0, 0, 0, 0)'&&bg!=='transparent'){
-          CHIP_ON=bg; CHIP_ON_BD=cs.borderTopColor;
-          CHIP_ON_TX=getComputedStyle(c.el).color;
-        } else if(cs.borderTopWidth!=='0px'){
-          CHIP_OFF_BD=cs.borderTopColor;
-          CHIP_OFF_TX=getComputedStyle(c.el).color;
-        }
-        p.classList.add('ax-inv-chip');
-      });
-      c.el.classList.add('ax-inv-chiptx');
-      var m=/(\d{4})\s*[-–]\s*\d{2,4}/.exec(c.t);
-      var rec={el:c.el,pill:pill,pills:pills,fy:m?parseInt(m[1],10):null,dead:false};
-      chipWired.push(rec);
-      var hitEl=pill||c.el;
-      hitEl.setAttribute('role','button');
-      hitEl.setAttribute('tabindex','0');
-      var pick=function(){ if(rec.dead) return; year=rec.fy; render(); };
-      /* document capture, like the rail: the chrome CTA pass owns these pills */
-      document.addEventListener('click',function(e){
-        var t=e.target, hit=(t&&t.nodeType===1&&(hitEl===t||hitEl.contains(t)||c.el===t||c.el.contains(t)));
-        if(!hit&&(e.clientX||e.clientY)){ var q=hitEl.getBoundingClientRect();
-          hit=q.width>0&&e.clientX>=q.left&&e.clientX<=q.right&&e.clientY>=q.top&&e.clientY<=q.bottom; }
-        if(!hit) return;
-        e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); pick();
-      },true);
-      hitEl.addEventListener('keydown',function(e){
-        if(e.key==='Enter'||e.key===' '){ e.preventDefault(); pick(); } });
+      if(badge) badge.el.textContent=String(docsFor(i).length);
     });
 
     /* the designed "Search" label becomes a real field */
@@ -4871,8 +4687,37 @@ document.addEventListener("DOMContentLoaded",function(){
       try{ build(e); }catch(err){}
     });
   }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){ setTimeout(init,80); });
-  else setTimeout(init,80);
+
+  /* ---- LIVE LIBRARY ----
+     The DATA blob above is a build-time snapshot. It is the FALLBACK, not the
+     source of truth: the IR team publishes through the backend admin, and a
+     filing has to reach the site without waiting on a rebuild and a deploy.
+     Load order is deliberate -- fetch first, render once. Rendering the snapshot
+     and then re-rendering over it would show visitors a stale list that silently
+     rearranges itself, and on a page of regulatory filings that reads as the
+     record changing under them.
+     Set window.AX_API_BASE (see backend/README.md) to point at the API; with it
+     unset the page keeps rendering the snapshot, which is what staging wants. */
+  var API_BASE=(window.AX_API_BASE||
+    (/^(localhost|127\.0\.0\.1)$/.test(location.hostname)?'http://localhost:8000':''))
+    .replace(/\/+$/,'');
+
+  function start(){
+    if(!API_BASE||!window.fetch){ init(); return; }
+    var done=false;
+    function go(){ if(done) return; done=true; init(); }
+    /* A hanging API must not hold the document list hostage; the snapshot is
+       right there and a visitor waiting on a spinner is strictly worse. */
+    var timer=setTimeout(go,4000);
+    fetch(API_BASE+'/api/investor-documents/',{credentials:'omit'})
+      .then(function(r){ return r.ok?r.json():null; })
+      .then(function(live){ if(live&&Object.keys(live).length) DATA=live; })
+      .catch(function(){})
+      .then(function(){ clearTimeout(timer); go(); });
+  }
+
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){ setTimeout(start,80); });
+  else setTimeout(start,80);
 })();
 </script>
 

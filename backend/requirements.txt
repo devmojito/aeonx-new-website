@@ -1,0 +1,12 @@
+# Pinned to the Django 5.2 LTS line (security support through April 2028) --
+# this is a client deliverable AeonX runs themselves, so a non-LTS release
+# would strand them on an unsupported version inside a year.
+Django==5.2.17
+djangorestframework==3.16.1
+django-cors-headers==4.9.0
+psycopg[binary]==3.2.10
+django-storages==1.14.6
+boto3==1.40.47
+python-dotenv==1.1.1
+gunicorn==23.0.0
+whitenoise==6.11.0
