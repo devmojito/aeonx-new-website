@@ -1,0 +1,12 @@
+{% extends "manage/base.html" %}
+{% block title %}Sections{% endblock %}
+{% block heading %}Sections &amp; categories{% endblock %}
+{% block content %}
+<p style="color:var(--body);margin:0 0 18px;max-width:640px">
+  Sections are the investor pages on the website; categories are the tabs inside them.
+  A section's key is fixed — the website looks it up by that key — so sections are
+  managed in the Django admin. Categories can be added and renamed here.
+</p>
+<div id="sections"></div>
+{% endblock %}
+{% block js %}<script>AX.taxonomy();</script>{% endblock %}

@@ -1,0 +1,61 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}Admin{% endblock %} · AeonX Digital</title>
+<link rel="icon" href="{% static 'manage/aeonx-logo.svg' %}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700;6..12,800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'manage/app.css' %}">
+{# Unsafe methods need this; app.js reads it rather than parsing cookies. #}
+<meta name="csrf-token" content="{{ csrf_token }}">
+</head>
+<body>
+<div class="shell">
+  <aside class="side">
+    <div class="side__brand">
+      <img src="{% static 'manage/aeonx-logo.svg' %}" alt="AeonX Digital">
+      <span>Content admin</span>
+    </div>
+    <nav class="side__nav">
+      <a class="side__link {% if active == 'dashboard' %}is-on{% endif %}" href="{% url 'manage:dashboard' %}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+        Dashboard
+      </a>
+      <a class="side__link {% if active == 'documents' %}is-on{% endif %}" href="{% url 'manage:documents' %}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Documents
+      </a>
+      <a class="side__link {% if active == 'submissions' %}is-on{% endif %}" href="{% url 'manage:submissions' %}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><polyline points="4 6 12 13 20 6"/></svg>
+        Enquiries
+        <span class="side__badge" id="nav-new" hidden></span>
+      </a>
+      <a class="side__link {% if active == 'taxonomy' %}is-on{% endif %}" href="{% url 'manage:taxonomy' %}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        Sections
+      </a>
+    </nav>
+    <div class="side__foot">
+      <b>{{ request.user.get_full_name|default:request.user.username }}</b>
+      {% if request.user.is_superuser %}<a href="/admin/">Django admin</a> · {% endif %}
+      <a href="{% url 'manage:logout' %}">Sign out</a>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="top">
+      <h1>{% block heading %}{% endblock %}</h1>
+      {% block topactions %}{% endblock %}
+    </header>
+    <div class="wrap">{% block content %}{% endblock %}</div>
+  </main>
+</div>
+
+<div class="toasts" id="toasts"></div>
+<script src="{% static 'manage/app.js' %}"></script>
+{% block js %}{% endblock %}
+</body>
+</html>

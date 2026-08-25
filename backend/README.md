@@ -47,7 +47,8 @@ applies migrations, creates the two permission groups, and starts gunicorn.
 
 | Service       | URL                            | Credentials                          |
 |---------------|--------------------------------|--------------------------------------|
-| Admin         | http://localhost:8000/admin/   | `admin` / `aeonx-local-admin-2026`   |
+| **Admin**     | http://localhost:8000/manage/  | `admin` / `aeonx-local-admin-2026`   |
+| Django admin  | http://localhost:8000/admin/   | same (superusers only)               |
 | Public API    | http://localhost:8000/api/investor-documents/ | — |
 | MinIO console | http://localhost:9001          | `aeonxminio` / `aeonxminio_secret`   |
 | Postgres      | `localhost:5434`               | `aeonx` / `aeonx`                    |
@@ -160,6 +161,20 @@ Rate limiting counts through Django's cache, which is configured as
 `DatabaseCache` on purpose: the default in-memory cache is per-process, and
 with three gunicorn workers each would keep its own count, letting a caller
 exceed the limit roughly threefold. `createcachetable` runs at startup.
+
+## The admin
+
+`/manage/` is the tool the IR team uses: dashboard, documents, enquiries and
+categories, branded to match the website. Vanilla JS with no build step -- the
+same choice the website itself makes -- so there is nothing to compile and
+nothing to keep working beyond Django.
+
+`/admin/` is Django's own admin, kept for superusers as an escape hatch: user
+management, and anything the custom UI does not model. Both write to the same
+audit log, so a document's history is one list regardless of which was used.
+
+Roles are enforced on the server, not merely hidden in the UI: a Contributor
+who crafts a delete or publish request by hand gets a 403.
 
 ## Users and roles
 

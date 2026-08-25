@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "investors",
     "contacts",
+    "manage_ui",
 ]
 
 MIDDLEWARE = [
@@ -137,6 +138,11 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_DIRS = [BASE_DIR / "static"]
+
+# Send people to the custom admin, not Django's, after a login redirect.
+LOGIN_URL = "/manage/login/"
+LOGIN_REDIRECT_URL = "/manage/"
 
 # Documents go to S3-compatible object storage: MinIO locally, real S3 on AWS.
 # Identical code path in both, so the S3 behaviour is exercised in development

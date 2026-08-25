@@ -1,0 +1,26 @@
+{% extends "manage/base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block heading %}Dashboard{% endblock %}
+{% block content %}
+<div class="stats" id="stats"></div>
+
+<div class="card" id="missing-card" hidden style="margin-bottom:22px">
+  <div class="card__hd">
+    <h2>Documents with no file</h2>
+    <a class="btn btn--sm" href="{% url 'manage:documents' %}?status=missing">Review</a>
+  </div>
+  <div class="card__bd" style="color:var(--body)">
+    These filings are listed on the website but have no downloadable file — they were
+    lost when the previous host was retired. They show as greyed-out rows to visitors.
+    Uploading a file against one fixes it automatically.
+  </div>
+</div>
+
+<div class="card">
+  <div class="card__hd"><h2>Recently added</h2>
+    <a class="btn btn--sm" href="{% url 'manage:documents' %}?sort=recent">All documents</a>
+  </div>
+  <div class="tbl-scroll"><table class="tbl" id="recent"><tbody></tbody></table></div>
+</div>
+{% endblock %}
+{% block js %}<script>AX.dashboard();</script>{% endblock %}

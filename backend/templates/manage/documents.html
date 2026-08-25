@@ -1,0 +1,44 @@
+{% extends "manage/base.html" %}
+{% block title %}Documents{% endblock %}
+{% block heading %}Documents{% endblock %}
+{% block topactions %}
+<button class="btn btn--primary" id="add-doc">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  Upload document
+</button>
+{% endblock %}
+{% block content %}
+<div class="toolbar">
+  <input class="input toolbar__grow" id="f-search" type="search" placeholder="Search by title or category…">
+  <select class="select" id="f-section"><option value="">All sections</option></select>
+  <select class="select" id="f-category"><option value="">All categories</option></select>
+  <select class="select" id="f-status">
+    <option value="">Any status</option>
+    <option value="published">Published</option>
+    <option value="unpublished">Unpublished</option>
+    <option value="missing">Missing file</option>
+  </select>
+</div>
+
+<div class="toolbar" id="bulkbar" hidden>
+  <strong id="bulk-n"></strong>
+  <button class="btn btn--sm" data-bulk="publish">Publish</button>
+  <button class="btn btn--sm" data-bulk="unpublish">Unpublish</button>
+  <button class="btn btn--sm" id="bulk-clear">Clear</button>
+</div>
+
+<div class="card">
+  <div class="tbl-scroll">
+    <table class="tbl">
+      <thead><tr>
+        <th style="width:34px"><input type="checkbox" id="check-all"></th>
+        <th>Document</th><th>Section</th><th>Date</th><th>File</th><th>Status</th>
+        <th style="text-align:right">Actions</th>
+      </tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+  <div class="pager" id="pager"></div>
+</div>
+{% endblock %}
+{% block js %}<script>AX.documents();</script>{% endblock %}

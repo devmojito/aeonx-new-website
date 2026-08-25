@@ -1,0 +1,39 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sign in · AeonX Digital</title>
+<link rel="icon" href="{% static 'manage/aeonx-logo.svg' %}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700;6..12,800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'manage/app.css' %}">
+</head>
+<body>
+<div class="login">
+  <div class="login__box">
+    <form class="login__card" method="post" novalidate>
+      {% csrf_token %}
+      <img class="login__logo" src="{% static 'manage/aeonx-logo.svg' %}" alt="AeonX Digital">
+      <h1 style="margin-bottom:4px">Content admin</h1>
+      <p style="color:var(--body);margin:0 0 20px;font-size:13px">
+        Investor documents and website enquiries.
+      </p>
+      {% if error %}<div class="login__err">{{ error }}</div>{% endif %}
+      <input type="hidden" name="next" value="{{ next }}">
+      <div class="field">
+        <label class="label" for="id_username">Username</label>
+        <input class="input" id="id_username" name="username" autocomplete="username" autofocus required>
+      </div>
+      <div class="field">
+        <label class="label" for="id_password">Password</label>
+        <input class="input" id="id_password" name="password" type="password" autocomplete="current-password" required>
+      </div>
+      <button class="btn btn--primary" type="submit" style="width:100%;justify-content:center">Sign in</button>
+    </form>
+    <p class="login__foot">AeonX Digital · authorised users only</p>
+  </div>
+</div>
+</body>
+</html>

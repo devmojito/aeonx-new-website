@@ -1,0 +1,33 @@
+{% extends "manage/base.html" %}
+{% block title %}Enquiries{% endblock %}
+{% block heading %}Enquiries{% endblock %}
+{% block topactions %}
+<a class="btn" href="{% url 'manage:api-submissions-export' %}">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+  Export CSV
+</a>
+{% endblock %}
+{% block content %}
+<div class="toolbar">
+  <input class="input toolbar__grow" id="f-search" type="search" placeholder="Search by name, company or email…">
+  <select class="select" id="f-status">
+    <option value="new">New</option>
+    <option value="">All</option>
+    <option value="handled">Handled</option>
+  </select>
+</div>
+
+<div class="card">
+  <div class="tbl-scroll">
+    <table class="tbl">
+      <thead><tr>
+        <th>Received</th><th>From</th><th>Type</th><th>Contact</th><th>Status</th>
+        <th style="text-align:right">Actions</th>
+      </tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+  <div class="pager" id="pager"></div>
+</div>
+{% endblock %}
+{% block js %}<script>AX.submissions();</script>{% endblock %}
