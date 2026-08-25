@@ -7,6 +7,8 @@ Django + DRF service behind the static marketing site.
 - **Contact submissions** — enquiries are recorded in the database and emailed
   to sales, replacing a `mailto:` handoff that lost the lead outright on any
   device with no mail client configured.
+- **Blog** — the 53 posts are authored here with a rich-text editor; the public
+  pages stay static HTML, regenerated from the database on publish.
 
 ## Why this exists
 
@@ -175,6 +177,67 @@ audit log, so a document's history is one list regardless of which was used.
 
 Roles are enforced on the server, not merely hidden in the UI: a Contributor
 who crafts a delete or publish request by hand gets a 403.
+
+## Blog
+
+Posts live in the database and the public site is generated from them. The
+static pages are the SEO asset, so they stay static -- publishing runs a build
+rather than serving articles from Django.
+
+```bash
+# in backend/
+python manage.py export_blogdata          # DB -> _blogdata.json
+# then from the repo root
+python3 _blog.py                          # writes the post pages
+python3 _bloglist_build.py                # rebuilds /insights/blog/
+python3 _postbuild.py --refresh _bloglist.html
+```
+
+`export_blogdata` writes the same file the existing generators already consume,
+so those scripts were fed rather than rewritten -- they work, and rewriting them
+would risk the permalinks.
+
+**Permalinks are a contract.** An imported post's `path` is stored, never
+derived: those URLs are indexed and linked from outside, so recomputing one
+would 404 a live page. The admin shows an existing post's URL read-only for
+the same reason. Only new posts get a generated path.
+
+### Import from WordPress
+
+```bash
+python manage.py import_wordpress_blog --dry-run
+python manage.py import_wordpress_blog
+python manage.py fix_post_paths          # reconcile permalinks, see below
+```
+
+Safe to re-run: an existing post is left untouched (`--overwrite` forces text
+back over it and discards admin edits), and images already in our storage are
+not fetched again.
+
+Result of the migration performed on 2026-08-25:
+
+| Outcome | Count |
+|---|---|
+| Posts imported | 53 |
+| Cover images stored | 47 |
+| In-body images stored | 49 |
+| Unrecoverable | 61 |
+
+The 61 break down as 48 that already 404 on the live WordPress site (including
+Google Docs images whose links expired) and 13 that `blogs.sap.com` refuses to
+serve to anything but itself. Images confirmed dead on the retired host are
+stripped from the generated pages rather than shipped as broken-image icons;
+third-party ones are left in place, because they refuse our crawler but may
+still render for a visitor.
+
+### The permalink correction
+
+The harvest recorded `uncategorized` as the category for seven 2026 posts, so
+their recorded URL was `/…/243271/uncategorized/rajat-jindal/` while the live
+site serves `/…/243271/aws/rajat-jindal/` and 301-redirects the other form.
+Both page files were already committed, so the site had been shipping duplicate
+pages for those articles. `fix_post_paths` points the database at the canonical
+URL; the duplicates were converted into canonical redirect stubs.
 
 ## Users and roles
 

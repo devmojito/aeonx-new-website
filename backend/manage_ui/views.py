@@ -91,3 +91,8 @@ def submissions(request):
 @staff_page
 def taxonomy(request):
     return render(request, "manage/taxonomy.html", {"active": "taxonomy"})
+
+
+@staff_page
+def blog(request):
+    return render(request, "manage/blog.html", {"active": "blog"})

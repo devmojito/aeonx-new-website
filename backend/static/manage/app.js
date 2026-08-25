@@ -120,8 +120,11 @@
   function pager(el, data, onGo) {
     if (!el) return;
     if (!data.total) { el.innerHTML = ''; return; }
-    var from = (data.page - 1) * 25 + 1;
-    var to = Math.min(data.page * 25, data.total);
+    /* The page size differs per endpoint (documents 25, posts 20); assuming
+       one of them made the other's range read wrong. */
+    var size = data.page_size || 25;
+    var from = (data.page - 1) * size + 1;
+    var to = Math.min(data.page * size, data.total);
     el.innerHTML =
       '<span>' + from + '–' + to + ' of ' + data.total + '</span>' +
       '<button class="btn btn--sm" data-p="' + (data.page - 1) + '"' + (data.page <= 1 ? ' disabled' : '') + '>Previous</button>' +
@@ -553,8 +556,289 @@
     load();
   }
 
+
+  /* ----------------------------------------------------------------- blog */
+
+  /* Minimal rich-text editor on contenteditable. document.execCommand is
+     formally deprecated but is the only thing every browser still implements
+     for this, and the alternative is a third-party library -- which this repo
+     deliberately does not do. Output is plain semantic HTML, which is exactly
+     what the static generator expects to receive. */
+  function makeEditor(host, initialHTML, postId) {
+    var BAR = [
+      ['h2', 'H2', 'Heading'], ['h3', 'H3', 'Subheading'], ['p', '¶', 'Paragraph'],
+      ['|'],
+      ['bold', '<b>B</b>', 'Bold (Ctrl+B)'], ['italic', '<i>I</i>', 'Italic (Ctrl+I)'],
+      ['|'],
+      ['insertUnorderedList', '• List', 'Bulleted list'],
+      ['insertOrderedList', '1. List', 'Numbered list'],
+      ['blockquote', '❝', 'Quote'],
+      ['|'],
+      ['createLink', 'Link', 'Add link'], ['unlink', 'Unlink', 'Remove link'],
+      ['image', 'Image', 'Insert image'],
+      ['|'],
+      ['removeFormat', 'Clear', 'Strip formatting']
+    ];
+
+    var wrap = document.createElement('div');
+    wrap.className = 'editor';
+    var bar = document.createElement('div');
+    bar.className = 'editor__bar';
+    var area = document.createElement('div');
+    area.className = 'editor__area';
+    area.contentEditable = 'true';
+    area.setAttribute('data-placeholder', 'Write the post…');
+    area.innerHTML = initialHTML || '';
+
+    BAR.forEach(function (item) {
+      if (item[0] === '|') {
+        var sep = document.createElement('span');
+        sep.className = 'editor__sep';
+        bar.appendChild(sep);
+        return;
+      }
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'editor__b';
+      b.innerHTML = item[1];
+      b.title = item[2];
+      b.dataset.cmd = item[0];
+      /* mousedown, not click: click fires after the editor has already lost
+         focus and the selection has collapsed, so the command would apply to
+         nothing. */
+      b.addEventListener('mousedown', function (e) { e.preventDefault(); exec(item[0]); });
+      bar.appendChild(b);
+    });
+
+    function exec(cmd) {
+      area.focus();
+      if (cmd === 'h2' || cmd === 'h3' || cmd === 'p') {
+        document.execCommand('formatBlock', false, cmd.toUpperCase());
+      } else if (cmd === 'blockquote') {
+        document.execCommand('formatBlock', false, 'BLOCKQUOTE');
+      } else if (cmd === 'createLink') {
+        var url = window.prompt('Link URL');
+        if (url) document.execCommand('createLink', false, url);
+      } else if (cmd === 'image') {
+        pickImage();
+      } else {
+        document.execCommand(cmd, false, null);
+      }
+      sync();
+    }
+
+    function pickImage() {
+      var input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.addEventListener('change', function () {
+        var f = input.files[0];
+        if (!f) return;
+        var fd = new FormData();
+        fd.append('image', f);
+        if (postId) fd.append('post_id', postId);
+        toast('Uploading image…');
+        req('/manage/api/blog/image/', { method: 'POST', body: fd })
+          .then(function (d) {
+            area.focus();
+            document.execCommand('insertHTML', false, '<img src="' + d.url + '" alt="">');
+            sync();
+            toast('Image inserted.', 'ok');
+          })
+          .catch(function (e) { toast(e.message, 'bad'); });
+      });
+      input.click();
+    }
+
+    function sync() {
+      [].forEach.call(bar.querySelectorAll('.editor__b'), function (b) {
+        var c = b.dataset.cmd;
+        var on = false;
+        try {
+          if (c === 'bold' || c === 'italic') on = document.queryCommandState(c);
+        } catch (e) { /* not all states are queryable everywhere */ }
+        b.classList.toggle('is-on', !!on);
+      });
+    }
+
+    area.addEventListener('keyup', sync);
+    area.addEventListener('mouseup', sync);
+    /* Paste as plain text by default. Pasting from Word or Google Docs drags in
+       font tags, inline styles and class names that fight the site's own type
+       scale -- the single most common way a CMS article ends up looking wrong. */
+    area.addEventListener('paste', function (e) {
+      e.preventDefault();
+      var text = (e.clipboardData || window.clipboardData).getData('text/plain');
+      document.execCommand('insertText', false, text);
+    });
+
+    wrap.appendChild(bar);
+    wrap.appendChild(area);
+    host.appendChild(wrap);
+    return { getHTML: function () { return area.innerHTML; }, focus: function () { area.focus(); } };
+  }
+
+  function blog() {
+    var state = { page: 1, search: '', category: '', status: '' };
+    var cats = [];
+
+    function load() {
+      var q = new URLSearchParams();
+      q.set('page', state.page);
+      if (state.search) q.set('search', state.search);
+      if (state.category) q.set('category', state.category);
+      if (state.status) q.set('status', state.status);
+      req('/manage/api/blog/?' + q).then(render).catch(function (e) { toast(e.message, 'bad'); });
+      req('/manage/api/blog/stats/').then(function (s) {
+        $('#pub-summary').textContent =
+          s.total + ' posts · ' + s.published + ' published · ' + s.drafts + ' draft';
+        var b = $('#nav-drafts');
+        if (b) { if (s.drafts) { b.textContent = s.drafts; b.hidden = false; } else b.hidden = true; }
+      });
+    }
+
+    function render(d) {
+      if (!cats.length) {
+        cats = d.categories;
+        $('#f-category').innerHTML = '<option value="">All categories</option>' +
+          cats.map(function (c) { return '<option value="' + esc(c.slug) + '">' + esc(c.name) + '</option>'; }).join('');
+      }
+      if (!d.results.length) {
+        $('#rows').innerHTML = '<tr><td colspan="6" class="empty"><b>No posts match</b>Try a different search.</td></tr>';
+        pager($('#pager'), d, function (p) { state.page = p; load(); });
+        return;
+      }
+      $('#rows').innerHTML = d.results.map(function (r) {
+        var thumb = r.cover_url
+          ? '<img class="post-thumb" src="' + esc(r.cover_url) + '" alt="">'
+          : '<div class="post-thumb post-thumb--ph">—</div>';
+        return '<tr>' +
+          '<td>' + thumb + '</td>' +
+          '<td><div class="tbl__title">' + esc(r.title) + '</div>' +
+              '<div class="tbl__sub">' + esc(r.path) + '</div></td>' +
+          '<td style="color:var(--body)">' + esc(r.category) + '</td>' +
+          '<td style="white-space:nowrap;color:var(--body)">' + fmtDate(r.published_at) + '</td>' +
+          '<td>' + (r.is_published ? '<span class="pill pill--ok">Published</span>'
+                                   : '<span class="pill pill--off">Draft</span>') + '</td>' +
+          '<td><div class="tbl__actions">' +
+            '<button class="btn btn--sm" data-edit="' + r.id + '">Edit</button>' +
+            (d.can_publish ? '<button class="btn btn--sm btn--danger" data-del="' + r.id + '">Delete</button>' : '') +
+          '</div></td></tr>';
+      }).join('');
+
+      $$('[data-edit]').forEach(function (b) {
+        b.addEventListener('click', function () { openPost(+b.dataset.edit); });
+      });
+      $$('[data-del]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          var r = d.results.filter(function (x) { return x.id === +b.dataset.del; })[0];
+          confirmDanger('Delete post',
+            '“' + r.title + '” and its cover image will be permanently removed. ' +
+            'Its URL will 404 for anyone who has it bookmarked or found it in search.',
+            'Delete').then(function (ok) {
+            if (!ok) return;
+            req('/manage/api/blog/' + r.id + '/delete/', { method: 'POST' })
+              .then(function () { toast('Post deleted.', 'ok'); load(); })
+              .catch(function (e) { toast(e.message, 'bad'); });
+          });
+        });
+      });
+      pager($('#pager'), d, function (p) { state.page = p; load(); });
+    }
+
+    function openPost(id) {
+      var p = id ? req('/manage/api/blog/' + id + '/') : Promise.resolve(null);
+      p.then(function (post) { editor(post); }).catch(function (e) { toast(e.message, 'bad'); });
+    }
+
+    function editor(post) {
+      var isNew = !post;
+      var today = new Date().toISOString().slice(0, 10);
+      var m = modal(isNew ? 'New post' : 'Edit post',
+        '<div class="post-grid">' +
+          '<div>' +
+            '<div class="field"><label class="label">Title</label>' +
+              '<input class="input" id="p-title" value="' + esc(post ? post.title : '') + '" placeholder="Post title"></div>' +
+            '<div class="field"><label class="label">Body</label><div id="p-editor"></div></div>' +
+          '</div>' +
+          '<div>' +
+            '<div class="field"><label class="label">Category</label><select class="select" id="p-cat">' +
+              cats.map(function (c) {
+                return '<option value="' + c.id + '"' + (post && post.category_id === c.id ? ' selected' : '') + '>' + esc(c.name) + '</option>';
+              }).join('') + '</select></div>' +
+            '<div class="field"><label class="label">Date</label>' +
+              '<input class="input" id="p-date" type="date" value="' + (post ? post.published_at : today) + '"></div>' +
+            '<div class="field"><label class="label">Author</label>' +
+              '<input class="input" id="p-author" value="' + esc(post ? post.author : 'admin') + '"></div>' +
+            '<div class="field"><label class="label">Cover image</label>' +
+              '<input class="input" id="p-cover" type="file" accept="image/*">' +
+              (post && post.cover_url ? '<img class="cover-prev" src="' + esc(post.cover_url) + '" alt="">' : '') +
+            '</div>' +
+            '<div class="field"><label class="label">URL</label>' +
+              '<input class="input" id="p-path" value="' + esc(post ? post.path : '') + '"' +
+                (post ? ' readonly title="An existing post\'s URL cannot be changed here — it is indexed."' : ' placeholder="generated from the title"') + '>' +
+              '<div class="hint">' + (post ? 'Fixed — changing it would break existing links and search results.'
+                                           : 'Created automatically from the date and title.') + '</div></div>' +
+            '<label style="display:flex;gap:8px;align-items:center;font-weight:600">' +
+              '<input type="checkbox" id="p-pub"' + (!post || post.is_published ? ' checked' : '') + '> Published' +
+            '</label>' +
+          '</div>' +
+        '</div>',
+        '<button class="btn" data-cancel>Cancel</button>' +
+        '<button class="btn btn--primary" data-save>' + (isNew ? 'Create post' : 'Save changes') + '</button>');
+
+      m.el.querySelector('.modal__box').classList.add('modal__box--wide');
+      var ed = makeEditor($('#p-editor', m.el), post ? post.body_html : '', post ? post.id : null);
+
+      $('[data-cancel]', m.el).addEventListener('click', m.close);
+      $('[data-save]', m.el).addEventListener('click', function () {
+        var btn = this;
+        var title = $('#p-title', m.el).value.trim();
+        if (!title) { toast('Give the post a title.', 'bad'); return; }
+        var fd = new FormData();
+        fd.append('title', title);
+        fd.append('category_id', $('#p-cat', m.el).value);
+        fd.append('published_at', $('#p-date', m.el).value);
+        fd.append('author', $('#p-author', m.el).value.trim());
+        fd.append('body_html', ed.getHTML());
+        fd.append('is_published', $('#p-pub', m.el).checked ? 'true' : 'false');
+        var cf = $('#p-cover', m.el).files[0];
+        if (cf) fd.append('cover', cf);
+
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> Saving';
+        var url = post ? '/manage/api/blog/' + post.id + '/save/' : '/manage/api/blog/create/';
+        req(url, { method: 'POST', body: fd }).then(function () {
+          m.close();
+          toast(isNew ? 'Post created.' : 'Post saved.', 'ok');
+          toast('Run the build to push it to the live site.');
+          load();
+        }).catch(function (e) {
+          toast(e.message, 'bad');
+          btn.disabled = false;
+          btn.textContent = isNew ? 'Create post' : 'Save changes';
+        });
+      });
+    }
+
+    $('#add-post').addEventListener('click', function () { editor(null); });
+    $('#f-search').addEventListener('input', debounce(function (e) {
+      state.search = e.target.value; state.page = 1; load();
+    }));
+    $('#f-category').addEventListener('change', function (e) {
+      state.category = e.target.value; state.page = 1; load();
+    });
+    $('#f-status').addEventListener('change', function (e) {
+      state.status = e.target.value; state.page = 1; load();
+    });
+
+    req('/manage/api/stats/').then(function (d) { badgeNewCount(d.submissions_new); });
+    load();
+  }
+
   window.AX = {
     dashboard: dashboard,
+    blog: blog,
     documents: documents,
     submissions: submissions,
     taxonomy: taxonomy,

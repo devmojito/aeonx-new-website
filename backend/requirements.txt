@@ -10,3 +10,7 @@ boto3==1.40.47
 python-dotenv==1.1.1
 gunicorn==23.0.0
 whitenoise==6.11.0
+# ImageField needs it. Worth the dependency over a plain FileField: Pillow
+# actually decodes the upload, so a renamed non-image is rejected rather
+# than shipping as a broken cover on the public blog listing.
+Pillow==11.3.0

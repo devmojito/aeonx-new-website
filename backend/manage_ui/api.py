@@ -198,6 +198,7 @@ def document_list(request):
         "page": page.number,
         "pages": page.paginator.num_pages,
         "total": page.paginator.count,
+        "page_size": PAGE_SIZE,
         "can_publish": can_publish(request.user),
     })
 
@@ -353,6 +354,7 @@ def submission_list(request):
         "page": page.number,
         "pages": page.paginator.num_pages,
         "total": page.paginator.count,
+        "page_size": PAGE_SIZE,
         "new_count": ContactSubmission.objects.filter(is_handled=False).count(),
     })
 

@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import api, views
+from . import api, blog_api, views
 
 app_name = "manage"
 
@@ -11,6 +11,7 @@ urlpatterns = [
     path("documents/", views.documents, name="documents"),
     path("enquiries/", views.submissions, name="submissions"),
     path("categories/", views.taxonomy, name="taxonomy"),
+    path("blog/", views.blog, name="blog"),
 
     # JSON, consumed only by static/manage/app.js
     path("api/stats/", api.stats, name="api-stats"),
@@ -25,4 +26,12 @@ urlpatterns = [
     path("api/enquiries/", api.submission_list, name="api-submissions"),
     path("api/enquiries/export/", api.submission_export, name="api-submissions-export"),
     path("api/enquiries/<int:pk>/", api.submission_update, name="api-submission-update"),
+
+    path("api/blog/", blog_api.post_list, name="api-posts"),
+    path("api/blog/stats/", blog_api.blog_stats, name="api-blog-stats"),
+    path("api/blog/create/", blog_api.post_save, name="api-post-create"),
+    path("api/blog/image/", blog_api.body_image_upload, name="api-post-image"),
+    path("api/blog/<int:pk>/", blog_api.post_detail, name="api-post-detail"),
+    path("api/blog/<int:pk>/save/", blog_api.post_save, name="api-post-save"),
+    path("api/blog/<int:pk>/delete/", blog_api.post_delete, name="api-post-delete"),
 ]
