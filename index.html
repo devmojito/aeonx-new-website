@@ -4115,6 +4115,31 @@ document.addEventListener("DOMContentLoaded",function(){
       if (t === 'SaaS') e.textContent = 'PRODUCT';
       else if (/^SAP\s*\.\s*AI\s*\.\s*GCP$/.test(t)) e.textContent = 'SERVICES';
     });
+    /* Renaming the text alone is not enough: Figma sized these boxes for the OLD
+       strings, so "PRODUCT" clipped inside the 7.2vw box drawn for "SaaS" and
+       "SERVICES" sat in the 20.2vw pill drawn for "SAP . AI . GCP" -- the control
+       visibly changed shape when you switched. The DEFAULT hero is the same control
+       with the same left offsets and Figma DID rename it there, so its widths are the
+       correct ones; copy them across, label and pill. Geometry only -- background and
+       colour are per-state and are set by the toggle itself. */
+    (function syncWidths(){
+      function widthOf(el){ var m=(el.getAttribute('style')||'').match(/width:\s*[\d.]+vw/); return m?m[0]:null; }
+      function setWidth(el,w){
+        if(!w) return;
+        var st=el.getAttribute('style')||'';
+        el.setAttribute('style', /width:\s*[\d.]+(vw|px)/.test(st)
+          ? st.replace(/width:\s*[\d.]+(vw|px)/, w) : st+';'+w);
+      }
+      ['PRODUCT','SERVICES'].forEach(function(name){
+        var src=[].slice.call(mob.querySelectorAll('.g-t')).filter(function(e){
+          return !e.children.length && !alt.contains(e) && (e.textContent||'').trim()===name; })[0];
+        var dst=[].slice.call(alt.querySelectorAll('.g-t')).filter(function(e){
+          return !e.children.length && (e.textContent||'').trim()===name; })[0];
+        if(!src||!dst) return;
+        setWidth(dst, widthOf(src));
+        if(src.parentElement && dst.parentElement) setWidth(dst.parentElement, widthOf(src.parentElement));
+      });
+    })();
     alt.style.background = '#fff';
     alt.style.zIndex = '6';
     /* Cross-fade the swap. Straight hidden-toggling snapped between two full
