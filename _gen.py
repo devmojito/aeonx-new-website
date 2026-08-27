@@ -36,7 +36,11 @@ def find(n, tid):
 #     the result still cannot match.
 # Same treatment as _saashero.bake() for filter fills. Applies to both dumps.
 BAKE_NODES = {
-    '6564:26541': 'bake-ptring-desk',
+    # Desktop bakes the disc only, same reasoning as mobile below: with the wrapper's
+    # tilt flattened (FLATTEN_ROTATION) the twelve badges place by their own AABB --
+    # which Figma already reports post-rotation -- so they stay real, upright elements
+    # and can orbit. Only the tilted disc+shadow needs Figma's own render.
+    '6564:26542': 'bake-ptdisc-desk',
     '6564:26580': 'bake-ptglow-desk',
     # Mobile bakes only the DISC. Unlike desktop, the mobile ring frame carries no
     # rotation and its badges are already upright (-0.006 rad), so the twelve logos
@@ -45,6 +49,31 @@ BAKE_NODES = {
     '6564:26764': 'bake-ptdisc-mob',
     '5637:48966': 'bake-ptglow-mob',
 }
+
+
+# Nodes whose rotation (and their descendants') is dropped so the walker places every
+# child by its absoluteBoundingBox, which Figma already reports post-rotation. Used for
+# the desktop partner ring: its wrapper is rotated +1.39deg and each badge carries
+# -1.39deg to stand upright, and emit_rotated() honours the first and drops the second.
+# Flattening both leaves the badges exactly where Figma draws them, upright, as real
+# elements -- the disc's tilt is not lost, it is baked into the disc's own render.
+FLATTEN_ROTATION = {'6564:26541'}
+
+
+def flatten_rotation(root):
+    """Strip `rotation` from each FLATTEN_ROTATION node and everything under it."""
+    hit = []
+    for nid in FLATTEN_ROTATION:
+        n = find(root, nid)
+        if not n:
+            continue
+        stack = [n]
+        while stack:
+            x = stack.pop()
+            if x.pop('rotation', None) is not None:
+                hit.append(x['id'])
+            stack.extend(x.get('children') or [])
+    return hit
 
 
 def bake(root):
@@ -57,6 +86,7 @@ def bake(root):
     """
     import os
     baked = []
+    flatten_rotation(root)
     for nid, ref in BAKE_NODES.items():
         n = find(root, nid)
         if not n:
