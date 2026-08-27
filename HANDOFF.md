@@ -2037,3 +2037,45 @@ would delete them and put nothing back. Verified at 1440px after all of the abov
 desktop ring / glow / heading centres still 50.14 / 50.03 / 50.03vw, zero elements
 masked, 16 of 19 desktop Explore labels still bumped to 0.7292vw exactly as before, no
 broken images, no console errors.
+
+---
+
+## 30. Announcement bar is editable from the dashboard (2026-08-27)
+
+The strip above the nav carried Figma's placeholder copy on all 91 pages since
+1 July, and both `GO-LIVE-REPORT.md` and 15.x list it as a launch blocker owed by
+the client. It was a blocker only because the text was baked into every page, so
+changing it needed a rebuild and a redeploy.
+
+New `siteconfig` app, one model (`Announcement`) with text / url / is_active, plus
+`GET /api/announcement/` cached 60s -- the same shape and the same contract as
+`investors.api`. `manage_ui` gains a page at `/manage/announcement/`, an endpoint,
+a nav entry and a preview that draws the real strip so copy is approved at its true
+width and colour. Writes go through `LogEntry`, so the history is one list
+regardless of which admin was used.
+
+`_annc.html` is the site half: a site-wide fragment (registered in `_postbuild.py`
+and in `GLOBAL_FRAGMENTS`, so `--refresh` reaches it) that reads the API and
+rewrites the bar. With no API reachable the page keeps its baked copy, exactly as
+the document browser does.
+
+Two details worth keeping:
+
+- **The baked markup ships `href="#"`.** With no destination configured the pass
+  removes the attribute rather than leaving a link that jumps to the top of the
+  page -- that dead `href` is one of the `href="#"` entries 4 of the go-live report
+  counted.
+- **Hiding collapses the strip.** `hidden` plus `display:none`, verified: bar
+  height 0 and the nav moves up from 44px to 8px, so there is no empty band left
+  behind.
+
+Seeded with the wording currently baked into the pages, so nothing changes visually
+until someone edits it.
+
+Verified end to end against the running stack: dashboard page 200; GET returns the
+row with `updated_by`; POST saves and the public API reflects it; a bad link
+(`javascript:`) is refused 400; empty text with the bar ticked on is refused 400; an
+anonymous request is 401; the live site picked up an edit (text AND href) and hid
+the bar when unticked. One thing that looked like a bug and is not: a sub-page kept
+showing the old copy for up to a minute -- that is the 60s cache, confirmed by
+refetching with `cache:'reload'`.

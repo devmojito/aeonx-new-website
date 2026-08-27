@@ -324,3 +324,30 @@ genuinely outgrows a single instance — nothing here would need rewriting.
       (list in MISSING_DOCUMENTS.txt)
 - [ ] `window.AX_API_BASE` set on the production site build
 - [ ] SMTP configured, or contact notifications go nowhere
+
+## Announcement bar
+
+The orange strip above the nav on every page. Its copy was Figma's placeholder
+("Grep, Embeddings, or Both? … webinar June 30th"), baked into all 91 pages, so
+changing it meant a rebuild and a redeploy — which is why it shipped stale for
+months. It is a database row now.
+
+*Admin → Announcement bar* (`/manage/announcement/`) edits three things: the
+wording, where it links, and whether it shows at all. The page previews the real
+strip so the copy is approved at its true width and colour. Changes reach the site
+within a minute — no rebuild, no deploy.
+
+- Leave the link empty and the bar renders as plain text rather than a link that
+  goes nowhere. The baked markup ships `href="#"`, which would jump to the top of
+  the page; the runtime pass removes it when there is no destination.
+- Unticking *Show the bar* hides the strip on every page. It collapses to zero
+  height rather than leaving an empty band.
+- An off-site link opens in a new tab, matching every other external CTA.
+
+`GET /api/announcement/` is the public endpoint, cached 60s the same way the
+investor documents are. If it is unreachable the page keeps whatever wording is
+baked into it, so an outage degrades to slightly stale copy rather than a missing
+strip — the same contract as the document browser.
+
+Edits go through Django's LogEntry, so the history sits alongside every other
+change whether it was made here or in `/admin/`.

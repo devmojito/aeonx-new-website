@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     "investors",
     "contacts",
     "blog",
+    "siteconfig",
     "manage_ui",
 ]
 

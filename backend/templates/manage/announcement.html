@@ -1,0 +1,11 @@
+{% extends "manage/base.html" %}
+{% block title %}Announcement bar{% endblock %}
+{% block heading %}Announcement bar{% endblock %}
+{% block content %}
+<p style="color:var(--body);margin:0 0 18px;max-width:640px">
+  The orange strip across the top of every page. Changes go live within a minute —
+  the website reads this directly, so there is no rebuild or deploy to wait for.
+</p>
+<div id="annc"></div>
+{% endblock %}
+{% block js %}<script>AX.announcement();</script>{% endblock %}

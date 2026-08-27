@@ -1,0 +1,8 @@
+
+/* Announcement preview: the orange strip as the site actually draws it, so the
+   wording is approved against its real width and colour rather than a form field. */
+.annc-prev{display:flex;align-items:center;justify-content:center;gap:10px;
+  background:linear-gradient(90deg,#DF3F17,#F58220);color:#fff;
+  font-weight:600;font-size:13px;line-height:1.35;text-align:center;
+  padding:10px 14px;border-radius:6px}
+.annc-prev.is-off{background:#ECEEF2;color:#8695AA}

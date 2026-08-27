@@ -27,6 +27,7 @@ STATHOV = open(os.path.join(_HERE, '_stathov.html'), encoding='utf-8').read()
 HOVER = open(os.path.join(_HERE, '_hover.html'), encoding='utf-8').read()
 SCROLLROW = open(os.path.join(_HERE, '_scrollrow.html'), encoding='utf-8').read()
 UIFX = open(os.path.join(_HERE, '_uifx.html'), encoding='utf-8').read()
+ANNC = open(os.path.join(_HERE, '_annc.html'), encoding='utf-8').read()
 MOBFX = open(os.path.join(_HERE, '_mobfx.html'), encoding='utf-8').read()
 
 # Site-wide fragments, as (sentinel, source filename), for `--refresh` to strip before
@@ -34,6 +35,7 @@ MOBFX = open(os.path.join(_HERE, '_mobfx.html'), encoding='utf-8').read()
 # stripped by its own sentinel.
 GLOBAL_FRAGMENTS = [
     ('ax-uifx-css', '_uifx.html'),
+    ('ax-annc-css', '_annc.html'),
     ('ax-hover-css', '_hover.html'),
     ('ax-mobfx-css', '_mobfx.html'),
     ('ax-scrollrow-css', '_scrollrow.html'),
@@ -225,6 +227,9 @@ def main():
         if 'ax-scrollrow-css' not in s and '</body>' in s:
             s = s.replace('</body>', SCROLLROW + '\n</body>', 1)
             stats['scrollrow'] = stats.get('scrollrow', 0) + 1
+        if 'ax-annc-css' not in s and '</body>' in s and 'ax-annc__txt' in s:
+            s = s.replace('</body>', ANNC + '\n</body>', 1)
+            stats['annc'] = stats.get('annc', 0) + 1
         if 'ax-uifx-css' not in s and '</body>' in s:
             s = s.replace('</body>', UIFX + '\n</body>', 1)
             stats['uifx'] = stats.get('uifx', 0) + 1
@@ -274,7 +279,7 @@ def main():
                 stats['burst'] += 1
         if s != o:
             open(f, 'w', encoding='utf-8').write(s)
-    print(f"postbuild: refreshed {stats['refreshed']}, gptw {stats['gptw']}, mobile-nav {stats['mobnav']}, "
+    print(f"postbuild: annc {stats.get('annc', 0)}, refreshed {stats['refreshed']}, gptw {stats['gptw']}, mobile-nav {stats['mobnav']}, "
           f"cta-wash {stats['ctawash']}, hero-burst-blur {stats['burst']}, "
           f"cursor {stats['cursor']}, preloader {stats['preload']}, "
           f"nav-loader {stats['navload']}, counters {stats['counters']}, "

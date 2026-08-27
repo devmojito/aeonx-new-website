@@ -393,3 +393,62 @@ def submission_export(request):
             "yes" if s.is_handled else "no",
         ])
     return response
+
+
+# ---- announcement bar -------------------------------------------------------
+# The strip above the nav on every page. It is one row, so there is no list or
+# create endpoint -- read the current wording, write the current wording.
+
+@staff_api
+@require_http_methods(["GET", "POST"])
+def announcement(request):
+    from siteconfig.models import Announcement
+
+    if request.method == "GET":
+        a = Announcement.current()
+        return JsonResponse({
+            "text": a.text, "url": a.url, "is_active": a.is_active,
+            "updated_at": a.updated_at.isoformat() if a.pk else None,
+            "updated_by": (a.updated_by.get_username() if a.updated_by_id else None),
+        })
+
+    try:
+        body = json.loads(request.body or "{}")
+    except ValueError:
+        return JsonResponse({"error": "Malformed request."}, status=400)
+
+    text = (body.get("text") or "").strip()
+    if not text and body.get("is_active"):
+        return JsonResponse(
+            {"error": "Add some wording, or untick 'Show the bar' to hide it."},
+            status=400,
+        )
+    if len(text) > 200:
+        return JsonResponse({"error": "Keep it under 200 characters."}, status=400)
+
+    url = (body.get("url") or "").strip()
+    if url and not (url.startswith("/") or url.startswith("http://")
+                    or url.startswith("https://")):
+        return JsonResponse(
+            {"error": "The link must start with / for a page on this site, "
+                      "or http:// or https:// for somewhere else."},
+            status=400,
+        )
+
+    # One row, edited in place, so the admin history reads as a series of edits to
+    # the announcement rather than a pile of near-identical records.
+    a = Announcement.objects.order_by("-updated_at").first() or Announcement()
+    created = a.pk is None
+    a.text, a.url, a.is_active = text, url, bool(body.get("is_active"))
+    a.updated_by = request.user
+    a.save()
+
+    LogEntry.objects.log_action(
+        user_id=request.user.pk,
+        content_type_id=ContentType.objects.get_for_model(Announcement).pk,
+        object_id=a.pk, object_repr=str(a),
+        action_flag=ADDITION if created else CHANGE,
+        change_message="Announcement bar updated",
+    )
+    return JsonResponse({"ok": True, "text": a.text, "url": a.url,
+                         "is_active": a.is_active})

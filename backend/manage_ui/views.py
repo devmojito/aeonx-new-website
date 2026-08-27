@@ -96,3 +96,8 @@ def taxonomy(request):
 @staff_page
 def blog(request):
     return render(request, "manage/blog.html", {"active": "blog"})
+
+
+@staff_page
+def announcement(request):
+    return render(request, "manage/announcement.html", {"active": "announcement"})

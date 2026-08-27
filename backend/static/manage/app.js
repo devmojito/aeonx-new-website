@@ -836,12 +836,85 @@
     load();
   }
 
+
+  /* ---- announcement bar ----------------------------------------------------
+     One row, so no list and no create: read the current wording, write the
+     current wording. The preview is the real markup the site renders, so what is
+     approved here is what ships -- the copy is otherwise only visible by loading
+     the public site. */
+  function announcement() {
+    var host = document.getElementById('annc');
+    if (!host) return;
+
+    host.innerHTML =
+      '<div class="card" style="max-width:640px;padding:20px">' +
+        '<label class="label" for="ann-text">Wording</label>' +
+        '<textarea id="ann-text" class="textarea" rows="3" maxlength="200"' +
+          ' placeholder="What should the bar say?"></textarea>' +
+        '<div class="hint" id="ann-count"></div>' +
+        '<label class="label" for="ann-url" style="margin-top:14px">Link</label>' +
+        '<input id="ann-url" class="input" type="text"' +
+          ' placeholder="/insights/blog/ or https://…">' +
+        '<div class="hint">Leave empty and the bar is not clickable.</div>' +
+        '<label style="display:flex;align-items:center;gap:8px;margin-top:14px">' +
+          '<input id="ann-on" type="checkbox"> Show the bar on the website' +
+        '</label>' +
+        '<div class="hint" style="margin-top:14px">Preview</div>' +
+        '<div id="ann-prev" class="annc-prev"></div>' +
+        '<div style="margin-top:16px;display:flex;gap:10px;align-items:center">' +
+          '<button id="ann-save" class="btn btn--primary">Save</button>' +
+          '<span class="hint" id="ann-meta"></span>' +
+        '</div>' +
+      '</div>';
+
+    var text = document.getElementById('ann-text');
+    var url = document.getElementById('ann-url');
+    var on = document.getElementById('ann-on');
+    var prev = document.getElementById('ann-prev');
+    var count = document.getElementById('ann-count');
+    var meta = document.getElementById('ann-meta');
+
+    function paint() {
+      var t = text.value.trim();
+      count.textContent = text.value.length + ' / 200';
+      prev.textContent = t || 'The bar is hidden while there is no wording.';
+      prev.classList.toggle('is-off', !(on.checked && t));
+    }
+    text.addEventListener('input', paint);
+    on.addEventListener('change', paint);
+
+    req('/manage/api/announcement/').then(function (d) {
+      text.value = d.text || '';
+      url.value = d.url || '';
+      on.checked = !!d.is_active;
+      meta.textContent = d.updated_at
+        ? 'Last changed ' + new Date(d.updated_at).toLocaleString() +
+          (d.updated_by ? ' by ' + d.updated_by : '')
+        : 'Not set yet.';
+      paint();
+    }).catch(function (e) { toast(e.message, 'bad'); });
+
+    document.getElementById('ann-save').addEventListener('click', function () {
+      var btn = this;
+      btn.disabled = true;
+      json('/manage/api/announcement/', 'POST', {
+        text: text.value, url: url.value, is_active: on.checked
+      }).then(function () {
+        toast('Saved. The website picks this up within a minute.');
+        meta.textContent = 'Last changed just now by you.';
+      }).catch(function (e) {
+        toast(e.message, 'bad');
+      }).then(function () { btn.disabled = false; });
+    });
+  }
+
   window.AX = {
     dashboard: dashboard,
     blog: blog,
     documents: documents,
     submissions: submissions,
     taxonomy: taxonomy,
+    announcement: announcement,
     toast: toast
   };
 })(window, document);

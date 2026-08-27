@@ -12,9 +12,11 @@ urlpatterns = [
     path("enquiries/", views.submissions, name="submissions"),
     path("categories/", views.taxonomy, name="taxonomy"),
     path("blog/", views.blog, name="blog"),
+    path("announcement/", views.announcement, name="announcement"),
 
     # JSON, consumed only by static/manage/app.js
     path("api/stats/", api.stats, name="api-stats"),
+    path("api/announcement/", api.announcement, name="api-announcement"),
     path("api/taxonomy/", api.taxonomy, name="api-taxonomy"),
     path("api/categories/", api.category_detail, name="api-category-create"),
     path("api/categories/<int:pk>/", api.category_detail, name="api-category-detail"),
