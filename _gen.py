@@ -23,6 +23,69 @@ def find(n, tid):
             return r
     return None
 
+
+# Nodes whose art CSS cannot reproduce, replaced wholesale by Figma's own PNG render
+# (assets/gen/<ref>.png, exported at scale 2). Two failure modes drove this:
+#   - the "Earned where it matters." ring: a wrapper rotated +1.39deg whose badges each
+#     carry -1.39deg to stand upright. emit_rotated() applies the wrapper tilt and
+#     assumes child rotation ~ 0, so the counter-rotation was dropped and every badge
+#     rendered tilted.
+#   - its blue glow: Figma interpolates gradient stops in straight (unpremultiplied)
+#     alpha, so white -> blue-with-alpha-0 shows blue mid-ramp; CSS interpolates
+#     premultiplied and fades white with NO blue anywhere. The stops are faithful and
+#     the result still cannot match.
+# Same treatment as _saashero.bake() for filter fills. Applies to both dumps.
+BAKE_NODES = {
+    '6564:26541': 'bake-ptring-desk',
+    '6564:26580': 'bake-ptglow-desk',
+    # Mobile bakes only the DISC. Unlike desktop, the mobile ring frame carries no
+    # rotation and its badges are already upright (-0.006 rad), so the twelve logos
+    # render correctly as real elements -- which is what lets them orbit while
+    # staying upright. Only the tilted disc+shadow needs Figma's own render.
+    '6564:26764': 'bake-ptdisc-mob',
+    '5637:48966': 'bake-ptglow-mob',
+}
+
+
+def bake(root):
+    """Swap each BAKE_NODES subtree for a single image-fill leaf, in place.
+
+    The box comes from whichever of bbox / renderBounds the exported PNG actually
+    matches (REST exports full geometry for clipped nodes, render bounds otherwise --
+    same ambiguity render_box() handles for SVG). Keeps document order, so paint
+    order is untouched.
+    """
+    import os
+    baked = []
+    for nid, ref in BAKE_NODES.items():
+        n = find(root, nid)
+        if not n:
+            continue
+        path = os.path.join('assets', 'gen', ref + '.png')
+        box = n.get('absoluteBoundingBox')
+        rb = n.get('absoluteRenderBounds')
+        try:
+            from PIL import Image
+            w, h = Image.open(path).size
+            w, h = w / 2.0, h / 2.0          # exported at scale 2
+            if rb and abs(rb['width'] - w) <= 2 and abs(rb['height'] - h) <= 2:
+                box = rb
+        except Exception:
+            pass                              # PNG missing: keep bbox, still bake
+        n['children'] = []
+        n['fills'] = [{'type': 'IMAGE', 'imageRef': ref, 'scaleMode': 'FILL',
+                       'blendMode': 'NORMAL'}]
+        n['strokes'] = []
+        n['effects'] = []
+        n.pop('rotation', None)
+        n.pop('cornerRadius', None)
+        n.pop('rectangleCornerRadii', None)
+        n['clipsContent'] = False
+        n['absoluteBoundingBox'] = dict(box)
+        n['absoluteRenderBounds'] = dict(box)
+        baked.append(nid)
+    return baked
+
 def vw(px):
     return f"{px*FACTOR:.4f}vw"
 

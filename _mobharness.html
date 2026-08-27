@@ -1,0 +1,188 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Mobile fidelity harness</title>
+<style>
+  body{font:13px/1.4 monospace;margin:0}
+  #bar{position:fixed;top:0;left:0;right:0;background:#111;color:#0f0;padding:6px 10px;z-index:9}
+  iframe{position:absolute;top:30px;left:0;width:430px;height:900px;border:0}
+</style>
+<div id="bar">idle</div>
+<iframe id="f"></iframe>
+<script>
+/* Runs every mobile route through a 430px iframe and diffs the rendered .ax-mob
+ * against the Figma mobile frame (_mobaudit_expected.json, from _mobaudit.py).
+ *
+ * An iframe rather than 34 real navigations: same-origin, so the parent can read
+ * computed styles directly, and one pass collects everything instead of three
+ * tool round-trips per page. Each load is cache-busted -- a stale document is the
+ * classic way this check silently measures the previous build (HANDOFF 2).
+ */
+var POS_TOL = 0.15, FS_TOL = 0.05, SETTLE = 1100;
+window.__all = null; window.__done = false; window.__progress = '';
+
+function norm(s){ return (s||'').replace(/\s+/g,' ').trim(); }
+function keyOf(s){ return norm(s).toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,60); }
+// <br> is a line break, not "no separator": textContent would glue the sentences
+// either side of it together and every multi-line heading would read as a defect.
+function textOf(el){
+  return norm(el.innerHTML.replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]*>/g, ''))
+         .replace(/&amp;/g,'&').replace(/&nbsp;/g,' ').replace(/&#39;|&rsquo;/g,"'")
+         .replace(/&quot;/g,'"').replace(/&lt;/g,'<').replace(/&gt;/g,'>');
+}
+function offsetIn(el, root, win){
+  /* Live rect relative to the page root, in vw.
+   *
+   * Not accumulated offsetLeft/offsetTop: those ignore ancestor transforms, and
+   * this layout puts real content inside rotated wrappers (emit_rotated places
+   * children in the wrapper's LOCAL frame and rotates the wrapper). Measured by
+   * offsets, the industries "+ More" chip reads 14vw off; measured by rect it
+   * lands on the Figma coordinate exactly. Callers force-reveal first, so the
+   * scroll-reveal transform is at its resting value when this runs. */
+  var r = el.getBoundingClientRect(), pr = root.getBoundingClientRect();
+  var vw = win.innerWidth/100;
+  return {left: (r.left-pr.left)/vw, top: (r.top-pr.top)/vw};
+}
+/* does this element sit inside a rotated / translated wrapper (rotated logo card,
+ * carousel track)? such an element is positioned by its wrapper, so a coordinate
+ * mismatch there is a wrapper question, not a per-element one */
+function inTransformed(el, root, win){
+  var p = el.parentElement;
+  while(p && p !== root){
+    var t = win.getComputedStyle(p).transform;
+    if(t && t !== 'none' && t !== 'matrix(1, 0, 0, 1, 0, 0)') return true;
+    p = p.parentElement;
+  }
+  return false;
+}
+function num(el, prop){
+  var m = (el.getAttribute('style')||'').match(new RegExp(prop+':\\s*(-?[\\d.]+)vw'));
+  return m ? parseFloat(m[1]) : null;
+}
+
+function check(win, exp){
+  var doc = win.document, out = {};
+  doc.querySelectorAll('.ax-rv,.ax-rvo').forEach(function(e){ e.classList.add('ax-in'); });
+  var st = doc.createElement('style');
+  st.textContent = '*{transition:none!important;animation:none!important}';
+  doc.head.appendChild(st);
+
+  var mob = doc.querySelector('.ax-mob');
+  out.mobPresent = !!mob;
+  if(!mob) return out;
+  var vw = win.innerWidth/100;
+  var page = mob.querySelector('main.ax-page') || mob;
+
+  var els = [].slice.call(mob.querySelectorAll('.g-t')).filter(function(e){ return textOf(e).length; });
+  var byKey = {};
+  els.forEach(function(e){ var k = keyOf(textOf(e)); (byKey[k] = byKey[k]||[]).push(e); });
+
+  var missing = [], deltas = [], caseDiffs = [], used = new Set();
+
+  /* Pair expected against rendered PER KEY, both sorted by authored position, then
+   * zipped. Greedy nearest-first pairing swapped the duplicates -- a page that draws
+   * "SupplierX" once in a tab strip and once in a card list reported both as moved,
+   * with the two elements' sizes and colours mirrored. Zipping two position-sorted
+   * lists cannot cross a pair over. */
+  var expByKey = {};
+  exp.texts.forEach(function(x){ var k = keyOf(x.text); (expByKey[k] = expByKey[k]||[]).push(x); });
+  var pairs = [];
+  Object.keys(expByKey).forEach(function(k){
+    var xs = expByKey[k].slice().sort(function(a,b){ return (a.top-b.top) || (a.left-b.left); });
+    var es = (byKey[k]||[]).slice().sort(function(a,b){
+      var A = offsetIn(a, page, win), B = offsetIn(b, page, win);
+      return (A.top-B.top) || (A.left-B.left);
+    });
+    xs.forEach(function(x, i){
+      if(es[i]){ used.add(es[i]); pairs.push([x, es[i]]); }
+      else { pairs.push([x, null]); }
+    });
+  });
+
+  pairs.forEach(function(p){
+    var x = p[0], el = p[1];
+    if(!el){
+      // last resort: a prefix match, for design strings the dump truncated at 80 chars
+      var pre = keyOf(x.text).slice(0,36);
+      el = els.filter(function(e){ return !used.has(e) && keyOf(textOf(e)).indexOf(pre)===0; })[0];
+      if(!el){ missing.push(x.text.slice(0,58)); return; }
+      used.add(el);
+    }
+    var cs = win.getComputedStyle(el);
+    var o = offsetIn(el, page, win);
+    var d = {};
+    if(Math.abs(o.left-x.left) > POS_TOL) d.left = [x.left, +o.left.toFixed(2)];
+    if(Math.abs(o.top-x.top) > POS_TOL) d.top = [x.top, +o.top.toFixed(2)];
+    if(x.fs){ var f = parseFloat(cs.fontSize)/vw;
+      if(Math.abs(f-x.fs) > FS_TOL) d.fs = [x.fs, +f.toFixed(2)]; }
+    if(x.fw && String(cs.fontWeight)!==String(x.fw)) d.fw = [x.fw, cs.fontWeight];
+    if(x.color && x.color!=='GRADIENT' && cs.color!==x.color) d.color = [x.color, cs.color];
+    if(Object.keys(d).length){
+      d.text = x.text.slice(0,44);
+      if((d.left||d.top) && inTransformed(el, page, win)) d.tf = 1;
+      deltas.push(d);
+    }
+    var got = textOf(el), want = norm(x.text);
+    /* _mobaudit.py stores `characters[:80]`, so any design string at that length is
+     * truncated and will never equal the full rendered text -- comparing them
+     * reported ~200 phantom "case" differences in long body copy. */
+    if(got !== want && want.length < 80 && keyOf(got) === keyOf(want)){
+      caseDiffs.push([want.slice(0,50), got.slice(0,50)]);
+    }
+  });
+
+  out.expected = exp.texts.length;
+  out.rendered = els.length;
+  out.missing = missing;
+  out.extra = els.filter(function(e){ return !used.has(e); }).map(function(e){ return textOf(e).slice(0,44); });
+  out.deltas = deltas;
+  out.caseDiffs = caseDiffs;
+
+  // anything painting past the 430px frame edge that is NOT inside a clip
+  var W = win.innerWidth;
+  out.overflow = [].slice.call(mob.querySelectorAll('.g-t,.g-b,.g-img,.g-vec')).map(function(e){
+    return {e:e, r:e.getBoundingClientRect()};
+  }).filter(function(o){
+    if(!(o.r.width>0 && o.r.right > W+1 && o.r.left < W)) return false;
+    var p = o.e.parentElement;
+    while(p && p !== mob){ if(win.getComputedStyle(p).overflow !== 'visible') return false; p = p.parentElement; }
+    return true;
+  }).map(function(o){
+    return {t:(textOf(o.e)||o.e.className).slice(0,34), over:Math.round(o.r.right-W)};
+  }).slice(0,10);
+
+  out.docScrollW = doc.documentElement.scrollWidth;
+  out.horizOverflow = out.docScrollW > W+1;
+  out.pageH = page ? Math.round(page.getBoundingClientRect().height) : null;
+  out.figmaH = Math.round(exp.frame.h * W/430);
+  out.heightDelta = out.pageH===null ? null : out.pageH-out.figmaH;
+
+  var imgs = [].slice.call(mob.querySelectorAll('img'));
+  out.imgTotal = imgs.length;
+  out.broken = imgs.filter(function(i){ return i.complete && i.naturalWidth===0; })
+                   .map(function(i){ return i.getAttribute('src'); }).slice(0,8);
+  // controls that look tappable but have nothing behind them
+  out.mnav = doc.querySelectorAll('.ax-mnav').length;
+  return out;
+}
+
+fetch('/_mobaudit_expected.json').then(function(r){ return r.json(); }).then(function(all){
+  var routes = Object.keys(all), results = {}, i = 0;
+  var f = document.getElementById('f'), bar = document.getElementById('bar');
+  function next(){
+    if(i >= routes.length){ window.__all = results; window.__done = true; bar.textContent = 'DONE '+routes.length; return; }
+    var route = routes[i];
+    var url = (route === 'index.html' ? '/' : '/'+route+'/') + '?mob=' + Date.now();
+    window.__progress = (i+1)+'/'+routes.length+' '+route;
+    bar.textContent = window.__progress;
+    f.onload = function(){
+      setTimeout(function(){
+        try { results[route] = check(f.contentWindow, all[route]); }
+        catch(e){ results[route] = {error: String(e)}; }
+        i++; next();
+      }, SETTLE);
+    };
+    f.src = url;
+  }
+  next();
+}).catch(function(e){ document.getElementById('bar').textContent = 'ERR '+e; window.__done = true; });
+</script>

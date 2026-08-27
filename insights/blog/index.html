@@ -1250,9 +1250,20 @@ document.addEventListener('DOMContentLoaded',function(){
     }
     pills.forEach(function(p){
       var lab=p.querySelector('.g-t'); if(!lab)return;
+      /* Desktop only. This is the pill-grower for 16px labels on a 1920 layout; the
+         .ax-mob block is authored at 430 with Figma's own pill widths, and running it
+         there only moved labels off their authored left (Figma x=40 -> left:112.9px on
+         "Request a Proposal"), which reads as a needlessly centred button. */
+      if(p.closest('.ax-mob')||lab.closest('.ax-mob'))return;
       var pr=p.getBoundingClientRect(); if(!pr.width)return;
       var rng=document.createRange(); rng.selectNodeContents(lab);
       var ink=rng.getBoundingClientRect().width;
+      /* A CARD is not a pill. Partners Hub draws "View All" as a left-aligned label
+         inside a 379px white content card; this pass read the card as the label's
+         button, rewrote its width in px and re-centred the label at (379-56)/2 =
+         161.5px -- 34vw off its Figma position. A real button hugs its label, so
+         require the box to be within ~4x the label ink before touching either. */
+      if(ink && pr.width > ink*4 + 80) return;
       var MINPAD=designPad(p,lab);
       var pad=Math.max(MINPAD,(pr.width-ink)/2);      // symmetric, on the design's own inset
       var need=Math.ceil(ink+pad*2);
@@ -1361,15 +1372,15 @@ document.addEventListener('DOMContentLoaded',function(){
 });
 </script>
 
-<div class="ax-mob"><main class="ax-page" style="position:relative;height:1891.1628vw">
-<div class="g-b" style="position:absolute;left:0.0000vw;top:1232.5581vw;width:100.0000vw;height:658.5060vw;background-color:rgb(255,255,255);"></div>
-<img class="g-vec" src="/assets/vec/5637-75984.svg" data-vec="5637:75984" loading="lazy" decoding="async" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:3.7209vw;top:1241.8605vw;width:23.2558vw;height:13.2558vw;">
+<div class="ax-mob"><main class="ax-page" style="position:relative;height:1901.3953vw">
+<div class="g-b" style="position:absolute;left:0.0000vw;top:1232.5581vw;width:100.0000vw;height:668.7385vw;background-color:rgb(255,255,255);"></div>
+<img class="g-vec" src="/assets/vec/6287-25084.svg" data-vec="6287:25084" loading="lazy" decoding="async" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:3.7209vw;top:1241.8605vw;width:23.2558vw;height:13.2558vw;">
 <div class="g-t" style="position:absolute;left:7.9070vw;top:1268.1608vw;width:41.6279vw;height:6.0465vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:4.2706vw;line-height:5.8721vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Sign up to learn more </div>
 <div class="g-t" style="position:absolute;left:7.9070vw;top:1279.0117vw;width:84.1860vw;height:6.0465vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:4.2706vw;line-height:5.8721vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">SAP. Cloud. AI. One accountable partner.
 </div>
 <div class="g-b g-clip" style="position:absolute;left:7.9070vw;top:1294.4003vw;width:84.1860vw;height:11.1628vw;background-color:rgb(223,63,23);border-radius:1.8605vw;overflow:hidden;">
 <div class="g-t" style="position:absolute;left:3.7209vw;top:3.2558vw;width:17.4419vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:3.2558vw;line-height:4.6512vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">Get Started</div>
-<img class="g-vec" src="/assets/vec/I5637-76017;4046-29821.svg" data-vec="I5637:76017;4046:29821" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:74.4186vw;top:2.7907vw;width:5.5814vw;height:5.5814vw;">
+<img class="g-vec" src="/assets/vec/I6287-25117;4046-29821.svg" data-vec="I6287:25117;4046:29821" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:74.4186vw;top:2.7907vw;width:5.5814vw;height:5.5814vw;">
 </div>
 <div class="g-t" style="position:absolute;left:10.1267vw;top:1318.6419vw;width:22.3256vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:3.7209vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Who we are
 </div>
@@ -1425,6 +1436,8 @@ document.addEventListener('DOMContentLoaded',function(){
 <div class="g-t" style="position:absolute;left:10.1267vw;top:1750.4299vw;width:11.8605vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Twitter</div>
 <div class="g-t" style="position:absolute;left:10.1267vw;top:1760.2818vw;width:14.1860vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">LinkedIn</div>
 <div class="g-img" data-ref="1a6724d5f1b0e3e74c7e42c83b442f552edd6040" role="img" aria-label="4 8" style="position:absolute;left:76.0465vw;top:1756.0465vw;width:20.2326vw;height:34.4186vw;background-image:url(/assets/partners/gptw-certified.png);background-size:contain;background-position:center;background-repeat:no-repeat;"></div>
+<div class="g-img" data-ref="9eb08a9ddab314e538d8d079612a05d15204b1c3" role="img" aria-label="4 8" style="position:absolute;left:74.8837vw;top:1700.4651vw;width:21.3953vw;height:21.3953vw;background-image:url(/assets/gen/9eb08a9ddab314e538d8d079612a05d15204b1c3.webp);background-size:35.6589vw 21.3953vw;background-position:-6.6258vw -0.0000vw;background-repeat:no-repeat;"></div>
+<div class="g-img" data-ref="f098495ead3741a8d723bd5d9f56e3a681293a2d" role="img" aria-label="4 9" style="position:absolute;left:74.1860vw;top:1727.4419vw;width:22.0930vw;height:23.0233vw;background-image:url(/assets/gen/f098495ead3741a8d723bd5d9f56e3a681293a2d.webp);background-size:22.9805vw 23.0233vw;background-position:-0.2104vw -0.0000vw;background-repeat:no-repeat;"></div>
 <div class="g-b" style="position:absolute;left:3.7209vw;top:1778.3844vw;width:92.5581vw;height:63.6100vw;box-sizing:border-box;border-bottom:0.2326vw solid rgb(236,238,242);"></div>
 <div class="g-t" style="position:absolute;left:10.3938vw;top:1784.5233vw;width:32.0930vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">support@doss.com</div>
 <div class="g-t" style="position:absolute;left:10.3938vw;top:1794.3755vw;width:32.5581vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Terms &amp; Conditions</div>
@@ -1433,16 +1446,19 @@ document.addEventListener('DOMContentLoaded',function(){
 <div class="g-t" style="position:absolute;left:10.3938vw;top:1804.2274vw;width:13.0233vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Cookies</div>
 <div class="g-t" style="position:absolute;left:33.0237vw;top:1804.3391vw;width:13.9535vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Sitemap</div>
 <div class="g-b" style="position:absolute;left:3.7209vw;top:1778.2926vw;width:92.5581vw;height:0.2326vw;background:linear-gradient(90deg, rgba(133,128,123,0.180) 0.0%);"></div>
-<div class="g-t" style="position:absolute;left:8.3721vw;top:1854.0875vw;width:49.3023vw;height:6.5116vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:4.1860vw;line-height:6.5116vw;color:rgb(38,15,20);text-align:left;white-space:nowrap;">Get the latest from Aeonx</div>
-<div class="g-b g-clip" style="position:absolute;left:8.3721vw;top:1864.4363vw;width:54.6512vw;height:10.6977vw;border-radius:0.4651vw;box-sizing:border-box;border:0.1860vw solid rgb(255,120,94);overflow:hidden;">
-<div class="g-t" style="position:absolute;left:3.9072vw;top:2.5581vw;width:46.8372vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:3.7209vw;line-height:5.5814vw;color:rgb(134,149,170);text-align:left;white-space:nowrap;">Work email</div>
+<div class="g-b" style="position:absolute;left:3.7209vw;top:1850.3666vw;width:92.5581vw;height:10.6977vw;box-sizing:border-box;border:0.2326vw solid rgb(236,238,242);"></div>
+<div class="g-t" style="position:absolute;left:7.6744vw;top:1853.3898vw;width:46.7442vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:3.2558vw;line-height:4.6512vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Get an AI summary of this page</div>
+<img class="g-vec" src="/assets/vec/6287-25266.svg" data-vec="6287:25266" loading="lazy" decoding="async" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:71.8605vw;top:1853.3898vw;width:20.0000vw;height:4.6512vw;">
+<div class="g-b" style="position:absolute;left:3.7209vw;top:1861.0642vw;width:92.5581vw;height:28.1395vw;box-sizing:border-box;border-right:0.2326vw solid rgb(236,238,242);border-bottom:0.2326vw solid rgb(236,238,242);border-left:0.2326vw solid rgb(236,238,242);"></div>
+<div class="g-t" style="position:absolute;left:7.6744vw;top:1863.8549vw;width:49.3023vw;height:6.5116vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:4.1860vw;line-height:6.5116vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Get the latest from Aeonx</div>
+<div class="g-b g-clip" style="position:absolute;left:7.6744vw;top:1875.0177vw;width:54.6512vw;height:10.2326vw;border-radius:0.4651vw;box-sizing:border-box;border:0.1860vw solid rgb(246,168,123);overflow:hidden;">
+<div class="g-t" style="position:absolute;left:3.9072vw;top:2.3256vw;width:46.8372vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:3.7209vw;line-height:5.5814vw;color:rgb(134,149,170);text-align:left;white-space:nowrap;">Work email</div>
 </div>
-<div class="g-b g-clip" style="position:absolute;left:65.8140vw;top:1864.4363vw;width:25.7267vw;height:10.6977vw;background-color:rgba(38,15,20,0.050);border-radius:0.4651vw;box-sizing:border-box;border:0.1860vw solid rgba(0,0,0,0.000);overflow:hidden;">
-<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:25.8140vw;height:10.2326vw;background-color:rgb(223,63,23);border-radius:1.8605vw;overflow:hidden;">
-<div class="g-t" style="position:absolute;left:5.5814vw;top:2.7907vw;width:14.6512vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:3.2558vw;line-height:4.6512vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">Subscribe</div>
+<div class="g-b g-clip" style="position:absolute;left:65.1163vw;top:1875.0177vw;width:27.6744vw;height:10.2326vw;border-radius:0.4651vw;overflow:hidden;">
+<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:27.6744vw;height:10.2326vw;background-color:rgb(223,63,23);border-radius:1.8605vw;overflow:hidden;">
+<div class="g-t" style="position:absolute;left:6.5116vw;top:2.7907vw;width:14.6512vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:3.2558vw;line-height:4.6512vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">Subscribe</div>
 </div>
 </div>
-<div class="g-b" style="position:absolute;left:3.7209vw;top:1881.7210vw;width:92.5581vw;height:0.2326vw;background-color:rgb(229,229,229);"></div>
 <div class="g-b" style="position:absolute;left:0.0000vw;top:1149.3023vw;width:100.0930vw;height:83.2558vw;background-color:rgb(246,247,249);"></div>
 <h1 class="g-t" style="position:absolute;left:5.5814vw;top:1158.6047vw;width:88.8372vw;height:10.2326vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:8.3721vw;line-height:10.2326vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Request the trust pack.</h1>
 <div class="g-t" style="position:absolute;left:5.9302vw;top:1171.6279vw;width:88.1395vw;height:19.5349vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:4.1860vw;line-height:6.5116vw;color:rgb(82,96,119);text-align:left;white-space:pre-wrap;">Send a one-line email, we&#x27;ll send the NDA the same day. Most procurement teams have the full pack within 48 hours.</div>
@@ -1895,8 +1911,19 @@ document.addEventListener("DOMContentLoaded",function(){
   -webkit-tap-highlight-color:transparent;cursor:pointer}
 .ax-carh:disabled{opacity:.35;cursor:default}
 /* live dots, drawn over the baked pill so the active step actually moves */
+/* Mobile only. The live dots overlay is itself hidden above 768px, so masking the
+   design's own dots out of the control art up there would delete them and put nothing
+   back -- and the desktop build is signed off. */
+@media (max-width:768px){
+.ax-carart{clip-path:polygon(0% 0%,3.4% 0%,3.4% 100%,35.2% 100%,35.2% 0%,100% 0%,100% 100%,0% 100%);shape-rendering:crispEdges}
+@supports (clip-path:xywh(0 0 1px 1px)){.ax-carart{clip-path:none;-webkit-mask-image:linear-gradient(90deg,#000 0 3.4%,transparent 3.4% 35.2%,#000 35.2% 100%);mask-image:linear-gradient(90deg,#000 0 3.4%,transparent 3.4% 35.2%,#000 35.2% 100%)}}
+}
 .ax-cardots{position:absolute;z-index:41;display:flex;align-items:center;
-  justify-content:center;gap:6px;background:#FEF5EE;border-radius:999px;pointer-events:none}
+  justify-content:center;gap:6px;background:#FEF5EE;border-radius:4px;pointer-events:none}
+/* The overlay sits ON TOP of Figma's own control artwork, which bakes its dots into
+   the same SVG as the arrows. It has to match AtomNavigationDots exactly -- peach
+   fill, 4px radius, 90x40 for three dots -- or the design's dots show alongside the
+   live ones and the row appears to have twice as many. */
 .ax-cardots i{display:block;width:6px;height:6px;border-radius:999px;background:#ECEEF2;
   transition:width .3s ease,background-color .3s ease}
 .ax-cardots i.on{width:22px;background:#DF3F17}
@@ -2133,6 +2160,11 @@ document.addEventListener("DOMContentLoaded",function(){
        one shape: a homepage row is baked with its slides at NEGATIVE offsets
        (content left of the origin is unreachable by a real scroller) and several
        rows have no clipping box at all -- their slides sit straight on the page. */
+    /* A row a page-scoped fragment already drives is not ours. _prodstrip.html marks
+       the mobile SaaS-suite clip and everything under it; without this the carousel
+       adopted part of that row and left the rest, which is why five of the six product
+       screenshots never moved with their tab. */
+    if (host && host.closest && host.closest('[data-ax-owned]')) return;
     var mTop = top - 6, mBot = bottom + 6;
     if (tabs) {
       mTop = tabs[0].T + tabs[0].H + 4;
@@ -2142,7 +2174,12 @@ document.addEventListener("DOMContentLoaded",function(){
       if (b.el.parentElement !== host) return false;
       if (ctrl && b.el === ctrl.el) return false;
       if (b.T < mTop || b.T > mBot) return false;
-      var k = Math.round((b.L - cols[0]) / stride);
+      /* floor, not round: a member belongs to the column it STARTS in. The homepage
+         trinity band's third CTA ("See the suite") sits 200px into its 354px column
+         -- narrower label, so Figma centres it further right -- which rounds to
+         column 3, past the last card, and the pill was dropped from the track
+         entirely. That card shipped with no button at all. */
+      var k = Math.floor((b.L - cols[0]) / stride);
       return k >= 0 && k < count && Math.abs((b.L - cols[0]) - k * stride) < stride * 0.9;
     }).map(function(b){ return b.el; });
     if (slides.length < 2) return;
@@ -2352,12 +2389,20 @@ document.addEventListener("DOMContentLoaded",function(){
       prev.addEventListener('click', function(){ takeover(); go(i - 1); });
       next.addEventListener('click', function(){ takeover(); go(i + 1); });
 
+      /* the live dots cannot paint over the baked art, so cut the art's own dots out */
+      if (ctrl.el) ctrl.el.classList.add('ax-carart');
       dots = document.createElement('div');
       dots.className = 'ax-cardots';
       dots.dataset.axRow = rowId;
       dots.style.left = (ctrl.L + ctrl.W * 16 / vb) + 'px';
       dots.style.top = ctrl.T + 'px';
-      dots.style.width = (ctrl.W * (153.6 - 16) / vb) + 'px';
+      /* Figma's own AtomNavigationDots box, not one fixed width. The component is
+         90x40 for three dots and grows ~16px per extra dot (measured across its 37
+         instances in the mobile file: 30 at 90, five at 122, one at 138, one at 151).
+         The old constant baked in the 138 case, so every three-dot row -- which is
+         nearly all of them -- drew a box half again too wide with its dots stranded
+         left of centre. */
+      dots.style.width = (ctrl.W * (90 + 16 * Math.max(0, count - 3)) / vb) + 'px';
       dots.style.height = ctrl.H + 'px';
       for (var d = 0; d < count; d++) dots.appendChild(document.createElement('i'));
       page.appendChild(dots);
@@ -2390,7 +2435,12 @@ document.addEventListener("DOMContentLoaded",function(){
        cloned track), pausing offscreen and handing over for good on first touch. */
     var driftStop = null;
     function stopDrift(){ if (driftStop) { driftStop(); driftStop = null; } }
-    if (!ctrl && !tabs && !REDUCED) (function(){
+    /* AUTO-ADVANCE REMOVED 2026-08-27 at the client's instruction: a carousel moves
+       only when the reader moves it. Rows with no arrows, dots or tabs keep touch
+       drag; they no longer scroll by themselves. The block is left in place, never
+       entered, so the seamless-clone technique is not lost. */
+    var DRIFT = false;
+    if (DRIFT && !ctrl && !tabs && !REDUCED) (function(){
       var cycle = stride * count;
       var clone = track.cloneNode(true);
       clone.setAttribute('aria-hidden', 'true');
@@ -2637,6 +2687,18 @@ document.addEventListener("DOMContentLoaded",function(){
          through String() -- the culture page's pillars read 1..4 on mobile, where
          the numbers are large enough to clear the size threshold. */
       if (/^0\d/.test(m[2])) continue;
+      /* A stat is a short standalone label -- "280+", "15+", "4X", "18 wks". These
+         three are numbers that merely START a line, and animating them rewrote real
+         copy: the Foundation timeline's YEARS all read "0" until the observer fired
+         (and then counted 0 -> 2020, which reads as a bug either way), "175-seat
+         infrastructure. Workforce growth across six offices…" became "0-seat
+         infrastructure…", and the investor pages' live "3 documents" count -- which
+         the document browser writes itself from the API -- was reset to "0 documents"
+         underneath it. Mobile is where this showed, because the type is big enough
+         there to clear MIN_REL; desktop draws the same nodes smaller. */
+      if (/^(19|20)\d\d$/.test(m[2]) && !m[3].trim()) continue;   /* a year */
+      if (raw.trim().length > 24) continue;                        /* prose, not a stat */
+      if (/^\s*documents?\b/i.test(m[3])) continue;                /* live API count */
       jobs.push({ node:n, target:target, grouped:/,/.test(m[2]),
                   pre:m[1], suf:m[3], box:box, done:false });
       n.nodeValue = m[1] + '0' + m[3];
@@ -3942,6 +4004,273 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 
+<style id="ax-bloglist-css">
+/* Real posts inside the DESIGNED Figma slots. Nothing is inserted into the
+   pixel-locked layout and no element is repositioned -- each designed card slot
+   (image box, category chip, title) simply gets real content, so the page still
+   renders exactly as drawn. Only paint-level properties are touched. */
+.ax-bl-hit{cursor:pointer}
+.ax-bl-hit:focus-visible{outline:2px solid rgb(223,63,23);outline-offset:2px}
+.ax-bl-img{background-size:cover!important;background-position:center!important;
+  background-repeat:no-repeat!important}
+.ax-bl-img--ph{background-size:60%!important;background-color:#F6F7F9!important}
+.ax-bl-t{transition:color .18s ease;height:auto!important;display:-webkit-box;
+  -webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.ax-bl-hit:hover .ax-bl-t,.ax-bl-t.ax-bl-hit:hover{color:rgb(223,63,23)}
+.ax-bl-page{position:absolute;display:flex;gap:.5rem;align-items:center;
+  font-family:'Nunito Sans',sans-serif;font-size:.85rem;color:rgb(82,96,119)}
+.ax-bl-page button{border:1px solid rgb(213,218,226);background:#fff;border-radius:99px;
+  width:2rem;height:2rem;cursor:pointer;color:rgb(35,39,46);font-size:1rem;line-height:1}
+.ax-bl-page button[disabled]{opacity:.35;cursor:default}
+</style>
+<script>
+/* ---- REAL POSTS IN THE DESIGNED BLOG SLOTS ---- */
+(function(){
+  var POSTS = [{"u":"/2026/07/08/guardrails-for-production-genai-how-we-stopped-prompt-injection-and-pii-leakage-before-it-reached-amazon-bedrock/10/00/00/243291/aws/chandni-gadhvi/","t":"Guardrails for Production GenAI: How We Stopped Prompt Injection and PII Leakage Before It Reached Amazon Bedrock","c":"AWS","d":"July 8, 2026","i":"https://www.aeonx.digital/wp-content/plugins/revslider/public/assets/assets/dummy.png","ph":0,"a":"Chandni Gadhvi","ts":"20260708"},{"u":"/2026/07/02/how-an-fmcg-manufacturer-reduced-logistics-costs-by-24-using-agentic-ai-on-aws-architecture-deployment-and-what-broke/10/00/00/243275/aws/rajat-jindal/","t":"How an FMCG Manufacturer Reduced Logistics Costs by 24% Using Agentic AI on AWS: Architecture, Deployment, and What Broke","c":"AWS","d":"July 2, 2026","i":"https://www.aeonx.digital/wp-content/uploads/2026/07/blog12-architecture-diagram.png","ph":0,"a":"Rajat Jindal","ts":"20260702"},{"u":"/2026/06/24/cost-aware-ai-architecture-how-we-reduced-amazon-bedrock-spend-by-52-without-sacrificing-output-quality/10/00/00/243290/aws/chandni-gadhvi/","t":"Cost-Aware AI Architecture: How We Reduced Amazon Bedrock Spend by 52% Without Sacrificing Output Quality","c":"AWS","d":"June 24, 2026","i":"https://www.aeonx.digital/wp-content/uploads/2026/07/aws-blog7-diagram-v2.png","ph":0,"a":"Chandni Gadhvi","ts":"20260624"},{"u":"/2026/06/11/how-an-enterprise-apparel-company-cut-expense-claim-processing-from-45-minutes-to-under-5-using-agentic-ai-on-aws-architecture-deployment-and-what-broke/10/00/00/243274/aws/rajat-jindal/","t":"How an Enterprise Apparel Company Cut Expense Claim Processing From 45 Minutes to Under 5 Using Agentic AI on AWS: Architecture, Deployment, and What Broke","c":"AWS","d":"June 11, 2026","i":"https://www.aeonx.digital/wp-content/uploads/2026/06/blog11-architecture-diagram.png","ph":0,"a":"Rajat Jindal","ts":"20260611"},{"u":"/2026/06/10/building-a-self-healing-data-pipeline-on-aws-how-we-used-amazon-bedrock-to-diagnose-and-auto-remediate-etl-failures/10/00/00/243289/aws/chandni-gadhvi/","t":"Building a Self-Healing Data Pipeline on AWS: How We Used Amazon Bedrock to Diagnose and Auto-Remediate ETL Failures","c":"AWS","d":"June 10, 2026","i":"https://www.aeonx.digital/wp-content/uploads/2026/07/aws-blog6-diagram.png","ph":0,"a":"Chandni Gadhvi","ts":"20260610"},{"u":"/2026/05/27/agentic-ai-in-finance-how-we-built-an-autonomous-accounts-payable-agent-on-amazon-bedrock-that-processes-invoices-end-to-end/10/00/00/243288/aws/chandni-gadhvi/","t":"Agentic AI in Finance: How We Built an Autonomous Accounts Payable Agent on Amazon Bedrock That Processes Invoices End-to-End","c":"AWS","d":"May 27, 2026","i":"https://www.aeonx.digital/wp-content/uploads/2026/07/aws-blog5-diagram.png","ph":0,"a":"Chandni Gadhvi","ts":"20260527"},{"u":"/2026/05/21/sap-on-aws-meets-generative-ai-why-your-erp-is-the-most-underused-ai-data-source-in-the-enterprise/10/00/00/243271/aws/rajat-jindal/","t":"SAP on AWS Meets Generative AI: Why Your ERP Is the Most Underused AI Data Source in the Enterprise","c":"AWS","d":"May 21, 2026","i":"https://www.aeonx.digital/wp-content/uploads/diagram10.png","ph":0,"a":"Rajat Jindal","ts":"20260521"},{"u":"/2026/05/13/multi-tenant-ai-how-we-built-a-single-amazon-bedrock-integration-that-serves-five-business-units-with-isolated-data-security-and-costs/10/00/00/243287/aws/chandni-gadhvi/","t":"Multi-Tenant AI: How We Built a Single Amazon Bedrock Integration That Serves Five Business Units With Isolated Data, Security, and Costs","c":"AWS","d":"May 13, 2026","i":"https://www.aeonx.digital/wp-content/uploads/2026/07/aws-blog4-diagram.png","ph":0,"a":"Chandni Gadhvi","ts":"20260513"},{"u":"/2026/05/07/data-governance-is-the-ai-gatekeeper-how-lake-formation-decides-what-your-ai-can-and-cannot-see/10/00/00/243270/aws/rajat-jindal/","t":"Data Governance Is the AI Gatekeeper: How Lake Formation Decides What Your AI Can and Cannot See","c":"AWS","d":"May 7, 2026","i":"/assets/aeonx-logo.svg","ph":1,"a":"Rajat Jindal","ts":"20260507"},{"u":"/2026/04/29/the-observability-gap-in-ml-systems-how-we-built-a-model-health-dashboard-that-catches-degradation-before-users-do/10/00/00/243286/aws/chandni-gadhvi/","t":"The Observability Gap in ML Systems: How We Built a Model Health Dashboard That Catches Degradation Before Users Do","c":"AWS","d":"April 29, 2026","i":"https://www.aeonx.digital/wp-content/uploads/2026/07/aws-blog3-diagram.png","ph":0,"a":"Chandni Gadhvi","ts":"20260429"},{"u":"/2026/04/23/zero-etl-is-the-end-of-pipeline-engineering-how-aws-is-eliminating-the-data-lakes-biggest-bottleneck/10/00/00/243269/aws/rajat-jindal/","t":"Zero-ETL Is the End of Pipeline Engineering: How AWS Is Eliminating the Data Lake\u2019s Biggest Bottleneck","c":"AWS","d":"April 23, 2026","i":"https://www.aeonx.digital/wp-content/uploads/diagram8_1.png","ph":0,"a":"Rajat Jindal","ts":"20260423"},{"u":"/2026/04/15/building-an-ai-powered-visual-inspection-system-on-aws-with-yolov11-and-amazon-bedrock/10/00/00/243197/aws/chandni-gadhvi/","t":"Building an AI-Powered Visual Inspection System on AWS with YOLOv11 and Amazon Bedrock","c":"AWS","d":"April 15, 2026","i":"https://www.aeonx.digital/wp-content/uploads/2026/07/aws-blog2-diagram.png","ph":0,"a":"Chandni Gadhvi","ts":"20260415"},{"u":"/2026/04/09/your-data-lake-is-a-data-swamp-until-ai-can-query-it-building-semantic-data-lakes-on-aws/10/00/00/243268/aws/rajat-jindal/","t":"Your Data Lake Is a Data Swamp Until AI Can Query It: Building Semantic Data Lakes on AWS","c":"AWS","d":"April 9, 2026","i":"https://www.aeonx.digital/wp-content/uploads/diagram7.png","ph":0,"a":"Rajat Jindal","ts":"20260409"},{"u":"/2026/04/01/architecting-an-ai-driven-freight-optimization-platform-on-aws-using-amazon-bedrock-and-sagemaker/10/00/00/243180/aws/chandni-gadhvi/","t":"Architecting an AI-Driven Freight Optimization Platform on AWS Using Amazon Bedrock and SageMaker","c":"AWS","d":"April 1, 2026","i":"https://www.aeonx.digital/wp-content/uploads/2026/07/aws-blog1-diagram.png","ph":0,"a":"Chandni Gadhvi","ts":"20260401"},{"u":"/2026/03/26/the-multi-model-strategy-why-locking-into-one-ai-provider-is-the-new-vendor-lock-in/10/00/00/243267/aws/rajat-jindal/","t":"The Multi-Model Strategy: Why Locking Into One AI Provider Is the New Vendor Lock-In","c":"AWS","d":"March 26, 2026","i":"https://www.aeonx.digital/wp-content/uploads/2026/03/blog6-architecture-diagram.png","ph":0,"a":"Rajat Jindal","ts":"20260326"},{"u":"/2026/03/05/shadow-ai-is-the-biggest-data-risk-your-ciso-hasnt-budgeted-for-and-its-already-inside-your-organisation/10/00/00/243266/aws/rajat-jindal/","t":"Shadow AI Is the Biggest Data Risk Your CISO Hasn\u2019t Budgeted For \u2014 And It\u2019s Already Inside Your Organisation","c":"AWS","d":"March 5, 2026","i":"/assets/aeonx-logo.svg","ph":1,"a":"Rajat Jindal","ts":"20260305"},{"u":"/2026/02/12/building-an-ai-ready-data-foundation/10/00/00/243240/aws/rajat-jindal/","t":"Building an AI-Ready Data Foundation","c":"AWS","d":"February 12, 2026","i":"/assets/aeonx-logo.svg","ph":1,"a":"Rajat Jindal","ts":"20260212"},{"u":"/2026/02/05/applying-the-aws-well-architected-framework-to-modernize-a-legacy-crm-and-employee-portal-platform/10/00/00/243212/aws/rajat-jindal/","t":"Applying the AWS Well-Architected Framework to Modernize a Legacy CRM and Employee Portal Platform","c":"AWS","d":"February 5, 2026","i":"/assets/aeonx-logo.svg","ph":1,"a":"Rajat Jindal","ts":"20260205"},{"u":"/2026/01/29/architecting-a-secure-multi-application-platform-with-ci-cd-and-cross-region-disaster-recovery-on-aws/10/00/00/243183/aws/rajat-jindal/","t":"Architecting a Secure Multi-Application Platform with CI/CD and Cross-Region Disaster Recovery on AWS","c":"AWS","d":"January 29, 2026","i":"https://www.aeonx.digital/wp-content/uploads/2026/01/blog2-architecture-diagram.png","ph":0,"a":"Rajat Jindal","ts":"20260129"},{"u":"/2026/01/26/architecting-a-secure-multi-vpc-rd-platform-on-aws-with-hybrid-connectivity-and-ci-cd-automation/01/23/06/243191/aws/rajat-jindal/","t":"Architecting a Secure Multi-VPC R&D Platform on AWS with Hybrid Connectivity and CI/CD Automation","c":"AWS","d":"January 26, 2026","i":"/assets/aeonx-logo.svg","ph":1,"a":"Rajat Jindal","ts":"20260126"},{"u":"/2026/01/23/building-a-real-time-inventory-validation-system-on-aws-using-iot-containers-and-automated-devops/01/13/19/243176/aws/rajat-jindal/","t":"Building a Real-Time Inventory Validation System on AWS Using IoT, Containers, and Automated DevOps","c":"AWS","d":"January 23, 2026","i":"/assets/aeonx-logo.svg","ph":1,"a":"Rajat Jindal","ts":"20260123"},{"u":"/2026/01/22/modernizing-enterprise-crm-and-employee-platforms-with-aws-fargate-and-end-to-end-ci-cd/10/00/00/243171/aws/rajat-jindal/","t":"Modernizing an Enterprise CRM Platform Using Amazon ECS Fargate and AWS CI/CD","c":"AWS","d":"January 22, 2026","i":"https://www.aeonx.digital/wp-content/uploads/2026/01/blog1-architecture-diagram.png","ph":0,"a":"Rajat Jindal","ts":"20260122"},{"u":"/2023/04/14/itd/05/25/44/240713/success-stories-sap/admin/","t":"ITD Cementation","c":"Success Stories","d":"April 14, 2023","i":"https://www.aeonx.digital/wp-content/uploads/2023/04/itd-top-banner.jpg","ph":0,"a":"Admin","ts":"20230414"},{"u":"/2023/03/01/sap-on-aws-delux-bearings/04/21/19/240608/success-stories-aws/admin/","t":"Hosting SAP workloads on AWS","c":"Success Stories","d":"March 1, 2023","i":"https://www.aeonx.digital/wp-content/uploads/2023/03/top-banner2.jpg","ph":0,"a":"Admin","ts":"20230301"},{"u":"/2023/01/03/ckbh-case-study/07/01/09/240160/success-stories-aws/admin/","t":"SAP AMS support for mining and exploration.","c":"Success Stories","d":"January 3, 2023","i":"https://www.aeonx.digital/wp-content/uploads/2023/01/top-banner-final.jpg","ph":0,"a":"Admin","ts":"20230103"},{"u":"/2023/01/03/konark-case-study/05/36/54/240144/success-stories-aws/admin/","t":"SAP AMS support for mining and exploration.","c":"Success Stories","d":"January 3, 2023","i":"https://www.aeonx.digital/wp-content/uploads/2023/01/top-banner.jpg","ph":0,"a":"Admin","ts":"20230103"},{"u":"/2023/01/03/ashok-alco-chem-case-study/07/29/19/240171/success-stories-aws/admin/","t":"SAP AMS support for mining and exploration.","c":"Success Stories","d":"January 3, 2023","i":"https://www.aeonx.digital/wp-content/uploads/2023/01/test-post2-2.jpg","ph":0,"a":"Admin","ts":"20230103"},{"u":"/2022/09/30/reaping-the-benefits-of-aws/11/34/26/239403/success-stories-aws/admin/","t":"Reaping the benefits of AWS","c":"Success Stories","d":"September 30, 2022","i":"https://www.aeonx.digital/wp-content/uploads/2022/09/MicrosoftTeams-image-1-1.jpg","ph":0,"a":"Admin","ts":"20220930"},{"u":"/2022/09/15/bvg-india-limited-deploys-aws-for-disaster-recovery-2/10/08/31/1112/aws/admin/","t":"BVG India Limited deploys AWS for Disaster Recovery","c":"AWS","d":"September 15, 2022","i":"https://www.aeonx.digital/wp-content/uploads/2022/09/02_Aeonx-blog-02-1.jpg","ph":0,"a":"Admin","ts":"20220915"},{"u":"/2022/09/13/public-sector-competency-in-aws/12/56/17/1052/aws/admin/","t":"Public Sector Competency in AWS","c":"AWS","d":"September 13, 2022","i":"https://www.aeonx.digital/wp-content/uploads/2022/09/technology.jpg","ph":0,"a":"Admin","ts":"20220913"},{"u":"/2022/09/06/the-proliferation-of-brands-with-sap-ams-cpg/10/17/32/1012/sap/admin/","t":"The proliferation of brands with SAP AMS CPG.","c":"SAP","d":"September 6, 2022","i":"https://www.aeonx.digital/wp-content/uploads/2022/09/03_AeonX-Blogs-04.jpg","ph":0,"a":"Admin","ts":"20220906"},{"u":"/2022/09/06/sap-ams-for-using-multiple-data-sources/10/09/42/1009/sap/admin/","t":"SAP AMS for using multiple data sources","c":"SAP","d":"September 6, 2022","i":"https://www.aeonx.digital/wp-content/uploads/2022/09/03_AeonX-Blogs-02.jpg","ph":0,"a":"Admin","ts":"20220906"},{"u":"/2022/09/06/success-story-of-technology-adoption/12/09/24/1003/sap/admin/","t":"Success Story of Technology Adoption","c":"SAP","d":"September 6, 2022","i":"https://www.aeonx.digital/wp-content/uploads/2022/09/02_Aeonx-blog-01.jpg","ph":0,"a":"Admin","ts":"20220906"},{"u":"/2022/09/06/sap-ams-support-for-mining-and-exploration/10/32/56/1007/sap/admin/","t":"SAP AMS support for mining and exploration.","c":"SAP","d":"September 6, 2022","i":"https://www.aeonx.digital/wp-content/uploads/2022/09/Untitled-design-2.jpg","ph":0,"a":"Admin","ts":"20220906"},{"u":"/2022/09/01/sap-ams-to-streamline-and-enhance-real-state-management-processes/12/49/29/1000/sap/admin/","t":"SAP AMS to streamline and enhance Real State management processes.","c":"SAP","d":"September 1, 2022","i":"https://www.aeonx.digital/wp-content/uploads/2022/09/03_AeonX-Blogs-03.jpg","ph":0,"a":"Admin","ts":"20220901"},{"u":"/2022/08/30/sap-ams-to-establish-strategic-and-targeted-value/12/06/57/996/sap/admin/","t":"SAP AMS to establish strategic and targeted value.","c":"SAP","d":"August 30, 2022","i":"https://www.aeonx.digital/wp-content/uploads/2022/08/02_Aeonx-blog-02.jpg","ph":0,"a":"Admin","ts":"20220830"},{"u":"/2022/08/30/sap-ams-fostering-advancement-through-developing-technology/12/10/13/992/sap/admin/","t":"SAP AMS fostering advancement through developing technology.","c":"SAP","d":"August 30, 2022","i":"https://www.aeonx.digital/wp-content/uploads/2022/08/02_Aeonx-blog-04.jpg","ph":0,"a":"Admin","ts":"20220830"},{"u":"/2022/07/19/case-study-for-integration-of-trackabout-with-sap-erp/07/52/04/984/sap/admin/","t":"Case Study for Integration of TrackAbout with SAP ERP","c":"SAP","d":"July 19, 2022","i":"https://www.aeonx.digital/wp-content/uploads/2022/07/01_Aeonx-blog-04.jpg","ph":0,"a":"Admin","ts":"20220719"},{"u":"/2022/07/07/migrate-to-modernize-a-case-study/06/08/04/938/aws/admin/","t":"Migrate-to-Modernize: A Case Study","c":"AWS","d":"July 7, 2022","i":"https://www.aeonx.digital/wp-content/uploads/2022/07/01_Aeonx-blog-02-1.jpg","ph":0,"a":"Admin","ts":"20220707"},{"u":"/2022/06/13/aeonx-modernizing-the-gopal-namkeen-processing-system-using-sap/14/37/26/932/sap/admin/","t":"AeonX modernizing the Gopal Namkeen processing system using SAP/AWS","c":"SAP","d":"June 13, 2022","i":"https://www.aeonx.digital/wp-content/uploads/2022/06/01_Aeonx-blog-01.jpg","ph":0,"a":"Admin","ts":"20220613"},{"u":"/2022/06/08/aeonx-aws-partner-network/05/48/43/918/aws/admin/","t":"AeonX achieves Advanced Tier Status in the AWS Partner Network","c":"AWS","d":"June 8, 2022","i":"https://www.aeonx.digital/wp-content/uploads/2022/06/Untitled-design-10.jpg","ph":0,"a":"Admin","ts":"20220608"},{"u":"/2022/03/11/sap-consultant-guide-career-salary-jobs-scope-skills/06/41/07/795/sap/admin/","t":"A Sap Consultant Guide 2022 : Career, Salary, Jobs, Scope, Skills","c":"SAP","d":"March 11, 2022","i":"https://www.aeonx.digital/wp-content/uploads/2022/03/sap_guide.jpg","ph":0,"a":"Admin","ts":"20220311"},{"u":"/2022/03/11/disaster-recovery-for-bhilosa-industry-using-aws/09/17/41/814/sap/admin/","t":"Disaster Recovery for Bhilosa Industry Using AWS.","c":"SAP","d":"March 11, 2022","i":"https://www.aeonx.digital/wp-content/uploads/2022/03/Disaster-Recovery-using-AWS.jpg","ph":0,"a":"Admin","ts":"20220311"},{"u":"/2021/12/18/is-the-rise-of-the-internet-increasing-the-need-for-digital-transformation-in-businesses/08/22/06/768/digital-transformation/admin/","t":"What role does the internet play in the rise of Digital Transformation?","c":"Digital Transformation","d":"December 18, 2021","i":"https://www.aeonx.digital/wp-content/uploads/2021/12/AenoX-Blog-Banner-3-1.png","ph":0,"a":"Admin","ts":"20211218"},{"u":"/2021/12/17/what-does-cloud-computing-mean-for-todays-businesses/14/13/21/746/cloud-computing/admin/","t":"What does cloud computing mean for today's businesses","c":"Cloud","d":"December 17, 2021","i":"https://www.aeonx.digital/wp-content/uploads/2021/12/AenoX-Blog-Banner.png","ph":0,"a":"Admin","ts":"20211217"},{"u":"/2021/03/15/how-does-sap-protect-your-data/07/54/52/694/sap/admin/","t":"How Does SAP Protect Your Data? - AeonX Digital Solution","c":"SAP","d":"March 15, 2021","i":"https://www.aeonx.digital/wp-content/uploads/2021/03/Untitled-design-3.jpg","ph":0,"a":"Admin","ts":"20210315"},{"u":"/2021/02/07/driving-innovation-with-sap/06/49/35/631/sap/admin/","t":"Driving Innovation With SAP","c":"SAP","d":"February 7, 2021","i":"https://www.aeonx.digital/wp-content/uploads/2021/02/Untitled-design-4.jpg","ph":0,"a":"Admin","ts":"20210207"},{"u":"/2021/01/28/sap-interview-questions/07/21/25/633/sap/admin/","t":"Top 30 SAP Interview Questions & Answers","c":"SAP","d":"January 28, 2021","i":"https://www.aeonx.digital/wp-content/uploads/2021/01/Untitled-design-5.jpg","ph":0,"a":"Admin","ts":"20210128"},{"u":"/2020/12/29/e-invoicing-under-gst-india/06/43/49/628/sap/admin/","t":"E-Invoicing Under GST India","c":"SAP","d":"December 29, 2020","i":"https://www.aeonx.digital/wp-content/uploads/2020/12/Untitled-design-6.jpg","ph":0,"a":"Admin","ts":"20201229"},{"u":"/2020/12/16/where-there-is-business-there-is-sap/06/52/05/624/sap/admin/","t":"Where There Is Business, There is SAP","c":"SAP","d":"December 16, 2020","i":"https://www.aeonx.digital/wp-content/uploads/2020/12/Untitled-design-7.jpg","ph":0,"a":"Admin","ts":"20201216"},{"u":"/2020/10/19/search-string-in-electronic-bank-reconciliation-mt940-format-part-ii/17/10/16/607/sap/admin/","t":"Search String in Electronic Bank Reconciliation \u2013 MT940 Format \u2013 Part II","c":"SAP","d":"October 19, 2020","i":"https://www.aeonx.digital/wp-content/uploads/2020/10/Untitled-design-8.jpg","ph":0,"a":"Admin","ts":"20201019"},{"u":"/2020/10/19/steps-to-activate-electronic-bank-reconciliation-statement-mt940-format-part-i/17/04/20/604/sap/admin/","t":"Steps to Activate Electronic BRS \u2013 MT940 Format \u2013 Part I","c":"SAP","d":"October 19, 2020","i":"https://www.aeonx.digital/wp-content/uploads/2020/10/Untitled-design-8.jpg","ph":0,"a":"Admin","ts":"20201019"},{"u":"/2020/10/12/sales-order-level-approval-workflow-and-release-from-credit-block-2-in-1/11/08/18/545/sap/admin/","t":"Sales Order \u2013 Level Approval Workflow","c":"SAP","d":"October 12, 2020","i":"https://www.aeonx.digital/wp-content/uploads/2020/10/Untitled-design-9-400x250.jpg","ph":0,"a":"Admin","ts":"20201012"}];
+  var CATS  = ["All","AWS","Success Stories","SAP","Digital Transformation","Cloud"];
+
+  function txt(e){ return (e.textContent||'').replace(/\s+/g,' ').trim(); }
+  function rect(e){ return e.getBoundingClientRect(); }
+
+  function slots(){
+    var page=document.querySelector('main.ax-page');
+    if(!page) return null;
+    var imgs=[],texts=[];
+    page.querySelectorAll('.g-img,.g-b.g-clip').forEach(function(e){
+      if(e.closest('.ax-mob')) return;
+      var r=rect(e), st=e.getAttribute('style')||'';
+      if(r.width>90&&r.height>60&&r.width<900&&/background-image/.test(st))
+        imgs.push({el:e,r:r});
+    });
+    page.querySelectorAll('.g-t').forEach(function(e){
+      if(e.closest('.ax-mob')) return;
+      var r=rect(e); if(!r.width) return;
+      texts.push({el:e,r:r,t:txt(e),fs:parseFloat(getComputedStyle(e).fontSize)||0});
+    });
+    /* one image box per visual position (Figma stacks a fill box under the image) */
+    var seen={},uniq=[];
+    imgs.sort(function(a,b){return a.r.top-b.r.top||a.r.left-b.r.left;});
+    imgs.forEach(function(i){
+      var k=Math.round(i.r.left)+'x'+Math.round(i.r.top);
+      if(!seen[k]){ seen[k]=1; uniq.push(i); }
+    });
+    return {page:page,imgs:uniq,texts:texts};
+  }
+
+  /* the card's title: the biggest text starting below the image, in its column */
+  function titleFor(img,texts){
+    var c=texts.filter(function(t){
+      return t.fs>=15 && t.t.length>12 &&
+             t.r.top>=img.r.top-8 && t.r.top<img.r.bottom+150 &&
+             t.r.left>=img.r.left-8 && t.r.left<img.r.right+420 &&
+             !/^(Field notes|Long-form|Browse by|Want the long|Subscribe|Sign up)/.test(t.t);
+    });
+    c.sort(function(a,b){ return (b.fs-a.fs) || (a.r.top-b.r.top); });
+    return c[0];
+  }
+  function chipFor(title,texts){
+    if(!title) return null;
+    var c=texts.filter(function(t){
+      return t!==title && /^[A-Za-z][A-Za-z &]{2,}$/.test(t.t) && t.t.length<26 &&
+             t.fs<15 && t.r.bottom<=title.r.top+4 && title.r.top-t.r.bottom<70 &&
+             Math.abs(t.r.left-title.r.left)<60;
+    });
+    c.sort(function(a,b){ return b.r.bottom-a.r.bottom; });
+    return c[0];
+  }
+
+  function wire(el,url){
+    if(!el) return;
+    el.classList.add('ax-bl-hit');
+    if(!el.hasAttribute('tabindex')) el.setAttribute('tabindex','0');
+    el.setAttribute('role','link');
+    if(el.__axgo){ el.__axgo.url=url; return; }
+    var box={url:url};
+    el.__axgo=box;
+    var go=function(){ location.href=box.url; };
+    el.addEventListener('click',go);
+    el.addEventListener('keydown',function(e){
+      if(e.key==='Enter'||e.key===' '){ e.preventDefault(); go(); }
+    });
+  }
+
+  function fill(slot,p){
+    if(!p){ return; }
+    var st=slot.img.el.getAttribute('style')||'';
+    st=st.replace(/background-image:[^;]*;?/,'');
+    slot.img.el.setAttribute('style', st+';background-image:url("'+p.i+'")');
+    slot.img.el.classList.add('ax-bl-img');
+    slot.img.el.classList.toggle('ax-bl-img--ph', !!p.ph);
+    if(slot.title){
+      slot.title.el.textContent=p.t;
+      slot.title.el.style.whiteSpace='normal';
+      slot.title.el.style.overflow='hidden';
+      slot.title.el.classList.add('ax-bl-t');
+      wire(slot.title.el,p.u);
+    }
+    if(slot.chip) slot.chip.el.textContent=p.c;
+    if(slot.author) slot.author.el.textContent=p.a||'AeonX Digital';
+    if(slot.date) slot.date.el.textContent=p.d;
+    wire(slot.img.el,p.u);
+  }
+
+  function init(){
+    var s=slots();
+    if(!s||s.imgs.length<3) return;
+    if(s.page.dataset.axBl) return;
+    s.page.dataset.axBl='1';
+
+    function nearBelow(title,test){
+      if(!title) return null;
+      var c=s.texts.filter(function(t){
+        return t!==title && test(t.t) && t.r.top>=title.r.bottom-4 &&
+               t.r.top-title.r.bottom<90 && Math.abs(t.r.left-title.r.left)<520;
+      });
+      c.sort(function(a,b){ return a.r.top-b.r.top; });
+      return c[0];
+    }
+    var cards=s.imgs.map(function(img){
+      var t=titleFor(img,s.texts);
+      return {img:img, title:t, chip:chipFor(t,s.texts),
+              author:nearBelow(t,function(x){ return /^[A-Z][a-z]+ [A-Z][a-z]+$/.test(x); }),
+              date:nearBelow(t,function(x){ return /^[A-Z][a-z]+ \d{1,2}, \d{4}$/.test(x); })};
+    }).filter(function(c){ return c.title; });
+    if(!cards.length) return;
+
+    /* hero = everything above the "Browse by category" heading; the rest is the
+       paged category grid the design puts underneath it */
+    var browse=s.texts.filter(function(t){ return /^Browse by category/i.test(t.t); })[0];
+    var cut=browse?browse.r.top:Infinity;
+    var hero=cards.filter(function(c){ return c.img.r.top<cut; });
+    var grid=cards.filter(function(c){ return c.img.r.top>=cut; });
+
+    var active='All', pageNo=0;
+    function pool(){ return POSTS.filter(function(p){ return active==='All'||p.c===active; }); }
+
+    function render(){
+      var list=pool();
+      hero.forEach(function(c,i){ fill(c,list[i]); });
+      var off=hero.length+pageNo*grid.length;
+      grid.forEach(function(c,i){
+        var p=list[off+i];
+        c.img.el.style.visibility = p?'':'hidden';
+        if(c.title) c.title.el.style.visibility = p?'':'hidden';
+        if(c.chip)  c.chip.el.style.visibility  = p?'':'hidden';
+        fill(c,p);
+      });
+      var total=Math.max(1,Math.ceil(Math.max(0,list.length-hero.length)/Math.max(1,grid.length)));
+      if(pageNo>total-1){ pageNo=total-1; }
+      paintPager(total);
+    }
+
+    /* Wire the DESIGNED pagination row (\u2039 1 2 3 4 5 \u2026 40 \u203a) rather than adding
+       another one. The numbers are plain .g-t nodes on a single baseline; the arrows
+       are the small bordered boxes flanking them. Labels are rewritten to the real
+       page count, and any surplus number slot is hidden. */
+    var pager=null,prev,next,label;
+    var numRow=s.texts.filter(function(t){ return /^(\d{1,3}|\u2026|\.\.\.)$/.test(t.t) && t.r.width; });
+    var pagBar=null;
+    if(numRow.length>=3){
+      var yy={};
+      numRow.forEach(function(t){ var k=Math.round(t.r.top/6); (yy[k]=yy[k]||[]).push(t); });
+      var best=Object.keys(yy).map(function(k){ return yy[k]; })
+        .sort(function(a,b){ return b.length-a.length; })[0];
+      if(best&&best.length>=3){
+        best.sort(function(a,b){ return a.r.left-b.r.left; });
+        pagBar=best;
+      }
+    }
+    var arrows=[];
+    if(pagBar){
+      var ry=pagBar[0].r.top;
+      s.page.querySelectorAll('.g-b').forEach(function(e){
+        if(e.closest('.ax-mob')) return;
+        var r=e.getBoundingClientRect();
+        if(Math.abs(r.top-ry)<80 && r.width>24 && r.width<110 && r.height>24 && r.height<110)
+          arrows.push({el:e,r:r});
+      });
+      arrows.sort(function(a,b){ return a.r.left-b.r.left; });
+    }
+
+    function paintPager(total){
+      if(!pagBar) return;
+      /* windowed numbering: 1..5 then an ellipsis then the last page, exactly the
+         shape the design draws */
+      var nums=[],i;
+      if(total<=pagBar.length){ for(i=1;i<=total;i++) nums.push(String(i)); }
+      else {
+        var start=Math.min(Math.max(1,pageNo),Math.max(1,total-4));
+        for(i=start;i<start+Math.min(5,pagBar.length-2)&&i<=total;i++) nums.push(String(i));
+        nums.push('\u2026'); nums.push(String(total));
+      }
+      pagBar.forEach(function(t,idx){
+        var v=nums[idx];
+        if(v===undefined){ t.el.style.display='none'; return; }
+        t.el.style.display='';
+        t.el.textContent=v;
+        var isNum=/^\d+$/.test(v);
+        t.el.style.cursor=isNum?'pointer':'default';
+        t.el.style.fontWeight=(isNum&&(+v-1)===pageNo)?'700':'';
+        t.el.style.color=(isNum&&(+v-1)===pageNo)?'rgb(223,63,23)':'';
+        if(isNum&&!t.el.__axpg){
+          t.el.__axpg=1;
+          t.el.setAttribute('role','button');
+          t.el.setAttribute('tabindex','0');
+          var jump=function(){ var n=parseInt(t.el.textContent,10); if(n){ pageNo=n-1; render(); } };
+          t.el.addEventListener('click',jump);
+          t.el.addEventListener('keydown',function(e){
+            if(e.key==='Enter'||e.key===' '){ e.preventDefault(); jump(); } });
+        }
+      });
+      if(arrows.length>=2){
+        var a0=arrows[0].el, a1=arrows[arrows.length-1].el;
+        [[a0,-1],[a1,1]].forEach(function(pair){
+          var el=pair[0], dir=pair[1];
+          el.style.cursor='pointer';
+          if(!el.__axpg){
+            el.__axpg=1;
+            el.setAttribute('role','button');
+            el.setAttribute('tabindex','0');
+            el.setAttribute('aria-label', dir<0?'Previous page':'Next page');
+            var step=function(){
+              var list=pool();
+              var tot=Math.max(1,Math.ceil(Math.max(0,list.length-hero.length)/grid.length));
+              pageNo=Math.min(Math.max(0,pageNo+dir),tot-1); render();
+            };
+            el.addEventListener('click',step);
+            el.addEventListener('keydown',function(e){
+              if(e.key==='Enter'||e.key===' '){ e.preventDefault(); step(); } });
+          }
+          el.style.opacity = ((dir<0&&pageNo<=0)) ? '.35' : '';
+        });
+      }
+    }
+
+    /* the designed category chips become the real filter */
+    var chipRow=s.texts.filter(function(t){ return /^(All|Product|Enterprise AI|Engineering|Other)$/.test(t.t); });
+    chipRow.forEach(function(t,i){
+      var label=CATS[i];
+      if(label===undefined){ t.el.style.display='none'; return; }
+      t.el.textContent=label;
+      t.el.classList.add('ax-bl-hit');
+      t.el.setAttribute('role','button');
+      t.el.setAttribute('tabindex','0');
+      var pick=function(){ active=label; pageNo=0; render(); };
+      t.el.addEventListener('click',pick);
+      t.el.addEventListener('keydown',function(e){
+        if(e.key==='Enter'||e.key===' '){ e.preventDefault(); pick(); }
+      });
+    });
+
+    render();
+  }
+
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init);
+  else init();
+  addEventListener('load',function(){ setTimeout(init,150); });
+})();
+</script>
+
 <style id="ax-uifx-css">
 /* Chrome interactions + newsletter. _hover.html deliberately skips header/footer
    (chrome() excludes them), so nothing in the nav or footer ever gained a hover
@@ -4034,6 +4363,10 @@ document.addEventListener("DOMContentLoaded",function(){
                 /* Figma spells it "COSTUMER IN THIS VERTICAL" on all six
                    industries pages. The rest of the site says Customer. */
                 [/\bCOSTUMER\b/g,'CUSTOMER'],[/\bCostumer\b/g,'Customer'],
+                /* The trinity band's first card is authored "01/SAP" on all ten of
+                   its instances while its own siblings are "02 / CLOUD" and
+                   "03 / AI" -- one card visibly set tighter than the other two. */
+                [/\b01\/SAP\b/g,'01 / SAP'],
                 /* Figma spells the product names three ways ("Logystix" in the footer,
                    "LogystiX" on the cards). One casing per brand, sitewide. */
                 [/\bLogystix\b/g,'LogystiX'],[/\bManuFex\b/g,'ManufeX'],[/\bManufex\b/g,'ManufeX'],
@@ -4059,19 +4392,29 @@ document.addEventListener("DOMContentLoaded",function(){
   var ACR={aws:'AWS',sap:'SAP',ams:'AMS',ai:'AI',ml:'ML',cms:'CMS',erp:'ERP',gcp:'GCP',
            ecs:'ECS',waf:'WAF',axiom:'AXIOM',api:'API',saas:'SaaS',rise:'RISE',grow:'GROW',
            bse:'BSE',noc:'NOC',sre:'SRE',hana:'HANA',btp:'BTP',iot:'IoT',rfp:'RFP',rpf:'RPF',
+           ecc:'ECC',fmcg:'FMCG',ap:'AP',
            iepf:'IEPF',pdf:'PDF',hr:'HR',it:'IT',ceo:'CEO',cio:'CIO',cfo:'CFO',esg:'ESG',
            brsr:'BRSR',agm:'AGM',faq:'FAQ',us:'Us',iq:'IQ',fy:'FY',soc:'SOC',iso:'ISO',
-           gdpr:'GDPR',sla:'SLA',fmcg:'FMCG',
+           gdpr:'GDPR',sla:'SLA',
            /* product names carry internal capitals -- Title Case must not flatten
               them to "Supplierx" */
            aeonx:'AeonX',supplierx:'SupplierX',orderx:'OrderX',xpense:'Xpense',
-           logystix:'LogystiX',manufex:'ManufeX',aeonxiq:'AeonX IQ',axiomai:'AXIOM AI'};
+           logystix:'LogystiX',manufex:'ManufeX',aeonxiq:'AeonX.IQ',axiomai:'AXIOM AI'};
+  /* Title case leaves short function words lowercase -- capitalising every word is
+     Start Case, and it changed the meaning of SAP's own product names: "RISE with
+     SAP" and "GROW with SAP" came out "RISE With SAP" / "GROW With SAP" on 34 and 33
+     pages. It also pushed every CTA away from the Figma copy ("Read the story" ->
+     "Read The Story"). A leading word is always capitalised. */
+  var MINOR=/^(a|an|the|and|but|or|nor|for|of|to|in|on|at|by|as|per|via|with|from|into|over|up)$/;
   function titleCase(s){
     /* Hyphenated compounds are ONE word: "SAP-on-AWS" must not become
        "SAP-On-AWS". Capitalise the first part, keep the rest as written unless it
        is a known acronym. */
+    var first=true;
     return s.split(/(\s+)/).map(function(word){
       if(/^\s+$/.test(word)||!word) return word;
+      var wasFirst=first; first=false;
+      if(!wasFirst && MINOR.test(word.toLowerCase()) && !ACR[word.toLowerCase()]) return word.toLowerCase();
       if(word.indexOf('-')>-1){
         return word.split('-').map(function(part,i){
           var low=part.toLowerCase();
@@ -4130,8 +4473,13 @@ document.addEventListener("DOMContentLoaded",function(){
      the other. Worse, _leadtabs.html identifies both tabs by matching this EXACT
      uppercase text; once mutated, its setup() no longer recognised them and neither
      tab responded to a click. Keep both as authored so identification and casing
-     both stay correct. */
-  var KEEP_LIT=['PRACTICE & PROGRAMME','SALES & GROWTH'];
+     both stay correct.
+
+     The homepage mobile hero's SERVICES / PRODUCT toggle is the same shape and broke
+     the same way: Figma exports a fill on the ACTIVE tab only, so inPill() saw
+     PRODUCT and not SERVICES, and the pair rendered "Product | SERVICES". Both are
+     authored caps in Figma; both stay caps. */
+  var KEEP_LIT=['PRACTICE & PROGRAMME','SALES & GROWTH','PRODUCT','SERVICES'];
   function applyTitleCase(root){
     (root||document).querySelectorAll('.g-t,.ax-mm2__feat-btn,.ax-mm2__api-btn').forEach(function(e){
       if(e.children.length) return;                     /* leave rich labels alone */
@@ -4142,6 +4490,17 @@ document.addEventListener("DOMContentLoaded",function(){
       if(e.closest('section.ax-footer')&&!isControl(e)) return;
       var t=txt(e);
       if(!t||t.length>34||KEEP.test(t)||KEEP_LIT.indexOf(t)!==-1) return;
+      /* A label the design sets in ALL CAPS is a design decision, not a sentence
+         waiting to be cased. The nav buttons were already exempted by hand for this
+         reason; the same is true of every other caps label, and title-casing them was
+         actively wrong -- it flattened acronyms the ACR map does not list ("FMCG &
+         Distribution" -> "Fmcg & Distribution" on 33 pages, "AP" -> "Ap") and rewrote
+         the leadership cards' JOB TITLES ("CHIEF FINANCIAL OFFICER" -> "Chief
+         Financial Officer", "VICE PRESIDENT", "HEAD OF OPERATIONS"), which are not
+         buttons at all and only qualified because they sit in a painted card.
+         The client's ask was Title Case on sentence-case CTAs -- "Download the
+         brochure", "Read the story" -- and those are untouched by this. */
+      if(t===t.toUpperCase()&&/[A-Z]{2}/.test(t)) return;
       /* A clickable CARD is not a button: its title is set at heading size. Compare
          in vw, not px -- the mobile block is authored against a 430px design, so its
          16px button label computes to ~54px when the desktop viewport is 1440 and a
@@ -4456,18 +4815,28 @@ document.addEventListener("DOMContentLoaded",function(){
          (pill.contains(e.target)||subLabel.contains(e.target))) submit(e); },true);
     input.addEventListener('keydown',function(e){ if(e.key==='Enter') submit(e); });
 
-    /* ---------- 4. NEWSLETTER COLUMN ALIGNMENT (removed) ----------
-       An earlier session force-aligned this heading under "About Us" (682px) on a
-       request made against that session's Figma state. Re-checked directly against
-       BOTH the master component (5323:12316) and the actual footer INSTANCE placed
-       on the live Home page (5323:14151, rendered as a PNG, not just read as
-       coordinates) -- Figma's own authored position for "Get the latest from
-       AeonX" is 932px, under "Services"/"Products", nowhere near "About Us". The
-       override was moving this row further from Figma, not closer, and the
-       collision it was patched to avoid (this heading crowding the AI-summary
-       icons at 682px) does not exist at the real 932px position -- there is 248px
-       of clear margin. Left un-shifted; the raw inline styles already carry
-       Figma's true numbers. */
+    /* ---------- 4. NEWSLETTER COLUMN ALIGNMENT ----------
+       Requested: the heading should sit in the same column as "About Us". Figma
+       puts it 1.35vw to the right, which reads as almost-but-not-quite aligned.
+       Measured against the real column so it survives a Figma re-pull. */
+    var head=[].slice.call(foot.querySelectorAll('.g-t')).filter(function(e){
+      return /^get the latest from aeonx/i.test(txt(e)); })[0];
+    var col=[].slice.call(foot.querySelectorAll('.g-t')).filter(function(e){
+      return /^about us$/i.test(txt(e)); })[0];
+    if(head&&col){
+      var hl=num(head,'left'), cl=num(col,'left');
+      if(hl!==null&&cl!==null){
+        var d=hl-cl;
+        if(Math.abs(d)>0.01){
+          setvw(head,'left',cl);
+          [box,pill,note].forEach(function(el){
+            var l=num(el,'left');
+            if(l!==null) setvw(el,'left',l-d);
+            else if(el===note){ note.style.left=(cl)+'vw'; }
+          });
+        }
+      }
+    }
   }
 
   /* ---------- 5. HOMEPAGE PRODUCT NAMES SCROLL IN PAGE ----------
@@ -4576,10 +4945,11 @@ document.addEventListener("DOMContentLoaded",function(){
   function bumpExplore(){
     [].slice.call(document.querySelectorAll('.g-t')).forEach(function(e){
       if(e.children.length) return;
-      /* Desktop-only. The mobile block is authored against a 430px design where
-         Figma already sets these pill labels to 12px (2.7907vw); .ax-fx-xl's
-         !important 2.4419vw drags that down to 10.5px, which also pushes the
-         glyphs off-centre in a pill whose padding is otherwise exactly 12/12. */
+      /* Desktop only. The mobile block is authored at 430 and Figma sets these labels
+         at 12px/20px (2.7907vw/4.6512vw) inside a 40px pill; .ax-fx-xl overrode that
+         with 2.4419vw/3.4884vw, so the type came out small AND the shorter line box
+         no longer filled the inset the pill was drawn for -- the uneven top/bottom
+         padding on every Explore button. */
       if(e.closest('.ax-mob')) return;
       if(!/^explore(\s|$)/i.test(txt(e))) return;
       var host=e.parentElement;
@@ -4647,273 +5017,6 @@ document.addEventListener("DOMContentLoaded",function(){
   });
   addEventListener('resize',function(){ clearTimeout(window.__axfxR);
     window.__axfxR=setTimeout(function(){ centerLabels(); spaceArrows(); },200); });
-})();
-</script>
-
-<style id="ax-bloglist-css">
-/* Real posts inside the DESIGNED Figma slots. Nothing is inserted into the
-   pixel-locked layout and no element is repositioned -- each designed card slot
-   (image box, category chip, title) simply gets real content, so the page still
-   renders exactly as drawn. Only paint-level properties are touched. */
-.ax-bl-hit{cursor:pointer}
-.ax-bl-hit:focus-visible{outline:2px solid rgb(223,63,23);outline-offset:2px}
-.ax-bl-img{background-size:cover!important;background-position:center!important;
-  background-repeat:no-repeat!important}
-.ax-bl-img--ph{background-size:60%!important;background-color:#F6F7F9!important}
-.ax-bl-t{transition:color .18s ease;height:auto!important;display:-webkit-box;
-  -webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
-.ax-bl-hit:hover .ax-bl-t,.ax-bl-t.ax-bl-hit:hover{color:rgb(223,63,23)}
-.ax-bl-page{position:absolute;display:flex;gap:.5rem;align-items:center;
-  font-family:'Nunito Sans',sans-serif;font-size:.85rem;color:rgb(82,96,119)}
-.ax-bl-page button{border:1px solid rgb(213,218,226);background:#fff;border-radius:99px;
-  width:2rem;height:2rem;cursor:pointer;color:rgb(35,39,46);font-size:1rem;line-height:1}
-.ax-bl-page button[disabled]{opacity:.35;cursor:default}
-</style>
-<script>
-/* ---- REAL POSTS IN THE DESIGNED BLOG SLOTS ---- */
-(function(){
-  var POSTS = [{"u":"/2026/07/08/guardrails-for-production-genai-how-we-stopped-prompt-injection-and-pii-leakage-before-it-reached-amazon-bedrock/10/00/00/243291/aws/chandni-gadhvi/","t":"Guardrails for Production GenAI: How We Stopped Prompt Injection and PII Leakage Before It Reached Amazon Bedrock","c":"AWS","d":"July 8, 2026","i":"https://www.aeonx.digital/wp-content/plugins/revslider/public/assets/assets/dummy.png","ph":0,"a":"Chandni Gadhvi","ts":"20260708"},{"u":"/2026/07/02/how-an-fmcg-manufacturer-reduced-logistics-costs-by-24-using-agentic-ai-on-aws-architecture-deployment-and-what-broke/10/00/00/243275/aws/rajat-jindal/","t":"How an FMCG Manufacturer Reduced Logistics Costs by 24% Using Agentic AI on AWS: Architecture, Deployment, and What Broke","c":"AWS","d":"July 2, 2026","i":"https://www.aeonx.digital/wp-content/uploads/2026/07/blog12-architecture-diagram.png","ph":0,"a":"Rajat Jindal","ts":"20260702"},{"u":"/2026/06/24/cost-aware-ai-architecture-how-we-reduced-amazon-bedrock-spend-by-52-without-sacrificing-output-quality/10/00/00/243290/aws/chandni-gadhvi/","t":"Cost-Aware AI Architecture: How We Reduced Amazon Bedrock Spend by 52% Without Sacrificing Output Quality","c":"AWS","d":"June 24, 2026","i":"https://www.aeonx.digital/wp-content/uploads/2026/07/aws-blog7-diagram-v2.png","ph":0,"a":"Chandni Gadhvi","ts":"20260624"},{"u":"/2026/06/11/how-an-enterprise-apparel-company-cut-expense-claim-processing-from-45-minutes-to-under-5-using-agentic-ai-on-aws-architecture-deployment-and-what-broke/10/00/00/243274/aws/rajat-jindal/","t":"How an Enterprise Apparel Company Cut Expense Claim Processing From 45 Minutes to Under 5 Using Agentic AI on AWS: Architecture, Deployment, and What Broke","c":"AWS","d":"June 11, 2026","i":"https://www.aeonx.digital/wp-content/uploads/2026/06/blog11-architecture-diagram.png","ph":0,"a":"Rajat Jindal","ts":"20260611"},{"u":"/2026/06/10/building-a-self-healing-data-pipeline-on-aws-how-we-used-amazon-bedrock-to-diagnose-and-auto-remediate-etl-failures/10/00/00/243289/aws/chandni-gadhvi/","t":"Building a Self-Healing Data Pipeline on AWS: How We Used Amazon Bedrock to Diagnose and Auto-Remediate ETL Failures","c":"AWS","d":"June 10, 2026","i":"https://www.aeonx.digital/wp-content/uploads/2026/07/aws-blog6-diagram.png","ph":0,"a":"Chandni Gadhvi","ts":"20260610"},{"u":"/2026/05/27/agentic-ai-in-finance-how-we-built-an-autonomous-accounts-payable-agent-on-amazon-bedrock-that-processes-invoices-end-to-end/10/00/00/243288/aws/chandni-gadhvi/","t":"Agentic AI in Finance: How We Built an Autonomous Accounts Payable Agent on Amazon Bedrock That Processes Invoices End-to-End","c":"AWS","d":"May 27, 2026","i":"https://www.aeonx.digital/wp-content/uploads/2026/07/aws-blog5-diagram.png","ph":0,"a":"Chandni Gadhvi","ts":"20260527"},{"u":"/2026/05/21/sap-on-aws-meets-generative-ai-why-your-erp-is-the-most-underused-ai-data-source-in-the-enterprise/10/00/00/243271/aws/rajat-jindal/","t":"SAP on AWS Meets Generative AI: Why Your ERP Is the Most Underused AI Data Source in the Enterprise","c":"AWS","d":"May 21, 2026","i":"https://www.aeonx.digital/wp-content/uploads/diagram10.png","ph":0,"a":"Rajat Jindal","ts":"20260521"},{"u":"/2026/05/13/multi-tenant-ai-how-we-built-a-single-amazon-bedrock-integration-that-serves-five-business-units-with-isolated-data-security-and-costs/10/00/00/243287/aws/chandni-gadhvi/","t":"Multi-Tenant AI: How We Built a Single Amazon Bedrock Integration That Serves Five Business Units With Isolated Data, Security, and Costs","c":"AWS","d":"May 13, 2026","i":"https://www.aeonx.digital/wp-content/uploads/2026/07/aws-blog4-diagram.png","ph":0,"a":"Chandni Gadhvi","ts":"20260513"},{"u":"/2026/05/07/data-governance-is-the-ai-gatekeeper-how-lake-formation-decides-what-your-ai-can-and-cannot-see/10/00/00/243270/aws/rajat-jindal/","t":"Data Governance Is the AI Gatekeeper: How Lake Formation Decides What Your AI Can and Cannot See","c":"AWS","d":"May 7, 2026","i":"/assets/aeonx-logo.svg","ph":1,"a":"Rajat Jindal","ts":"20260507"},{"u":"/2026/04/29/the-observability-gap-in-ml-systems-how-we-built-a-model-health-dashboard-that-catches-degradation-before-users-do/10/00/00/243286/aws/chandni-gadhvi/","t":"The Observability Gap in ML Systems: How We Built a Model Health Dashboard That Catches Degradation Before Users Do","c":"AWS","d":"April 29, 2026","i":"https://www.aeonx.digital/wp-content/uploads/2026/07/aws-blog3-diagram.png","ph":0,"a":"Chandni Gadhvi","ts":"20260429"},{"u":"/2026/04/23/zero-etl-is-the-end-of-pipeline-engineering-how-aws-is-eliminating-the-data-lakes-biggest-bottleneck/10/00/00/243269/aws/rajat-jindal/","t":"Zero-ETL Is the End of Pipeline Engineering: How AWS Is Eliminating the Data Lake\u2019s Biggest Bottleneck","c":"AWS","d":"April 23, 2026","i":"https://www.aeonx.digital/wp-content/uploads/diagram8_1.png","ph":0,"a":"Rajat Jindal","ts":"20260423"},{"u":"/2026/04/15/building-an-ai-powered-visual-inspection-system-on-aws-with-yolov11-and-amazon-bedrock/10/00/00/243197/aws/chandni-gadhvi/","t":"Building an AI-Powered Visual Inspection System on AWS with YOLOv11 and Amazon Bedrock","c":"AWS","d":"April 15, 2026","i":"https://www.aeonx.digital/wp-content/uploads/2026/07/aws-blog2-diagram.png","ph":0,"a":"Chandni Gadhvi","ts":"20260415"},{"u":"/2026/04/09/your-data-lake-is-a-data-swamp-until-ai-can-query-it-building-semantic-data-lakes-on-aws/10/00/00/243268/aws/rajat-jindal/","t":"Your Data Lake Is a Data Swamp Until AI Can Query It: Building Semantic Data Lakes on AWS","c":"AWS","d":"April 9, 2026","i":"https://www.aeonx.digital/wp-content/uploads/diagram7.png","ph":0,"a":"Rajat Jindal","ts":"20260409"},{"u":"/2026/04/01/architecting-an-ai-driven-freight-optimization-platform-on-aws-using-amazon-bedrock-and-sagemaker/10/00/00/243180/aws/chandni-gadhvi/","t":"Architecting an AI-Driven Freight Optimization Platform on AWS Using Amazon Bedrock and SageMaker","c":"AWS","d":"April 1, 2026","i":"https://www.aeonx.digital/wp-content/uploads/2026/07/aws-blog1-diagram.png","ph":0,"a":"Chandni Gadhvi","ts":"20260401"},{"u":"/2026/03/26/the-multi-model-strategy-why-locking-into-one-ai-provider-is-the-new-vendor-lock-in/10/00/00/243267/aws/rajat-jindal/","t":"The Multi-Model Strategy: Why Locking Into One AI Provider Is the New Vendor Lock-In","c":"AWS","d":"March 26, 2026","i":"https://www.aeonx.digital/wp-content/uploads/2026/03/blog6-architecture-diagram.png","ph":0,"a":"Rajat Jindal","ts":"20260326"},{"u":"/2026/03/05/shadow-ai-is-the-biggest-data-risk-your-ciso-hasnt-budgeted-for-and-its-already-inside-your-organisation/10/00/00/243266/aws/rajat-jindal/","t":"Shadow AI Is the Biggest Data Risk Your CISO Hasn\u2019t Budgeted For \u2014 And It\u2019s Already Inside Your Organisation","c":"AWS","d":"March 5, 2026","i":"/assets/aeonx-logo.svg","ph":1,"a":"Rajat Jindal","ts":"20260305"},{"u":"/2026/02/12/building-an-ai-ready-data-foundation/10/00/00/243240/aws/rajat-jindal/","t":"Building an AI-Ready Data Foundation","c":"AWS","d":"February 12, 2026","i":"/assets/aeonx-logo.svg","ph":1,"a":"Rajat Jindal","ts":"20260212"},{"u":"/2026/02/05/applying-the-aws-well-architected-framework-to-modernize-a-legacy-crm-and-employee-portal-platform/10/00/00/243212/aws/rajat-jindal/","t":"Applying the AWS Well-Architected Framework to Modernize a Legacy CRM and Employee Portal Platform","c":"AWS","d":"February 5, 2026","i":"/assets/aeonx-logo.svg","ph":1,"a":"Rajat Jindal","ts":"20260205"},{"u":"/2026/01/29/architecting-a-secure-multi-application-platform-with-ci-cd-and-cross-region-disaster-recovery-on-aws/10/00/00/243183/aws/rajat-jindal/","t":"Architecting a Secure Multi-Application Platform with CI/CD and Cross-Region Disaster Recovery on AWS","c":"AWS","d":"January 29, 2026","i":"https://www.aeonx.digital/wp-content/uploads/2026/01/blog2-architecture-diagram.png","ph":0,"a":"Rajat Jindal","ts":"20260129"},{"u":"/2026/01/26/architecting-a-secure-multi-vpc-rd-platform-on-aws-with-hybrid-connectivity-and-ci-cd-automation/01/23/06/243191/aws/rajat-jindal/","t":"Architecting a Secure Multi-VPC R&D Platform on AWS with Hybrid Connectivity and CI/CD Automation","c":"AWS","d":"January 26, 2026","i":"/assets/aeonx-logo.svg","ph":1,"a":"Rajat Jindal","ts":"20260126"},{"u":"/2026/01/23/building-a-real-time-inventory-validation-system-on-aws-using-iot-containers-and-automated-devops/01/13/19/243176/aws/rajat-jindal/","t":"Building a Real-Time Inventory Validation System on AWS Using IoT, Containers, and Automated DevOps","c":"AWS","d":"January 23, 2026","i":"/assets/aeonx-logo.svg","ph":1,"a":"Rajat Jindal","ts":"20260123"},{"u":"/2026/01/22/modernizing-enterprise-crm-and-employee-platforms-with-aws-fargate-and-end-to-end-ci-cd/10/00/00/243171/aws/rajat-jindal/","t":"Modernizing an Enterprise CRM Platform Using Amazon ECS Fargate and AWS CI/CD","c":"AWS","d":"January 22, 2026","i":"https://www.aeonx.digital/wp-content/uploads/2026/01/blog1-architecture-diagram.png","ph":0,"a":"Rajat Jindal","ts":"20260122"},{"u":"/2023/04/14/itd/05/25/44/240713/success-stories-sap/admin/","t":"ITD Cementation","c":"Success Stories","d":"April 14, 2023","i":"https://www.aeonx.digital/wp-content/uploads/2023/04/itd-top-banner.jpg","ph":0,"a":"Admin","ts":"20230414"},{"u":"/2023/03/01/sap-on-aws-delux-bearings/04/21/19/240608/success-stories-aws/admin/","t":"Hosting SAP workloads on AWS","c":"Success Stories","d":"March 1, 2023","i":"https://www.aeonx.digital/wp-content/uploads/2023/03/top-banner2.jpg","ph":0,"a":"Admin","ts":"20230301"},{"u":"/2023/01/03/ckbh-case-study/07/01/09/240160/success-stories-aws/admin/","t":"SAP AMS support for mining and exploration.","c":"Success Stories","d":"January 3, 2023","i":"https://www.aeonx.digital/wp-content/uploads/2023/01/top-banner-final.jpg","ph":0,"a":"Admin","ts":"20230103"},{"u":"/2023/01/03/konark-case-study/05/36/54/240144/success-stories-aws/admin/","t":"SAP AMS support for mining and exploration.","c":"Success Stories","d":"January 3, 2023","i":"https://www.aeonx.digital/wp-content/uploads/2023/01/top-banner.jpg","ph":0,"a":"Admin","ts":"20230103"},{"u":"/2023/01/03/ashok-alco-chem-case-study/07/29/19/240171/success-stories-aws/admin/","t":"SAP AMS support for mining and exploration.","c":"Success Stories","d":"January 3, 2023","i":"https://www.aeonx.digital/wp-content/uploads/2023/01/test-post2-2.jpg","ph":0,"a":"Admin","ts":"20230103"},{"u":"/2022/09/30/reaping-the-benefits-of-aws/11/34/26/239403/success-stories-aws/admin/","t":"Reaping the benefits of AWS","c":"Success Stories","d":"September 30, 2022","i":"https://www.aeonx.digital/wp-content/uploads/2022/09/MicrosoftTeams-image-1-1.jpg","ph":0,"a":"Admin","ts":"20220930"},{"u":"/2022/09/15/bvg-india-limited-deploys-aws-for-disaster-recovery-2/10/08/31/1112/aws/admin/","t":"BVG India Limited deploys AWS for Disaster Recovery","c":"AWS","d":"September 15, 2022","i":"https://www.aeonx.digital/wp-content/uploads/2022/09/02_Aeonx-blog-02-1.jpg","ph":0,"a":"Admin","ts":"20220915"},{"u":"/2022/09/13/public-sector-competency-in-aws/12/56/17/1052/aws/admin/","t":"Public Sector Competency in AWS","c":"AWS","d":"September 13, 2022","i":"https://www.aeonx.digital/wp-content/uploads/2022/09/technology.jpg","ph":0,"a":"Admin","ts":"20220913"},{"u":"/2022/09/06/the-proliferation-of-brands-with-sap-ams-cpg/10/17/32/1012/sap/admin/","t":"The proliferation of brands with SAP AMS CPG.","c":"SAP","d":"September 6, 2022","i":"https://www.aeonx.digital/wp-content/uploads/2022/09/03_AeonX-Blogs-04.jpg","ph":0,"a":"Admin","ts":"20220906"},{"u":"/2022/09/06/sap-ams-for-using-multiple-data-sources/10/09/42/1009/sap/admin/","t":"SAP AMS for using multiple data sources","c":"SAP","d":"September 6, 2022","i":"https://www.aeonx.digital/wp-content/uploads/2022/09/03_AeonX-Blogs-02.jpg","ph":0,"a":"Admin","ts":"20220906"},{"u":"/2022/09/06/success-story-of-technology-adoption/12/09/24/1003/sap/admin/","t":"Success Story of Technology Adoption","c":"SAP","d":"September 6, 2022","i":"https://www.aeonx.digital/wp-content/uploads/2022/09/02_Aeonx-blog-01.jpg","ph":0,"a":"Admin","ts":"20220906"},{"u":"/2022/09/06/sap-ams-support-for-mining-and-exploration/10/32/56/1007/sap/admin/","t":"SAP AMS support for mining and exploration.","c":"SAP","d":"September 6, 2022","i":"https://www.aeonx.digital/wp-content/uploads/2022/09/Untitled-design-2.jpg","ph":0,"a":"Admin","ts":"20220906"},{"u":"/2022/09/01/sap-ams-to-streamline-and-enhance-real-state-management-processes/12/49/29/1000/sap/admin/","t":"SAP AMS to streamline and enhance Real State management processes.","c":"SAP","d":"September 1, 2022","i":"https://www.aeonx.digital/wp-content/uploads/2022/09/03_AeonX-Blogs-03.jpg","ph":0,"a":"Admin","ts":"20220901"},{"u":"/2022/08/30/sap-ams-to-establish-strategic-and-targeted-value/12/06/57/996/sap/admin/","t":"SAP AMS to establish strategic and targeted value.","c":"SAP","d":"August 30, 2022","i":"https://www.aeonx.digital/wp-content/uploads/2022/08/02_Aeonx-blog-02.jpg","ph":0,"a":"Admin","ts":"20220830"},{"u":"/2022/08/30/sap-ams-fostering-advancement-through-developing-technology/12/10/13/992/sap/admin/","t":"SAP AMS fostering advancement through developing technology.","c":"SAP","d":"August 30, 2022","i":"https://www.aeonx.digital/wp-content/uploads/2022/08/02_Aeonx-blog-04.jpg","ph":0,"a":"Admin","ts":"20220830"},{"u":"/2022/07/19/case-study-for-integration-of-trackabout-with-sap-erp/07/52/04/984/sap/admin/","t":"Case Study for Integration of TrackAbout with SAP ERP","c":"SAP","d":"July 19, 2022","i":"https://www.aeonx.digital/wp-content/uploads/2022/07/01_Aeonx-blog-04.jpg","ph":0,"a":"Admin","ts":"20220719"},{"u":"/2022/07/07/migrate-to-modernize-a-case-study/06/08/04/938/aws/admin/","t":"Migrate-to-Modernize: A Case Study","c":"AWS","d":"July 7, 2022","i":"https://www.aeonx.digital/wp-content/uploads/2022/07/01_Aeonx-blog-02-1.jpg","ph":0,"a":"Admin","ts":"20220707"},{"u":"/2022/06/13/aeonx-modernizing-the-gopal-namkeen-processing-system-using-sap/14/37/26/932/sap/admin/","t":"AeonX modernizing the Gopal Namkeen processing system using SAP/AWS","c":"SAP","d":"June 13, 2022","i":"https://www.aeonx.digital/wp-content/uploads/2022/06/01_Aeonx-blog-01.jpg","ph":0,"a":"Admin","ts":"20220613"},{"u":"/2022/06/08/aeonx-aws-partner-network/05/48/43/918/aws/admin/","t":"AeonX achieves Advanced Tier Status in the AWS Partner Network","c":"AWS","d":"June 8, 2022","i":"https://www.aeonx.digital/wp-content/uploads/2022/06/Untitled-design-10.jpg","ph":0,"a":"Admin","ts":"20220608"},{"u":"/2022/03/11/sap-consultant-guide-career-salary-jobs-scope-skills/06/41/07/795/sap/admin/","t":"A Sap Consultant Guide 2022 : Career, Salary, Jobs, Scope, Skills","c":"SAP","d":"March 11, 2022","i":"https://www.aeonx.digital/wp-content/uploads/2022/03/sap_guide.jpg","ph":0,"a":"Admin","ts":"20220311"},{"u":"/2022/03/11/disaster-recovery-for-bhilosa-industry-using-aws/09/17/41/814/sap/admin/","t":"Disaster Recovery for Bhilosa Industry Using AWS.","c":"SAP","d":"March 11, 2022","i":"https://www.aeonx.digital/wp-content/uploads/2022/03/Disaster-Recovery-using-AWS.jpg","ph":0,"a":"Admin","ts":"20220311"},{"u":"/2021/12/18/is-the-rise-of-the-internet-increasing-the-need-for-digital-transformation-in-businesses/08/22/06/768/digital-transformation/admin/","t":"What role does the internet play in the rise of Digital Transformation?","c":"Digital Transformation","d":"December 18, 2021","i":"https://www.aeonx.digital/wp-content/uploads/2021/12/AenoX-Blog-Banner-3-1.png","ph":0,"a":"Admin","ts":"20211218"},{"u":"/2021/12/17/what-does-cloud-computing-mean-for-todays-businesses/14/13/21/746/cloud-computing/admin/","t":"What does cloud computing mean for today's businesses","c":"Cloud","d":"December 17, 2021","i":"https://www.aeonx.digital/wp-content/uploads/2021/12/AenoX-Blog-Banner.png","ph":0,"a":"Admin","ts":"20211217"},{"u":"/2021/03/15/how-does-sap-protect-your-data/07/54/52/694/sap/admin/","t":"How Does SAP Protect Your Data? - AeonX Digital Solution","c":"SAP","d":"March 15, 2021","i":"https://www.aeonx.digital/wp-content/uploads/2021/03/Untitled-design-3.jpg","ph":0,"a":"Admin","ts":"20210315"},{"u":"/2021/02/07/driving-innovation-with-sap/06/49/35/631/sap/admin/","t":"Driving Innovation With SAP","c":"SAP","d":"February 7, 2021","i":"https://www.aeonx.digital/wp-content/uploads/2021/02/Untitled-design-4.jpg","ph":0,"a":"Admin","ts":"20210207"},{"u":"/2021/01/28/sap-interview-questions/07/21/25/633/sap/admin/","t":"Top 30 SAP Interview Questions & Answers","c":"SAP","d":"January 28, 2021","i":"https://www.aeonx.digital/wp-content/uploads/2021/01/Untitled-design-5.jpg","ph":0,"a":"Admin","ts":"20210128"},{"u":"/2020/12/29/e-invoicing-under-gst-india/06/43/49/628/sap/admin/","t":"E-Invoicing Under GST India","c":"SAP","d":"December 29, 2020","i":"https://www.aeonx.digital/wp-content/uploads/2020/12/Untitled-design-6.jpg","ph":0,"a":"Admin","ts":"20201229"},{"u":"/2020/12/16/where-there-is-business-there-is-sap/06/52/05/624/sap/admin/","t":"Where There Is Business, There is SAP","c":"SAP","d":"December 16, 2020","i":"https://www.aeonx.digital/wp-content/uploads/2020/12/Untitled-design-7.jpg","ph":0,"a":"Admin","ts":"20201216"},{"u":"/2020/10/19/search-string-in-electronic-bank-reconciliation-mt940-format-part-ii/17/10/16/607/sap/admin/","t":"Search String in Electronic Bank Reconciliation \u2013 MT940 Format \u2013 Part II","c":"SAP","d":"October 19, 2020","i":"https://www.aeonx.digital/wp-content/uploads/2020/10/Untitled-design-8.jpg","ph":0,"a":"Admin","ts":"20201019"},{"u":"/2020/10/19/steps-to-activate-electronic-bank-reconciliation-statement-mt940-format-part-i/17/04/20/604/sap/admin/","t":"Steps to Activate Electronic BRS \u2013 MT940 Format \u2013 Part I","c":"SAP","d":"October 19, 2020","i":"https://www.aeonx.digital/wp-content/uploads/2020/10/Untitled-design-8.jpg","ph":0,"a":"Admin","ts":"20201019"},{"u":"/2020/10/12/sales-order-level-approval-workflow-and-release-from-credit-block-2-in-1/11/08/18/545/sap/admin/","t":"Sales Order \u2013 Level Approval Workflow","c":"SAP","d":"October 12, 2020","i":"https://www.aeonx.digital/wp-content/uploads/2020/10/Untitled-design-9-400x250.jpg","ph":0,"a":"Admin","ts":"20201012"}];
-  var CATS  = ["All","AWS","Success Stories","SAP","Digital Transformation","Cloud"];
-
-  function txt(e){ return (e.textContent||'').replace(/\s+/g,' ').trim(); }
-  function rect(e){ return e.getBoundingClientRect(); }
-
-  function slots(){
-    var page=document.querySelector('main.ax-page');
-    if(!page) return null;
-    var imgs=[],texts=[];
-    page.querySelectorAll('.g-img,.g-b.g-clip').forEach(function(e){
-      if(e.closest('.ax-mob')) return;
-      var r=rect(e), st=e.getAttribute('style')||'';
-      if(r.width>90&&r.height>60&&r.width<900&&/background-image/.test(st))
-        imgs.push({el:e,r:r});
-    });
-    page.querySelectorAll('.g-t').forEach(function(e){
-      if(e.closest('.ax-mob')) return;
-      var r=rect(e); if(!r.width) return;
-      texts.push({el:e,r:r,t:txt(e),fs:parseFloat(getComputedStyle(e).fontSize)||0});
-    });
-    /* one image box per visual position (Figma stacks a fill box under the image) */
-    var seen={},uniq=[];
-    imgs.sort(function(a,b){return a.r.top-b.r.top||a.r.left-b.r.left;});
-    imgs.forEach(function(i){
-      var k=Math.round(i.r.left)+'x'+Math.round(i.r.top);
-      if(!seen[k]){ seen[k]=1; uniq.push(i); }
-    });
-    return {page:page,imgs:uniq,texts:texts};
-  }
-
-  /* the card's title: the biggest text starting below the image, in its column */
-  function titleFor(img,texts){
-    var c=texts.filter(function(t){
-      return t.fs>=15 && t.t.length>12 &&
-             t.r.top>=img.r.top-8 && t.r.top<img.r.bottom+150 &&
-             t.r.left>=img.r.left-8 && t.r.left<img.r.right+420 &&
-             !/^(Field notes|Long-form|Browse by|Want the long|Subscribe|Sign up)/.test(t.t);
-    });
-    c.sort(function(a,b){ return (b.fs-a.fs) || (a.r.top-b.r.top); });
-    return c[0];
-  }
-  function chipFor(title,texts){
-    if(!title) return null;
-    var c=texts.filter(function(t){
-      return t!==title && /^[A-Za-z][A-Za-z &]{2,}$/.test(t.t) && t.t.length<26 &&
-             t.fs<15 && t.r.bottom<=title.r.top+4 && title.r.top-t.r.bottom<70 &&
-             Math.abs(t.r.left-title.r.left)<60;
-    });
-    c.sort(function(a,b){ return b.r.bottom-a.r.bottom; });
-    return c[0];
-  }
-
-  function wire(el,url){
-    if(!el) return;
-    el.classList.add('ax-bl-hit');
-    if(!el.hasAttribute('tabindex')) el.setAttribute('tabindex','0');
-    el.setAttribute('role','link');
-    if(el.__axgo){ el.__axgo.url=url; return; }
-    var box={url:url};
-    el.__axgo=box;
-    var go=function(){ location.href=box.url; };
-    el.addEventListener('click',go);
-    el.addEventListener('keydown',function(e){
-      if(e.key==='Enter'||e.key===' '){ e.preventDefault(); go(); }
-    });
-  }
-
-  function fill(slot,p){
-    if(!p){ return; }
-    var st=slot.img.el.getAttribute('style')||'';
-    st=st.replace(/background-image:[^;]*;?/,'');
-    slot.img.el.setAttribute('style', st+';background-image:url("'+p.i+'")');
-    slot.img.el.classList.add('ax-bl-img');
-    slot.img.el.classList.toggle('ax-bl-img--ph', !!p.ph);
-    if(slot.title){
-      slot.title.el.textContent=p.t;
-      slot.title.el.style.whiteSpace='normal';
-      slot.title.el.style.overflow='hidden';
-      slot.title.el.classList.add('ax-bl-t');
-      wire(slot.title.el,p.u);
-    }
-    if(slot.chip) slot.chip.el.textContent=p.c;
-    if(slot.author) slot.author.el.textContent=p.a||'AeonX Digital';
-    if(slot.date) slot.date.el.textContent=p.d;
-    wire(slot.img.el,p.u);
-  }
-
-  function init(){
-    var s=slots();
-    if(!s||s.imgs.length<3) return;
-    if(s.page.dataset.axBl) return;
-    s.page.dataset.axBl='1';
-
-    function nearBelow(title,test){
-      if(!title) return null;
-      var c=s.texts.filter(function(t){
-        return t!==title && test(t.t) && t.r.top>=title.r.bottom-4 &&
-               t.r.top-title.r.bottom<90 && Math.abs(t.r.left-title.r.left)<520;
-      });
-      c.sort(function(a,b){ return a.r.top-b.r.top; });
-      return c[0];
-    }
-    var cards=s.imgs.map(function(img){
-      var t=titleFor(img,s.texts);
-      return {img:img, title:t, chip:chipFor(t,s.texts),
-              author:nearBelow(t,function(x){ return /^[A-Z][a-z]+ [A-Z][a-z]+$/.test(x); }),
-              date:nearBelow(t,function(x){ return /^[A-Z][a-z]+ \d{1,2}, \d{4}$/.test(x); })};
-    }).filter(function(c){ return c.title; });
-    if(!cards.length) return;
-
-    /* hero = everything above the "Browse by category" heading; the rest is the
-       paged category grid the design puts underneath it */
-    var browse=s.texts.filter(function(t){ return /^Browse by category/i.test(t.t); })[0];
-    var cut=browse?browse.r.top:Infinity;
-    var hero=cards.filter(function(c){ return c.img.r.top<cut; });
-    var grid=cards.filter(function(c){ return c.img.r.top>=cut; });
-
-    var active='All', pageNo=0;
-    function pool(){ return POSTS.filter(function(p){ return active==='All'||p.c===active; }); }
-
-    function render(){
-      var list=pool();
-      hero.forEach(function(c,i){ fill(c,list[i]); });
-      var off=hero.length+pageNo*grid.length;
-      grid.forEach(function(c,i){
-        var p=list[off+i];
-        c.img.el.style.visibility = p?'':'hidden';
-        if(c.title) c.title.el.style.visibility = p?'':'hidden';
-        if(c.chip)  c.chip.el.style.visibility  = p?'':'hidden';
-        fill(c,p);
-      });
-      var total=Math.max(1,Math.ceil(Math.max(0,list.length-hero.length)/Math.max(1,grid.length)));
-      if(pageNo>total-1){ pageNo=total-1; }
-      paintPager(total);
-    }
-
-    /* Wire the DESIGNED pagination row (\u2039 1 2 3 4 5 \u2026 40 \u203a) rather than adding
-       another one. The numbers are plain .g-t nodes on a single baseline; the arrows
-       are the small bordered boxes flanking them. Labels are rewritten to the real
-       page count, and any surplus number slot is hidden. */
-    var pager=null,prev,next,label;
-    var numRow=s.texts.filter(function(t){ return /^(\d{1,3}|\u2026|\.\.\.)$/.test(t.t) && t.r.width; });
-    var pagBar=null;
-    if(numRow.length>=3){
-      var yy={};
-      numRow.forEach(function(t){ var k=Math.round(t.r.top/6); (yy[k]=yy[k]||[]).push(t); });
-      var best=Object.keys(yy).map(function(k){ return yy[k]; })
-        .sort(function(a,b){ return b.length-a.length; })[0];
-      if(best&&best.length>=3){
-        best.sort(function(a,b){ return a.r.left-b.r.left; });
-        pagBar=best;
-      }
-    }
-    var arrows=[];
-    if(pagBar){
-      var ry=pagBar[0].r.top;
-      s.page.querySelectorAll('.g-b').forEach(function(e){
-        if(e.closest('.ax-mob')) return;
-        var r=e.getBoundingClientRect();
-        if(Math.abs(r.top-ry)<80 && r.width>24 && r.width<110 && r.height>24 && r.height<110)
-          arrows.push({el:e,r:r});
-      });
-      arrows.sort(function(a,b){ return a.r.left-b.r.left; });
-    }
-
-    function paintPager(total){
-      if(!pagBar) return;
-      /* windowed numbering: 1..5 then an ellipsis then the last page, exactly the
-         shape the design draws */
-      var nums=[],i;
-      if(total<=pagBar.length){ for(i=1;i<=total;i++) nums.push(String(i)); }
-      else {
-        var start=Math.min(Math.max(1,pageNo),Math.max(1,total-4));
-        for(i=start;i<start+Math.min(5,pagBar.length-2)&&i<=total;i++) nums.push(String(i));
-        nums.push('\u2026'); nums.push(String(total));
-      }
-      pagBar.forEach(function(t,idx){
-        var v=nums[idx];
-        if(v===undefined){ t.el.style.display='none'; return; }
-        t.el.style.display='';
-        t.el.textContent=v;
-        var isNum=/^\d+$/.test(v);
-        t.el.style.cursor=isNum?'pointer':'default';
-        t.el.style.fontWeight=(isNum&&(+v-1)===pageNo)?'700':'';
-        t.el.style.color=(isNum&&(+v-1)===pageNo)?'rgb(223,63,23)':'';
-        if(isNum&&!t.el.__axpg){
-          t.el.__axpg=1;
-          t.el.setAttribute('role','button');
-          t.el.setAttribute('tabindex','0');
-          var jump=function(){ var n=parseInt(t.el.textContent,10); if(n){ pageNo=n-1; render(); } };
-          t.el.addEventListener('click',jump);
-          t.el.addEventListener('keydown',function(e){
-            if(e.key==='Enter'||e.key===' '){ e.preventDefault(); jump(); } });
-        }
-      });
-      if(arrows.length>=2){
-        var a0=arrows[0].el, a1=arrows[arrows.length-1].el;
-        [[a0,-1],[a1,1]].forEach(function(pair){
-          var el=pair[0], dir=pair[1];
-          el.style.cursor='pointer';
-          if(!el.__axpg){
-            el.__axpg=1;
-            el.setAttribute('role','button');
-            el.setAttribute('tabindex','0');
-            el.setAttribute('aria-label', dir<0?'Previous page':'Next page');
-            var step=function(){
-              var list=pool();
-              var tot=Math.max(1,Math.ceil(Math.max(0,list.length-hero.length)/grid.length));
-              pageNo=Math.min(Math.max(0,pageNo+dir),tot-1); render();
-            };
-            el.addEventListener('click',step);
-            el.addEventListener('keydown',function(e){
-              if(e.key==='Enter'||e.key===' '){ e.preventDefault(); step(); } });
-          }
-          el.style.opacity = ((dir<0&&pageNo<=0)) ? '.35' : '';
-        });
-      }
-    }
-
-    /* the designed category chips become the real filter */
-    var chipRow=s.texts.filter(function(t){ return /^(All|Product|Enterprise AI|Engineering|Other)$/.test(t.t); });
-    chipRow.forEach(function(t,i){
-      var label=CATS[i];
-      if(label===undefined){ t.el.style.display='none'; return; }
-      t.el.textContent=label;
-      t.el.classList.add('ax-bl-hit');
-      t.el.setAttribute('role','button');
-      t.el.setAttribute('tabindex','0');
-      var pick=function(){ active=label; pageNo=0; render(); };
-      t.el.addEventListener('click',pick);
-      t.el.addEventListener('keydown',function(e){
-        if(e.key==='Enter'||e.key===' '){ e.preventDefault(); pick(); }
-      });
-    });
-
-    render();
-  }
-
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init);
-  else init();
-  addEventListener('load',function(){ setTimeout(init,150); });
 })();
 </script>
 

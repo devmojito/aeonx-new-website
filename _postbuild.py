@@ -29,6 +29,18 @@ SCROLLROW = open(os.path.join(_HERE, '_scrollrow.html'), encoding='utf-8').read(
 UIFX = open(os.path.join(_HERE, '_uifx.html'), encoding='utf-8').read()
 MOBFX = open(os.path.join(_HERE, '_mobfx.html'), encoding='utf-8').read()
 
+# Site-wide fragments, as (sentinel, source filename), for `--refresh` to strip before
+# the injection guards below re-add the edited copy. Order does not matter; each is
+# stripped by its own sentinel.
+GLOBAL_FRAGMENTS = [
+    ('ax-uifx-css', '_uifx.html'),
+    ('ax-hover-css', '_hover.html'),
+    ('ax-mobfx-css', '_mobfx.html'),
+    ('ax-scrollrow-css', '_scrollrow.html'),
+    ('ax-ctawash-css', '_ctawash.html'),
+    ('ax-stathov-css', '_stathov.html'),
+]
+
 # Page-scoped fragments. These are big (the contact-form one carries two inert <template>
 # panels) and each matches exactly ONE page, so injecting them site-wide would bloat 30+
 # files with markup that can never fire. Injected after the site-wide fragments, which is
@@ -187,6 +199,18 @@ def main():
         except FileNotFoundError:
             continue
         o = s
+        # `--refresh` used to cover only the SCOPED list, so editing a SITE-WIDE
+        # fragment (_uifx, _hover, _mobfx, ...) reached no page that already had the
+        # old copy -- the sentinel guard below skipped every one of them, and the
+        # edit had to be re-deployed by hand (HANDOFF 1). Strip those here too so one
+        # flag covers both kinds.
+        if refresh:
+            for sent, fn in GLOBAL_FRAGMENTS:
+                if only and sent not in only and fn not in only:
+                    continue
+                s, cut = strip_fragment(s, sent)
+                if cut:
+                    stats['refreshed'] += 1
         if 'ax-ctawash-css' not in s and '</body>' in s:
             s = s.replace('</body>', CTAWASH + '\n</body>', 1)
             stats['ctawash'] = stats.get('ctawash', 0) + 1

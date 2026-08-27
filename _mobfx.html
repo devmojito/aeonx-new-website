@@ -145,6 +145,11 @@
        headings ABOVE the card top and buttons BELOW its bottom, which a band tied to
        the card edges missed (the button read "Explore AeonxIQ" forever). Without
        tabs the card edges are the honest band. */
+    /* A row a page-scoped fragment already drives is not ours. _prodstrip.html marks
+       the mobile SaaS-suite clip and everything under it; without this the carousel
+       adopted part of that row and left the rest, which is why five of the six product
+       screenshots never moved with their tab. */
+    if (host && host.closest && host.closest('[data-ax-owned]')) return;
     var mTop = top - 6, mBot = bottom + 6;
     if (tabs) {
       mTop = tabs[0].T + tabs[0].H + 4;
@@ -167,7 +172,12 @@
        twice as far as the rest). */
     var band = box.filter(function(b){
       if (b.T < mTop || b.T > mBot) return false;
-      var k = Math.round((b.L - cols[0]) / stride);
+      /* floor, not round: a member belongs to the column it STARTS in. The homepage
+         trinity band's third CTA ("See the suite") sits 200px into its 354px column
+         -- narrower label, so Figma centres it further right -- which rounds to
+         column 3, past the last card, and the pill was dropped from the track
+         entirely. That card shipped with no button at all. */
+      var k = Math.floor((b.L - cols[0]) / stride);
       return k >= 0 && k < count && Math.abs((b.L - cols[0]) - k * stride) < stride * 0.9;
     }).map(function(b){ return b.el; });
     members = members.concat(band).filter(function(e, i, a){ return a.indexOf(e) === i; });
@@ -230,6 +240,8 @@
       prev.addEventListener('click', function(){ takeover(); go(i - 1); });
       next.addEventListener('click', function(){ takeover(); go(i + 1); });
 
+      /* the live dots cannot paint over the baked art, so cut the art's own dots out */
+      if (ctrl.el) ctrl.el.classList.add('ax-carart');
       dots = document.createElement('div');
       dots.className = 'ax-cardots';
       dots.style.left = (ctrl.L + ctrl.W * 16 / vb) + 'px';
@@ -271,7 +283,12 @@
        of clones), pausing offscreen and handing over for good on first touch. */
     var driftStop = null;
     function stopDrift(){ if (driftStop) { driftStop(); driftStop = null; } }
-    if (!ctrl && !tabs && !REDUCED) (function(){
+    /* AUTO-ADVANCE REMOVED 2026-08-27 at the client's instruction: a carousel moves
+       only when the reader moves it. Rows with no arrows, dots or tabs keep touch
+       drag; they no longer scroll by themselves. The block is left in place, never
+       entered, so the seamless-clone technique is not lost. */
+    var DRIFT = false;
+    if (DRIFT && !ctrl && !tabs && !REDUCED) (function(){
       var cycle = stride * count;
       var clones = members.map(function(e){
         var c = e.cloneNode(true);

@@ -24,10 +24,23 @@ CHUNK = 25
 
 
 def rotated_ids():
-    """Every node _gen.emit_rotated() would handle, straight from the dump."""
+    """Every node _gen.emit_rotated() would handle, from BOTH dumps.
+
+    _mobile.py runs the same emitter over aeonx-mobile.json, so a mobile-only
+    rotated node needs a cached matrix just as much as a desktop one. Walking only
+    the desktop canvas left 62 of the mobile dump's 104 rotated nodes uncached, and
+    each of those fell back to the pure-rotation guess -- which is what pushed the
+    industries pages' "+ More" chip and the Partners Hub "View All" off-design.
+    """
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     import _gen
-    ids, stack = [], [_gen.load_canvas()]
+    roots = [_gen.load_canvas()]
+    try:
+        mob = json.load(open('aeonx-mobile.json', encoding='utf-8'))
+        roots.append(mob['nodes']['5478:4162']['document'])
+    except (OSError, ValueError, KeyError):
+        print('  (no aeonx-mobile.json -- desktop transforms only)')
+    ids, stack = [], list(roots)
     while stack:
         n = stack.pop()
         r = n.get('rotation')

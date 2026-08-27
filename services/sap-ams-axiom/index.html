@@ -1175,9 +1175,20 @@ document.addEventListener('DOMContentLoaded',function(){
     }
     pills.forEach(function(p){
       var lab=p.querySelector('.g-t'); if(!lab)return;
+      /* Desktop only. This is the pill-grower for 16px labels on a 1920 layout; the
+         .ax-mob block is authored at 430 with Figma's own pill widths, and running it
+         there only moved labels off their authored left (Figma x=40 -> left:112.9px on
+         "Request a Proposal"), which reads as a needlessly centred button. */
+      if(p.closest('.ax-mob')||lab.closest('.ax-mob'))return;
       var pr=p.getBoundingClientRect(); if(!pr.width)return;
       var rng=document.createRange(); rng.selectNodeContents(lab);
       var ink=rng.getBoundingClientRect().width;
+      /* A CARD is not a pill. Partners Hub draws "View All" as a left-aligned label
+         inside a 379px white content card; this pass read the card as the label's
+         button, rewrote its width in px and re-centred the label at (379-56)/2 =
+         161.5px -- 34vw off its Figma position. A real button hugs its label, so
+         require the box to be within ~4x the label ink before touching either. */
+      if(ink && pr.width > ink*4 + 80) return;
       var MINPAD=designPad(p,lab);
       var pad=Math.max(MINPAD,(pr.width-ink)/2);      // symmetric, on the design's own inset
       var need=Math.ceil(ink+pad*2);
@@ -1286,15 +1297,15 @@ document.addEventListener('DOMContentLoaded',function(){
 });
 </script>
 
-<div class="ax-mob"><main class="ax-page" style="position:relative;height:1835.3488vw">
-<div class="g-b" style="position:absolute;left:0.0000vw;top:1176.8836vw;width:100.0000vw;height:658.5060vw;background-color:rgb(255,255,255);"></div>
-<img class="g-vec" src="/assets/vec/5637-74297.svg" data-vec="5637:74297" loading="lazy" decoding="async" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:3.7209vw;top:1186.1860vw;width:23.2558vw;height:13.2558vw;">
+<div class="ax-mob"><main class="ax-page" style="position:relative;height:1845.5814vw">
+<div class="g-b" style="position:absolute;left:0.0000vw;top:1176.8836vw;width:100.0000vw;height:668.7385vw;background-color:rgb(255,255,255);"></div>
+<img class="g-vec" src="/assets/vec/6287-18544.svg" data-vec="6287:18544" loading="lazy" decoding="async" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:3.7209vw;top:1186.1860vw;width:23.2558vw;height:13.2558vw;">
 <div class="g-t" style="position:absolute;left:7.9070vw;top:1212.4863vw;width:41.6279vw;height:6.0465vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:4.2706vw;line-height:5.8721vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Sign up to learn more </div>
 <div class="g-t" style="position:absolute;left:7.9070vw;top:1223.3372vw;width:84.1860vw;height:6.0465vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:4.2706vw;line-height:5.8721vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">SAP. Cloud. AI. One accountable partner.
 </div>
 <div class="g-b g-clip" style="position:absolute;left:7.9070vw;top:1238.7258vw;width:84.1860vw;height:11.1628vw;background-color:rgb(223,63,23);border-radius:1.8605vw;overflow:hidden;">
 <div class="g-t" style="position:absolute;left:3.7209vw;top:3.2558vw;width:17.4419vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:3.2558vw;line-height:4.6512vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">Get Started</div>
-<img class="g-vec" src="/assets/vec/I5637-74330;4046-29821.svg" data-vec="I5637:74330;4046:29821" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:74.4186vw;top:2.7907vw;width:5.5814vw;height:5.5814vw;">
+<img class="g-vec" src="/assets/vec/I6287-18577;4046-29821.svg" data-vec="I6287:18577;4046:29821" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:74.4186vw;top:2.7907vw;width:5.5814vw;height:5.5814vw;">
 </div>
 <div class="g-t" style="position:absolute;left:10.1269vw;top:1262.9674vw;width:22.3256vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:3.7209vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Who we are
 </div>
@@ -1350,6 +1361,8 @@ document.addEventListener('DOMContentLoaded',function(){
 <div class="g-t" style="position:absolute;left:10.1269vw;top:1694.7554vw;width:11.8605vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Twitter</div>
 <div class="g-t" style="position:absolute;left:10.1269vw;top:1704.6073vw;width:14.1860vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">LinkedIn</div>
 <div class="g-img" data-ref="1a6724d5f1b0e3e74c7e42c83b442f552edd6040" role="img" aria-label="4 8" style="position:absolute;left:76.0465vw;top:1700.3720vw;width:20.2326vw;height:34.4186vw;background-image:url(/assets/partners/gptw-certified.png);background-size:contain;background-position:center;background-repeat:no-repeat;"></div>
+<div class="g-img" data-ref="9eb08a9ddab314e538d8d079612a05d15204b1c3" role="img" aria-label="4 8" style="position:absolute;left:74.8837vw;top:1644.7906vw;width:21.3953vw;height:21.3953vw;background-image:url(/assets/gen/9eb08a9ddab314e538d8d079612a05d15204b1c3.webp);background-size:35.6589vw 21.3953vw;background-position:-6.6258vw -0.0000vw;background-repeat:no-repeat;"></div>
+<div class="g-img" data-ref="f098495ead3741a8d723bd5d9f56e3a681293a2d" role="img" aria-label="4 9" style="position:absolute;left:74.1860vw;top:1671.7674vw;width:22.0930vw;height:23.0233vw;background-image:url(/assets/gen/f098495ead3741a8d723bd5d9f56e3a681293a2d.webp);background-size:22.9805vw 23.0233vw;background-position:-0.2104vw -0.0000vw;background-repeat:no-repeat;"></div>
 <div class="g-b" style="position:absolute;left:3.7209vw;top:1722.7098vw;width:92.5581vw;height:63.6100vw;box-sizing:border-box;border-bottom:0.2326vw solid rgb(236,238,242);"></div>
 <div class="g-t" style="position:absolute;left:10.3938vw;top:1728.8488vw;width:32.0930vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">support@doss.com</div>
 <div class="g-t" style="position:absolute;left:10.3938vw;top:1738.7009vw;width:32.5581vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Terms &amp; Conditions</div>
@@ -1358,16 +1371,19 @@ document.addEventListener('DOMContentLoaded',function(){
 <div class="g-t" style="position:absolute;left:10.3938vw;top:1748.5529vw;width:13.0233vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Cookies</div>
 <div class="g-t" style="position:absolute;left:33.0237vw;top:1748.6646vw;width:13.9535vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Sitemap</div>
 <div class="g-b" style="position:absolute;left:3.7209vw;top:1722.6181vw;width:92.5581vw;height:0.2326vw;background:linear-gradient(90deg, rgba(133,128,123,0.180) 0.0%);"></div>
-<div class="g-t" style="position:absolute;left:8.3721vw;top:1798.4130vw;width:49.3023vw;height:6.5116vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:4.1860vw;line-height:6.5116vw;color:rgb(38,15,20);text-align:left;white-space:nowrap;">Get the latest from Aeonx</div>
-<div class="g-b g-clip" style="position:absolute;left:8.3721vw;top:1808.7618vw;width:54.6512vw;height:10.6977vw;border-radius:0.4651vw;box-sizing:border-box;border:0.1860vw solid rgb(255,120,94);overflow:hidden;">
-<div class="g-t" style="position:absolute;left:3.9070vw;top:2.5581vw;width:46.8372vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:3.7209vw;line-height:5.5814vw;color:rgb(134,149,170);text-align:left;white-space:nowrap;">Work email</div>
+<div class="g-b" style="position:absolute;left:3.7209vw;top:1794.6920vw;width:92.5581vw;height:10.6977vw;box-sizing:border-box;border:0.2326vw solid rgb(236,238,242);"></div>
+<div class="g-t" style="position:absolute;left:7.6744vw;top:1797.7153vw;width:46.7442vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:3.2558vw;line-height:4.6512vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Get an AI summary of this page</div>
+<img class="g-vec" src="/assets/vec/6287-18726.svg" data-vec="6287:18726" loading="lazy" decoding="async" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:71.8605vw;top:1797.7153vw;width:20.0000vw;height:4.6512vw;">
+<div class="g-b" style="position:absolute;left:3.7209vw;top:1805.3897vw;width:92.5581vw;height:28.1395vw;box-sizing:border-box;border-right:0.2326vw solid rgb(236,238,242);border-bottom:0.2326vw solid rgb(236,238,242);border-left:0.2326vw solid rgb(236,238,242);"></div>
+<div class="g-t" style="position:absolute;left:7.6744vw;top:1808.1804vw;width:49.3023vw;height:6.5116vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:4.1860vw;line-height:6.5116vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Get the latest from Aeonx</div>
+<div class="g-b g-clip" style="position:absolute;left:7.6744vw;top:1819.3432vw;width:54.6512vw;height:10.2326vw;border-radius:0.4651vw;box-sizing:border-box;border:0.1860vw solid rgb(246,168,123);overflow:hidden;">
+<div class="g-t" style="position:absolute;left:3.9070vw;top:2.3256vw;width:46.8372vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:3.7209vw;line-height:5.5814vw;color:rgb(134,149,170);text-align:left;white-space:nowrap;">Work email</div>
 </div>
-<div class="g-b g-clip" style="position:absolute;left:65.8140vw;top:1808.7618vw;width:25.7267vw;height:10.6977vw;background-color:rgba(38,15,20,0.050);border-radius:0.4651vw;box-sizing:border-box;border:0.1860vw solid rgba(0,0,0,0.000);overflow:hidden;">
-<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0931vw;width:25.8140vw;height:10.2326vw;background-color:rgb(223,63,23);border-radius:1.8605vw;overflow:hidden;">
-<div class="g-t" style="position:absolute;left:5.5814vw;top:2.7907vw;width:14.6512vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:3.2558vw;line-height:4.6512vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">Subscribe</div>
+<div class="g-b g-clip" style="position:absolute;left:65.1163vw;top:1819.3432vw;width:27.6744vw;height:10.2326vw;border-radius:0.4651vw;overflow:hidden;">
+<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:27.6744vw;height:10.2326vw;background-color:rgb(223,63,23);border-radius:1.8605vw;overflow:hidden;">
+<div class="g-t" style="position:absolute;left:6.5116vw;top:2.7907vw;width:14.6512vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:3.2558vw;line-height:4.6512vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">Subscribe</div>
 </div>
 </div>
-<div class="g-b" style="position:absolute;left:3.7209vw;top:1826.0465vw;width:92.5581vw;height:0.2326vw;background-color:rgb(229,229,229);"></div>
 <div class="g-b" style="position:absolute;left:0.0000vw;top:1076.8836vw;width:100.0930vw;height:100.0000vw;background-color:rgb(246,247,249);"></div>
 <h2 class="g-t" style="position:absolute;left:5.5814vw;top:1086.1860vw;width:88.8372vw;height:20.4651vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:8.3721vw;line-height:10.2326vw;color:rgb(35,39,46);text-align:left;white-space:pre-wrap;">Transition in 6 weeks.<br>Priced by outcome.</h2>
 <div class="g-t" style="position:absolute;left:5.9302vw;top:1109.4418vw;width:88.1395vw;height:26.0465vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:4.1860vw;line-height:6.5116vw;color:rgb(82,96,119);text-align:left;white-space:pre-wrap;">Bring your current AMS contract, a backlog that moves too slowly, or an AXIOM pilot question. We’ll come back with a transition plan and an autonomy commitment.<br></div>
@@ -1724,8 +1740,19 @@ document.addEventListener("DOMContentLoaded",function(){
   -webkit-tap-highlight-color:transparent;cursor:pointer}
 .ax-carh:disabled{opacity:.35;cursor:default}
 /* live dots, drawn over the baked pill so the active step actually moves */
+/* Mobile only. The live dots overlay is itself hidden above 768px, so masking the
+   design's own dots out of the control art up there would delete them and put nothing
+   back -- and the desktop build is signed off. */
+@media (max-width:768px){
+.ax-carart{clip-path:polygon(0% 0%,3.4% 0%,3.4% 100%,35.2% 100%,35.2% 0%,100% 0%,100% 100%,0% 100%);shape-rendering:crispEdges}
+@supports (clip-path:xywh(0 0 1px 1px)){.ax-carart{clip-path:none;-webkit-mask-image:linear-gradient(90deg,#000 0 3.4%,transparent 3.4% 35.2%,#000 35.2% 100%);mask-image:linear-gradient(90deg,#000 0 3.4%,transparent 3.4% 35.2%,#000 35.2% 100%)}}
+}
 .ax-cardots{position:absolute;z-index:41;display:flex;align-items:center;
-  justify-content:center;gap:6px;background:#FEF5EE;border-radius:999px;pointer-events:none}
+  justify-content:center;gap:6px;background:#FEF5EE;border-radius:4px;pointer-events:none}
+/* The overlay sits ON TOP of Figma's own control artwork, which bakes its dots into
+   the same SVG as the arrows. It has to match AtomNavigationDots exactly -- peach
+   fill, 4px radius, 90x40 for three dots -- or the design's dots show alongside the
+   live ones and the row appears to have twice as many. */
 .ax-cardots i{display:block;width:6px;height:6px;border-radius:999px;background:#ECEEF2;
   transition:width .3s ease,background-color .3s ease}
 .ax-cardots i.on{width:22px;background:#DF3F17}
@@ -1962,6 +1989,11 @@ document.addEventListener("DOMContentLoaded",function(){
        one shape: a homepage row is baked with its slides at NEGATIVE offsets
        (content left of the origin is unreachable by a real scroller) and several
        rows have no clipping box at all -- their slides sit straight on the page. */
+    /* A row a page-scoped fragment already drives is not ours. _prodstrip.html marks
+       the mobile SaaS-suite clip and everything under it; without this the carousel
+       adopted part of that row and left the rest, which is why five of the six product
+       screenshots never moved with their tab. */
+    if (host && host.closest && host.closest('[data-ax-owned]')) return;
     var mTop = top - 6, mBot = bottom + 6;
     if (tabs) {
       mTop = tabs[0].T + tabs[0].H + 4;
@@ -1971,7 +2003,12 @@ document.addEventListener("DOMContentLoaded",function(){
       if (b.el.parentElement !== host) return false;
       if (ctrl && b.el === ctrl.el) return false;
       if (b.T < mTop || b.T > mBot) return false;
-      var k = Math.round((b.L - cols[0]) / stride);
+      /* floor, not round: a member belongs to the column it STARTS in. The homepage
+         trinity band's third CTA ("See the suite") sits 200px into its 354px column
+         -- narrower label, so Figma centres it further right -- which rounds to
+         column 3, past the last card, and the pill was dropped from the track
+         entirely. That card shipped with no button at all. */
+      var k = Math.floor((b.L - cols[0]) / stride);
       return k >= 0 && k < count && Math.abs((b.L - cols[0]) - k * stride) < stride * 0.9;
     }).map(function(b){ return b.el; });
     if (slides.length < 2) return;
@@ -2181,12 +2218,20 @@ document.addEventListener("DOMContentLoaded",function(){
       prev.addEventListener('click', function(){ takeover(); go(i - 1); });
       next.addEventListener('click', function(){ takeover(); go(i + 1); });
 
+      /* the live dots cannot paint over the baked art, so cut the art's own dots out */
+      if (ctrl.el) ctrl.el.classList.add('ax-carart');
       dots = document.createElement('div');
       dots.className = 'ax-cardots';
       dots.dataset.axRow = rowId;
       dots.style.left = (ctrl.L + ctrl.W * 16 / vb) + 'px';
       dots.style.top = ctrl.T + 'px';
-      dots.style.width = (ctrl.W * (153.6 - 16) / vb) + 'px';
+      /* Figma's own AtomNavigationDots box, not one fixed width. The component is
+         90x40 for three dots and grows ~16px per extra dot (measured across its 37
+         instances in the mobile file: 30 at 90, five at 122, one at 138, one at 151).
+         The old constant baked in the 138 case, so every three-dot row -- which is
+         nearly all of them -- drew a box half again too wide with its dots stranded
+         left of centre. */
+      dots.style.width = (ctrl.W * (90 + 16 * Math.max(0, count - 3)) / vb) + 'px';
       dots.style.height = ctrl.H + 'px';
       for (var d = 0; d < count; d++) dots.appendChild(document.createElement('i'));
       page.appendChild(dots);
@@ -2219,7 +2264,12 @@ document.addEventListener("DOMContentLoaded",function(){
        cloned track), pausing offscreen and handing over for good on first touch. */
     var driftStop = null;
     function stopDrift(){ if (driftStop) { driftStop(); driftStop = null; } }
-    if (!ctrl && !tabs && !REDUCED) (function(){
+    /* AUTO-ADVANCE REMOVED 2026-08-27 at the client's instruction: a carousel moves
+       only when the reader moves it. Rows with no arrows, dots or tabs keep touch
+       drag; they no longer scroll by themselves. The block is left in place, never
+       entered, so the seamless-clone technique is not lost. */
+    var DRIFT = false;
+    if (DRIFT && !ctrl && !tabs && !REDUCED) (function(){
       var cycle = stride * count;
       var clone = track.cloneNode(true);
       clone.setAttribute('aria-hidden', 'true');
@@ -2466,6 +2516,18 @@ document.addEventListener("DOMContentLoaded",function(){
          through String() -- the culture page's pillars read 1..4 on mobile, where
          the numbers are large enough to clear the size threshold. */
       if (/^0\d/.test(m[2])) continue;
+      /* A stat is a short standalone label -- "280+", "15+", "4X", "18 wks". These
+         three are numbers that merely START a line, and animating them rewrote real
+         copy: the Foundation timeline's YEARS all read "0" until the observer fired
+         (and then counted 0 -> 2020, which reads as a bug either way), "175-seat
+         infrastructure. Workforce growth across six offices…" became "0-seat
+         infrastructure…", and the investor pages' live "3 documents" count -- which
+         the document browser writes itself from the API -- was reset to "0 documents"
+         underneath it. Mobile is where this showed, because the type is big enough
+         there to clear MIN_REL; desktop draws the same nodes smaller. */
+      if (/^(19|20)\d\d$/.test(m[2]) && !m[3].trim()) continue;   /* a year */
+      if (raw.trim().length > 24) continue;                        /* prose, not a stat */
+      if (/^\s*documents?\b/i.test(m[3])) continue;                /* live API count */
       jobs.push({ node:n, target:target, grouped:/,/.test(m[2]),
                   pre:m[1], suf:m[3], box:box, done:false });
       n.nodeValue = m[1] + '0' + m[3];
@@ -3771,6 +3833,45 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 
+<style id="ax-amsicon-css">
+/* "Four characteristics." -- card 1 ("Outcome-led") is a stray in the Figma source:
+   its icon plate is a 120px square parked to the RIGHT of the copy and vertically
+   centred, while cards 2-4 use a 44px plate at the card's top-left. _gen.py
+   reproduces the source faithfully, so the outlier is upstream, not a generator bug.
+   Cards 2-4 are the intent: that 120px plate is the only one of its kind on the whole
+   canvas (13 other icon plates are all 44px), and the MOBILE frame of this very
+   section gives all four cards the small top-left plate, "Outcome-led" included.
+   Card 1's box sits at left:15.6250vw top:70.3125vw, and its siblings place their
+   plate at card corner + 1.6667vw -> 17.2917 / 71.9792, matching card 3's left and
+   card 2's top exactly. */
+main.ax-page .g-b.g-clip:has(> img.g-vec[src$="4613-9605.svg"]){
+  left:17.2917vw!important; top:71.9792vw!important;
+  width:2.2917vw!important; height:2.2917vw!important;
+  border-radius:0.4167vw!important;
+}
+main.ax-page img.g-vec[src$="4613-9605.svg"]{
+  left:0.2083vw!important; top:0.2083vw!important;   /* same inset as cards 2-4 */
+}
+/* The icon RASTER kept the stray card's 120px size after the plate was resized to
+   44px, so it overflowed the plate on every side. All four of these icons are
+   1254x1254 images with OPAQUE BLACK corners -- what makes them read as rounded
+   tiles is the plate's own border-radius clipping them, which only works while the
+   image matches the plate. Unclipped, card 1 showed a black square sitting over the
+   heading. */
+main.ax-page .g-img[style*="7a11b88cbd"]{
+  width:2.2917vw!important; height:2.2917vw!important;
+}
+
+/* The same stray card also sets its heading and copy 2.7083vw (52px) higher than
+   its rowmate, because in the source they were centred against that tall 120px
+   plate on the right. With the plate moved to the card's top-left, the heading ran
+   straight under it -- "Outcome-led" came out with the icon sitting on the word.
+   Drop both lines to card 2's tops: 73.2292 -> 75.9375 and 76.5625 -> 79.2708,
+   which is exactly the row-1 baseline (cards 3 and 4 already share theirs). */
+main.ax-page .g-t[style*="left:17.2917vw"][style*="top:73.2292vw"]{top:75.9375vw!important}
+main.ax-page .g-t[style*="left:17.2917vw"][style*="top:76.5625vw"]{top:79.2708vw!important}
+</style>
+
 <style id="ax-uifx-css">
 /* Chrome interactions + newsletter. _hover.html deliberately skips header/footer
    (chrome() excludes them), so nothing in the nav or footer ever gained a hover
@@ -3863,6 +3964,10 @@ document.addEventListener("DOMContentLoaded",function(){
                 /* Figma spells it "COSTUMER IN THIS VERTICAL" on all six
                    industries pages. The rest of the site says Customer. */
                 [/\bCOSTUMER\b/g,'CUSTOMER'],[/\bCostumer\b/g,'Customer'],
+                /* The trinity band's first card is authored "01/SAP" on all ten of
+                   its instances while its own siblings are "02 / CLOUD" and
+                   "03 / AI" -- one card visibly set tighter than the other two. */
+                [/\b01\/SAP\b/g,'01 / SAP'],
                 /* Figma spells the product names three ways ("Logystix" in the footer,
                    "LogystiX" on the cards). One casing per brand, sitewide. */
                 [/\bLogystix\b/g,'LogystiX'],[/\bManuFex\b/g,'ManufeX'],[/\bManufex\b/g,'ManufeX'],
@@ -3888,19 +3993,29 @@ document.addEventListener("DOMContentLoaded",function(){
   var ACR={aws:'AWS',sap:'SAP',ams:'AMS',ai:'AI',ml:'ML',cms:'CMS',erp:'ERP',gcp:'GCP',
            ecs:'ECS',waf:'WAF',axiom:'AXIOM',api:'API',saas:'SaaS',rise:'RISE',grow:'GROW',
            bse:'BSE',noc:'NOC',sre:'SRE',hana:'HANA',btp:'BTP',iot:'IoT',rfp:'RFP',rpf:'RPF',
+           ecc:'ECC',fmcg:'FMCG',ap:'AP',
            iepf:'IEPF',pdf:'PDF',hr:'HR',it:'IT',ceo:'CEO',cio:'CIO',cfo:'CFO',esg:'ESG',
            brsr:'BRSR',agm:'AGM',faq:'FAQ',us:'Us',iq:'IQ',fy:'FY',soc:'SOC',iso:'ISO',
-           gdpr:'GDPR',sla:'SLA',fmcg:'FMCG',
+           gdpr:'GDPR',sla:'SLA',
            /* product names carry internal capitals -- Title Case must not flatten
               them to "Supplierx" */
            aeonx:'AeonX',supplierx:'SupplierX',orderx:'OrderX',xpense:'Xpense',
-           logystix:'LogystiX',manufex:'ManufeX',aeonxiq:'AeonX IQ',axiomai:'AXIOM AI'};
+           logystix:'LogystiX',manufex:'ManufeX',aeonxiq:'AeonX.IQ',axiomai:'AXIOM AI'};
+  /* Title case leaves short function words lowercase -- capitalising every word is
+     Start Case, and it changed the meaning of SAP's own product names: "RISE with
+     SAP" and "GROW with SAP" came out "RISE With SAP" / "GROW With SAP" on 34 and 33
+     pages. It also pushed every CTA away from the Figma copy ("Read the story" ->
+     "Read The Story"). A leading word is always capitalised. */
+  var MINOR=/^(a|an|the|and|but|or|nor|for|of|to|in|on|at|by|as|per|via|with|from|into|over|up)$/;
   function titleCase(s){
     /* Hyphenated compounds are ONE word: "SAP-on-AWS" must not become
        "SAP-On-AWS". Capitalise the first part, keep the rest as written unless it
        is a known acronym. */
+    var first=true;
     return s.split(/(\s+)/).map(function(word){
       if(/^\s+$/.test(word)||!word) return word;
+      var wasFirst=first; first=false;
+      if(!wasFirst && MINOR.test(word.toLowerCase()) && !ACR[word.toLowerCase()]) return word.toLowerCase();
       if(word.indexOf('-')>-1){
         return word.split('-').map(function(part,i){
           var low=part.toLowerCase();
@@ -3959,8 +4074,13 @@ document.addEventListener("DOMContentLoaded",function(){
      the other. Worse, _leadtabs.html identifies both tabs by matching this EXACT
      uppercase text; once mutated, its setup() no longer recognised them and neither
      tab responded to a click. Keep both as authored so identification and casing
-     both stay correct. */
-  var KEEP_LIT=['PRACTICE & PROGRAMME','SALES & GROWTH'];
+     both stay correct.
+
+     The homepage mobile hero's SERVICES / PRODUCT toggle is the same shape and broke
+     the same way: Figma exports a fill on the ACTIVE tab only, so inPill() saw
+     PRODUCT and not SERVICES, and the pair rendered "Product | SERVICES". Both are
+     authored caps in Figma; both stay caps. */
+  var KEEP_LIT=['PRACTICE & PROGRAMME','SALES & GROWTH','PRODUCT','SERVICES'];
   function applyTitleCase(root){
     (root||document).querySelectorAll('.g-t,.ax-mm2__feat-btn,.ax-mm2__api-btn').forEach(function(e){
       if(e.children.length) return;                     /* leave rich labels alone */
@@ -3971,6 +4091,17 @@ document.addEventListener("DOMContentLoaded",function(){
       if(e.closest('section.ax-footer')&&!isControl(e)) return;
       var t=txt(e);
       if(!t||t.length>34||KEEP.test(t)||KEEP_LIT.indexOf(t)!==-1) return;
+      /* A label the design sets in ALL CAPS is a design decision, not a sentence
+         waiting to be cased. The nav buttons were already exempted by hand for this
+         reason; the same is true of every other caps label, and title-casing them was
+         actively wrong -- it flattened acronyms the ACR map does not list ("FMCG &
+         Distribution" -> "Fmcg & Distribution" on 33 pages, "AP" -> "Ap") and rewrote
+         the leadership cards' JOB TITLES ("CHIEF FINANCIAL OFFICER" -> "Chief
+         Financial Officer", "VICE PRESIDENT", "HEAD OF OPERATIONS"), which are not
+         buttons at all and only qualified because they sit in a painted card.
+         The client's ask was Title Case on sentence-case CTAs -- "Download the
+         brochure", "Read the story" -- and those are untouched by this. */
+      if(t===t.toUpperCase()&&/[A-Z]{2}/.test(t)) return;
       /* A clickable CARD is not a button: its title is set at heading size. Compare
          in vw, not px -- the mobile block is authored against a 430px design, so its
          16px button label computes to ~54px when the desktop viewport is 1440 and a
@@ -4285,18 +4416,28 @@ document.addEventListener("DOMContentLoaded",function(){
          (pill.contains(e.target)||subLabel.contains(e.target))) submit(e); },true);
     input.addEventListener('keydown',function(e){ if(e.key==='Enter') submit(e); });
 
-    /* ---------- 4. NEWSLETTER COLUMN ALIGNMENT (removed) ----------
-       An earlier session force-aligned this heading under "About Us" (682px) on a
-       request made against that session's Figma state. Re-checked directly against
-       BOTH the master component (5323:12316) and the actual footer INSTANCE placed
-       on the live Home page (5323:14151, rendered as a PNG, not just read as
-       coordinates) -- Figma's own authored position for "Get the latest from
-       AeonX" is 932px, under "Services"/"Products", nowhere near "About Us". The
-       override was moving this row further from Figma, not closer, and the
-       collision it was patched to avoid (this heading crowding the AI-summary
-       icons at 682px) does not exist at the real 932px position -- there is 248px
-       of clear margin. Left un-shifted; the raw inline styles already carry
-       Figma's true numbers. */
+    /* ---------- 4. NEWSLETTER COLUMN ALIGNMENT ----------
+       Requested: the heading should sit in the same column as "About Us". Figma
+       puts it 1.35vw to the right, which reads as almost-but-not-quite aligned.
+       Measured against the real column so it survives a Figma re-pull. */
+    var head=[].slice.call(foot.querySelectorAll('.g-t')).filter(function(e){
+      return /^get the latest from aeonx/i.test(txt(e)); })[0];
+    var col=[].slice.call(foot.querySelectorAll('.g-t')).filter(function(e){
+      return /^about us$/i.test(txt(e)); })[0];
+    if(head&&col){
+      var hl=num(head,'left'), cl=num(col,'left');
+      if(hl!==null&&cl!==null){
+        var d=hl-cl;
+        if(Math.abs(d)>0.01){
+          setvw(head,'left',cl);
+          [box,pill,note].forEach(function(el){
+            var l=num(el,'left');
+            if(l!==null) setvw(el,'left',l-d);
+            else if(el===note){ note.style.left=(cl)+'vw'; }
+          });
+        }
+      }
+    }
   }
 
   /* ---------- 5. HOMEPAGE PRODUCT NAMES SCROLL IN PAGE ----------
@@ -4405,10 +4546,11 @@ document.addEventListener("DOMContentLoaded",function(){
   function bumpExplore(){
     [].slice.call(document.querySelectorAll('.g-t')).forEach(function(e){
       if(e.children.length) return;
-      /* Desktop-only. The mobile block is authored against a 430px design where
-         Figma already sets these pill labels to 12px (2.7907vw); .ax-fx-xl's
-         !important 2.4419vw drags that down to 10.5px, which also pushes the
-         glyphs off-centre in a pill whose padding is otherwise exactly 12/12. */
+      /* Desktop only. The mobile block is authored at 430 and Figma sets these labels
+         at 12px/20px (2.7907vw/4.6512vw) inside a 40px pill; .ax-fx-xl overrode that
+         with 2.4419vw/3.4884vw, so the type came out small AND the shorter line box
+         no longer filled the inset the pill was drawn for -- the uneven top/bottom
+         padding on every Explore button. */
       if(e.closest('.ax-mob')) return;
       if(!/^explore(\s|$)/i.test(txt(e))) return;
       var host=e.parentElement;
@@ -4478,45 +4620,6 @@ document.addEventListener("DOMContentLoaded",function(){
     window.__axfxR=setTimeout(function(){ centerLabels(); spaceArrows(); },200); });
 })();
 </script>
-
-<style id="ax-amsicon-css">
-/* "Four characteristics." -- card 1 ("Outcome-led") is a stray in the Figma source:
-   its icon plate is a 120px square parked to the RIGHT of the copy and vertically
-   centred, while cards 2-4 use a 44px plate at the card's top-left. _gen.py
-   reproduces the source faithfully, so the outlier is upstream, not a generator bug.
-   Cards 2-4 are the intent: that 120px plate is the only one of its kind on the whole
-   canvas (13 other icon plates are all 44px), and the MOBILE frame of this very
-   section gives all four cards the small top-left plate, "Outcome-led" included.
-   Card 1's box sits at left:15.6250vw top:70.3125vw, and its siblings place their
-   plate at card corner + 1.6667vw -> 17.2917 / 71.9792, matching card 3's left and
-   card 2's top exactly. */
-main.ax-page .g-b.g-clip:has(> img.g-vec[src$="4613-9605.svg"]){
-  left:17.2917vw!important; top:71.9792vw!important;
-  width:2.2917vw!important; height:2.2917vw!important;
-  border-radius:0.4167vw!important;
-}
-main.ax-page img.g-vec[src$="4613-9605.svg"]{
-  left:0.2083vw!important; top:0.2083vw!important;   /* same inset as cards 2-4 */
-}
-/* The icon RASTER kept the stray card's 120px size after the plate was resized to
-   44px, so it overflowed the plate on every side. All four of these icons are
-   1254x1254 images with OPAQUE BLACK corners -- what makes them read as rounded
-   tiles is the plate's own border-radius clipping them, which only works while the
-   image matches the plate. Unclipped, card 1 showed a black square sitting over the
-   heading. */
-main.ax-page .g-img[style*="7a11b88cbd"]{
-  width:2.2917vw!important; height:2.2917vw!important;
-}
-
-/* The same stray card also sets its heading and copy 2.7083vw (52px) higher than
-   its rowmate, because in the source they were centred against that tall 120px
-   plate on the right. With the plate moved to the card's top-left, the heading ran
-   straight under it -- "Outcome-led" came out with the icon sitting on the word.
-   Drop both lines to card 2's tops: 73.2292 -> 75.9375 and 76.5625 -> 79.2708,
-   which is exactly the row-1 baseline (cards 3 and 4 already share theirs). */
-main.ax-page .g-t[style*="left:17.2917vw"][style*="top:73.2292vw"]{top:75.9375vw!important}
-main.ax-page .g-t[style*="left:17.2917vw"][style*="top:76.5625vw"]{top:79.2708vw!important}
-</style>
 
 </body>
 </html>

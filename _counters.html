@@ -38,6 +38,18 @@
          through String() -- the culture page's pillars read 1..4 on mobile, where
          the numbers are large enough to clear the size threshold. */
       if (/^0\d/.test(m[2])) continue;
+      /* A stat is a short standalone label -- "280+", "15+", "4X", "18 wks". These
+         three are numbers that merely START a line, and animating them rewrote real
+         copy: the Foundation timeline's YEARS all read "0" until the observer fired
+         (and then counted 0 -> 2020, which reads as a bug either way), "175-seat
+         infrastructure. Workforce growth across six offices…" became "0-seat
+         infrastructure…", and the investor pages' live "3 documents" count -- which
+         the document browser writes itself from the API -- was reset to "0 documents"
+         underneath it. Mobile is where this showed, because the type is big enough
+         there to clear MIN_REL; desktop draws the same nodes smaller. */
+      if (/^(19|20)\d\d$/.test(m[2]) && !m[3].trim()) continue;   /* a year */
+      if (raw.trim().length > 24) continue;                        /* prose, not a stat */
+      if (/^\s*documents?\b/i.test(m[3])) continue;                /* live API count */
       jobs.push({ node:n, target:target, grouped:/,/.test(m[2]),
                   pre:m[1], suf:m[3], box:box, done:false });
       n.nodeValue = m[1] + '0' + m[3];

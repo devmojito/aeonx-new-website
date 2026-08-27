@@ -29,6 +29,26 @@
     var pitch=num(clip,'width');
     if(!pitch) return false;
 
+    /* Claim the row. The chrome carousel scans for the same shape and, when it got
+       there first, moved some of these wrappers into a track of its own -- they stop
+       being clip.children, so the sweep below missed them and five of the six product
+       screenshots stayed put while their tab changed. `data-ax-owned` makes the
+       carousel skip the row; anything it already took is put back, in place, before
+       the columns are worked out. */
+    clip.dataset.axOwned='1';
+    [].forEach.call(clip.querySelectorAll('.ax-cartrack'),function(tr){
+      while(tr.firstChild){
+        var k=tr.firstChild;
+        if(k.classList) k.classList.remove('ax-carm','ax-cartrack--drag');
+        clip.insertBefore(k,tr);
+      }
+      tr.parentNode.removeChild(tr);
+    });
+    [].forEach.call(clip.querySelectorAll('.ax-carm'),function(k){
+      k.classList.remove('ax-carm');
+      k.style.transform='';
+    });
+
     var tabs=[].slice.call(strip.children)
       .filter(function(e){ return /g-t/.test(e.className||'')&&NAMES.test(txt(e))&&num(e,'left')!==null; })
       .map(function(e){ return {el:e,l:num(e,'left'),w:num(e,'width')||0}; })
@@ -67,9 +87,17 @@
        at the top of the box; panels start below it, which is what keeps the strip
        out of the column maths (its left of 0 would otherwise read as column 5). */
     var stripBot=(num(strip,'top')||0)+(num(strip,'height')||0);
+    /* Direct children only: a nested node's left resolves against its own wrapper, so
+       translating both moves it twice. Anything whose own left is missing is a wrapper
+       positioned some other way and is left alone. */
     var parts=[].slice.call(clip.children).filter(function(e){
       return e!==strip&&num(e,'left')!==null&&(num(e,'top')||0)>=stripBot-0.5;
     });
+    /* Every column must actually be represented. The screenshots live one level down
+       inside their own .g-clip, and if that wrapper is missing from `parts` the panel
+       slides while its picture stays -- the reported "image does not change". */
+    var seen={};
+    parts.forEach(function(e){ seen[Math.round((num(e,'left'))/pitch)]=1; });
     if(parts.length<tabs.length) return false;
 
     var base=Math.min.apply(null,parts.map(function(e){ return num(e,'left'); }));
@@ -115,8 +143,15 @@
       var dx=-(base+i*pitch);
       parts.forEach(function(e){ e.style.transform='translateX('+dx.toFixed(4)+'vw)'; });
       if(pill){
-        pill.style.transform='translateX('+(tabs[i].l-pillL0).toFixed(4)+'vw)';
-        pill.style.width=(tabs[i].w+(pillW0-tabs[0].w)).toFixed(4)+'vw';
+        /* Centre the pill on the label. Aligning their LEFT edges put the whole of the
+           pill's slack on the right -- SupplierX sat flush against the pill's left edge
+           with 14px of gap after it. The pill keeps the design's own padding (its width
+           minus the label it was drawn around) and is centred on whichever label is
+           active, so both sides match at every tab. */
+        var pad=Math.max(0,(pillW0-tabs[0].w)/2);
+        var w=tabs[i].w+pad*2;
+        pill.style.width=w.toFixed(4)+'vw';
+        pill.style.transform='translateX('+((tabs[i].l-pad)-pillL0).toFixed(4)+'vw)';
       }
       tabs.forEach(function(t,n2){
         t.el.style.color=(n2===i?ON:(t.c0===ON?OFF:t.c0));

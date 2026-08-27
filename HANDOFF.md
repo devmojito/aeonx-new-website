@@ -1249,3 +1249,791 @@ it, because the peel pass's one scheduled run (140ms after `load`) had already f
 the time the synthetic test's probe script ran its own separate reload. Re-verified
 sitewide: no page has another button-over-labeled-data-cta-element pattern, so this was
 scoped to the two elements it was fixed on.
+
+---
+
+## 21. Backend build + localhost leak trap (2026-08-25/27)
+
+### Django backend now exists, separate from this file's scope
+
+A full backend was built at `backend/` (Django 5.2 + DRF, Docker Compose: Postgres +
+MinIO/S3 + gunicorn): investor document upload/publish, WordPress document migration,
+contact form submissions, and a blog CMS with a custom admin UI at `/manage/`. Full
+detail, setup and the AWS deploy plan live in `backend/README.md`; this file stays
+scoped to the static-site build. Three places the two repos touch:
+
+- `_forminputs.html` now POSTs the contact form to `/api/contact/` with a mailto
+  fallback on any failure, instead of mailto-only.
+- `_invdocs_build.py`'s runtime script now fetches `/api/investor-documents/` live and
+  falls back to the baked-in snapshot already described in §14/§17 if the API is
+  unreachable.
+- Blog posts are authored in the admin and exported back to `_blogdata.json` via
+  `python manage.py export_blogdata`, which then feeds the EXISTING `_blog.py` /
+  `_bloglist_build.py` pipeline unchanged — everything in §14 about permalinks and
+  image handling still applies, just with the database as the new source of truth
+  instead of the WordPress harvest.
+
+### The `localhost:9000`-in-production trap
+
+`export_blogdata` runs against whatever storage the machine running it has configured —
+locally that is MinIO on `localhost:9000`, not publicly reachable. The first version of
+the export command guarded against this by refusing to write the file if local-only
+URLs were about to leak in; correct, but incomplete, because the whole point of the
+fallback is to substitute the ORIGINAL external (still-live) WordPress URL back in when
+local storage is not public. That substitution had two real bugs, both shipped once
+before being caught:
+
+1. The substitution only rewrote `src="..."`, not `srcset="..."`. `strip_dead_srcset()`
+   (§14) strips the retired-host size-variants from `srcset`, which left the local URL
+   as the only surviving `srcset` candidate on any image whose `src` had been fixed — so
+   the fix looked complete while the browser was still free to pick the untouched
+   `srcset` entry. Fixed by making the local-to-external substitution a bare string
+   replace, not `src="..."`-scoped, matching the pattern `import_wordpress_blog.py`
+   already uses for the reverse direction.
+2. `dead_in()` (marks images as confirmed-404 so `_blog.py` strips the `<img>` tag
+   entirely) ran on the body AFTER the local-to-external substitution, so it saw the
+   reverted `aeonx.digital` URL and treated every fallback-restored image as one of the
+   genuinely-dead ones, deleting the tag instead of shipping a working image. Fixed by
+   computing `dead_in()` BEFORE the substitution runs — at that point any surviving
+   `aeonx.digital` src really is one migration never touched.
+
+Both bugs together meant 47 blog pages had shipped with either a broken `localhost:9000`
+image or a silently-deleted one, live on the public Vercel deployment, before an
+unrelated external-URL audit caught it. Underlying data corruption: 32 `BodyImage` rows
+had their `original_url` field pointing at ANOTHER of our own local storage URLs instead
+of the true external source, a leftover from an earlier migration re-run before
+`own_storage_prefix()` (`import_wordpress_blog.py`, `backend/README.md`) existed to
+prevent exactly that. Recovered by matching each row's stored filename, with our own
+hex/collision prefixes stripped, against the untouched `_blogdata.harvest.json` (the
+pristine pre-database harvest file, never rewritten by any of this) — first by exact
+basename within the owning post, then by shrinking prefix match for the handful whose
+true filename had itself been truncated by an earlier Django storage collision suffix.
+
+**Lesson:** an export step that can run against non-public local storage needs its
+"does this actually resolve for a real visitor" check to run on the OUTPUT, after every
+fallback and substitution pass — not gate upfront on whether storage is public, which
+blocks the very code path meant to make the output safe.
+
+### WebP repoint must run again after any full rebuild
+
+Same trap as §20.6, confirmed a second time. `_build_all.py` / `_blog.py` regenerate
+straight from `_gen.py`, which always emits `.png`. The `.webp` swap is `_webp.py`, a
+separate pass, not part of the standard build chain. A navbar change that required a
+full `_build_all.py` + `_blog.py` rebuild silently reverted 31 pages' background fills
+from WebP back to PNG (the same 216 referenced fills jumping from ~19MB back to
+~184MB) until `_webp.py` was run again. **Any full rebuild via `_build_all.py` or
+`_blog.py` needs `_webp.py` run again afterward.**
+
+### Navbar: Instagram icon added
+
+`.ax-nav__soc` (X / LinkedIn / YouTube) gained a fourth icon, Instagram, linking to
+`https://www.instagram.com/aeonx.digital/` — an account already verified and wired into
+the footer's `SOC` link map (§14) but missing from the nav cluster. Added in both
+`_chrome.html` and `index.html`. The fixed-width `.ax-nav__right` box (26.6146vw) has
+enough slack for a fourth 1.3021vw icon without pushing the CTA buttons, confirmed via
+computed `getBoundingClientRect()` rather than the screenshot tool (see below).
+
+### Screenshot tool still unreliable for this project
+
+Consistent with §19.10: the Browser pane's `screenshot` renders this project's pages at
+a tiny, squished scale unrelated to actual layout, on both the homepage and generated
+pages, regardless of viewport resize. Numeric verification via `javascript_tool`
+(`getBoundingClientRect`, computed styles) remains the reliable path; do not trust a
+screenshot's absence of visible overflow as confirmation of anything.
+
+### Outstanding: Customer Stories carousel still hotlinks WordPress
+
+`_csfilter.html` (the `/insights/` Customer Stories carousel, §16) hardcodes 8 thumbnail
+URLs as raw JS data (`i:"https://www.aeonx.digital/wp-content/..."`), not as
+`src=`/`href=` attributes, so it does not surface in an attribute-based audit of
+external dependencies, only a full-text grep for `wp-content`. Not part of any backend
+phase. It works today because the WordPress host is still live and will break at actual
+cutover exactly like every other image did before migration. Not yet fixed.
+
+---
+
+## 22. Figma resync + rebuild (2026-08-27)
+
+`_figdiff.py` reported 32 of 34 desktop frames and 34 of 45 mobile frames as changed.
+Almost all of that was one shared component: the footer. Desktop pages take their
+footer markup from `_chrome.html`, not from the dump, so the desktop footer delta was
+already built (`_footersync.py`, §19.2) and 22 of the 34 desktop pages regenerated
+byte-identical. The mobile footer is different — it is generated from
+`aeonx-mobile.json` per frame — so every changed mobile frame had to be synced or the
+site would ship two different mobile footers side by side.
+
+### What was synced
+
+Two `_figsync.py` runs: 6 desktop + 11 mobile frames with real content changes, then
+the remaining 23 footer-only mobile frames for consistency. Dumps backed up first as
+`aeonx-{node,mobile}.json.pre-sync-20260827-134952.bak`.
+
+Real content changes, as opposed to the footer swap:
+
+| frame | what moved |
+|---|---|
+| Home `4046:31781` | hero, testimonials and Partner Tiers all swapped for new siblings (see below) |
+| `alliances/partners-hub` `4991:3980` | `AWS Section` 1652 → 2745 nodes, 74 → 196 texts, 2558 → 3170px: a six-entry practice grid, an "Recognized AWS Ambassadors" block, and a SupplierX purchase-order mock |
+| `alliances/aws-advanced-tier` `4444:2795` | new `Practice pages` section `6527:19734` (1920×629); hero image fills 4 → 6 |
+| `alliances/sap-gold-partner` `4435:9173` | hero 45 → 59 nodes, image fills 5 → 10 |
+| `alliances/google-cloud-partner` `4445:6719` | page height 5940 → 5625 |
+| `who-we-are/leadership` `4473:7509` | one job title: `DATA AND AI PROJECT MANAGER` → `PROGRAM MANAGER · DATA & AI` |
+| Home mobile `5637:45944` | testimonial author `MCPI / Debi Prasad Patra` → **`Raymond / Dr. Biswajit Rath`** (this retires the §7 duplicate-author flag for mobile); hero tabs `SAP . AI . GCP` / `SaaS` → `SERVICES` / `PRODUCT` |
+| Culture mobile `5637:50988` | `OFFICE GALLERY` 71 → 183 nodes, 15 → 39 texts: `Kolkata · Bhuj · Dehradun` replaces `Mumbai · HQ` |
+| Partners Hub mobile `5637:78376` | `AWS Competency Badges` (430×681) deleted, `Ambassadors 6679:19931` (430×935) added — Rajat Jindal, Chandni Gadhvi |
+| 4 industries mobile | typo `autonom` → `autonomy` only |
+
+### Run order actually used
+
+```
+_figsync.py <ids>            # both dumps
+_transforms.py               # 216 rotated nodes, 16 NEW -- see below
+_build_all.py                # chains _mobile.py, _postbuild.py, _herosap.py
+_vecfetch.py /tmp/vecids.txt # 31 new clusters
+_imgfetch.py <pages>         # 17 new raster fills
+_webp.py                     # LAST
+```
+
+`_transforms.py` matters here and is easy to forget: the redesigned sections carry new
+node ids, so 16 rotated nodes had no cached matrix. Without the re-run `_gen.py` falls
+back to assuming a pure rotation and the tilted logo cards regenerate as flat bars
+(§18). Run it after every `_figsync.py`, before the rebuild.
+
+`/tmp/imgfills.json` had been cleared (it is `/tmp`), so `_imgfetch.py` cannot run until
+it is re-pulled from `/files/:key/images` — 1378 entries.
+
+### The homepage was deliberately NOT regenerated
+
+`index.html`'s desktop markup is byte-identical before and after this pass (verified:
+279860 bytes unchanged); only its `.ax-mob` block moved, because `_mobile.py` rewrites
+that on every run. The three homepage section swaps were left unbuilt on purpose:
+
+- **Hero.** `Component 44` is now hidden and `Component 224` `6620:19284` is the live
+  hero — but its 28 text nodes are byte-identical to Component 44's. Only the node
+  count differs (651 → 2695). There is no visible change to gain, only new asset ids.
+- **Testimonials.** `Testimonials Section` `6064:23841` (the built one) is hidden;
+  `Testimonial Section` `6554:20730` replaces it, 795 → 1459px. It is 90 percent
+  designer template content: `Nexora` / `2025` ten times over, `Forem`/`Dorem`/`Morem`/
+  `Norem ipsum`, `Launchify · Tyler Brooks`, `PixelCore Studio · Alex Johnson`. One real
+  entry, `Raymond · Dr. Biswajit Rath`. Building it 1:1 would put invented company names
+  on the homepage. **Client content owed before this ships.**
+- **Partner Tiers.** `4270:6421` is deleted, `6564:26539` replaces it with 12 real image
+  fills where the old node had none. This is the one with genuine upside — the site
+  currently hand-builds that ring from `assets/partners/logo-*.svg` (§PROGRESS) because
+  Figma had no real badges. Worth doing as its own pass.
+
+Rebuilding the homepage from the dump also costs a full section reflow: Figma's frame
+still sits 69px lower than the built page (§20.1), and the homepage carries ten
+hand-managed enhancements a regen wipes.
+
+### Findings from this pass
+
+- **`LLMS.TXT` in the footer is a hidden node.** `_figdiff`'s fingerprint walks hidden
+  nodes, so it showed as new copy. `Link 6287:17122` is `visible:false` in the master
+  `5323:12316`. Nothing to build; no `llms.txt` is owed yet.
+- **The mobile footer's AI-summary row is inert.** Mobile now generates the row from
+  Figma — a label plus one `g-vec` SVG holding all three assistant icons — with zero
+  `data-ai` anchors. Desktop's row is wired by `_footersync.py`'s own script; the mobile
+  one has no wiring and no split between the three icons. It is a new dead control,
+  introduced by this sync. Fixing it means overlaying three hit areas on the SVG with
+  the same canonical-host URLs desktop uses.
+- **Mobile hero tabs disagree on case.** `PRODUCT` is Title Cased to `Product` by
+  `_uifx.html` while its sibling `SERVICES` keeps its caps, so the pair reads
+  inconsistently. Same shape as the leadership-tab bug in §19.9; the fix register is the
+  same (exempt both labels).
+- **`at Level 4 autonom` is already handled.** Figma fixed the truncation on the four
+  mobile industries frames only; desktop still ships it, and `_uifx.html`'s `COPY_FIX`
+  already rewrites it at runtime. Verified rendering as `autonomy.` on desktop.
+- **`/assets/assets/dummy.png` 404s on two 2026 blog posts** — a doubled path prefix.
+  Pre-existing (present at HEAD, untouched by this rebuild), not from this pass.
+
+### Verification
+
+Dev server on 8809, numeric assertions via `javascript_tool` per §19.10 — the
+screenshot tool is still unusable on this project.
+
+- Every `/assets/...` reference on all 144 built files resolves except the pre-existing
+  `dummy.png` (1357 unique refs).
+- All 33 entries in `_postbuild.py`'s `SCOPED` list present exactly once on their page.
+- All 34 mobile blocks carry the new footer; 0 carry the old one.
+- Zero `[NEEDS INPUT: …]` placeholders anywhere in the built site.
+- `alliances/aws-advanced-tier`: the new Practice pages section renders, 1 footer,
+  0 broken images.
+- `alliances/partners-hub`: practice grid, 14 `View Practice` pills, the Ambassadors
+  block, 0 broken images, no negative offsets.
+- Homepage at 375px: `.ax-mob` visible, mobile nav present, partner ring rebuilt with
+  its 12 badges, testimonial author now Dr. Biswajit Rath, no horizontal overflow,
+  no console errors.
+- Leadership department tabs still switch after the rebuild (asserted with
+  `*{transition:none!important}` injected first): clicking PRACTICE & PROGRAMME flips it
+  to white and SALES & GROWTH to grey. Both labels kept their authored caps, so the
+  §19.9 title-case regression did not return.
+
+Nothing in this pass has been committed.
+
+---
+
+## 23. Mobile fidelity audit (2026-08-27)
+
+A frame-by-frame check of all 34 mobile routes against the freshly synced
+`aeonx-mobile.json`, prompted by a report that the mobile build had "lots of
+mistakes". New tooling, kept in the tree because this needs re-running after any
+mobile rebuild:
+
+- `_mobaudit.py` -> `_mobaudit_expected.json`: every visible TEXT node of every frame
+  `_mobile.py` builds, with its expected left/top/font-size in **mobile** vw
+  (`FACTOR = 100/430`), weight and colour. The mobile sibling of `_audit.py`.
+- `_mobharness.html`: loads all 34 routes through one 430px same-origin iframe and
+  diffs the rendered `.ax-mob` against that file — missing/extra copy, position,
+  size, weight, colour, case, frame-edge overflow, page height, broken images.
+  Cache-busts every load. Read `window.__all` when `window.__done` is true.
+- `_mobcheck.js`: the same check as a single-page script, for spot-checking one route.
+
+### Three measurement traps this audit hit first
+
+Worth knowing before trusting any number this harness prints — each one produced a
+confident page of false defects:
+
+1. **A stale document.** The first run measured the *previous* build because the tab
+   was navigated without a cache-buster. Everything downstream was wrong.
+2. **Reading inline `left`/`top`.** Those are relative to the nearest POSITIONED
+   ancestor; the Figma coordinate is page-absolute. Raw, every nested element looked
+   thousands of vw out of place (1077 "top" defects, all fictional).
+3. **Accumulating `offsetLeft`/`offsetTop` instead.** Correct for the nesting, but it
+   ignores ancestor transforms — and `emit_rotated()` puts real content inside rotated
+   wrappers. The industries "+ More" chip read 14vw off by offsets and lands on the
+   Figma coordinate **exactly** by rect. The harness now measures live rects relative
+   to `main.ax-page`, after force-revealing, and flags elements inside a transformed
+   ancestor separately.
+
+Also: greedy nearest-match pairing swaps duplicate strings (a page that draws
+"SupplierX" in both a tab strip and a card list reported both as moved, with their
+sizes and colours mirrored). Pair per key by zipping two position-sorted lists.
+
+### Clean across all 34 routes
+
+`.ax-mob` present and visible · mobile nav present · page height matches the Figma
+frame **exactly** (0px delta on every route) · no horizontal overflow · nothing
+painting past the 430px frame edge outside a clip · 0 broken images (after the fix
+below).
+
+### Fixed during the audit
+
+- **28 mobile-footer vectors were 404ing across 21 pages.** The second `_figsync.py`
+  run (the 23 footer-only mobile frames) brought new `6287-*` asset ids, and the
+  asset check + `_vecfetch.py` were not re-run after it. 66 SVGs fetched.
+  **Rule: re-run the asset check after EVERY `_mobile.py`, not once per session.**
+- **`_transforms.py` only ever walked the desktop canvas.** `rotated_ids()` called
+  `_gen.load_canvas()`, so no mobile rotated node ever got a cached matrix even though
+  `_mobile.py` runs the same emitter. It now walks both dumps (261 ids, 3 new).
+
+### Real defects found, NOT yet fixed
+
+1. **The mobile homepage testimonial carousel is dead.** Four real testimonials are
+   built (Ashish Desai / Bhushan Puranik / Ajay Arora / Mitali Biswas) at x = 103,
+   443, 783, 1123 inside a 430px viewport, so three of them are off-screen. The pager
+   reads `01 / 01`, and clicking the labelled "Next review" / "Previous review"
+   buttons changes nothing — verified at 0 / 700 / 1600ms on a live load with
+   transitions left on. Only the first testimonial is reachable.
+2. **"View All" is centred instead of left-aligned** on `alliances/partners-hub` and
+   `alliances/partners-hub/sap-on-aws` (34vw / 146px out). The chrome tail's pill-fit
+   pass treats the 379px white content card as the label's button pill: it rewrites
+   the card's width to `379px` and the label's `left` to `161.5px`, which is exactly
+   `(379 - 56) / 2`. A full-width card is not a pill; the band test needs an upper
+   width bound relative to the label.
+3. **Title Case capitalises articles, prepositions and conjunctions**, on all 34
+   mobile pages. `RISE with SAP` -> `RISE With SAP` (34 pages) and `GROW with SAP` ->
+   `GROW With SAP` (33) are SAP's own product names and are now wrong. Also
+   `Request a proposal` -> `Request A Proposal` (36), `Read the story` -> `Read The
+   Story` (39), `Sign up to learn more` -> `Sign Up To Learn More` (33), `Talk to us`
+   -> `Talk To Us` (14), `Talk to a specialist`, `Read the case study`, `Request the
+   trust pack`, `Download the brochure`, `Book a Signavio Diagnostic`, `Extract and
+   map`. Real title case leaves short function words lowercase; `titleCase()` in
+   `_uifx.html` capitalises every word.
+4. **`SAP ECC` -> `SAP Ecc`.** `ecc` is missing from the `ACR` acronym map in
+   `_uifx.html`.
+5. **The stat counter animates things that are not stats.** `_counters.html` zeroes
+   every leading-digit run above its size threshold at load and counts it up on
+   intersection, with a 6s safety net. On `who-we-are/foundation` that swallows the
+   timeline **years** — `2020` … `2026` all read `0` — and turns `175-seat
+   infrastructure` into `0-seat infrastructure`. `products` shows nine `0%`,
+   `investor-relations` shows `0 documents`. It resolves within 6s, but a reader
+   scrolling early sees zeros and then a year counting up from 0. Years, `N-seat` and
+   the live `N documents` count should be excluded the way zero-padded step labels
+   already are.
+6. **Homepage hero tabs disagree on case**: `PRODUCT` is Title Cased to `Product`
+   while its sibling `SERVICES` keeps its caps (same register as the leadership-tab
+   fix in 19.9 — exempt both).
+7. **The mobile footer's AI-summary row is inert** (see 22): label plus one SVG
+   holding all three assistant icons, no `data-ai` anchors, no wiring.
+8. **Leadership job titles are inconsistent between breakpoints and within the page**:
+   mobile says `PROGRAMME MANAGER · DATA & AI`, desktop `PROGRAM MANAGER · DATA & AI`,
+   and `PROGRAM MANAGER - FUNCTIONAL & PRE-SALES` uses a hyphen where its siblings use
+   a middot. Designer copy, not a build bug.
+
+### Confirmed NOT defects (each looked like one)
+
+- The homepage SaaS product strip renders at panel 0 while Figma authors it at the
+  LAST panel (x = -441 … +21). Deliberate — `_mobfx.html` opens tabbed bands on tab 0.
+- The lorem testimonial cards (`Forem ipsum`, `Launchify`, `Tyler Brooks`,
+  `PixelCore Studio`, `Alex Johnson`) are authored into the mobile markup and replaced
+  at runtime with the four real ones. Working as designed — but see defect 1.
+- Contact-us's Figma dummy values (`Jaideep waghela|`, `jaideep.waghela@aeonx.digital`,
+  `XXXXX-XXXXX`) are replaced by `_forminputs.html` with real fields.
+- `COSTUMER IN THIS VERTICAL` -> `CUSTOMER`, `Ahmadabad` -> `Ahmedabad`, `Aeonx` ->
+  `AeonX`, `Logystix` -> `LogystiX`, and `at Level 4 autonom` -> `autonomy.` are all
+  `_uifx.html`'s `COPY_FIX` correcting the Figma source at runtime.
+- `SIX PRACTICES. ONE PARTNER.` reporting weight 700 vs 500 is `_mobaudit.py` taking
+  the dominant character override as the element weight; the markup correctly splits
+  it into a 500 run and a 700 orange span.
+- The leadership roster row and the industries logo strip move their members because
+  they are scrollers/rotated wrappers, not because they are misplaced.
+
+---
+
+## 24. "PRODUCT" rendered as "Product" — Title Case fixes (2026-08-27)
+
+Reported as a Figma-fidelity failure ("you did not thoroughly fetch info from the
+figma file"). The fetch was correct at every stage; the deviation was written by
+JavaScript after the page loaded:
+
+| stage | value |
+|---|---|
+| live Figma, node `I6452:40736;6452:38058` | `PRODUCT` |
+| `aeonx-mobile.json` | `PRODUCT` |
+| built `index.html` `.ax-mob` source | `>PRODUCT</div>` |
+| DOM after `_uifx.html` runs | `Product` |
+
+**Why only that one word.** `PRODUCT`'s parent carries `background-color: rgb(...)`
+— the white active-tab pill — while `SERVICES`'s parent carries only
+`overflow:hidden`. Figma exports a fill on the ACTIVE tab of a segmented control and
+on nothing else, so `inPill()` recognised one half of the pair as a button and not the
+other. Exactly the leadership-tab failure from 19.9, on a different control.
+
+**When a page does not match Figma, check the DOM against the built HTML before
+checking the built HTML against Figma.** Three of this session's reported "generator
+bugs" were runtime passes rewriting correct markup.
+
+### Fixed in `_uifx.html`
+
+1. `KEEP_LIT` now also holds `PRODUCT` and `SERVICES`, so the homepage mobile hero
+   toggle keeps its authored caps on both halves.
+2. **`titleCase()` was Start Case, not title case** — it capitalised every word. New
+   `MINOR` list (a/an/the/and/or/for/of/to/in/on/at/by/as/with/from/…) stays lowercase
+   unless it leads the label or is in the acronym map. This restores the Figma copy on
+   every page: `RISE with SAP` (was `RISE With SAP`, 34 pages), `GROW with SAP` (33),
+   `Request a Proposal` (36), `Read the story` (39), `Sign up to learn more` (33),
+   `Talk to us` (14), plus `Read the case study`, `Download the brochure`,
+   `Request the trust pack`, `Book a Signavio Diagnostic`, `Extract and map`.
+   `RISE with SAP` and `GROW with SAP` are SAP's own product names, so the old output
+   was wrong, not merely off-design.
+3. `ecc:'ECC'` added to `ACR` — `SAP ECC` was rendering as `SAP Ecc`.
+
+### `_postbuild.py --refresh` now covers site-wide fragments
+
+`--refresh` only stripped the `SCOPED` list, so an edit to `_uifx.html` / `_hover.html`
+/ `_mobfx.html` / `_scrollrow.html` / `_ctawash.html` / `_stathov.html` reached no page
+that already carried the old copy — the `sentinel not in s` guard skipped all of them,
+and HANDOFF 1 documented a hand-rolled re-deploy snippet as the workaround. Those six
+are now listed in `GLOBAL_FRAGMENTS` and stripped by the same flag:
+
+```bash
+python3 _postbuild.py --refresh _uifx.html     # one fragment
+python3 _postbuild.py --refresh                # all of them
+```
+
+This run refreshed 92 files (91 pages + `_chrome.html`).
+
+Verified in the browser at 430px: the hero toggle reads `PRODUCT` / `SERVICES`, both
+caps, at their Figma coordinates; the labels above all render their Figma copy again.
+
+### Result
+
+Text differences between the rendered mobile pages and the Figma mobile frames, across
+all 34 routes: **880 -> 8 distinct patterns**, and on inspection every one of the 8 is
+an artifact rather than a defect:
+
+- Six are the `·` separator. Figma itself authors `Textile \xa0·\xa0 Full SAP …` —
+  space + NBSP either side — and the page renders those exact codepoints
+  (84,101,120,116,105,108,101,32,160,183,160,32,…). `_mobaudit.py` collapses NBSP when
+  it normalises, so the design string looked single-spaced and the render did not.
+  **The page is 1:1; the audit was not.**
+- One is a stat counter caught mid-animation (`0` vs `0%`).
+- One is `Request a Proposal` vs `Request a proposal` on the homepage — Figma authors
+  the label both ways on the same frame, so the pairing picked the other instance.
+  Designer copy inconsistency, same register as the flags in 7.
+
+`_mobharness.html` also now skips the case comparison when the design string is 80
+characters — `_mobaudit.py` stores `characters[:80]`, so anything at that length is
+truncated and can never equal the full rendered text. That alone was ~200 phantom
+"case" differences in long body copy.
+
+Structural checks still clean on all 34 routes after the refresh: `.ax-mob` present,
+page height exactly matching the Figma frame, no horizontal overflow, nothing painting
+past the frame edge outside a clip, no broken images.
+
+---
+
+## 25. Partner ring rebuilt from Figma + mobile fixes (2026-08-27)
+
+Reported as "earned where it matters ring is completely different and made up", with
+two more differences alongside it. All four were real.
+
+### The partner ring WAS made up, on both breakpoints
+
+Figma originally had no real partner marks in "Earned where it matters.", so an earlier
+session drew `assets/partners/ring-disc.svg` and hand-placed twelve
+`<span class="ax-pt-badge">` on a circle it computed itself, spinning them 72s. Figma
+has since replaced the whole section — `4270:6421` deleted, **`6564:26539` "Partner
+Tiers\\"** in its place on desktop and **`6564:26763`** on mobile — and now ships twelve
+REAL partner logos at authored coordinates. So the ring on screen was neither the
+design's layout nor its logos, and every badge carried a wrong `alt`/`title`
+(SAP / AWS / Google Cloud / Anthropic cycled over twelve different partners).
+
+- **Mobile**: the overlay was the only problem. `_mobile.py` was already emitting
+  Figma's twelve logos at Figma's own coordinates; the runtime ring re-laid them on top.
+  Deleting the `ax-ptm-css` block leaves the design. Verified: all twelve now sit within
+  0.3vw of their Figma positions (e.g. `d49bcd` at -11.5 / 1633.2 vw, exactly as
+  authored — the 613px ring frame is meant to bleed past both edges of the 430px frame).
+- **Desktop**: `_ptring.py` (new) generates the section with `_gen.build_body` and
+  splices it between `<!-- ax-ptring:start -->` / `<!-- ax-ptring:end -->`, replacing
+  only the CONTENTS of the wrapper that already carries the node's exact geometry
+  (`left:0 top:548.8542vw 100x46.3542vw`). Idempotent. Verified: twelve logos within
+  0.1vw of Figma. "Discover Now" is `visible:false` on the desktop node (`Link`
+  `6564:26581`) and correctly omitted; the mobile node has it visible and shows it.
+
+`_ptring.py`'s span detection depth-counts the wrapper's own `</div>`. An earlier
+version searched for the last `ax-pt-badge`, which also appears in the stylesheet 150KB
+further down, and proposed replacing 262KB of the file.
+
+### Carousel dots box was one fixed width
+
+`.ax-cardots` took its width from a hardcoded `153.6 - 16` slice of the control art's
+431-unit viewBox. Figma's `AtomNavigationDots` is **90x40 for three dots** and grows
+about 16px per extra dot — measured across its 37 instances in the mobile file: 30 at
+90, five at 122, one at 138, one at 151. The constant baked in the 138 case, so nearly
+every row drew a box half again too wide with its dots stranded left of centre. Now
+`90 + 16 * max(0, count - 3)`. Verified: the homepage's three-dot row is 90x40 at 16px.
+
+### `01/SAP`
+
+Figma authors the trinity band's first card as `01/SAP` on all ten of its instances
+while its own siblings are `02 / CLOUD` and `03 / AI` — one card visibly tighter than
+the other two. Same register as `Ahmadabad` and `COSTUMER`, so it is corrected in
+`_uifx.html`'s `COPY_FIX` rather than in markup a rebuild would overwrite.
+
+### "View All" was centred by the pill-fit pass
+
+Partners Hub draws "View All" as a left-aligned label inside a 379px white content card.
+`fit()` read the card as the label's button, rewrote its width to `379px` and re-centred
+the label at `(379 - 56) / 2 = 161.5px` — 34vw off. A real button hugs its label, so the
+pass now skips any box wider than `ink * 4 + 80`. Verified: the label is back on its
+authored `left:3.7209vw`, the card back in vw, and the page's real CTAs still arm.
+
+### Stat counter no longer animates things that are not stats
+
+`_counters.html` zeroes every leading-digit run above its size threshold at load. That
+swallowed the Foundation timeline's **years** (`2020`…`2026` all read `0`), turned
+`175-seat infrastructure. Workforce growth across six offices…` into `0-seat
+infrastructure…`, and reset the investor pages' live `3 documents` count — which the
+document browser writes itself from the API — to `0 documents`. Three guards added: a
+bare four-digit year, a text node longer than 24 characters (prose, not a stat), and a
+`N documents` suffix. Verified on `/who-we-are/foundation/`: years and `175-seat` intact
+at load, zero `0`s; real stats still count.
+
+### `_postbuild.py --refresh` covers site-wide fragments
+
+See 24. Editing `_uifx.html` / `_hover.html` / `_mobfx.html` / `_scrollrow.html` /
+`_ctawash.html` / `_stathov.html` used to need a hand-rolled re-deploy; they are in
+`GLOBAL_FRAGMENTS` now. `_counters.html` is not — its sentinel is a bare comment, not a
+`<style id>`, so `strip_fragment()` cannot find it; re-deploy that one by replacing from
+`/* ---- STAT COUNTERS ---- */`'s enclosing `<script>` to its `</script>`.
+
+### A broken comment silently disabled `_uifx.html` on all 92 pages
+
+The KEEP_LIT note was appended AFTER the preceding comment's `*/`, so its prose parsed
+as code: `SyntaxError: Unexpected identifier 'homepage'`, and the whole IIFE — Title
+Case, COPY_FIX, arrow spacing, the newsletter, the footer map — did nothing site-wide.
+It looked like the fix had worked, because `PRODUCT` kept its caps and `RISE with SAP`
+read correctly for the opposite reason: the pass that would have changed them was dead.
+
+**Syntax-check a fragment before deploying it, and check the console after.** Both are
+one step:
+
+```bash
+python3 - <<'PY'
+import io,re,subprocess,tempfile,os
+code = re.search(r'<script[^>]*>(.*)</script>', io.open('_uifx.html').read(), re.S).group(1)
+f = tempfile.NamedTemporaryFile('w', suffix='.js', delete=False); f.write(code); f.close()
+print(subprocess.run(['node','--check',f.name], capture_output=True, text=True).stderr or 'OK')
+PY
+```
+
+Verified after the repair, on a fresh tab: zero console errors, and every fix in 24 and
+25 confirmed live — `01 / SAP`, `PRODUCT` / `SERVICES` both caps, `RISE with SAP`,
+`GROW with SAP`, `Request a Proposal`, dots 90px, ring overlay gone.
+
+### Correction to 23
+
+**The mobile homepage testimonial carousel is NOT dead.** That finding was wrong. The
+row is a drift carousel: its track translates continuously at ~25px/s (sampled
+-48.6 -> -73.7 -> -98.9px over 1.8s) and all four real testimonials pass through. The
+earlier measurement was taken while the section was off-screen, where the
+IntersectionObserver deliberately pauses the drift. The `01 / 01` pager belongs to a
+DIFFERENT block — the featured review, which has exactly one quote (`STORIES=[FEATURED]`)
+— and its arrows are disabled on purpose. Two adjacent controls, one conclusion, wrong.
+
+### Title Case, second pass: never re-case an ALL-CAPS label
+
+With `_uifx.html` alive again the pass could finally be measured, and it was doing more
+damage than the article-casing in 24:
+
+- **Acronyms it does not know get flattened.** `FMCG & Distribution` -> `Fmcg &
+  Distribution` on 33 pages, `AP` -> `Ap`. (`ecc`, `fmcg`, `ap` added to `ACR`, but the
+  map will always be incomplete — that is the point below.)
+- **It rewrote the leadership cards' JOB TITLES.** `CHIEF FINANCIAL OFFICER` -> `Chief
+  Financial Officer`, `VICE PRESIDENT`, `HEAD OF OPERATIONS`, `PROGRAM MANAGER · DATA &
+  AI`. Those are not buttons; they qualified only because they sit in a painted card.
+- Plus every other caps label the design sets deliberately: `WHAT WE DO`, `LEARN MORE`,
+  `TEXTILES`, `MANUFACTURING`, `CULTURE`, `PRODUCT`.
+
+One rule covers all of it: **a label the design authored in ALL CAPS is left alone.**
+The nav buttons were already exempted by hand for exactly this reason, and `KEEP_LIT`
+is a hand-maintained list of the same idea. The client's ask was Title Case on
+sentence-case CTAs — "Download the brochure", "Read the story" — and those are
+untouched. This also makes the acronym map non-load-bearing for caps labels.
+
+---
+
+## 26. Homepage mobile carousel fixes (2026-08-27)
+
+Six reports against the mobile homepage. Four were real defects, two were already 1:1.
+
+### Fixed
+
+**Doubled dots.** `.ax-cardots` is laid over Figma's own control artwork
+(`5637-47843.svg`), which bakes its dots into the same SVG as the arrows. The overlay
+has to cover them exactly. Its fill was already right (`#FEF5EE` = the design's
+`AtomNavigationDots` fill) but its radius was `999px` against the design's `4`, and
+until 25 its width was the wrong constant — so the design's dots showed alongside the
+live ones and the row appeared to have six. Now 90x40, `#FEF5EE`, radius 4: exactly
+`AtomNavigationDots` (`5637:47844`).
+
+**No auto-advance.** Both carousel engines (the chrome tail's and `_mobfx.html`'s) drift
+rows that have no arrows, dots or tabs — continuously, right-to-left, at ~25px/s. The
+client's instruction is that a carousel moves only when the reader moves it. Gated off
+behind `var DRIFT = false` in both, in all 93 files. Touch drag, arrows and dots still
+work; the block is left in place, never entered, so the seamless-clone technique is not
+lost. Verified: 0 drift clones, and 5 tracks all still at `translateX(0)` after 2s.
+
+**The third card shipped with no button.** The slide collector assigned members to
+columns with `Math.round((b.L - cols[0]) / stride)`. "See the suite" is a shorter label,
+so Figma centres it further right — 200px into its 354px column — which rounds to column
+**3**, past the last card, and the pill was dropped from the track. `Math.floor` fixes
+it: a member belongs to the column it STARTS in. The track went from 20 members to 21,
+and stepping to slide 3 now shows `03 / AI` with `See the Suite`.
+
+**`01 / 01` should be `01 / 03`.** Figma pages the featured-review block `01 / 03`
+(`6564:26286`). `ax-mobtst` shipped `STORIES=[FEATURED]` — one quote — so the pager read
+`01 / 01` and both arrows were deliberately disabled. It now carries three: the design's
+own featured line plus two real client quotes. Verified: `01 / 03` -> `02 / 03` ->
+`03 / 03` -> back, quote changing each step, arrows live.
+
+### Already 1:1 — measured, not assumed
+
+**"Explore SAP Services" vertical padding.** Figma: label 117x20 inside a 176x40 pill,
+inset 10px top and 10px bottom. Rendered at 375px: pill 34.9, label box 17.4, insets
+8.7 / 8.7 — the same numbers at the 375/430 scale. The text *looks* high because the
+glyphs sit high inside their line box (Nunito Sans ascender/descender), which Figma
+renders identically. **Do not "fix" this** — 19.5 records exactly this pass being built
+and then reverted for making the buttons look worse.
+
+**Mobile product tabs.** The design gives the active tab an orange *text* colour and no
+pill, and that is what renders. The pill in the report is not on either mobile strip nor
+on the desktop SaaS-hero strip (whose active tab is Figma's own
+`rgb(41,93,160)`) — still to be located; ask which section it is in.
+
+---
+
+## 27. Partner ring, round two: 25's fix was not enough — art now BAKED (2026-08-27)
+
+25 rebuilt the ring from the right Figma nodes and verified the twelve logo POSITIONS
+to 0.1vw. The user compared actual pixels and was right to: the section still looked
+nothing like Figma. Position-only verification missed two rendering failures that sit
+below the generator's abstraction:
+
+1. **Every badge rendered tilted.** The ring wrapper (`6564:26541`) is rotated
+   +1.39deg and each badge `Link` inside carries -1.39deg to stand upright.
+   `emit_rotated()` applies the wrapper tilt and places children assuming child
+   rotation ~ 0 — the counter-rotation was dropped, so the white badge cards showed
+   as tilted squares instead of upright circles.
+2. **The blue glow did not exist on the page.** The design's gradient is
+   `white@38% -> rgba(41,93,160,0)@70%`. Figma interpolates gradient stops in
+   STRAIGHT (unpremultiplied) alpha, so half-transparent blue shows mid-ramp — the
+   visible blue ring. CSS interpolates in PREMULTIPLIED alpha, which fades white to
+   nothing with no blue anywhere. The emitted CSS was a faithful transcription of the
+   stops and still cannot look like the design. Not fixable by more stops alone; any
+   CSS radial approximation stays an approximation.
+
+**Fix: bake Figma's own render.** `_gen.BAKE_NODES` + `_gen.bake(root)` replace a
+node's subtree in place with a single image fill (PNG exported at scale 2 via REST):
+ring `6564:26541` + glow `6564:26580` on desktop, ring `6564:26763` + glow
+`5637:48966` on mobile. In-place replacement keeps document order, so the heading
+still paints above the glow. The box is whichever of bbox / renderBounds the exported
+PNG's own dimensions match — the mobile ring exports at full geometry (613x630, the
+node's renderBounds are clipped to the 430 frame), the desktop ring at renderBounds
+(789x789, rotation AABB). Same precedent as `_saashero.bake()` for filter fills.
+`_ptring.py` and `_mobile.py` both call `bake()` before `build_body`, so rebuilds
+keep it; `_webp.py`'s name regex accepts the `bake-*` names and converted all four.
+
+Verified: desktop ring/glow/heading centres 50.14 / 50.03 / 50.03vw, heading on top at
+its own pixel; canvas-sampling the baked glow shows blue (34,85,153) present — the
+colour CSS could never produce; mobile ring at exactly Figma's box (-21.16vw /
+1583.72vw, 142.56x146.51vw), zero leftover per-badge fills, zero broken images. The
+`ERR_CONNECTION_REFUSED` console lines are the investor/contact API probe against
+`localhost:8000` with the backend down — the designed fallback path, not a page error.
+
+**Lesson, appended to the 19.10 list:** verifying coordinates is not verifying
+rendering. A section can have every element within 0.1vw and still look wrong,
+because rotation composition and gradient interpolation happen BELOW the coordinate
+level. For art-heavy sections, compare pixels (canvas-sample ours vs Figma's render)
+or ship Figma's render itself.
+
+The two `OVERFLOW` ids `_vecfetch` flagged in 25 (`6564:26599/26600`) turned out to be
+the section's hairline side rules — 0-1px wide, correctly placed; that warning was not
+part of this bug.
+
+---
+
+## 28. Mobile-only pass, verified item by item (2026-08-27)
+
+Desktop is signed off and must not be touched. Nine mobile reports; **four fixed and
+measured, five confirmed still broken and NOT fixed** — listed as such rather than
+claimed.
+
+### Fixed, with the measurement
+
+**Explore button type.** `bumpExplore()` in `_uifx.html` forced every `Explore …` label
+to `.ax-fx-xl`, which is `2.4419vw / line-height 3.4884vw` under 1024px. Figma sets
+these at **12px / 20px = 2.7907vw / 4.6512vw** inside a 40px pill (`5862:14198`). Both
+the type size and the line box were wrong, and the short line box is what made the
+padding look uneven. `bumpExplore` is now desktop-only, matching `centerLabels()`, which
+already skipped `.ax-mob`. Measured after: `fs 2.7907` / `lh 4.6512` — Figma exactly.
+
+**Explore top/bottom padding.** Follows from the above: inset **2.325vw top / 2.327vw
+bottom** against Figma's 2.326, pill height 9.302 = Figma's 9.302.
+*Correction to my own earlier reading:* I first measured 14px / 3.5px and called it a
+defect. That was taken mid reveal-transition — the pill and the label each still carried
+the scroll-reveal's `translateY(1.4vw)`, and because the label is nested inside the pill
+the offset counted twice. **Inject `*{transition:none!important}` AND force `.ax-in`
+before measuring anything inside a revealed container**, or nested elements read ~1.4vw
+low. This is the 19.6 lesson in a new place.
+
+**"Request a Proposal" / "All Case Studies" wrongly centred.** `fit()` — the desktop
+pill-grower that widens a pill around a 16px label and re-centres the label in px — was
+running on the mobile block, where the layout is authored at 430 with Figma's own pill
+widths. It moved these off their authored left: Figma x=40 of 430 (9.30vw) rendered at
+`left:112.9px`, and x=32 (7.44vw) at 128.2px. `fit()` is now desktop-only. Measured
+after: **9.30vw and 7.44vw — Figma exactly**, inline `left` back to authored vw.
+
+**Doubled dots on "Three businesses, one company."** The live overlay cannot win on paint
+order — `elementFromPoint` at five points across the box answered with the control SVG
+every time, despite `z-index:41`. So the design's own dots were showing beside the live
+ones. Cutting the band out of the ART instead. Two rounds were needed because the node
+data and the export disagree: `AtomNavigationDots` (`5637:47844`) says the box is 90px
+at x=16, but rasterising `5637-47843.svg` at its rendered size shows peach ink from
+**x=13 to x=130** of 375 and the art's own active pill at **67..93** — a different, wider
+box than the node describes. A cut at 24.56% therefore left a one-pixel orange sliver
+(the mark visible in the report). The mask now removes 3.4%..35.2%, the art's whole dots
+box, and the overlay supplies the box at exactly the design's 90x40. Measured after:
+**0 orange pixels surviving** from the art in the left half, overlay box 90x40 = Figma,
+3 dots. Page height still exactly Figma's, no horizontal overflow, no broken images, no
+console errors.
+
+`mask-image` with an explicit `@supports` fallback rather than a self-crossing
+`clip-path` polygon — the polygon's fill rule made the intended hole ambiguous.
+
+### Confirmed still broken — NOT fixed
+
+Each measured, none attempted yet:
+
+1. **Homepage hero PRODUCT / SERVICES switch is inert.** Dispatching a full
+   pointer/mouse/click sequence at the tab's own centre pixel changes nothing: colours
+   stay `PRODUCT` orange / `SERVICES` grey, no hash, no content swap. The label carries
+   `cursor:pointer` with no handler and no `data-cta`, so it advertises a control that
+   does not exist. Desktop has this switch via `_saashero_apply.py`'s `#saas`/`#sap`
+   toggle; mobile has no equivalent.
+2. **"SaaS, on top of SAP." — SupplierX active-pill left padding too tight.**
+3. **Tab change does not change the panel image** in that section.
+4. **"What customers say after go-live." has no interactions.**
+5. **"Earned where it matters." has no circular animation.** Note for whoever picks this
+   up: 27 baked the ring to a single PNG because `emit_rotated()` drops the badges'
+   -1.39deg counter-rotation and CSS cannot reproduce Figma's straight-alpha gradient.
+   A rotating ring with upright logos needs the badges back as separate elements —
+   either fix `emit_rotated()` to honour child rotation, or bake only the disc and glow
+   and place the twelve badges as upright siblings. The mobile Figma file carries **no
+   prototype interaction** on this section, so the rotation is a requested addition, not
+   a Figma behaviour to copy.
+
+---
+
+## 29. The five remaining mobile items (2026-08-27)
+
+Mobile only; desktop is signed off. All five fixed, each verified by measurement.
+
+**Hero PRODUCT / SERVICES toggle was dead.** The toggle script existed and was correct
+— it just matched the OLD label strings. Figma's resync renamed the pair `SaaS` ->
+`PRODUCT` and `SAP . AI . GCP` -> `SERVICES`, so `labels()` found nothing and the
+switch silently did nothing while both labels kept `cursor:pointer`. Now matches both
+spellings, **case-sensitively**: a loose match also caught the footer's "Services" link
+and recoloured it, and the hero's own tabs are authored ALL-CAPS. Added the click-POINT
+fallback these labels need (16) and active-tab painting, which had never existed because
+the switch never ran. Verified: tap SERVICES -> alt hero visible (`hidden:false`,
+opacity 1), SERVICES orange / PRODUCT grey; tap PRODUCT -> alt hidden, colours back;
+stray "Services" links untouched.
+
+**SupplierX pill padding.** `_prodstrip.html` aligned the pill's LEFT edge with the
+label's, so the pill's whole slack sat on the right — the label was flush against the
+left edge with 14px after it. The pill now keeps the design's own padding (its drawn
+width minus the label it was drawn around) and centres on the active label. Verified:
+**7px / 7px on all six tabs**, was 0 / 14.
+
+**The panel image did not change with the tab.** Dual ownership again (19.8): the chrome
+carousel and `_prodstrip` both claimed this row, and the carousel got some of the panel
+wrappers into a track of its own. Those stop being `clip.children` — exactly the set
+`_prodstrip` translates — so five of the six product screenshots stayed put while their
+copy slid. `_prodstrip` now marks the clip `data-ax-owned` and unwraps anything the
+carousel already took; the carousel skips a row under `[data-ax-owned]`. Verified per
+tab: SupplierX->SOURCE-TO-PAY+59aaccb6, OrderX->DISTRIBUTION+7f4ebb15,
+Xpense->TRAVEL&EXPENSE+59aaccb6, LogystiX->LOGISTICS+2714267a, ManufeX->PRODUCTION+94d8ee82,
+AeonX IQ->INTELLIGENCE+e35ee9e5 — one panel on screen at a time, each with its own shot.
+
+**"What customers say after go-live." had no interaction at all.** With auto-drift
+removed (26) the card row sat still with three of its four cards off-screen, it has no
+arrows or dots of its own in Figma, and the carousel's touch drag did nothing (a
+synthetic swipe moved the track 0px). Rather than invent controls, the section's OWN
+"Previous review" / "Next review" arrows — which sit directly above the row — now page
+the cards as well as the quote. Verified: Ashish Desai -> Bhushan Puranik -> Ajay Arora
+and back, one card on screen at x=90, pager tracking 01/03 -> 02/03 -> 03/03.
+
+**"Earned where it matters." now turns.** 27 baked the whole ring because
+`emit_rotated()` drops a child's counter-rotation — but that is a DESKTOP problem: the
+mobile ring frame `6564:26763` carries no rotation at all and its twelve badges are
+already upright (-0.006 rad). Only the disc `6564:26764` is tilted. So mobile now bakes
+the **disc only** (`bake-ptdisc-mob`), the twelve badges render as real elements at
+Figma's own coordinates, and a wrapper spins them 72s while each badge counter-spins by
+the same amount — logos orbit without ever tipping. The disc and glow stay still, as
+they do on desktop. Hover pauses; `prefers-reduced-motion` stops it. The mobile Figma
+file carries no prototype interaction here, so the motion is a requested addition, not
+a Figma behaviour. Verified: 12 badges, orbit matrix advancing, each badge's matrix the
+exact inverse of the wrapper's, a badge moving 43px on screen in 1.5s, disc
+`animation-name: none`, 0 broken images.
+
+### Desktop left alone, and checked
+
+The dots mask from 28 is now inside `@media (max-width:768px)`: the live dots overlay is
+itself hidden above 768px, so masking the design's dots out of the control art up there
+would delete them and put nothing back. Verified at 1440px after all of the above:
+desktop ring / glow / heading centres still 50.14 / 50.03 / 50.03vw, zero elements
+masked, 16 of 19 desktop Explore labels still bumped to 0.7292vw exactly as before, no
+broken images, no console errors.

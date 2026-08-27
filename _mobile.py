@@ -77,6 +77,7 @@ def main():
     needs_vec, needs_img = set(), set()
     for fid, nm, route in matched:
         node = _gen.find(MOB, fid)
+        _gen.bake(node)   # ring/glow art CSS cannot reproduce -- see _gen.BAKE_NODES
         body, h, _ = _gen.build_body(node)
         mob = (f'<div class="ax-mob"><main class="ax-page" '
                f'style="position:relative;height:{_gen.vw(h)}">\n{body}\n</main></div>')

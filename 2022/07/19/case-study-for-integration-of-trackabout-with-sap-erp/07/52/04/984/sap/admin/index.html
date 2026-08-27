@@ -1171,9 +1171,20 @@ document.addEventListener('DOMContentLoaded',function(){
     }
     pills.forEach(function(p){
       var lab=p.querySelector('.g-t'); if(!lab)return;
+      /* Desktop only. This is the pill-grower for 16px labels on a 1920 layout; the
+         .ax-mob block is authored at 430 with Figma's own pill widths, and running it
+         there only moved labels off their authored left (Figma x=40 -> left:112.9px on
+         "Request a Proposal"), which reads as a needlessly centred button. */
+      if(p.closest('.ax-mob')||lab.closest('.ax-mob'))return;
       var pr=p.getBoundingClientRect(); if(!pr.width)return;
       var rng=document.createRange(); rng.selectNodeContents(lab);
       var ink=rng.getBoundingClientRect().width;
+      /* A CARD is not a pill. Partners Hub draws "View All" as a left-aligned label
+         inside a 379px white content card; this pass read the card as the label's
+         button, rewrote its width in px and re-centred the label at (379-56)/2 =
+         161.5px -- 34vw off its Figma position. A real button hugs its label, so
+         require the box to be within ~4x the label ink before touching either. */
+      if(ink && pr.width > ink*4 + 80) return;
       var MINPAD=designPad(p,lab);
       var pad=Math.max(MINPAD,(pr.width-ink)/2);      // symmetric, on the design's own inset
       var need=Math.ceil(ink+pad*2);
@@ -1540,8 +1551,19 @@ document.addEventListener("DOMContentLoaded",function(){
   -webkit-tap-highlight-color:transparent;cursor:pointer}
 .ax-carh:disabled{opacity:.35;cursor:default}
 /* live dots, drawn over the baked pill so the active step actually moves */
+/* Mobile only. The live dots overlay is itself hidden above 768px, so masking the
+   design's own dots out of the control art up there would delete them and put nothing
+   back -- and the desktop build is signed off. */
+@media (max-width:768px){
+.ax-carart{clip-path:polygon(0% 0%,3.4% 0%,3.4% 100%,35.2% 100%,35.2% 0%,100% 0%,100% 100%,0% 100%);shape-rendering:crispEdges}
+@supports (clip-path:xywh(0 0 1px 1px)){.ax-carart{clip-path:none;-webkit-mask-image:linear-gradient(90deg,#000 0 3.4%,transparent 3.4% 35.2%,#000 35.2% 100%);mask-image:linear-gradient(90deg,#000 0 3.4%,transparent 3.4% 35.2%,#000 35.2% 100%)}}
+}
 .ax-cardots{position:absolute;z-index:41;display:flex;align-items:center;
-  justify-content:center;gap:6px;background:#FEF5EE;border-radius:999px;pointer-events:none}
+  justify-content:center;gap:6px;background:#FEF5EE;border-radius:4px;pointer-events:none}
+/* The overlay sits ON TOP of Figma's own control artwork, which bakes its dots into
+   the same SVG as the arrows. It has to match AtomNavigationDots exactly -- peach
+   fill, 4px radius, 90x40 for three dots -- or the design's dots show alongside the
+   live ones and the row appears to have twice as many. */
 .ax-cardots i{display:block;width:6px;height:6px;border-radius:999px;background:#ECEEF2;
   transition:width .3s ease,background-color .3s ease}
 .ax-cardots i.on{width:22px;background:#DF3F17}
@@ -1778,6 +1800,11 @@ document.addEventListener("DOMContentLoaded",function(){
        one shape: a homepage row is baked with its slides at NEGATIVE offsets
        (content left of the origin is unreachable by a real scroller) and several
        rows have no clipping box at all -- their slides sit straight on the page. */
+    /* A row a page-scoped fragment already drives is not ours. _prodstrip.html marks
+       the mobile SaaS-suite clip and everything under it; without this the carousel
+       adopted part of that row and left the rest, which is why five of the six product
+       screenshots never moved with their tab. */
+    if (host && host.closest && host.closest('[data-ax-owned]')) return;
     var mTop = top - 6, mBot = bottom + 6;
     if (tabs) {
       mTop = tabs[0].T + tabs[0].H + 4;
@@ -1787,7 +1814,12 @@ document.addEventListener("DOMContentLoaded",function(){
       if (b.el.parentElement !== host) return false;
       if (ctrl && b.el === ctrl.el) return false;
       if (b.T < mTop || b.T > mBot) return false;
-      var k = Math.round((b.L - cols[0]) / stride);
+      /* floor, not round: a member belongs to the column it STARTS in. The homepage
+         trinity band's third CTA ("See the suite") sits 200px into its 354px column
+         -- narrower label, so Figma centres it further right -- which rounds to
+         column 3, past the last card, and the pill was dropped from the track
+         entirely. That card shipped with no button at all. */
+      var k = Math.floor((b.L - cols[0]) / stride);
       return k >= 0 && k < count && Math.abs((b.L - cols[0]) - k * stride) < stride * 0.9;
     }).map(function(b){ return b.el; });
     if (slides.length < 2) return;
@@ -1997,12 +2029,20 @@ document.addEventListener("DOMContentLoaded",function(){
       prev.addEventListener('click', function(){ takeover(); go(i - 1); });
       next.addEventListener('click', function(){ takeover(); go(i + 1); });
 
+      /* the live dots cannot paint over the baked art, so cut the art's own dots out */
+      if (ctrl.el) ctrl.el.classList.add('ax-carart');
       dots = document.createElement('div');
       dots.className = 'ax-cardots';
       dots.dataset.axRow = rowId;
       dots.style.left = (ctrl.L + ctrl.W * 16 / vb) + 'px';
       dots.style.top = ctrl.T + 'px';
-      dots.style.width = (ctrl.W * (153.6 - 16) / vb) + 'px';
+      /* Figma's own AtomNavigationDots box, not one fixed width. The component is
+         90x40 for three dots and grows ~16px per extra dot (measured across its 37
+         instances in the mobile file: 30 at 90, five at 122, one at 138, one at 151).
+         The old constant baked in the 138 case, so every three-dot row -- which is
+         nearly all of them -- drew a box half again too wide with its dots stranded
+         left of centre. */
+      dots.style.width = (ctrl.W * (90 + 16 * Math.max(0, count - 3)) / vb) + 'px';
       dots.style.height = ctrl.H + 'px';
       for (var d = 0; d < count; d++) dots.appendChild(document.createElement('i'));
       page.appendChild(dots);
@@ -2035,7 +2075,12 @@ document.addEventListener("DOMContentLoaded",function(){
        cloned track), pausing offscreen and handing over for good on first touch. */
     var driftStop = null;
     function stopDrift(){ if (driftStop) { driftStop(); driftStop = null; } }
-    if (!ctrl && !tabs && !REDUCED) (function(){
+    /* AUTO-ADVANCE REMOVED 2026-08-27 at the client's instruction: a carousel moves
+       only when the reader moves it. Rows with no arrows, dots or tabs keep touch
+       drag; they no longer scroll by themselves. The block is left in place, never
+       entered, so the seamless-clone technique is not lost. */
+    var DRIFT = false;
+    if (DRIFT && !ctrl && !tabs && !REDUCED) (function(){
       var cycle = stride * count;
       var clone = track.cloneNode(true);
       clone.setAttribute('aria-hidden', 'true');
@@ -2282,6 +2327,18 @@ document.addEventListener("DOMContentLoaded",function(){
          through String() -- the culture page's pillars read 1..4 on mobile, where
          the numbers are large enough to clear the size threshold. */
       if (/^0\d/.test(m[2])) continue;
+      /* A stat is a short standalone label -- "280+", "15+", "4X", "18 wks". These
+         three are numbers that merely START a line, and animating them rewrote real
+         copy: the Foundation timeline's YEARS all read "0" until the observer fired
+         (and then counted 0 -> 2020, which reads as a bug either way), "175-seat
+         infrastructure. Workforce growth across six offices…" became "0-seat
+         infrastructure…", and the investor pages' live "3 documents" count -- which
+         the document browser writes itself from the API -- was reset to "0 documents"
+         underneath it. Mobile is where this showed, because the type is big enough
+         there to clear MIN_REL; desktop draws the same nodes smaller. */
+      if (/^(19|20)\d\d$/.test(m[2]) && !m[3].trim()) continue;   /* a year */
+      if (raw.trim().length > 24) continue;                        /* prose, not a stat */
+      if (/^\s*documents?\b/i.test(m[3])) continue;                /* live API count */
       jobs.push({ node:n, target:target, grouped:/,/.test(m[2]),
                   pre:m[1], suf:m[3], box:box, done:false });
       n.nodeValue = m[1] + '0' + m[3];
@@ -3679,6 +3736,10 @@ document.addEventListener("DOMContentLoaded",function(){
                 /* Figma spells it "COSTUMER IN THIS VERTICAL" on all six
                    industries pages. The rest of the site says Customer. */
                 [/\bCOSTUMER\b/g,'CUSTOMER'],[/\bCostumer\b/g,'Customer'],
+                /* The trinity band's first card is authored "01/SAP" on all ten of
+                   its instances while its own siblings are "02 / CLOUD" and
+                   "03 / AI" -- one card visibly set tighter than the other two. */
+                [/\b01\/SAP\b/g,'01 / SAP'],
                 /* Figma spells the product names three ways ("Logystix" in the footer,
                    "LogystiX" on the cards). One casing per brand, sitewide. */
                 [/\bLogystix\b/g,'LogystiX'],[/\bManuFex\b/g,'ManufeX'],[/\bManufex\b/g,'ManufeX'],
@@ -3704,19 +3765,29 @@ document.addEventListener("DOMContentLoaded",function(){
   var ACR={aws:'AWS',sap:'SAP',ams:'AMS',ai:'AI',ml:'ML',cms:'CMS',erp:'ERP',gcp:'GCP',
            ecs:'ECS',waf:'WAF',axiom:'AXIOM',api:'API',saas:'SaaS',rise:'RISE',grow:'GROW',
            bse:'BSE',noc:'NOC',sre:'SRE',hana:'HANA',btp:'BTP',iot:'IoT',rfp:'RFP',rpf:'RPF',
+           ecc:'ECC',fmcg:'FMCG',ap:'AP',
            iepf:'IEPF',pdf:'PDF',hr:'HR',it:'IT',ceo:'CEO',cio:'CIO',cfo:'CFO',esg:'ESG',
            brsr:'BRSR',agm:'AGM',faq:'FAQ',us:'Us',iq:'IQ',fy:'FY',soc:'SOC',iso:'ISO',
-           gdpr:'GDPR',sla:'SLA',fmcg:'FMCG',
+           gdpr:'GDPR',sla:'SLA',
            /* product names carry internal capitals -- Title Case must not flatten
               them to "Supplierx" */
            aeonx:'AeonX',supplierx:'SupplierX',orderx:'OrderX',xpense:'Xpense',
-           logystix:'LogystiX',manufex:'ManufeX',aeonxiq:'AeonX IQ',axiomai:'AXIOM AI'};
+           logystix:'LogystiX',manufex:'ManufeX',aeonxiq:'AeonX.IQ',axiomai:'AXIOM AI'};
+  /* Title case leaves short function words lowercase -- capitalising every word is
+     Start Case, and it changed the meaning of SAP's own product names: "RISE with
+     SAP" and "GROW with SAP" came out "RISE With SAP" / "GROW With SAP" on 34 and 33
+     pages. It also pushed every CTA away from the Figma copy ("Read the story" ->
+     "Read The Story"). A leading word is always capitalised. */
+  var MINOR=/^(a|an|the|and|but|or|nor|for|of|to|in|on|at|by|as|per|via|with|from|into|over|up)$/;
   function titleCase(s){
     /* Hyphenated compounds are ONE word: "SAP-on-AWS" must not become
        "SAP-On-AWS". Capitalise the first part, keep the rest as written unless it
        is a known acronym. */
+    var first=true;
     return s.split(/(\s+)/).map(function(word){
       if(/^\s+$/.test(word)||!word) return word;
+      var wasFirst=first; first=false;
+      if(!wasFirst && MINOR.test(word.toLowerCase()) && !ACR[word.toLowerCase()]) return word.toLowerCase();
       if(word.indexOf('-')>-1){
         return word.split('-').map(function(part,i){
           var low=part.toLowerCase();
@@ -3775,8 +3846,13 @@ document.addEventListener("DOMContentLoaded",function(){
      the other. Worse, _leadtabs.html identifies both tabs by matching this EXACT
      uppercase text; once mutated, its setup() no longer recognised them and neither
      tab responded to a click. Keep both as authored so identification and casing
-     both stay correct. */
-  var KEEP_LIT=['PRACTICE & PROGRAMME','SALES & GROWTH'];
+     both stay correct.
+
+     The homepage mobile hero's SERVICES / PRODUCT toggle is the same shape and broke
+     the same way: Figma exports a fill on the ACTIVE tab only, so inPill() saw
+     PRODUCT and not SERVICES, and the pair rendered "Product | SERVICES". Both are
+     authored caps in Figma; both stay caps. */
+  var KEEP_LIT=['PRACTICE & PROGRAMME','SALES & GROWTH','PRODUCT','SERVICES'];
   function applyTitleCase(root){
     (root||document).querySelectorAll('.g-t,.ax-mm2__feat-btn,.ax-mm2__api-btn').forEach(function(e){
       if(e.children.length) return;                     /* leave rich labels alone */
@@ -3787,6 +3863,17 @@ document.addEventListener("DOMContentLoaded",function(){
       if(e.closest('section.ax-footer')&&!isControl(e)) return;
       var t=txt(e);
       if(!t||t.length>34||KEEP.test(t)||KEEP_LIT.indexOf(t)!==-1) return;
+      /* A label the design sets in ALL CAPS is a design decision, not a sentence
+         waiting to be cased. The nav buttons were already exempted by hand for this
+         reason; the same is true of every other caps label, and title-casing them was
+         actively wrong -- it flattened acronyms the ACR map does not list ("FMCG &
+         Distribution" -> "Fmcg & Distribution" on 33 pages, "AP" -> "Ap") and rewrote
+         the leadership cards' JOB TITLES ("CHIEF FINANCIAL OFFICER" -> "Chief
+         Financial Officer", "VICE PRESIDENT", "HEAD OF OPERATIONS"), which are not
+         buttons at all and only qualified because they sit in a painted card.
+         The client's ask was Title Case on sentence-case CTAs -- "Download the
+         brochure", "Read the story" -- and those are untouched by this. */
+      if(t===t.toUpperCase()&&/[A-Z]{2}/.test(t)) return;
       /* A clickable CARD is not a button: its title is set at heading size. Compare
          in vw, not px -- the mobile block is authored against a 430px design, so its
          16px button label computes to ~54px when the desktop viewport is 1440 and a
@@ -4101,18 +4188,28 @@ document.addEventListener("DOMContentLoaded",function(){
          (pill.contains(e.target)||subLabel.contains(e.target))) submit(e); },true);
     input.addEventListener('keydown',function(e){ if(e.key==='Enter') submit(e); });
 
-    /* ---------- 4. NEWSLETTER COLUMN ALIGNMENT (removed) ----------
-       An earlier session force-aligned this heading under "About Us" (682px) on a
-       request made against that session's Figma state. Re-checked directly against
-       BOTH the master component (5323:12316) and the actual footer INSTANCE placed
-       on the live Home page (5323:14151, rendered as a PNG, not just read as
-       coordinates) -- Figma's own authored position for "Get the latest from
-       AeonX" is 932px, under "Services"/"Products", nowhere near "About Us". The
-       override was moving this row further from Figma, not closer, and the
-       collision it was patched to avoid (this heading crowding the AI-summary
-       icons at 682px) does not exist at the real 932px position -- there is 248px
-       of clear margin. Left un-shifted; the raw inline styles already carry
-       Figma's true numbers. */
+    /* ---------- 4. NEWSLETTER COLUMN ALIGNMENT ----------
+       Requested: the heading should sit in the same column as "About Us". Figma
+       puts it 1.35vw to the right, which reads as almost-but-not-quite aligned.
+       Measured against the real column so it survives a Figma re-pull. */
+    var head=[].slice.call(foot.querySelectorAll('.g-t')).filter(function(e){
+      return /^get the latest from aeonx/i.test(txt(e)); })[0];
+    var col=[].slice.call(foot.querySelectorAll('.g-t')).filter(function(e){
+      return /^about us$/i.test(txt(e)); })[0];
+    if(head&&col){
+      var hl=num(head,'left'), cl=num(col,'left');
+      if(hl!==null&&cl!==null){
+        var d=hl-cl;
+        if(Math.abs(d)>0.01){
+          setvw(head,'left',cl);
+          [box,pill,note].forEach(function(el){
+            var l=num(el,'left');
+            if(l!==null) setvw(el,'left',l-d);
+            else if(el===note){ note.style.left=(cl)+'vw'; }
+          });
+        }
+      }
+    }
   }
 
   /* ---------- 5. HOMEPAGE PRODUCT NAMES SCROLL IN PAGE ----------
@@ -4221,10 +4318,11 @@ document.addEventListener("DOMContentLoaded",function(){
   function bumpExplore(){
     [].slice.call(document.querySelectorAll('.g-t')).forEach(function(e){
       if(e.children.length) return;
-      /* Desktop-only. The mobile block is authored against a 430px design where
-         Figma already sets these pill labels to 12px (2.7907vw); .ax-fx-xl's
-         !important 2.4419vw drags that down to 10.5px, which also pushes the
-         glyphs off-centre in a pill whose padding is otherwise exactly 12/12. */
+      /* Desktop only. The mobile block is authored at 430 and Figma sets these labels
+         at 12px/20px (2.7907vw/4.6512vw) inside a 40px pill; .ax-fx-xl overrode that
+         with 2.4419vw/3.4884vw, so the type came out small AND the shorter line box
+         no longer filled the inset the pill was drawn for -- the uneven top/bottom
+         padding on every Explore button. */
       if(e.closest('.ax-mob')) return;
       if(!/^explore(\s|$)/i.test(txt(e))) return;
       var host=e.parentElement;
