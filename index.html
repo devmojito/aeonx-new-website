@@ -4176,6 +4176,42 @@ document.addEventListener("DOMContentLoaded",function(){
        with the same left offsets and Figma DID rename it there, so its widths are the
        correct ones; copy them across, label and pill. Geometry only -- background and
        colour are per-state and are set by the toggle itself. */
+    /* Figma sizes each label box to ITS OWN text metrics, and the browser renders
+       Nunito Sans a little wider -- so the box is a hair too narrow and the pill,
+       which clips with overflow:hidden, shaves the last glyph. Measured here rather
+       than guessed at because it is engine-dependent: this Chromium loses 0.3-1.7px,
+       Firefox loses enough to eat a whole letter ("PRODUC"). Widen the box to the ink
+       it actually renders, plus a little air, and keep a centred label centred. */
+    function fitLabel(e){
+      if (!e) return;
+      var rng = document.createRange();
+      rng.selectNodeContents(e);
+      var ink = rng.getBoundingClientRect().width;
+      var box = e.getBoundingClientRect().width;
+      if (!ink || !box) return;
+      /* Leave 2px of air rather than merely "not clipping". A box that ends exactly
+         at the last glyph still loses its edge to sub-pixel rounding, and the amount
+         differs per engine -- which is the whole reason this is measured. */
+      if (box - ink >= 2) return;
+      var vwpx = (document.documentElement.clientWidth || 1920) / 100;
+      var grow = (ink - box + 2) / vwpx;
+      var st = e.getAttribute('style') || '';
+      var w = parseFloat((st.match(/width:\s*([\d.]+)vw/) || [])[1]);
+      var l = parseFloat((st.match(/left:\s*(-?[\d.]+)vw/) || [])[1]);
+      if (isNaN(w)) return;
+      st = st.replace(/width:\s*[\d.]+vw/, 'width:' + (w + grow).toFixed(4) + 'vw');
+      if (!isNaN(l) && getComputedStyle(e).textAlign === 'center') {
+        st = st.replace(/left:\s*-?[\d.]+vw/, 'left:' + (l - grow / 2).toFixed(4) + 'vw');
+      }
+      e.setAttribute('style', st);
+    }
+    function fitAll(root){
+      [].slice.call(root.querySelectorAll('.g-t')).forEach(function(e){
+        if (e.children.length) return;
+        if (side((e.textContent || '').trim())) fitLabel(e);
+      });
+    }
+
     (function syncWidths(){
       function widthOf(el){ var m=(el.getAttribute('style')||'').match(/width:\s*[\d.]+vw/); return m?m[0]:null; }
       function setWidth(el,w){
@@ -4217,8 +4253,20 @@ document.addEventListener("DOMContentLoaded",function(){
         return !e.children.length && side((e.textContent || '').trim());
       });
     }
+    /* after the webfont, or the ink measures narrow and the correction is short */
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(function(){ fitAll(mob); });
+    }
+    fitAll(mob);            /* the visible hero */
+    var fittedAlt = false;
     var fade = null;
     function show(sap){
+      if (sap && !fittedAlt) {
+        /* the alt measures zero while hidden, so size its labels on first reveal */
+        fittedAlt = true;
+        alt.hidden = false;
+        fitAll(alt);
+      }
       if (fade) { clearTimeout(fade); fade = null; }
       if (sap) {
         alt.hidden = false;
