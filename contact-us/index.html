@@ -4718,7 +4718,7 @@ select.ax-cf-code{left:0!important;top:0!important;height:100%!important;cursor:
         return;
       }
 
-      if (!API_BASE || !window.fetch){ mailto(); return; }
+      if (!window.fetch){ mailto(); return; }
 
       var payload = { kind: kind === 'A' ? 'talk' : 'enquiry', source_page: location.pathname };
       [].slice.call(form.elements).forEach(function(el){
@@ -5675,7 +5675,7 @@ select.ax-cf-code{left:0!important;top:0!important;height:100%!important;cursor:
   var API_BASE = (window.AX_API_BASE ||
     (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8000' : ''))
     .replace(/\/+$/, '');
-  if (!API_BASE || !window.fetch) return;
+  if (!window.fetch) return;
 
   function apply(d) {
     var bars = document.querySelectorAll('a.ax-annc, .ax-annc');

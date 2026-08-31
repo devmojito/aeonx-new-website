@@ -299,7 +299,8 @@
     .replace(/\/+$/,'');
 
   function start(){
-    if(!API_BASE||!window.fetch){ init(); return; }
+    /* '' is the correct same-origin base; see note in _chrome.html. */
+    if(!window.fetch){ init(); return; }
     var done=false;
     function go(){ if(done) return; done=true; init(); }
     /* A hanging API must not hold the document list hostage; the snapshot is

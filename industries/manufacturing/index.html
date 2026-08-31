@@ -4907,7 +4907,7 @@ img.g-vec[src*="6138-26173"]{animation:ax-gear-ccw 104s linear infinite}
   var API_BASE = (window.AX_API_BASE ||
     (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8000' : ''))
     .replace(/\/+$/, '');
-  if (!API_BASE || !window.fetch) return;
+  if (!window.fetch) return;
 
   function apply(d) {
     var bars = document.querySelectorAll('a.ax-annc, .ax-annc');

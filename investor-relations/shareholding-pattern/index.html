@@ -4072,7 +4072,7 @@ document.addEventListener("DOMContentLoaded",function(){
     .replace(/\/+$/,'');
 
   function start(){
-    if(!API_BASE||!window.fetch){ init(); return; }
+    if(!window.fetch){ init(); return; }
     var done=false;
     function go(){ if(done) return; done=true; init(); }
     /* A hanging API must not hold the document list hostage; the snapshot is
@@ -4857,7 +4857,7 @@ document.addEventListener("DOMContentLoaded",function(){
   var API_BASE = (window.AX_API_BASE ||
     (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8000' : ''))
     .replace(/\/+$/, '');
-  if (!API_BASE || !window.fetch) return;
+  if (!window.fetch) return;
 
   function apply(d) {
     var bars = document.querySelectorAll('a.ax-annc, .ax-annc');

@@ -252,7 +252,8 @@ select.ax-cf-code{left:0!important;top:0!important;height:100%!important;cursor:
         return;
       }
 
-      if (!API_BASE || !window.fetch){ mailto(); return; }
+      /* '' is the correct same-origin base; see note in _chrome.html. */
+      if (!window.fetch){ mailto(); return; }
 
       var payload = { kind: kind === 'A' ? 'talk' : 'enquiry', source_page: location.pathname };
       [].slice.call(form.elements).forEach(function(el){
