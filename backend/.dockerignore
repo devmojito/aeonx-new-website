@@ -1,0 +1,40 @@
+# Without this file, `COPY . .` bakes the local development .env into the image.
+# settings.py calls load_dotenv(BASE_DIR / ".env"), and python-dotenv fills any
+# variable the process environment does not already define. So every value the
+# production .env happens to omit silently inherits the development one:
+# DJANGO_DEBUG=true, the published dev SECRET_KEY, POSTGRES_PASSWORD=aeonx, the
+# MinIO keys, and AWS_S3_URL_PROTOCOL=http: -- which is how document URLs came out
+# as http:// on an https:// page. Keep the image free of any .env at all; the
+# production values arrive through compose's env_file at runtime.
+.env
+.env.*
+!.env.example
+
+# 136 MB of x86_64 virtualenv, meaningless inside an arm64 image built from
+# requirements.txt.
+.venv/
+venv/
+
+# Local-only compose and host overrides.
+docker-compose.yml
+docker-compose.prod.yml
+
+# Build and editor noise.
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Written at runtime, not build time.
+media/
+staticfiles/
+
+# Working notes, not needed to run the service.
+*.md
+!README.md
+MISSING_DOCUMENTS.txt
+
+.git/
+.gitignore
