@@ -303,6 +303,15 @@ AWS_SES_REGION_NAME = env("AWS_SES_REGION_NAME", "ap-south-1")
 AWS_SES_REGION_ENDPOINT = env(
     "AWS_SES_REGION_ENDPOINT", f"email.{AWS_SES_REGION_NAME}.amazonaws.com"
 )
+# django-ses defaults this to 0.5, which makes it call ses:GetSendQuota before
+# every send to rate-limit itself. The EC2 instance role grants ses:SendEmail and
+# nothing else, so that call raises AccessDenied and no mail goes out at all.
+# 0 disables the check (the library documents 0/None as the off switch).
+# Nothing is lost: the throttle assumes it is the only SES client and exists to
+# stay under the account send rate, while this app sends contact-form
+# notifications that DRF already caps at CONTACT_THROTTLE_RATE per IP -- orders
+# of magnitude below any SES limit.
+AWS_SES_AUTO_THROTTLE = 0
 
 # Where a new contact-form lead is sent. Empty disables the notification (the
 # submission is still saved -- see contacts/views.py) rather than raising, so
