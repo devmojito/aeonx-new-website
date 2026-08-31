@@ -148,14 +148,18 @@ is told to email instead.
 
 **Email is not configured by default.** Local and staging use Django's console
 backend, which prints the message to `docker compose logs api` instead of
-sending it. For production set:
+sending it; `_notify` detects that backend and leaves `notify_email_sent` False
+rather than reporting a send that did not happen.
+
+Production sends through SES using the EC2 instance role, so no mail credentials
+sit on the box. `AWS_SES_REGION_NAME` defaults to `ap-south-1` in settings because
+django-ses would otherwise default to `us-east-1`, where the sender is not
+verified. The From address must be an SES-verified identity: only
+`sales@aeonx.digital` is. Set:
 
 ```ini
-EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
-EMAIL_HOST=<smtp host>          # e.g. AWS SES
-EMAIL_HOST_USER=<user>
-EMAIL_HOST_PASSWORD=<password>
-DEFAULT_FROM_EMAIL=website@aeonx.digital
+EMAIL_BACKEND=django_ses.SESBackend
+DEFAULT_FROM_EMAIL=sales@aeonx.digital
 CONTACT_NOTIFY_EMAIL=sales@aeonx.digital
 ```
 
@@ -290,8 +294,8 @@ genuinely outgrows a single instance — nothing here would need rewriting.
    ```ini
    DJANGO_DEBUG=false
    DJANGO_SECRET_KEY=<50+ random chars, not the dev one>
-   DJANGO_ALLOWED_HOSTS=api.aeonx.digital
-   DJANGO_CSRF_TRUSTED_ORIGINS=https://api.aeonx.digital
+   DJANGO_ALLOWED_HOSTS=dhixs8fi5fryo.cloudfront.net,<ec2-public-dns>,13.204.150.143
+   DJANGO_CSRF_TRUSTED_ORIGINS=https://dhixs8fi5fryo.cloudfront.net
 
    POSTGRES_HOST=<rds endpoint>
    POSTGRES_PASSWORD=<strong>

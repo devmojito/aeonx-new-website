@@ -41,3 +41,13 @@ _testimonials_mobile_out.html
 # raw product reels handed over by the client: 1080p, ~150 MB each. The 720p
 # encodes that actually ship live in assets/video/ and ARE tracked.
 assets/videos/
+
+# EC2 SSH private key -- never commit
+*.pem
+
+# Generated deliverables for the client, regenerated from source on demand
+AeonX-Deployment-Architecture.pdf
+
+# Agent worktrees: a full duplicate of the repo. Left untracked it also skews any
+# page/asset count that walks the tree (it doubled the static-site figures once).
+.claude/worktrees/

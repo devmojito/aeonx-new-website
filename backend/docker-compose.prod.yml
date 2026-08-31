@@ -1,0 +1,40 @@
+# Production stack for the EC2 instance. Standalone, not an override:
+#
+#     docker compose -f docker-compose.prod.yml up -d --build
+#
+# Differences from docker-compose.yml, and why each one matters:
+#
+#   * No `db` service. Postgres is RDS, on a private subnet reachable only from
+#     this instance's security group. POSTGRES_HOST in .env points at it.
+#   * No `minio` service. Object storage is the real S3 bucket, reached through
+#     the instance IAM role, so AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY stay
+#     EMPTY in .env and boto3 picks the role up from instance metadata.
+#     entrypoint.py skips its bucket setup whenever AWS_S3_ENDPOINT_URL is unset,
+#     which is exactly the production case, so nothing tries to rewrite a bucket
+#     policy it should not own.
+#   * Published on port 80, because CloudFront connects to this origin over plain
+#     HTTP on 80. TLS is terminated at CloudFront; the origin never sees HTTPS,
+#     which is why the distribution sets X-Forwarded-Proto: https as a custom
+#     origin header and Django trusts it via SECURE_PROXY_SSL_HEADER.
+#   * No `.:/app` bind mount. The local file mounts the working tree over the
+#     image for live reload; in production that would shadow the image contents,
+#     including the staticfiles/ that collectstatic writes at startup.
+#
+# The image is built ON the instance. It is a t4g.medium, so linux/arm64, and
+# building there avoids cross-compilation entirely. Every dependency in
+# requirements.txt ships an aarch64 wheel for Python 3.12, so nothing compiles.
+
+services:
+  api:
+    build: .
+    env_file: .env
+    ports:
+      - "80:8000"
+    restart: unless-stopped
+    logging:
+      # Without a cap the JSON log file grows until it fills the 30GB volume and
+      # takes the database connection down with it.
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"

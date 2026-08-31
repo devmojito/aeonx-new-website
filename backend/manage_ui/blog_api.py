@@ -1,6 +1,7 @@
 """JSON endpoints for blog authoring in the custom admin."""
 import json
 import re
+from urllib.parse import urlparse
 
 from django.contrib.admin.models import ADDITION, CHANGE, DELETION
 from django.core.paginator import Paginator
@@ -155,7 +156,19 @@ def body_image_upload(request):
     post = Post.objects.filter(pk=request.POST.get("post_id")).first()
     bi = BodyImage(post=post)
     bi.image.save(f.name, f, save=True)
-    return JsonResponse({"url": bi.image.url})
+
+    # Whatever is returned here is pasted verbatim into Post.body_html, a plain
+    # TextField that nothing ever recomputes, so an absolute URL welds today's
+    # storage host into the markup permanently. That is how 52 localhost:9000
+    # URLs survived into the database. When storage is served from the same host
+    # as the admin (CloudFront fronts both /manage/ and /blog/*), hand back a
+    # root-relative URL instead, which stays correct through a domain change.
+    # Local MinIO sits on a different port, so there it stays absolute.
+    url = bi.image.url
+    parsed = urlparse(url)
+    if parsed.netloc == request.get_host():
+        url = parsed.path
+    return JsonResponse({"url": url})
 
 
 @staff_api

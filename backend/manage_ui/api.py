@@ -265,11 +265,19 @@ def document_update(request, pk):
         doc.order = int(request.POST["order"] or 0)
         changed.append("order")
     if "is_published" in request.POST:
-        if not can_publish(request.user):
-            return JsonResponse(
-                {"detail": "Your role cannot publish or unpublish."}, status=403)
-        doc.is_published = request.POST["is_published"] in ("1", "true", "True")
-        changed.append("published")
+        want = request.POST["is_published"] in ("1", "true", "True")
+        # Only a real CHANGE of the flag needs the publish right. The edit modal
+        # always submits the checkbox for an existing document, so refusing on the
+        # key's mere presence meant a Contributor could not save a title or a date
+        # either -- their whole documented role ("add and edit, cannot publish")
+        # was unusable. Comparing against the stored value keeps the rule exactly
+        # as strict for anyone actually trying to flip it.
+        if want != doc.is_published:
+            if not can_publish(request.user):
+                return JsonResponse(
+                    {"detail": "Your role cannot publish or unpublish."}, status=403)
+            doc.is_published = want
+            changed.append("published")
     if request.FILES.get("file"):
         doc.file = request.FILES["file"]
         changed.append("file")

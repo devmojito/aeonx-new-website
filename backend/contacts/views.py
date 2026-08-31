@@ -9,6 +9,7 @@ because the mail server had a bad minute. The email failing is logged and
 response to the visitor is still success -- their enquiry is safely recorded
 either way.
 """
+import ipaddress
 import logging
 
 from django.conf import settings
@@ -48,17 +49,51 @@ class ContactSubmissionView(APIView):
 
     @staticmethod
     def _client_ip(request):
-        # Behind a proxy/load balancer, REMOTE_ADDR is the proxy's own address;
-        # the real visitor is the first hop in X-Forwarded-For.
+        # CloudFront APPENDS the viewer address to any X-Forwarded-For the client
+        # sent rather than replacing it, so the FIRST hop is attacker-supplied and
+        # the LAST is the only one it cannot forge. Taking the first also fed
+        # arbitrary text to a Postgres `inet` column (ip_address is a
+        # GenericIPAddressField, and this value is passed as a save() kwarg, so it
+        # bypasses serializer validation): `X-Forwarded-For: unknown` raised
+        # "invalid input syntax for type inet", the request 500'd, and the lead was
+        # lost -- a one-line denial of service on the endpoint.
+        # Keep this consistent with REST_FRAMEWORK["NUM_PROXIES"], which is what
+        # the throttle keys on.
         forwarded = request.META.get("HTTP_X_FORWARDED_FOR")
-        if forwarded:
-            return forwarded.split(",")[0].strip()
-        return request.META.get("REMOTE_ADDR")
+        candidate = (
+            forwarded.split(",")[-1].strip()
+            if forwarded
+            else request.META.get("REMOTE_ADDR")
+        )
+        try:
+            return str(ipaddress.ip_address(candidate))
+        except ValueError:
+            # Unparseable: record nothing rather than lose the enquiry. The field
+            # is null=True precisely so a missing address is not fatal.
+            return None
 
     @staticmethod
     def _notify(submission):
         to = settings.CONTACT_NOTIFY_EMAIL
         if not to:
+            return False
+        # The console/locmem/dummy backends return a success count without
+        # sending anything, so send_mail() below would report every lead as
+        # notified while the message went to container stdout. notify_email_sent
+        # is surfaced in the admin's list_display AND list_filter, so that lie is
+        # the one signal the IR team was told to trust. Fail closed instead: the
+        # lead is already saved, and the flag stays False until real mail is
+        # configured.
+        if any(
+            marker in settings.EMAIL_BACKEND
+            for marker in ("console", "locmem", "dummy")
+        ):
+            logger.warning(
+                "EMAIL_BACKEND is %s: contact notification for submission %s was "
+                "NOT sent. Set EMAIL_BACKEND=django_ses.SESBackend in production.",
+                settings.EMAIL_BACKEND,
+                submission.pk,
+            )
             return False
         kind_label = dict(ContactSubmission.KIND_CHOICES)[submission.kind]
         lines = [

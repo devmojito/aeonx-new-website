@@ -8,6 +8,11 @@ psycopg[binary]==3.2.10
 django-storages==1.14.6
 boto3==1.40.47
 python-dotenv==1.1.1
+# SES through the EC2 instance role, so no mail credentials sit on the box.
+# Django's SMTP backend cannot use an IAM role; this one signs with boto3, which
+# picks the role up from the instance metadata. Needs AWS_SES_REGION_NAME set --
+# it defaults to us-east-1, where our sender is not verified.
+django-ses==4.4.0
 gunicorn==23.0.0
 whitenoise==6.11.0
 # ImageField needs it. Worth the dependency over a plain FileField: Pillow

@@ -27,8 +27,22 @@ def env_list(key, default=""):
 
 # ---------------------------------------------------------------- core
 
-SECRET_KEY = env("DJANGO_SECRET_KEY", "dev-only-insecure-key-change-me")
-DEBUG = env_bool("DJANGO_DEBUG", True)
+DEV_SECRET_KEY = "dev-only-insecure-key-change-me"
+SECRET_KEY = env("DJANGO_SECRET_KEY", DEV_SECRET_KEY)
+# Defaults to FALSE. Every .env in the project sets this explicitly, so the only
+# way to reach the default is to forget the variable entirely -- and forgetting it
+# on the instance must not silently produce a debug-mode production serving
+# tracebacks, settings and SQL to the public internet.
+DEBUG = env_bool("DJANGO_DEBUG", False)
+
+# The dev key is published in this repository. With it, session cookies and CSRF
+# tokens are forgeable, so a production process holding it is an authentication
+# bypass waiting to be noticed. Refuse to start rather than run compromised.
+if not DEBUG and SECRET_KEY == DEV_SECRET_KEY:
+    raise RuntimeError(
+        "DJANGO_SECRET_KEY is still the development key while DJANGO_DEBUG is "
+        "false. Generate one: python -c \"import secrets; print(secrets.token_urlsafe(64))\""
+    )
 ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0,api")
 
 # Behind a load balancer / reverse proxy that terminates TLS, Django must be told
@@ -42,8 +56,13 @@ CSRF_TRUSTED_ORIGINS = env_list("DJANGO_CSRF_TRUSTED_ORIGINS")
 if not DEBUG:
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
-    SECURE_HSTS_SECONDS = 31536000
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    # HSTS cannot be withdrawn once a browser has cached it, and
+    # includeSubDomains binds every subdomain of aeonx.digital, several of which
+    # are outside this project and may not be HTTPS-ready. So both are env-driven
+    # and start short: run an hour through cutover, confirm nothing on the domain
+    # broke, then raise to 31536000 and turn includeSubDomains on deliberately.
+    SECURE_HSTS_SECONDS = int(env("DJANGO_HSTS_SECONDS", "3600"))
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool("DJANGO_HSTS_INCLUDE_SUBDOMAINS", False)
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -118,6 +137,12 @@ CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.db.DatabaseCache",
         "LOCATION": "django_cache",
+        # Django's default MAX_ENTRIES is 300, and it culls a third of the table
+        # once that is passed. The throttle is effectively the only tenant, so
+        # every distinct visitor holds a row: past 300 callers in a window, real
+        # counters get evicted and the rate limit silently stops applying to
+        # whoever was culled. 10000 rows of counters is nothing on RDS.
+        "OPTIONS": {"MAX_ENTRIES": 10000},
     }
 }
 
@@ -215,6 +240,18 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
 REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.AllowAny"],
     "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
+    # The public API is anonymous by design. DRF's default list would also enable
+    # BasicAuthentication, which turns every endpoint into a password oracle that
+    # answers before the throttle runs, and SessionAuthentication, whose CSRF
+    # enforcement makes the contact form 403 for anyone holding a /manage/ session
+    # now that the site and the API share one CloudFront origin.
+    "DEFAULT_AUTHENTICATION_CLASSES": [],
+    # CloudFront APPENDS the viewer address to whatever X-Forwarded-For the client
+    # sent rather than replacing it, so only the LAST hop is trustworthy. Left
+    # unset, DRF keys the throttle on the whole chain, and a caller who varies a
+    # forged prefix mints a fresh bucket on every request. 1 = trust one proxy
+    # (CloudFront) and key on the address it appended.
+    "NUM_PROXIES": 1,
     "DEFAULT_THROTTLE_RATES": {
         # Generous enough that a real visitor never notices; tight enough that
         # a script cannot flood the inbox or the database. Per-IP, so one
@@ -228,8 +265,11 @@ if DEBUG:
         "rest_framework.renderers.BrowsableAPIRenderer"
     )
 
-# The document list is public data read by the static marketing site, which is
-# served from a different origin (Vercel for staging, CloudFront in production).
+# In production the static site and this API are served by the SAME CloudFront
+# distribution, so every browser call is same-origin and CORS does not apply at
+# all. These stay for local development, where the site is opened from a file or
+# a different port. Production should set CORS_ALLOW_ALL_ORIGINS=false and leave
+# the lists empty rather than naming an origin that never sends an Origin header.
 CORS_ALLOWED_ORIGINS = env_list("CORS_ALLOWED_ORIGINS")
 CORS_ALLOWED_ORIGIN_REGEXES = env_list("CORS_ALLOWED_ORIGIN_REGEXES")
 CORS_ALLOW_ALL_ORIGINS = env_bool("CORS_ALLOW_ALL_ORIGINS", DEBUG)
@@ -240,8 +280,9 @@ CORS_ALLOW_CREDENTIALS = False
 
 # Local/staging default to the console backend so nothing tries to reach a
 # real SMTP server that was never configured -- a submission still fails
-# closed to "logged, not sent" rather than raising. Set EMAIL_BACKEND to
-# django.core.mail.backends.smtp.EmailBackend in production.
+# closed to "logged, not sent" rather than raising. Production sets
+# EMAIL_BACKEND=django_ses.SESBackend, which signs with the EC2 instance role
+# so no mail credentials ever sit on the box.
 EMAIL_BACKEND = env(
     "EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend"
 )
@@ -250,7 +291,18 @@ EMAIL_PORT = int(env("EMAIL_PORT", "587"))
 EMAIL_HOST_USER = env("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", "")
 EMAIL_USE_TLS = env_bool("EMAIL_USE_TLS", True)
-DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", "website@aeonx.digital")
+# Must be an identity verified in AWS_SES_REGION_NAME. Only sales@aeonx.digital
+# is verified, and SES rejects an unverified From outright, so this is not a
+# cosmetic default.
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", "sales@aeonx.digital")
+
+# django-ses defaults the region to us-east-1, where nothing is verified, and
+# fails with MessageRejected rather than anything that names the real cause.
+# Both are set so the behaviour does not depend on which version pip resolves.
+AWS_SES_REGION_NAME = env("AWS_SES_REGION_NAME", "ap-south-1")
+AWS_SES_REGION_ENDPOINT = env(
+    "AWS_SES_REGION_ENDPOINT", f"email.{AWS_SES_REGION_NAME}.amazonaws.com"
+)
 
 # Where a new contact-form lead is sent. Empty disables the notification (the
 # submission is still saved -- see contacts/views.py) rather than raising, so
