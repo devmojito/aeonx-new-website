@@ -1013,6 +1013,11 @@ def main():
     # per-page canonical + og:url + social titles
     BASE = 'https://aeonx.digital'
     route = '/' + out_path[:-len('index.html')] if out_path.endswith('index.html') else '/' + out_path
+    # An out_path of "./index.html" yields "/./", which shipped on the homepage as
+    # og:url for months: the canonical was corrected once but the og:url beside it
+    # was missed, so social shares carried a URL with a "/." segment in it.
+    # Collapse the artefact rather than relying on every caller passing a clean path.
+    route = re.sub(r'/\./', '/', route)
     url = BASE + route
     top = top.replace('</head>', f'<link rel="canonical" href="{url}">\n<meta property="og:url" content="{url}">\n</head>', 1)
     top = re.sub(r'(<meta property="og:title" content=")[^"]*(">)', lambda m: m.group(1)+esc(title)+m.group(2), top)
