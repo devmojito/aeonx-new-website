@@ -4017,6 +4017,65 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 
+<style id="ax-annc-css">
+/* Nothing to style: the bar already has its design. This block only exists so
+   _postbuild.py has a sentinel to test for. */
+</style>
+<script>
+/* ---- ANNOUNCEMENT BAR, EDITED FROM /manage/ ----
+   The strip above the nav is baked into all 91 pages, so changing its wording used
+   to mean a rebuild and a redeploy -- which is why it shipped carrying Figma's
+   placeholder ("Grep, Embeddings, or Both? ... June 30th") for months. It now reads
+   siteconfig.Announcement at runtime.
+
+   Same contract as the investor document browser: with no API reachable the page
+   keeps whatever is baked into it, so an outage degrades to slightly stale copy
+   rather than an empty orange band. */
+(function () {
+  var API_BASE = (window.AX_API_BASE ||
+    (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8000' : ''))
+    .replace(/\/+$/, '');
+  if (!window.fetch) return;
+
+  function apply(d) {
+    var bars = document.querySelectorAll('a.ax-annc, .ax-annc');
+    if (!bars.length) return;
+    [].forEach.call(bars, function (bar) {
+      var txt = bar.querySelector('.ax-annc__txt');
+      if (!d.active || !d.text) { bar.hidden = true; bar.style.display = 'none'; return; }
+      bar.hidden = false;
+      bar.style.removeProperty('display');
+      if (txt) txt.textContent = d.text;
+      if (bar.tagName === 'A') {
+        if (d.url) {
+          bar.setAttribute('href', d.url);
+          bar.style.removeProperty('cursor');
+          /* off-site links open in a new tab, matching every other external CTA */
+          if (/^https?:/i.test(d.url) && d.url.indexOf(location.host) === -1) {
+            bar.setAttribute('target', '_blank');
+            bar.setAttribute('rel', 'noopener noreferrer');
+          } else {
+            bar.removeAttribute('target');
+            bar.removeAttribute('rel');
+          }
+        } else {
+          /* No destination: keep it as text rather than a link that goes nowhere.
+             href="#" would jump to the top of the page and looks broken. */
+          bar.removeAttribute('href');
+          bar.removeAttribute('target');
+          bar.style.cursor = 'default';
+        }
+      }
+    });
+  }
+
+  fetch(API_BASE + '/api/announcement/', { credentials: 'omit' })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (d) { if (d) apply(d); })
+    .catch(function () { /* keep the baked copy */ });
+})();
+</script>
+
 <style id="ax-uifx-css">
 /* Chrome interactions + newsletter. _hover.html deliberately skips header/footer
    (chrome() excludes them), so nothing in the nav or footer ever gained a hover
@@ -4123,6 +4182,26 @@ document.addEventListener("DOMContentLoaded",function(){
       var t=e.textContent, o=t;
       COPY_FIX.forEach(function(f){ t=t.replace(f[0],f[1]); });
       if(t!==o) e.textContent=t;
+    });
+  }
+
+  /* ---------- 0b. LATIN PLACEHOLDER ----------
+     The three job openings on /who-we-are/career/ ship their descriptions as
+     "Lorem ipsum dolor sit amet..." on both breakpoints. The roles, locations and
+     Apply buttons are real, so a candidate reads real titles against Latin filler.
+     Real copy is the client's to write, and inventing job descriptions for a real
+     company's openings is not ours to do, so the placeholder is hidden instead:
+     the listing keeps its title, location and Apply button and simply carries no
+     description until AeonX supplies one.
+     Hidden at runtime for the same reason as the copy fixes above -- these pages
+     are regenerated from the Figma dump, which still contains the Latin. */
+  var LATIN=/\blorem ipsum dolor sit amet\b/i;
+  function hidePlaceholderCopy(){
+    [].slice.call(document.querySelectorAll('.g-t')).forEach(function(e){
+      if(e.children.length) return;
+      if(!LATIN.test(e.textContent)) return;
+      e.textContent='';
+      e.style.display='none';
     });
   }
 
@@ -4734,6 +4813,7 @@ document.addEventListener("DOMContentLoaded",function(){
 
   function init(){
     copyFix();
+    hidePlaceholderCopy();
     applyTitleCase();
     bumpExplore();
     spaceArrows();
@@ -4763,65 +4843,6 @@ document.addEventListener("DOMContentLoaded",function(){
   });
   addEventListener('resize',function(){ clearTimeout(window.__axfxR);
     window.__axfxR=setTimeout(function(){ centerLabels(); spaceArrows(); },200); });
-})();
-</script>
-
-<style id="ax-annc-css">
-/* Nothing to style: the bar already has its design. This block only exists so
-   _postbuild.py has a sentinel to test for. */
-</style>
-<script>
-/* ---- ANNOUNCEMENT BAR, EDITED FROM /manage/ ----
-   The strip above the nav is baked into all 91 pages, so changing its wording used
-   to mean a rebuild and a redeploy -- which is why it shipped carrying Figma's
-   placeholder ("Grep, Embeddings, or Both? ... June 30th") for months. It now reads
-   siteconfig.Announcement at runtime.
-
-   Same contract as the investor document browser: with no API reachable the page
-   keeps whatever is baked into it, so an outage degrades to slightly stale copy
-   rather than an empty orange band. */
-(function () {
-  var API_BASE = (window.AX_API_BASE ||
-    (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8000' : ''))
-    .replace(/\/+$/, '');
-  if (!window.fetch) return;
-
-  function apply(d) {
-    var bars = document.querySelectorAll('a.ax-annc, .ax-annc');
-    if (!bars.length) return;
-    [].forEach.call(bars, function (bar) {
-      var txt = bar.querySelector('.ax-annc__txt');
-      if (!d.active || !d.text) { bar.hidden = true; bar.style.display = 'none'; return; }
-      bar.hidden = false;
-      bar.style.removeProperty('display');
-      if (txt) txt.textContent = d.text;
-      if (bar.tagName === 'A') {
-        if (d.url) {
-          bar.setAttribute('href', d.url);
-          bar.style.removeProperty('cursor');
-          /* off-site links open in a new tab, matching every other external CTA */
-          if (/^https?:/i.test(d.url) && d.url.indexOf(location.host) === -1) {
-            bar.setAttribute('target', '_blank');
-            bar.setAttribute('rel', 'noopener noreferrer');
-          } else {
-            bar.removeAttribute('target');
-            bar.removeAttribute('rel');
-          }
-        } else {
-          /* No destination: keep it as text rather than a link that goes nowhere.
-             href="#" would jump to the top of the page and looks broken. */
-          bar.removeAttribute('href');
-          bar.removeAttribute('target');
-          bar.style.cursor = 'default';
-        }
-      }
-    });
-  }
-
-  fetch(API_BASE + '/api/announcement/', { credentials: 'omit' })
-    .then(function (r) { return r.ok ? r.json() : null; })
-    .then(function (d) { if (d) apply(d); })
-    .catch(function () { /* keep the baked copy */ });
 })();
 </script>
 

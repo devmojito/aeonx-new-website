@@ -107,6 +107,26 @@
     });
   }
 
+  /* ---------- 0b. LATIN PLACEHOLDER ----------
+     The three job openings on /who-we-are/career/ ship their descriptions as
+     "Lorem ipsum dolor sit amet..." on both breakpoints. The roles, locations and
+     Apply buttons are real, so a candidate reads real titles against Latin filler.
+     Real copy is the client's to write, and inventing job descriptions for a real
+     company's openings is not ours to do, so the placeholder is hidden instead:
+     the listing keeps its title, location and Apply button and simply carries no
+     description until AeonX supplies one.
+     Hidden at runtime for the same reason as the copy fixes above -- these pages
+     are regenerated from the Figma dump, which still contains the Latin. */
+  var LATIN=/\blorem ipsum dolor sit amet\b/i;
+  function hidePlaceholderCopy(){
+    [].slice.call(document.querySelectorAll('.g-t')).forEach(function(e){
+      if(e.children.length) return;
+      if(!LATIN.test(e.textContent)) return;
+      e.textContent='';
+      e.style.display='none';
+    });
+  }
+
   /* ---------- 1. TITLE CASE ON CTA LABELS ----------
      Client asked for Title Case on EVERY button. The first version matched an
      allow-list of known labels, so anything the list did not name -- "Download the
@@ -715,6 +735,7 @@
 
   function init(){
     copyFix();
+    hidePlaceholderCopy();
     applyTitleCase();
     bumpExplore();
     spaceArrows();
