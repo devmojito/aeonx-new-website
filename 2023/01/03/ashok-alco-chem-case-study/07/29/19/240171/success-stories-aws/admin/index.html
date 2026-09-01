@@ -463,7 +463,7 @@ main.ax-post{position:relative;max-width:100vw;overflow-x:hidden;background:#fff
 <div class="ax-post__eyebrow">Success Stories Aws</div>
 <h1 class="ax-post__title">SAP AMS support for mining and exploration.</h1>
 <div class="ax-post__meta">January 3, 2023 &middot; Admin</div>
-<img class="ax-post__hero" src="https://www.aeonx.digital/wp-content/uploads/2023/01/test-post2-2.jpg" alt="SAP AMS support for mining and exploration.">
+<img class="ax-post__hero" src="https://dhixs8fi5fryo.cloudfront.net/blog/2023/968cf25ad10b-test-post2-2.jpg" alt="SAP AMS support for mining and exploration.">
 <div class="ax-post__body">
 <h2 class="wp-block-heading" id="executive-summary">Executive Summary &#8211;</h2>
 
@@ -517,7 +517,7 @@ main.ax-post{position:relative;max-width:100vw;overflow-x:hidden;background:#fff
 
 
 
-<figure class="wp-block-image aligncenter size-full"><img fetchpriority="high" decoding="async" width="613" height="339" src="https://www.aeonx.digital/wp-content/uploads/2023/01/Capture-3.png" alt="" class="wp-image-240174" srcset="https://www.aeonx.digital/wp-content/uploads/2023/01/Capture-3.png 613w" /></figure>
+<figure class="wp-block-image aligncenter size-full"><img fetchpriority="high" decoding="async" width="613" height="339" src="https://dhixs8fi5fryo.cloudfront.net/blog/inline/0320ea156d81-526f0eb6e229-Capture-3.png" alt="" class="wp-image-240174" srcset="https://dhixs8fi5fryo.cloudfront.net/blog/inline/0320ea156d81-526f0eb6e229-Capture-3.png 613w" /></figure>
 
 
 
@@ -543,7 +543,7 @@ main.ax-post{position:relative;max-width:100vw;overflow-x:hidden;background:#fff
 
 
 
-<figure class="wp-block-image aligncenter size-full"><img decoding="async" width="625" height="355" src="https://www.aeonx.digital/wp-content/uploads/2023/01/Capture2-1.png" alt="" class="wp-image-240175" srcset="https://www.aeonx.digital/wp-content/uploads/2023/01/Capture2-1.png 625w" loading="lazy" /></figure>
+<figure class="wp-block-image aligncenter size-full"><img decoding="async" width="625" height="355" src="https://dhixs8fi5fryo.cloudfront.net/blog/inline/2f77b9ad9ab4-702cd9efe1c9-Capture2-1.png" alt="" class="wp-image-240175" srcset="https://dhixs8fi5fryo.cloudfront.net/blog/inline/2f77b9ad9ab4-702cd9efe1c9-Capture2-1.png 625w" loading="lazy" /></figure>
 </div>
 </div>
 
@@ -581,7 +581,7 @@ main.ax-post{position:relative;max-width:100vw;overflow-x:hidden;background:#fff
 
 
 
-<figure class="wp-block-image aligncenter size-full"><img loading="lazy" decoding="async" width="602" height="352" src="https://www.aeonx.digital/wp-content/uploads/2023/01/Capture3.png" alt="" class="wp-image-240176" srcset="https://www.aeonx.digital/wp-content/uploads/2023/01/Capture3.png 602w" /></figure>
+<figure class="wp-block-image aligncenter size-full"><img loading="lazy" decoding="async" width="602" height="352" src="https://dhixs8fi5fryo.cloudfront.net/blog/inline/9d413895c868-9ebf8d078e9e-Capture3.png" alt="" class="wp-image-240176" srcset="https://dhixs8fi5fryo.cloudfront.net/blog/inline/9d413895c868-9ebf8d078e9e-Capture3.png 602w" /></figure>
 
 
 
@@ -2284,7 +2284,7 @@ document.addEventListener("DOMContentLoaded",function(){
       var b = e.getBoundingClientRect();
       if (!b.width) return;
       var top = b.top + scrollY;
-      /* y0 band is the "Signup to LlamaParse" promo strip (bg + label); the nav
+      /* y0 band is the announcement strip (bg + label), API-driven; the nav
          bar sits right under it. Several heroes have decorative background art
          (a swoosh, a line-art cluster) that starts at/near the page's own y=0,
          same as the promo strip, and is 300-2300px tall -- ungated, that art got
@@ -4465,6 +4465,9 @@ document.addEventListener("DOMContentLoaded",function(){
   var API_BASE = (window.AX_API_BASE ||
     (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8000' : ''))
     .replace(/\/+$/, '');
+  /* Empty string is the CORRECT base: the site and the API are served by one
+     CloudFront distribution, so a relative fetch is same-origin. Testing for
+     !API_BASE made every page skip the API on production entirely. */
   if (!window.fetch) return;
 
   function apply(d) {

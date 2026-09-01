@@ -463,7 +463,7 @@ main.ax-post{position:relative;max-width:100vw;overflow-x:hidden;background:#fff
 <div class="ax-post__eyebrow">Success Stories Aws</div>
 <h1 class="ax-post__title">SAP AMS support for mining and exploration.</h1>
 <div class="ax-post__meta">January 3, 2023 &middot; Admin</div>
-<img class="ax-post__hero" src="https://www.aeonx.digital/wp-content/uploads/2023/01/top-banner-final.jpg" alt="SAP AMS support for mining and exploration.">
+<img class="ax-post__hero" src="https://dhixs8fi5fryo.cloudfront.net/blog/2023/a179f80322ae-top-banner-final.jpg" alt="SAP AMS support for mining and exploration.">
 <div class="ax-post__body">
 <h2 class="wp-block-heading" id="the-executive-summary">The Executive Summary &#8211;</h2>
 
@@ -479,7 +479,7 @@ main.ax-post{position:relative;max-width:100vw;overflow-x:hidden;background:#fff
 
 <div class="wp-block-columns is-layout-flex wp-container-core-columns-is-layout-9d6595d7 wp-block-columns-is-layout-flex">
 <div class="wp-block-column is-layout-flow wp-block-column-is-layout-flow">
-<figure class="wp-block-image size-full is-resized"><img fetchpriority="high" decoding="async" src="https://www.aeonx.digital/wp-content/uploads/2023/01/Capture-2.png" alt="" class="wp-image-240161" width="541" height="398"/></figure>
+<figure class="wp-block-image size-full is-resized"><img fetchpriority="high" decoding="async" src="https://dhixs8fi5fryo.cloudfront.net/blog/inline/b3c9e3711059-6a406961fe1b-Capture-2.png" alt="" class="wp-image-240161" width="541" height="398"/></figure>
 </div>
 </div>
 
@@ -521,7 +521,7 @@ main.ax-post{position:relative;max-width:100vw;overflow-x:hidden;background:#fff
 
 
 
-<figure class="wp-block-image aligncenter size-full"><img loading="lazy" decoding="async" width="824" height="722" src="https://www.aeonx.digital/wp-content/uploads/2023/01/Capture2.png" alt="" class="wp-image-240162" srcset="https://www.aeonx.digital/wp-content/uploads/2023/01/Capture2.png 824w" /></figure>
+<figure class="wp-block-image aligncenter size-full"><img loading="lazy" decoding="async" width="824" height="722" src="https://dhixs8fi5fryo.cloudfront.net/blog/inline/0132f5649857-a74f8bb4c7c0-Capture2.png" alt="" class="wp-image-240162" srcset="https://dhixs8fi5fryo.cloudfront.net/blog/inline/0132f5649857-a74f8bb4c7c0-Capture2.png 824w" /></figure>
 
 
 
@@ -605,7 +605,7 @@ main.ax-post{position:relative;max-width:100vw;overflow-x:hidden;background:#fff
 
 
 
-<figure class="wp-block-image aligncenter size-full"><img loading="lazy" decoding="async" width="771" height="229" src="https://www.aeonx.digital/wp-content/uploads/2023/02/Capture3.png" alt="" class="wp-image-240480" srcset="https://www.aeonx.digital/wp-content/uploads/2023/02/Capture3.png 771w" /></figure>
+<figure class="wp-block-image aligncenter size-full"><img loading="lazy" decoding="async" width="771" height="229" src="https://dhixs8fi5fryo.cloudfront.net/blog/inline/281ba7ce672a-84db2f0c0e1c-Capture3.png" alt="" class="wp-image-240480" srcset="https://dhixs8fi5fryo.cloudfront.net/blog/inline/281ba7ce672a-84db2f0c0e1c-Capture3.png 771w" /></figure>
 
 
 
@@ -613,7 +613,7 @@ main.ax-post{position:relative;max-width:100vw;overflow-x:hidden;background:#fff
 
 
 
-<figure class="wp-block-image aligncenter size-full"><img loading="lazy" decoding="async" width="806" height="311" src="https://www.aeonx.digital/wp-content/uploads/2023/02/Capture4.png" alt="" class="wp-image-240481" srcset="https://www.aeonx.digital/wp-content/uploads/2023/02/Capture4.png 806w" /></figure>
+<figure class="wp-block-image aligncenter size-full"><img loading="lazy" decoding="async" width="806" height="311" src="https://dhixs8fi5fryo.cloudfront.net/blog/inline/e296446c8434-3919b28cc63e-Capture4.png" alt="" class="wp-image-240481" srcset="https://dhixs8fi5fryo.cloudfront.net/blog/inline/e296446c8434-3919b28cc63e-Capture4.png 806w" /></figure>
 
 
 
@@ -2308,7 +2308,7 @@ document.addEventListener("DOMContentLoaded",function(){
       var b = e.getBoundingClientRect();
       if (!b.width) return;
       var top = b.top + scrollY;
-      /* y0 band is the "Signup to LlamaParse" promo strip (bg + label); the nav
+      /* y0 band is the announcement strip (bg + label), API-driven; the nav
          bar sits right under it. Several heroes have decorative background art
          (a swoosh, a line-art cluster) that starts at/near the page's own y=0,
          same as the promo strip, and is 300-2300px tall -- ungated, that art got
@@ -4489,6 +4489,9 @@ document.addEventListener("DOMContentLoaded",function(){
   var API_BASE = (window.AX_API_BASE ||
     (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8000' : ''))
     .replace(/\/+$/, '');
+  /* Empty string is the CORRECT base: the site and the API are served by one
+     CloudFront distribution, so a relative fetch is same-origin. Testing for
+     !API_BASE made every page skip the API on production entirely. */
   if (!window.fetch) return;
 
   function apply(d) {

@@ -463,7 +463,7 @@ main.ax-post{position:relative;max-width:100vw;overflow-x:hidden;background:#fff
 <div class="ax-post__eyebrow">Aws</div>
 <h1 class="ax-post__title">BVG India Limited deploys AWS for Disaster Recovery</h1>
 <div class="ax-post__meta">September 15, 2022 &middot; Admin</div>
-<img class="ax-post__hero" src="https://www.aeonx.digital/wp-content/uploads/2022/09/02_Aeonx-blog-02-1.jpg" alt="BVG India Limited deploys AWS for Disaster Recovery">
+<img class="ax-post__hero" src="https://dhixs8fi5fryo.cloudfront.net/blog/2022/8a1f33abb43d-02_Aeonx-blog-02-1.jpg" alt="BVG India Limited deploys AWS for Disaster Recovery">
 <div class="ax-post__body">
 <p>BVG India Limited, founded in 1997 by Mr. Hanmantrao Gaikwad, is a responsible and forward-thinking company that seeks to support India&#8217;s entire development. By 2030, the BVG group hopes to make a positive difference in the lives of ten million people through empowerment, employment, and education.</p>
 
@@ -2228,7 +2228,7 @@ document.addEventListener("DOMContentLoaded",function(){
       var b = e.getBoundingClientRect();
       if (!b.width) return;
       var top = b.top + scrollY;
-      /* y0 band is the "Signup to LlamaParse" promo strip (bg + label); the nav
+      /* y0 band is the announcement strip (bg + label), API-driven; the nav
          bar sits right under it. Several heroes have decorative background art
          (a swoosh, a line-art cluster) that starts at/near the page's own y=0,
          same as the promo strip, and is 300-2300px tall -- ungated, that art got
@@ -4409,6 +4409,9 @@ document.addEventListener("DOMContentLoaded",function(){
   var API_BASE = (window.AX_API_BASE ||
     (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8000' : ''))
     .replace(/\/+$/, '');
+  /* Empty string is the CORRECT base: the site and the API are served by one
+     CloudFront distribution, so a relative fetch is same-origin. Testing for
+     !API_BASE made every page skip the API on production entirely. */
   if (!window.fetch) return;
 
   function apply(d) {

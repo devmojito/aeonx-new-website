@@ -2543,7 +2543,7 @@ document.addEventListener("DOMContentLoaded",function(){
       var b = e.getBoundingClientRect();
       if (!b.width) return;
       var top = b.top + scrollY;
-      /* y0 band is the "Signup to LlamaParse" promo strip (bg + label); the nav
+      /* y0 band is the announcement strip (bg + label), API-driven; the nav
          bar sits right under it. Several heroes have decorative background art
          (a swoosh, a line-art cluster) that starts at/near the page's own y=0,
          same as the promo strip, and is 300-2300px tall -- ungated, that art got
@@ -4724,6 +4724,9 @@ document.addEventListener("DOMContentLoaded",function(){
   var API_BASE = (window.AX_API_BASE ||
     (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8000' : ''))
     .replace(/\/+$/, '');
+  /* Empty string is the CORRECT base: the site and the API are served by one
+     CloudFront distribution, so a relative fetch is same-origin. Testing for
+     !API_BASE made every page skip the API on production entirely. */
   if (!window.fetch) return;
 
   function apply(d) {

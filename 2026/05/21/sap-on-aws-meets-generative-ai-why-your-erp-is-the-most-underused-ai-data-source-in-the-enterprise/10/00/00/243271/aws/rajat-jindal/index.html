@@ -463,7 +463,7 @@ main.ax-post{position:relative;max-width:100vw;overflow-x:hidden;background:#fff
 <div class="ax-post__eyebrow">Aws</div>
 <h1 class="ax-post__title">SAP on AWS Meets Generative AI: Why Your ERP Is the Most Underused AI Data Source in the Enterprise</h1>
 <div class="ax-post__meta">May 21, 2026 &middot; Rajat Jindal</div>
-<img class="ax-post__hero" src="https://www.aeonx.digital/wp-content/uploads/diagram10.png" alt="SAP on AWS Meets Generative AI: Why Your ERP Is the Most Underused AI Data Source in the Enterprise">
+<img class="ax-post__hero" src="https://dhixs8fi5fryo.cloudfront.net/blog/2026/ed7be5ed71b7-diagram10.png" alt="SAP on AWS Meets Generative AI: Why Your ERP Is the Most Underused AI Data Source in the Enterprise">
 <div class="ax-post__body">
 <h2 style="margin-top: 32px; margin-bottom: 12px; padding-bottom: 6px; color: #02103E; font-size: 24px; font-weight: 700;" id="the-richest-data-source-you-are-not-feeding-to-ai">The Richest Data Source You Are Not Feeding to AI</h2>
 <p style="line-height: 1.7; margin-bottom: 8px;">Every enterprise AI initiative starts with the same discovery: &#8220;What data do we have that could power this?&#8221; The team surveys CRM records, support tickets, product documentation, customer emails. They build Knowledge Bases, generate embeddings, and deploy copilots.</p>
@@ -622,7 +622,7 @@ glueContext.write_dynamic_frame.from_options(
 <p style="line-height: 1.7; margin-bottom: 8px;"><strong>Without SAP-AI integration:</strong> The finance director submits a request to the SAP reporting team, waits 2-3 days for a custom report.</p>
 <p style="line-height: 1.7; margin-bottom: 8px;"><strong>With SAP-AI integration:</strong> Amazon Q Business, connected to SAP financial data in S3, answers the question immediately — in natural language, with source citations back to specific SAP document numbers.</p>
 <h2 style="margin-top: 32px; margin-bottom: 12px; padding-bottom: 6px; color: #02103E; font-size: 24px; font-weight: 700;" id="the-architecture-sap-%e2%86%92-aws-%e2%86%92-ai">The Architecture: SAP → AWS → AI</h2>
-<p><img decoding="async" src="https://www.aeonx.digital/wp-content/uploads/diagram10.png" alt="SAP on AWS to Generative AI End-to-End Architecture" style="width:100%;max-width:100%;height:auto;margin:12px 0;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,0.12);" loading="lazy" /></p>
+<p><img decoding="async" src="https://dhixs8fi5fryo.cloudfront.net/blog/inline/5fa152b19267-diagram10.png" alt="SAP on AWS to Generative AI End-to-End Architecture" style="width:100%;max-width:100%;height:auto;margin:12px 0;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,0.12);" loading="lazy" /></p>
 <h3 style="margin-top: 20px; margin-bottom: 8px; color: #02103E; font-size: 18px; font-weight: 700;" id="amazon-q-business-the-quick-win">Amazon Q Business: The Quick Win</h3>
 <p style="line-height: 1.7; margin-bottom: 8px;">Amazon Q Business has a native SAP connector — meaning you can connect Q Business to SAP without building the full extraction pipeline first. For organisations wanting immediate value, Q Business provides natural language access to SAP data within weeks, not months.</p>
 <p style="line-height: 1.7; margin-bottom: 8px;">The trade-off: Q Business provides conversational access but limited customisation. For advanced use cases (agents with tool use, custom reasoning, multi-step analysis), the full pipeline (AppFlow → S3 → Bedrock Knowledge Base → Bedrock Agent) gives you maximum flexibility.</p>
@@ -2451,7 +2451,7 @@ document.addEventListener("DOMContentLoaded",function(){
       var b = e.getBoundingClientRect();
       if (!b.width) return;
       var top = b.top + scrollY;
-      /* y0 band is the "Signup to LlamaParse" promo strip (bg + label); the nav
+      /* y0 band is the announcement strip (bg + label), API-driven; the nav
          bar sits right under it. Several heroes have decorative background art
          (a swoosh, a line-art cluster) that starts at/near the page's own y=0,
          same as the promo strip, and is 300-2300px tall -- ungated, that art got
@@ -4632,6 +4632,9 @@ document.addEventListener("DOMContentLoaded",function(){
   var API_BASE = (window.AX_API_BASE ||
     (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8000' : ''))
     .replace(/\/+$/, '');
+  /* Empty string is the CORRECT base: the site and the API are served by one
+     CloudFront distribution, so a relative fetch is same-origin. Testing for
+     !API_BASE made every page skip the API on production entirely. */
   if (!window.fetch) return;
 
   function apply(d) {

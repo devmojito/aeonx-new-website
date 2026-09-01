@@ -463,7 +463,7 @@ main.ax-post{position:relative;max-width:100vw;overflow-x:hidden;background:#fff
 <div class="ax-post__eyebrow">Aws</div>
 <h1 class="ax-post__title">The Observability Gap in ML Systems: How We Built a Model Health Dashboard That Catches Degradation Before Users Do</h1>
 <div class="ax-post__meta">April 29, 2026 &middot; Chandni Gadhvi</div>
-<img class="ax-post__hero" src="https://www.aeonx.digital/wp-content/uploads/2026/07/aws-blog3-diagram.png" alt="The Observability Gap in ML Systems: How We Built a Model Health Dashboard That Catches Degradation Before Users Do">
+<img class="ax-post__hero" src="https://dhixs8fi5fryo.cloudfront.net/blog/2026/54feb07c4ade-aws-blog3-diagram.png" alt="The Observability Gap in ML Systems: How We Built a Model Health Dashboard That Catches Degradation Before Users Do">
 <div class="ax-post__body">
 <h2 style="margin-top: 32px; margin-bottom: 12px; padding-bottom: 6px; color: #02103E; font-size: 24px; font-weight: 700;" id="the-silent-failure-problem-why-your-ml-model-can-break-without-throwing-a-single-error">The Silent Failure Problem: Why Your ML Model Can Break Without Throwing a Single Error</h2>
 <p style="line-height: 1.7; margin-bottom: 8px;">Application monitoring is a solved problem. When a microservice goes down, CloudWatch fires an alarm. When a database query exceeds its timeout, an alert reaches the on-call engineer within seconds. The system fails loudly, and the team responds.</p>
@@ -501,7 +501,7 @@ main.ax-post{position:relative;max-width:100vw;overflow-x:hidden;background:#fff
 </ul>
 <p style="line-height: 1.7; margin-bottom: 8px;">The goal was not to build better models — the models were reasonable. The goal was to build the visibility infrastructure that ensures model quality in production is continuously validated, not periodically hoped for.</p>
 <h2 style="margin-top: 32px; margin-bottom: 12px; padding-bottom: 6px; color: #02103E; font-size: 24px; font-weight: 700;" id="technical-architecture">Technical Architecture</h2>
-<p><img decoding="async" src="https://www.aeonx.digital/wp-content/uploads/2026/07/aws-blog3-diagram.png" alt="The Observability Gap in ML Systems: How We Built a Model Health Dashboard That Catches Degradation Before Users Do" style="width:100%;max-width:100%;height:auto;margin:12px 0;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,0.12);" loading="lazy" /></p>
+<p><img decoding="async" src="https://dhixs8fi5fryo.cloudfront.net/blog/inline/b017a081b8f8-aws-blog3-diagram.png" alt="The Observability Gap in ML Systems: How We Built a Model Health Dashboard That Catches Degradation Before Users Do" style="width:100%;max-width:100%;height:auto;margin:12px 0;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,0.12);" loading="lazy" /></p>
 <p style="line-height: 1.7; margin-bottom: 8px;"><em>Figure 1: ML Model Health Monitoring Platform — Three-Layer Observability Architecture on AWS</em></p>
 <p style="line-height: 1.7; margin-bottom: 8px;"><strong>AWS Services Used:</strong></p>
 <ul style="margin: 8px 0; padding-left: 24px;">
@@ -2701,7 +2701,7 @@ document.addEventListener("DOMContentLoaded",function(){
       var b = e.getBoundingClientRect();
       if (!b.width) return;
       var top = b.top + scrollY;
-      /* y0 band is the "Signup to LlamaParse" promo strip (bg + label); the nav
+      /* y0 band is the announcement strip (bg + label), API-driven; the nav
          bar sits right under it. Several heroes have decorative background art
          (a swoosh, a line-art cluster) that starts at/near the page's own y=0,
          same as the promo strip, and is 300-2300px tall -- ungated, that art got
@@ -4882,6 +4882,9 @@ document.addEventListener("DOMContentLoaded",function(){
   var API_BASE = (window.AX_API_BASE ||
     (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8000' : ''))
     .replace(/\/+$/, '');
+  /* Empty string is the CORRECT base: the site and the API are served by one
+     CloudFront distribution, so a relative fetch is same-origin. Testing for
+     !API_BASE made every page skip the API on production entirely. */
   if (!window.fetch) return;
 
   function apply(d) {
