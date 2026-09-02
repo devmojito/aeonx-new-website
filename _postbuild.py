@@ -29,6 +29,7 @@ SCROLLROW = open(os.path.join(_HERE, '_scrollrow.html'), encoding='utf-8').read(
 UIFX = open(os.path.join(_HERE, '_uifx.html'), encoding='utf-8').read()
 ANNC = open(os.path.join(_HERE, '_annc.html'), encoding='utf-8').read()
 MOBFX = open(os.path.join(_HERE, '_mobfx.html'), encoding='utf-8').read()
+COOKIE = open(os.path.join(_HERE, '_cookie.html'), encoding='utf-8').read()
 
 # Site-wide fragments, as (sentinel, source filename), for `--refresh` to strip before
 # the injection guards below re-add the edited copy. Order does not matter; each is
@@ -41,6 +42,7 @@ GLOBAL_FRAGMENTS = [
     ('ax-scrollrow-css', '_scrollrow.html'),
     ('ax-ctawash-css', '_ctawash.html'),
     ('ax-stathov-css', '_stathov.html'),
+    ('ax-cookie-css', '_cookie.html'),
 ]
 
 # Page-scoped fragments. These are big (the contact-form one carries two inert <template>
@@ -193,7 +195,7 @@ def main():
     # caller of this script expects.
     refresh = '--refresh' in sys.argv
     only = [a for a in sys.argv[1:] if not a.startswith('-')]
-    stats = {'gptw': 0, 'mobnav': 0, 'ctawash': 0, 'burst': 0, 'cursor': 0, 'preload': 0, 'navload': 0, 'counters': 0, 'mobfx': 0, 'scoped': 0, 'hover': 0, 'scrollrow': 0, 'refreshed': 0}
+    stats = {'gptw': 0, 'mobnav': 0, 'ctawash': 0, 'burst': 0, 'cursor': 0, 'preload': 0, 'navload': 0, 'counters': 0, 'mobfx': 0, 'scoped': 0, 'hover': 0, 'scrollrow': 0, 'cookie': 0, 'refreshed': 0}
     bids = burst_ids()
     for f in glob.glob('**/index.html', recursive=True) + ['_chrome.html']:
         try:
@@ -216,6 +218,9 @@ def main():
         if 'ax-ctawash-css' not in s and '</body>' in s:
             s = s.replace('</body>', CTAWASH + '\n</body>', 1)
             stats['ctawash'] = stats.get('ctawash', 0) + 1
+        if 'ax-cookie-css' not in s and '</body>' in s:
+            s = s.replace('</body>', COOKIE + '\n</body>', 1)
+            stats['cookie'] = stats.get('cookie', 0) + 1
         # CURSOR RING RETIRED 2026-08-05. The accent ring that trailed the pointer
         # (44px, brand orange, translucent fill when over anything clickable) was
         # reported as "colour overflowing out of the button" — over a CTA it sits

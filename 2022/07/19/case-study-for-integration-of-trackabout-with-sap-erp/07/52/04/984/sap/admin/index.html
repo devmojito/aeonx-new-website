@@ -4482,5 +4482,139 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 
+<style id="ax-cookie-css">
+/* Cookie consent bar. Bottom-anchored rather than a modal: this site sets no
+   tracking cookies today (see the script below), so blocking the page behind a
+   dialog would be theatre. It sits above everything, including the mega-menu
+   (z 9999) and the search overlay. */
+.ax-ck{position:fixed;left:0;right:0;bottom:0;z-index:10050;
+  background:#fff;border-top:1px solid #e3e6ea;
+  box-shadow:0 -8px 28px rgba(21,24,30,.10);
+  font-family:'Nunito Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  transform:translateY(100%);transition:transform .32s cubic-bezier(.22,.61,.36,1)}
+.ax-ck.is-in{transform:translateY(0)}
+.ax-ck[hidden]{display:none!important}
+/* The mobile shell hides every direct child of body except the mobile blocks:
+     @media(max-width:768px){ body>*:not(.ax-mob):not(.ax-mnav){display:none!important} }
+   The banner is appended to body, so without this it is display:none on every
+   phone, which is precisely where a consent notice has to work. That rule is
+   (0,2,1) and !important, so this matches its specificity and wins on order,
+   because this stylesheet is injected at the end of body. Overriding here keeps
+   the fix inside the fragment rather than editing the baked CSS on 94 pages. */
+@media (max-width:768px){ body > .ax-ck.ax-ck{display:block!important} }
+.ax-ck__in{max-width:1400px;margin:0 auto;padding:20px 32px;
+  display:flex;align-items:center;gap:28px;flex-wrap:wrap}
+.ax-ck__tx{flex:1 1 420px;min-width:0;font-size:14px;line-height:1.55;color:#3d4654;margin:0}
+.ax-ck__tx b{color:#15181e;font-weight:700}
+.ax-ck__tx a{color:#df3f17;text-decoration:underline;text-underline-offset:2px}
+.ax-ck__bt{display:flex;gap:10px;flex:0 0 auto;flex-wrap:wrap}
+.ax-ck__b{font-family:inherit;font-size:13px;font-weight:700;line-height:1;
+  padding:12px 22px;border-radius:999px;cursor:pointer;border:1px solid transparent;
+  white-space:nowrap;transition:background .18s,border-color .18s,color .18s}
+/* #d63b14 rather than the brand #df3f17: white on the brand orange is 4.32:1,
+   just under the 4.5:1 AA needs for 13px bold. This is the nearest shade that
+   passes (4.67:1) and is indistinguishable from the brand at this size. */
+.ax-ck__b--y{background:#d63b14;color:#fff}
+.ax-ck__b--y:hover{background:#b5310d}
+.ax-ck__b--n{background:#fff;color:#15181e;border-color:#c8ced6}
+.ax-ck__b--n:hover{border-color:#15181e}
+.ax-ck__b:focus-visible{outline:2px solid #df3f17;outline-offset:2px}
+@media (max-width:768px){
+  .ax-ck__in{padding:16px 20px;gap:14px}
+  .ax-ck__tx{flex:1 1 100%;font-size:13px}
+  .ax-ck__bt{width:100%}
+  .ax-ck__b{flex:1 1 0}
+}
+@media (prefers-reduced-motion:reduce){.ax-ck{transition:none}}
+</style>
+<script>
+/* ---- COOKIE CONSENT ----
+   What this site actually stores today, checked rather than assumed:
+     - csrftoken  : set by Django on the contact form and the admin. Strictly
+                    necessary; without it the form cannot post.
+     - sessionid  : set only after an admin logs in at /manage/. Strictly necessary.
+     - ax-cookie-consent : this banner's own choice, in localStorage.
+   There is no analytics, tag manager, pixel or third-party tracker anywhere in the
+   build. So "Decline" is not being quietly ignored: there is currently nothing
+   non-essential to switch off, and the honest thing is to say so in the copy rather
+   than imply a choice that does nothing.
+
+   The gate is still real for the future. Anything non-essential added later must be
+   loaded through window.axConsent.onGranted(fn), which fires immediately if consent
+   was already given and never fires if it was declined. That keeps the decision in
+   one place instead of scattered across whichever script gets added next. */
+(function () {
+  var KEY = 'ax-cookie-consent';
+  var granted = null, waiting = [];
+
+  function read() {
+    try { return localStorage.getItem(KEY); } catch (e) { return null; }   // private mode throws
+  }
+  function write(v) {
+    try { localStorage.setItem(KEY, v); } catch (e) {}
+  }
+
+  granted = read() === 'granted';
+
+  window.axConsent = {
+    state: function () { return read(); },
+    granted: function () { return read() === 'granted'; },
+    /* Register work that must not run without consent. Fires now if already
+       granted, queues if undecided, never fires if declined. */
+    onGranted: function (fn) {
+      if (typeof fn !== 'function') return;
+      if (read() === 'granted') { fn(); return; }
+      if (read() === 'declined') return;
+      waiting.push(fn);
+    }
+  };
+
+  if (read()) return;            // already decided; never ask twice
+
+  function build() {
+    if (document.querySelector('.ax-ck')) return;
+    var bar = document.createElement('div');
+    bar.className = 'ax-ck';
+    bar.setAttribute('role', 'region');
+    bar.setAttribute('aria-label', 'Cookie notice');
+    bar.innerHTML =
+      '<div class="ax-ck__in">' +
+        '<p class="ax-ck__tx"><b>Cookies on aeonx.digital.</b> We use only the cookies ' +
+        'needed to make the contact form and the admin work. We do not use advertising ' +
+        'or analytics cookies. Read our <a href="/cookie-policy/">Cookie Policy</a>.</p>' +
+        '<div class="ax-ck__bt">' +
+          '<button type="button" class="ax-ck__b ax-ck__b--n" data-ck="declined">Decline</button>' +
+          '<button type="button" class="ax-ck__b ax-ck__b--y" data-ck="granted">Accept</button>' +
+        '</div>' +
+      '</div>';
+
+    bar.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-ck]');
+      if (!b) return;
+      var choice = b.getAttribute('data-ck');
+      write(choice);
+      if (choice === 'granted') { waiting.forEach(function (f) { try { f(); } catch (e) {} }); }
+      waiting = [];
+      bar.classList.remove('is-in');
+      var done = function () { bar.remove(); };
+      bar.addEventListener('transitionend', done, { once: true });
+      setTimeout(done, 400);          /* reduced-motion: no transitionend fires */
+    });
+
+    document.body.appendChild(bar);
+    /* Next frame, so the transform transition has a start value to animate from. */
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () { bar.classList.add('is-in'); });
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', build);
+  } else {
+    build();
+  }
+})();
+</script>
+
 </body>
 </html>
