@@ -2,7 +2,12 @@
 """Build mobile (430px) layouts and inject as .ax-mob into existing pages.
 Dual-layout: CSS hides everything but .ax-mob under 768px.
 Reuses _gen.build_body with FACTOR monkeypatched to mobile scale.
-Usage: python3 _mobile.py [--dry]   (--dry only prints frame->route mapping)
+Usage: python3 _mobile.py [--dry]            (--dry only prints frame->route mapping)
+       python3 _mobile.py --only 5637:45944 --out _v2/index.html
+
+--only restricts the build to one mobile frame and --out overrides where its block
+is injected. Both exist so the V2 homepage preview can carry its own mobile layout
+without rewriting the live index.html, which is hand-managed.
 """
 import json, re, os, sys
 import _gen
@@ -48,6 +53,9 @@ def main():
         'Investor/Financial Highlights': 'investor-relations',
         'Investor/Shareholding pattern.': 'investor-relations/shareholding-pattern',
     }
+    def flag(name):
+        return sys.argv[sys.argv.index(name) + 1] if name in sys.argv else None
+    only, out = flag('--only'), flag('--out')
     frames = [c for c in MOB['children'] if c.get('type') == 'FRAME']
     matched, unmatched, skipped = [], [], []
     for f in frames:
@@ -62,6 +70,10 @@ def main():
             matched.append((f['id'], nm, route))
         else:
             unmatched.append((f['id'], nm))
+    if only:
+        matched = [m for m in matched if m[0] == only]
+        if not matched:
+            raise SystemExit('--only %s matched no frame' % only)
     if dry:
         print(f"MATCHED {len(matched)}:")
         for i, nm, r in matched: print(f"  {i:14} {nm[:44]:44} -> {r}")
@@ -81,7 +93,7 @@ def main():
         body, h, _ = _gen.build_body(node)
         mob = (f'<div class="ax-mob"><main class="ax-page" '
                f'style="position:relative;height:{_gen.vw(h)}">\n{body}\n</main></div>')
-        path = route if route.endswith('.html') else route + '/index.html'
+        path = out or (route if route.endswith('.html') else route + '/index.html')
         s = open(path, encoding='utf-8').read()
         # strip any prior mobile block (idempotent)
         s = re.sub(r'<style id="ax-mob-css">.*?</style>', '', s, flags=re.S)

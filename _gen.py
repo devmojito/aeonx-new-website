@@ -1047,7 +1047,9 @@ def main():
     import os
     for ref in sorted(refs):
         exists = os.path.exists(f'assets/gen/{ref}.png')
-        eid, method = IMG_EXPORTS[ref]
+        # refs baked into the shared chrome were emitted by an earlier run, so they
+        # are not in this run's IMG_EXPORTS. They are already on disk; don't crash.
+        eid, method = IMG_EXPORTS.get(ref, ('-', 'chrome'))
         print(f'EXPORT {ref} {eid} {method} {"HAVE" if exists else "NEED"}')
     for nid in sorted(VEC_EXPORTS):
         fn = nid.replace(':', '-')
