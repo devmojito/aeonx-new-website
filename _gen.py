@@ -591,6 +591,8 @@ def emit_vector(n, left, top, w, h):
             f'{defs}{"".join(paths)}</svg>')
 
 VEC_EXPORTS = set()  # figma node ids to render as SVG assets
+# Vector clusters with null render bounds and no exported SVG: reported, never emitted.
+VEC_MISSING = set()
 
 def subtree_flags(n):
     """Scan a node's visible subtree: (has_vector, has_text, has_image)."""
@@ -883,6 +885,15 @@ def walk(n, ox, oy, out, depth=0):
             if n.get('absoluteRenderBounds') or svg_intrinsic(n['id']):
                 l, t2, w, h = render_box(n, ox, oy)
                 out.append(emit_vec_asset(n, l, t2, w, h))
+            else:
+                # Null render bounds AND no file yet. Staying silent here is circular:
+                # no emit means no data-vec, so the id never reaches the VEC report,
+                # so _vecfetch.py is never asked for it, so a file never appears and
+                # it can never emit. Five icons in the mobile product strip
+                # (LogytstiX, Setu Move, QuiC, Data Setu.ai, Setu Edge) were simply
+                # absent for that reason. Record it so the caller can fetch and rerun;
+                # still no <img>, because there is genuinely no file to point at.
+                VEC_MISSING.add(n['id'])
             return
         # rotated raster container (tilted logo/text card): the dump drops the
         # rotation, so reconstruct it in CSS instead of drawing a flat AABB box.
@@ -1059,6 +1070,8 @@ def main():
         fn = nid.replace(':', '-')
         exists = os.path.exists(f'assets/vec/{fn}.svg')
         print(f'VEC {nid} {"HAVE" if exists else "NEED"}')
+    for nid in sorted(VEC_MISSING):
+        print(f'VEC {nid} NEED (null render bounds, nothing emitted until fetched)')
 
 if __name__ == '__main__':
     main()

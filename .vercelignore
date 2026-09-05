@@ -60,92 +60,22 @@ __pycache__/
 *.pem
 
 # ---- generated: assets/gen PNG allowlist ----
-# 275 of the 357 PNGs in assets/gen are dead weight: _webp.py re-encoded them and
+# 345 of the 357 PNGs in assets/gen are dead weight: _webp.py re-encoded them and
 # repointed every page at the .webp twin. Rather than list the dead ones, drop all
-# PNGs there and re-include only the 82 still requested. The list is built from the
+# PNGs there and re-include only the 12 still requested. The list is built from the
 # built pages PLUS the product-tab panels, which are only ever referenced from
 # _prodtabs.html at runtime and so appear in no page source.
 # Regenerate after a _webp.py run, a rebuild, or a _prodtabs.html regeneration.
 assets/gen/*.png
-!assets/gen/04eaeb733efde3146c420cc6f5aa8e81e19640ca.png
 !assets/gen/055a6847a0cb6e745984e1a704db491809493a01.png
-!assets/gen/05ef51a6d85e9dc2951baf98f10bd3c76791b161.png
-!assets/gen/079b8837d1b5c82ec0052311d53d977fa6688711.png
-!assets/gen/0cb61298a8e6d4bc78d08dde9798cdaecbb1e3cd.png
 !assets/gen/0ccfb371b06ba329344ddc992cf1ae382c8e04a1.png
-!assets/gen/0f5c63ab7f974b1c78108c866f1ddbd992cdcb7d.png
-!assets/gen/13149ec2fbb6df912358b80613f6c67a16c7d7b8.png
 !assets/gen/1747adadc621799435cb0199e2362493ede4a712.png
-!assets/gen/2335eeb982fbfeb9362b65853acdacae77de6ffc.png
-!assets/gen/261011cd380ff677e9627a3faa33b218e91375c3.png
 !assets/gen/2714267af9e02b4b2ebcea0c1790f496f03e7899.png
-!assets/gen/2a4c14a5a890470712ce8e8ae4975b9a74a81b3f.png
-!assets/gen/2b8f0d4dafd48d1301fba700b95b78f37b8bbc43.png
-!assets/gen/2e20a38b86a8a155c62974446f77e46a4c409aaa.png
-!assets/gen/3070c46218f1ca92731c301b0fac91b182c8ef57.png
-!assets/gen/318e08abcd40f9bb46b95f52c299203876561dc3.png
-!assets/gen/37faa9aa565699e50ce1c3bc1a0ba98c34970fd8.png
-!assets/gen/47984284bc0fca81e6c0f589dcaeba48294ee423.png
 !assets/gen/52e0c2a51736b95c964d9fed3772f646f8c94219.png
-!assets/gen/5778d345b890c25bb14d315e1a30f033b6a187d0.png
 !assets/gen/59aaccb6d152a67424f6bd4fbf46df577bdd9ff5.png
-!assets/gen/5b235ddbe70d573660dca6ce0000421c2f3f7d3e.png
-!assets/gen/5e020983098097a612da3491b52d65582776e429.png
-!assets/gen/5eeb1abf71fbf1c3e5bb2c1a41c254eef55211a5.png
-!assets/gen/5f115961b9876ce9984edcad250c06fa24f76dcb.png
 !assets/gen/5fd0e3417a71ad9ce0ea61b32d9cd17bdce414ca.png
-!assets/gen/631a74599c3a93e74560e27c1a8dd904ea99ef7d.png
-!assets/gen/64e72ae3e83ce2b93ed42ccfded15d5cf9b61855.png
-!assets/gen/666debce7be69c145843ea50f68e337b21cbda79.png
-!assets/gen/6d177f5eeaa6050b7d266d837961f0582a5a5195.png
-!assets/gen/6f539e0c924cdd49c4bd9faaf58b216afdd8935b.png
-!assets/gen/72eb841874a2228f82a66e608946c01f564592c5.png
-!assets/gen/79639ffe8c558ef8736abf528ceeb7211362cd1d.png
-!assets/gen/7cc840223304259554d559cc4d11c37b152d2344.png
 !assets/gen/7f4ebb15712b6e8306e590a80755af65f4e5b1e8.png
-!assets/gen/80d21bbd4400a33e4f6ecc462e10ff963943c39c.png
-!assets/gen/81749ebb409208a534df5fd3fffba1aa50d5a470.png
-!assets/gen/86ce3b1c9b1d362d1f0b1333dfd6d0b23e0a8b0b.png
-!assets/gen/8b4cec8358269b240572a60f6244838ed169be36.png
-!assets/gen/8c5b7ed3f14c88fdf9ede7afee31eb0cc4190f51.png
-!assets/gen/8ca24e339e92151705da3bb89ad895884dde31ca.png
-!assets/gen/8d95d956ef218a5706fcc7141fe6c466998c3d37.png
-!assets/gen/8eaf4941ce48968497bcdb2eae4f28dd5711d8db.png
 !assets/gen/94d8ee820081df4a95384f2b45e4c0892d857aa0.png
-!assets/gen/95bfcc2845fd5c292dc583a96a2c64f63468e750.png
-!assets/gen/9652f376cd06db0ea5d99abc00f21af784405b6e.png
-!assets/gen/98486a04f6470a61dc7e379144f5a58793555333.png
-!assets/gen/99c43e8329c311d83e019afba68fb8914ec28d08.png
-!assets/gen/9eb08a9ddab314e538d8d079612a05d15204b1c3.png
 !assets/gen/a18023954288f9a1fc4834dd71f70970453a9ea3.png
-!assets/gen/a197900a9643d9721d990b8cd939885fc4fa483f.png
-!assets/gen/ace73eb572f6d1ace450dde31467377ac09ec063.png
-!assets/gen/adb07600433e5c0e255d0833edf5d892177ec6db.png
-!assets/gen/b06bcaa9610034aef23b78b90c284f1c917742f1.png
-!assets/gen/b442b97ad21c5e00a089f57243f36edb795a5787.png
-!assets/gen/b6238bcf5f82afb905a3d48d14fb04a980c2c7b1.png
-!assets/gen/b8092c385813dae419a50cb29094d5d2b1628a53.png
-!assets/gen/bake-ptdisc-mob.png
-!assets/gen/bake-ptglow-mob.png
-!assets/gen/bb06c93e0213c5fc8fae222ef59fc5bc29e67118.png
-!assets/gen/c11e5e9b7461f94c4ead221b83f8c62f51ae7188.png
-!assets/gen/c38413391915af07b3cf269a333810923e555d18.png
-!assets/gen/c3a858286a40d0b725cc6e8456240d599a4ad107.png
-!assets/gen/cf33cb266c209f5ddd987de08324ac0a6e38987a.png
-!assets/gen/d49bcd1525a34e0ecd878cc1876f5180bd9e2049.png
-!assets/gen/d991858fbdd4db64459bc288f4475a76da7dda66.png
-!assets/gen/dd2fb50e331bb60756717fd9a9750ebea252d8f1.png
 !assets/gen/e35ee9e51c72f197dcd30547c51270218a80b07b.png
-!assets/gen/e4a692c1cd086c806650e3419d44bff8cc67db80.png
-!assets/gen/ecf972712ea6a3babcd8b5c4336f4d25c62ae883.png
-!assets/gen/edf7f67a10c6c8a9f9dc95ceca236295268b76ae.png
 !assets/gen/ee4434788170addd06348da234f893d00dafa364.png
-!assets/gen/f098495ead3741a8d723bd5d9f56e3a681293a2d.png
-!assets/gen/f12ef3c1b7de1516a779ad3792b9b1eb2deafc76.png
-!assets/gen/f206e7246fa94e7dfe3b231fcb1dc01c3d31c663.png
-!assets/gen/f3de993bef619a0676ab8619bc0b446f74ea6fd0.png
-!assets/gen/f5ce822c1c8b72bf90f3aaeedc3fcdf9c6f85a1c.png
-!assets/gen/f72b35e63267791cdc9ea791b12cecd52c49459d.png
-!assets/gen/faaa09fdd5bbbbfe29e0b600db53e23ead954814.png
-!assets/gen/fb7e305eec8814e08b6e927661a228992754cfc8.png
-!assets/gen/fd0eb0646e70d6a1bae2813e2568a4ee8d0bdab4.png
