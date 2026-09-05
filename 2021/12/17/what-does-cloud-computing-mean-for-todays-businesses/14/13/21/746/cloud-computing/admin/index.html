@@ -5175,5 +5175,185 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 
+<style id="ax-testicards-css">
+.ax-tc2-q{transition:none}
+</style>
+<script>
+/* ---- REVIEW CARDS: real quotes over Figma's placeholders ----
+
+   The four cards in the "In their words" row ship from Figma as a stock template:
+   Alex Johnson / PixelCore Studio and Tyler Brooks / Launchify, each twice, over
+   Lorem paragraphs written to overflow and be clipped. index.html has carried the
+   real quotes for a while, but they were baked into that one file by hand, so the
+   moment the homepage is regenerated from Figma the placeholders come back. Same
+   for the mobile block, which _mobile.py rewrites wholesale on every build.
+
+   The copy below is the same four customer quotes index.html already ships. This
+   is a fragment so both the current homepage and the V2 build get them from one
+   place rather than one being hand-patched and the other reverting.
+
+   index.html keeps its own inline `ax-mobtst` script for the mobile block; the
+   mobile pass here stands down when that is present rather than running twice. */
+(function () {
+  var CARDS = [
+      {
+          "q": "We were able to properly deploy SAP from the ground up thanks to AeonX. They were there for us every step of the journey, providing assistance and knowledge. We wouldn’t have been able to achieve it without them! Their assistance has been crucial to us, and we cannot express how grateful we are. We strongly recommend working with AeonX Digital!",
+          "name": "Ashish Desai",
+          "org": "CFO, Ashapura"
+      },
+      {
+          "q": "When it came to understanding our expectations, the team was incredibly supportive and conducted a stellar job. We are thankful to AeonX Digital for providing us with a new Disaster Recovery System and implementing SAP modules, which is helping our business run smoothly. It was a pleasure to work with AeonX. They’re a fantastic team and I loved getting to collaborate with them personally!",
+          "name": "Bhushan Puranik",
+          "org": "Head IT & SAP, BVG India"
+      },
+      {
+          "q": "We had heard that AeonX Digital is a terrific service provider with a strong focus on customer support, and now we can confidently pass that information on. Thank you for all of your assistance with SAP Managed Services (AMS), Team AeonX. You’ve been quite helpful in getting everything up and running. We sincerely appreciate all of your efforts!",
+          "name": "Ajay Arora",
+          "org": "CFO, BFN Forgings"
+      },
+      {
+          "q": "We appreciate how simple SAP managed services and SAP S/4HANA cloud migration were to implement. For our company, this has been a game-changer, and I couldn’t be happier with the outcomes. Working with AeonX Digital has been a fantastic experience for us, and we would gladly recommend them as one of the industry’s top providers.",
+          "name": "Mitali Biswas",
+          "org": "CIO, CK Birla Hospitals"
+      }
+  ];
+
+  /* Deliberately matches Norem/Morem/Dorem/Forem as well as Lorem. Whoever built the
+     template varied the first letter per card, which is why an earlier filter keyed
+     on \blorem missed every one of them. */
+  var PLACEHOLDER = /[a-z]orem ipsum dolor sit amet/i;
+
+  function txt(e) { return (e.textContent || '').replace(/\s+/g, ' ').trim(); }
+
+  /* A leaf label, meaning no nested .g-t. Testing children.length instead misses these
+     entirely: _gen.py closes the quote paragraph with a trailing <br>, so the element
+     that holds the text has a child element and reads as a container. That is the same
+     guard _uifx.html's own placeholder filter uses, and the reason it never caught
+     these four either. */
+  function leaf(e) { return !e.querySelector('.g-t'); }
+
+  /* A card is the nearest ancestor holding both a placeholder quote and a name. */
+  function cardOf(q) {
+    var el = q.parentElement;
+    for (var i = 0; el && i < 6; i++, el = el.parentElement) {
+      var t = [].filter.call(el.querySelectorAll('.g-t'), function (x) { return leaf(x) && txt(x); });
+      if (t.length >= 3) return el;
+    }
+    return null;
+  }
+
+  function fill(root) {
+    var quotes = [].filter.call(root.querySelectorAll('.g-t'), function (e) {
+      return leaf(e) && PLACEHOLDER.test(e.textContent || '');
+    });
+    if (!quotes.length) return 0;
+
+    quotes.forEach(function (q, i) {
+      var c = CARDS[i % CARDS.length];
+      var card = cardOf(q);
+      if (!card) return;
+
+      /* Name and company are the two non-quote labels, in DOM order. */
+      var labels = [].filter.call(card.querySelectorAll('.g-t'), function (e) {
+        return e !== q && leaf(e) && txt(e);
+      });
+      if (labels.length >= 2) {
+        labels[0].textContent = c.name;
+        labels[1].textContent = c.org;
+        labels[0].style.whiteSpace = 'nowrap';
+        labels[1].style.whiteSpace = 'nowrap';
+      }
+
+      q.textContent = c.q;
+      q.classList.add('ax-tc2-q');
+
+      /* The stock portrait belonged to "Alex Johnson". Beside a real person's name it
+         is a fabricated photograph of someone who exists, so it goes.
+
+         Matched on the inline vw geometry, not on getBoundingClientRect. index.html
+         matches it by viewport rect, but that only ever runs at mobile width; here one
+         pass has to cover both breakpoints, and whichever block is not current is
+         display:none with every rect at zero. The image to the LEFT of the name block,
+         in the card's own coordinate space, is the portrait. */
+      var nameBox = labels.length ? labels[0].parentElement : null;
+      var nameLeft = nameBox ? parseFloat(nameBox.style.left) : NaN;
+      if (!isNaN(nameLeft)) {
+        [].forEach.call(card.querySelectorAll('.g-img'), function (img) {
+          var el = img;
+          while (el && el.parentElement !== card) el = el.parentElement;
+          if (!el) return;
+          var l = parseFloat(el.style.left);
+          if (isNaN(l) || l >= nameLeft) return;
+          el.style.display = 'none';
+          /* Slide the name into the slot the portrait vacated rather than leaving a
+             hole. Same placement index.html ends up with on desktop. */
+          var w = parseFloat(nameBox.style.width);
+          if (!isNaN(w)) nameBox.style.width = (w + nameLeft - l).toFixed(4) + 'vw';
+          nameBox.style.left = el.style.left;
+        });
+      }
+
+      /* The placeholder was written to overflow, so Figma gave the body a short window
+         and left dead space above it: ~170px on desktop, and about 39vw of empty card
+         on mobile. A real quote should be readable end to end, so the window grows up
+         into that space.
+
+         index.html carries a warning against doing this on mobile. That failure came
+         from mixing viewport rects with the clip's own parent-relative vw offsets, with
+         the scroll-reveal's translateY sitting between the two, which put the body on
+         top of the name. Everything below reads and writes inline vw only, never a
+         rect, which is the condition that note sets for reintroducing it. */
+      var box = q.parentElement;
+      var top = parseFloat(box.style.top), h = parseFloat(box.style.height);
+      if (isNaN(top) || isNaN(h) || box.dataset.axGrown) return;
+      var nameBox = labels.length ? labels[0].parentElement : null;
+      var nTop = nameBox ? parseFloat(nameBox.style.top) : NaN;
+      var nH = nameBox ? parseFloat(nameBox.style.height) : NaN;
+      if (isNaN(nTop) || isNaN(nH)) return;
+      var newTop = nTop + nH + 1.0417;              /* the card's own 20px gutter */
+      if (newTop >= top) return;
+      box.style.top = newTop.toFixed(4) + 'vw';
+      box.style.height = (top + h - newTop).toFixed(4) + 'vw';
+      q.style.height = box.style.height;
+      box.dataset.axGrown = '1';
+    });
+    return quotes.length;
+  }
+
+  /* Step the type down only when a quote still will not fit, and never below the size
+     the placeholder used. Same ladder index.html settled on. */
+  function fit() {
+    [].forEach.call(document.querySelectorAll('.ax-tc2-q'), function (q) {
+      var box = q.parentElement;
+      var maxH = box.getBoundingClientRect().height;
+      if (!maxH) return;
+      var base = parseFloat(q.dataset.axBase || '');
+      if (isNaN(base)) { base = parseFloat(q.style.fontSize) || 0.8333; q.dataset.axBase = base; }
+      var size = base * 1.125, floor = base;
+      while (size > floor) {
+        q.style.fontSize = size.toFixed(4) + 'vw';
+        q.style.lineHeight = (size * 1.4).toFixed(4) + 'vw';
+        if (q.scrollHeight <= maxH) break;
+        size -= base * 0.024;
+      }
+    });
+  }
+
+  function run() {
+    var mob = document.querySelector('.ax-mob');
+    var desk = document.querySelector('main.ax-page');
+    if (desk) fill(desk);
+    /* index.html carries its own inline pass for the mobile block; don't run twice. */
+    if (mob && !document.getElementById('ax-mobtst')) fill(mob);
+    fit();
+  }
+
+  var t;
+  addEventListener('resize', function () { clearTimeout(t); t = setTimeout(fit, 150); });
+  if (document.readyState === 'complete') setTimeout(run, 0);
+  else addEventListener('load', function () { setTimeout(run, 0); });
+})();
+</script>
+
 </body>
 </html>
