@@ -429,28 +429,84 @@
      top without re-parenting anything (a move would need every sibling's absolute
      top rewritten) and keeps its own hit area, since a transform moves that too. */
   function stickyHeader(mob){
-    var bar = null, best = 1e9;
-    [].slice.call(mob.querySelectorAll('.g-vec,.g-img,.g-b')).forEach(function(e){
+    if (mob.dataset.axStickDone) return;    /* this fires twice (a timer + load); only the first call does anything */
+    var S = 430 / (innerWidth || 430);
+    var bar = null, best = 1e9, promo = [];
+    [].slice.call(mob.querySelectorAll('.g-vec,.g-img,.g-b,.g-t')).forEach(function(e){
       var b = e.getBoundingClientRect();
       if (!b.width) return;
-      var top = b.top + scrollY, S = 430 / (innerWidth || 430);
-      /* y0 is the promo strip, which is meant to scroll away; the nav sits under it */
-      if (top * S < 20 || top * S > 130) return;
+      var top = b.top + scrollY;
+      /* y0 band is the announcement strip (bg + label), API-driven; the nav
+         bar sits right under it. Several heroes have decorative background art
+         (a swoosh, a line-art cluster) that starts at/near the page's own y=0,
+         same as the promo strip, and is 300-2300px tall -- ungated, that art got
+         swept into `promo`, pinned position:fixed (stuck through the whole page,
+         not just its hero), and its huge .bottom became `promoBottom`, which the
+         real nav bar was then pinned BELOW -- shoving it thousands of px down,
+         off-screen ("the navbar disappears"). A promo/nav bar is always short;
+         cap out here same as the bar candidate check below does. */
+      if (top * S < 20 && b.height * S < 80) { promo.push(e); return; }
+      if (top * S > 130) return;
       if (b.width * S < 380 || b.height * S > 70 || b.height * S < 30) return;
       if (top * S < best) { best = top * S; bar = e; }
     });
-    if (!bar || bar.dataset.axStick) return;
-    bar.dataset.axStick = '1';
-    bar.classList.add('ax-mstick');
-    var top0 = bar.getBoundingClientRect().top + scrollY;
-    var base = bar.style.transform || '';
-    function pin(){
-      var d = Math.max(0, scrollY - top0);
-      bar.style.transform = d ? (base + ' translateY(' + d + 'px)') : base;
+    if (!bar) return;
+    mob.dataset.axStickDone = '1';
+
+    /* Real position:fixed, same as the desktop nav -- the old approach translated
+       the bar on every scroll event, which trails a frame or more behind native
+       fixed positioning (most visible scrolling up fast / momentum scroll). Each
+       element's own top/left were authored relative to the page's absolute-
+       position flow, which means something different once fixed, so pin every
+       one from its current on-screen rect instead of trusting those values. */
+    function pinFixed(el, top){
+      var r = el.getBoundingClientRect();
+      el.style.position = 'fixed';
+      el.style.left = r.left + 'px';
+      el.style.top = top + 'px';
+      el.style.width = r.width + 'px';
+      el.style.height = r.height + 'px';
+      el.style.margin = '0';
+      el.classList.add('ax-mstick');
+      return r;
     }
-    addEventListener('scroll', pin, {passive:true});
-    addEventListener('resize', function(){ top0 = bar.getBoundingClientRect().top + scrollY - Math.max(0, scrollY - top0); pin(); });
-    pin();
+    /* Promo strip pins first, flush at the very top, at its own natural
+       (zero-padding) position. The nav bar pins right under it. No padding-top
+       reservation on .ax-mob: content below is already positioned clear of the
+       nav band in Figma's own coordinates (everything here is absolute, not
+       normal flow), so the fixed bars simply float over the top of it -- same
+       as the single-bar version before the promo strip was added. Adding a
+       reservation double-counts that clearance and pushes every hero down an
+       extra nav-height's worth (the bug: a huge gap above every hero on mobile). */
+    var promoBottom = 0;
+    promo.forEach(function(e){
+      var r0 = e.getBoundingClientRect();
+      promoBottom = Math.max(promoBottom, r0.bottom);
+      pinFixed(e, r0.top);
+    });
+    var barRect = pinFixed(bar, promoBottom);
+
+    /* The bar cannot be its own background. Figma draws this nav as glass: the
+       exported SVG's backing rect is `fill="white" fill-opacity="0.35"`, and it is
+       414 wide inside a 430 viewport. Sitting in the flat sheet over a white hero
+       that reads as solid, but pinned over scrolling content the page shows straight
+       through it, and through the 8px gutter either side. Put a real backdrop behind
+       it, full width, and keep the blur so it still reads as the designed glass
+       rather than a flat white slab. Behind, not inside: the SVG is a single
+       exported image and there is nothing in it to recolour.
+
+       Appended inside .ax-mob, not to body: the mobile shell hides every direct
+       child of body except .ax-mob and .ax-mnav, so a body-level backdrop would be
+       display:none on exactly the breakpoint it exists for. The pinned bars are
+       already fixed from inside .ax-mob, so position:fixed resolves the same here. */
+    var bg = document.createElement('div');
+    bg.className = 'ax-mstick-bg';
+    bg.style.cssText = 'position:fixed;left:0;right:0;pointer-events:none;' +
+      'top:' + promoBottom + 'px;height:' + barRect.height + 'px;z-index:899;' +
+      'background:rgba(255,255,255,.94);' +
+      'backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);' +
+      'border-bottom:1px solid #ECEEF2';
+    mob.appendChild(bg);
   }
 
 
