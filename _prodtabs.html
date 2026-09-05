@@ -1,0 +1,251 @@
+<style id="ax-prodtabs-css">
+/* 300ms / EASE_OUT again: every `Tab` node in both Container (Products) sets carries
+   transitionDuration 300 and transitionEasing EASE_OUT. */
+.ax-pt-tab{cursor:pointer}
+.ax-pt-tab:focus-visible{outline:2px solid #df3f17;outline-offset:2px}
+.ax-pt-box{transition:border-color .3s cubic-bezier(0,0,.58,1)}
+.ax-pt-lbl{transition:color .3s cubic-bezier(0,0,.58,1)}
+/* The panels are twelve unrelated product screenshots, so a cross-dissolve is the
+   honest read of the variant swap: there is nothing to tween between them. */
+.ax-pt-panel{transition:opacity .15s linear}
+@media (prefers-reduced-motion:reduce){
+  .ax-pt-box,.ax-pt-lbl,.ax-pt-panel{transition:none}
+}
+</style>
+<script>
+/* ---- PRODUCT TABS (the twelve-product strip) ----
+
+   Same problem as the hero tabs. In Figma this section is an INSTANCE of a
+   COMPONENT_SET with twelve variants and the tab click is a prototype variant swap
+   that the export cannot carry, so only the SupplierX variant survived and eleven of
+   the twelve tabs were inert.
+
+     desktop  set 6795:23870   instance 6795:23913
+     mobile   set 6893:27393   instance 6893:27539
+
+   What actually differs between the twelve variants is ONE thing: the screenshot
+   filling the tab panel. The heading, the strip and the panel frame are identical. So
+   this swaps the panel's background image and moves the active border, rather than
+   shipping twelve copies of the section.
+
+   The tables are generated, not hand-typed. `box` is the image rectangle relative to
+   its clipping panel and `sizing` is _gen.image_sizing_css() for that fill, so each
+   crop matches what a static export of that variant would have produced. Regenerate by
+   walking the component set and reading the first IMAGE fill under 'Tab Panel:margin'.
+
+   Desktop currently reuses ONE placeholder screenshot for Setu Move, QuiC, Jarvis,
+   Data Setu.ai and Setu Edge; mobile has real shots for all but Setu Edge. That is a
+   gap in the design, not a bug here: those tabs work, they just repeat an image until
+   the real ones are drawn. */
+(function () {
+  var SPEC = {
+    desktop: {
+      /* Desktop moves the border AND the label weight; mobile moves only the border,
+         because Figma's own mobile variants leave tab 0's label bold in every state. */
+      weights: true,
+      panes: [
+      { label: 'SupplierX',     ref: '59aaccb6d152a67424f6bd4fbf46df577bdd9ff5',
+        box: [0.0417, 0.0417, 71.6146, 46.8229],
+        sizing: 'background-size:71.6146vw 47.6095vw;background-position:-0.0000vw 0.0289vw;background-repeat:no-repeat;' },
+      { label: 'OrderX',        ref: '7f4ebb15712b6e8306e590a80755af65f4e5b1e8',
+        box: [0.0417, 0.0417, 71.5833, 52.6933],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'Xpense',        ref: '055a6847a0cb6e745984e1a704db491809493a01',
+        box: [0.0417, 0.0417, 71.6146, 40.3125],
+        sizing: 'background-size:71.9220vw 96.9014vw;background-position:-0.1419vw -0.0000vw;background-repeat:no-repeat;' },
+      { label: 'ManufeX',       ref: '94d8ee820081df4a95384f2b45e4c0892d857aa0',
+        box: [0.0417, 0.0417, 71.6146, 50.9375],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'LogytstiX',     ref: '2714267af9e02b4b2ebcea0c1790f496f03e7899',
+        box: [0.0417, 0.0417, 71.6146, 47.6562],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'CRM 360',       ref: 'a18023954288f9a1fc4834dd71f70970453a9ea3',
+        box: [0.0417, 0.0417, 71.6146, 34.6875],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'Setu Move',     ref: '5fd0e3417a71ad9ce0ea61b32d9cd17bdce414ca',
+        box: [0.0417, 0.0417, 71.5833, 29.9566],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'QuiC',          ref: '5fd0e3417a71ad9ce0ea61b32d9cd17bdce414ca',
+        box: [0.0417, 0.0417, 71.5833, 29.9566],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'Jarvis',        ref: '5fd0e3417a71ad9ce0ea61b32d9cd17bdce414ca',
+        box: [0.0417, 0.0417, 71.5833, 29.9566],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'AeonxIQ',       ref: 'e35ee9e51c72f197dcd30547c51270218a80b07b',
+        box: [0.0417, 0.0417, 71.5833, 34.3578],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'Data Setu.ai',  ref: '5fd0e3417a71ad9ce0ea61b32d9cd17bdce414ca',
+        box: [0.0417, 0.0417, 71.5833, 29.9566],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'Setu Edge',     ref: '5fd0e3417a71ad9ce0ea61b32d9cd17bdce414ca',
+        box: [0.0417, 0.0417, 71.5833, 29.9566],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' }
+      ]
+    },
+    mobile: {
+      weights: false,
+      panes: [
+      { label: 'SupplierX',     ref: '59aaccb6d152a67424f6bd4fbf46df577bdd9ff5',
+        box: [0.0, 1.8605, 92.5581, 60.4651],
+        sizing: 'background-size:92.5581vw 61.4809vw;background-position:-0.0000vw 0.0373vw;background-repeat:no-repeat;' },
+      { label: 'OrderX',        ref: '7f4ebb15712b6e8306e590a80755af65f4e5b1e8',
+        box: [0.0, 1.8605, 92.5581, 68.1395],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'Xpense',        ref: '055a6847a0cb6e745984e1a704db491809493a01',
+        box: [0.0, 1.8605, 92.5581, 52.093],
+        sizing: 'background-size:92.9555vw 125.2189vw;background-position:-0.1834vw -0.0000vw;background-repeat:no-repeat;' },
+      { label: 'ManufeX',       ref: '94d8ee820081df4a95384f2b45e4c0892d857aa0',
+        box: [0.0, 1.8605, 92.5581, 65.814],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'LogytstiX',     ref: '2714267af9e02b4b2ebcea0c1790f496f03e7899',
+        box: [0.0, 1.8605, 92.5581, 61.6279],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'CRM 360',       ref: 'a18023954288f9a1fc4834dd71f70970453a9ea3',
+        box: [0.0, 1.8605, 92.5581, 44.8837],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'Setu Move',     ref: 'ee4434788170addd06348da234f893d00dafa364',
+        box: [0.0, 1.8605, 92.5581, 60.4651],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'QuiC',          ref: '0ccfb371b06ba329344ddc992cf1ae382c8e04a1',
+        box: [0.0, 1.8605, 92.5581, 60.4651],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'Jarvis',        ref: '1747adadc621799435cb0199e2362493ede4a712',
+        box: [0.0, 1.8605, 92.5581, 60.4651],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'AeonxIQ',       ref: 'e35ee9e51c72f197dcd30547c51270218a80b07b',
+        box: [0.0, 1.8605, 92.5581, 44.425],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'Data Setu.ai',  ref: '52e0c2a51736b95c964d9fed3772f646f8c94219',
+        box: [0.0, 1.8605, 92.5581, 60.4651],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'Setu Edge',     ref: '1747adadc621799435cb0199e2362493ede4a712',
+        box: [0.0, 1.8605, 92.5581, 60.4651],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' }
+      ]
+    }
+  };
+
+  var ACTIVE_BORDER = 'rgb(223, 63, 23)', IDLE_BORDER = 'rgb(213, 218, 226)';
+  var ACTIVE_TEXT = 'rgb(35, 39, 46)', IDLE_TEXT = 'rgb(82, 96, 119)';
+
+  function txt(e) { return (e.textContent || '').replace(/\s+/g, ' ').trim(); }
+  function norm(s) { return s.replace(/[^a-z0-9]/gi, '').toLowerCase(); }
+
+  /* Identified by contents, because _gen.py names every one of these layers
+     "Container". _uifx.html title-cases the labels ("QuiC" -> "Quic"), which is why
+     the comparison is on the normalised form. */
+  function findStrips() {
+    var out = [];
+    ['desktop', 'mobile'].forEach(function (key) {
+      var spec = SPEC[key];
+      var want = spec.panes.map(function (p) { return norm(p.label); });
+      [].forEach.call(document.querySelectorAll('.g-b.g-clip'), function (el) {
+        var mob = !!el.closest('.ax-mob');
+        if (mob !== (key === 'mobile')) return;
+        var labels = [].filter.call(el.children, function (c) { return c.classList.contains('g-t'); });
+        if (labels.length !== want.length) return;
+        if (!want.every(function (w, i) { return norm(txt(labels[i])) === w; })) return;
+        out.push({ strip: el, spec: spec, labels: labels });
+      });
+    });
+    return out;
+  }
+
+  function wire(w) {
+    var strip = w.strip, spec = w.spec, labels = w.labels;
+    var boxes = [].filter.call(strip.children, function (c) {
+      return c.classList.contains('g-b') && !c.classList.contains('g-clip');
+    });
+    if (boxes.length !== labels.length) return;
+
+    /* The panel is the image the first variant shipped with. Looking it up by that ref
+       rather than by position means a section reshuffle cannot silently retarget it. */
+    var scope = strip.closest('.ax-mob') || document;
+    var panel = scope.querySelector('.g-img[data-ref="' + spec.panes[0].ref + '"]');
+    if (!panel) return;
+
+    var current = 0, token = 0;
+
+    function apply(i) {
+      var p = spec.panes[i];
+      panel.setAttribute('data-ref', p.ref);
+      panel.style.left = p.box[0] + 'vw';
+      panel.style.top = p.box[1] + 'vw';
+      panel.style.width = p.box[2] + 'vw';
+      panel.style.height = p.box[3] + 'vw';
+      /* The export writes background sizing as a shorthand-free set of longhands; drop
+         the old ones wholesale rather than trying to override each. */
+      panel.style.cssText = panel.style.cssText.replace(
+        /background-size:[^;]*;?|background-position:[^;]*;?|background-repeat:[^;]*;?/g, '');
+      panel.style.backgroundImage = 'url(/assets/gen/' + p.ref + '.png)';
+      panel.style.cssText += ';' + p.sizing;
+    }
+
+    function select(i, animate) {
+      if (animate && i === current) return;
+      current = i;
+      var mine = ++token;
+
+      boxes.forEach(function (b, n) { b.style.borderColor = n === i ? ACTIVE_BORDER : IDLE_BORDER; });
+      labels.forEach(function (l, n) {
+        l.setAttribute('aria-selected', n === i ? 'true' : 'false');
+        l.tabIndex = n === i ? 0 : -1;
+        if (!spec.weights) return;
+        l.style.color = n === i ? ACTIVE_TEXT : IDLE_TEXT;
+        l.style.fontWeight = n === i ? '600' : '400';
+      });
+
+      if (!animate) { apply(i); return; }
+
+      /* Hold the fade open until the screenshot has actually decoded: these are 1-2MB
+         PNGs, and swapping on a fixed timer showed an empty panel on a cold cache. */
+      var ready = false, faded = false;
+      var img = new Image();
+      var swap = function () {
+        if (!ready || !faded || token !== mine) return;
+        apply(i);
+        panel.style.opacity = '1';
+      };
+      img.onload = img.onerror = function () { ready = true; swap(); };
+      img.src = '/assets/gen/' + spec.panes[i].ref + '.png';
+
+      panel.style.opacity = '0';
+      setTimeout(function () { faded = true; swap(); }, 150);
+    }
+
+    strip.setAttribute('role', 'tablist');
+    labels.forEach(function (l, i) {
+      l.classList.add('ax-pt-tab', 'ax-pt-lbl');
+      l.setAttribute('role', 'tab');
+      boxes[i].classList.add('ax-pt-box', 'ax-pt-tab');
+      var go = function (e) { e.preventDefault(); e.stopPropagation(); select(i, true); l.focus(); };
+      l.addEventListener('click', go, true);
+      boxes[i].addEventListener('click', go, true);
+      l.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') return go(e);
+        var d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+        if (!d) return;
+        e.preventDefault();
+        var n = (i + d + labels.length) % labels.length;
+        select(n, true);
+        labels[n].focus();
+        if (labels[n].scrollIntoView) labels[n].scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      });
+    });
+
+    /* The icons sit between the boxes and the labels in the flat export and would
+       otherwise swallow the click. */
+    [].forEach.call(strip.querySelectorAll('.g-vec, .g-img'), function (v) {
+      if (v !== panel) v.style.pointerEvents = 'none';
+    });
+
+    select(0, false);
+    setTimeout(function () { panel.classList.add('ax-pt-panel'); }, 0);
+  }
+
+  function init() { findStrips().forEach(wire); }
+
+  if (document.readyState === 'complete') setTimeout(init, 0);
+  else window.addEventListener('load', function () { setTimeout(init, 0); });
+})();
+</script>

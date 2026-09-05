@@ -6031,5 +6031,601 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 
+<style id="ax-herotabs-css">
+/* 300ms / EASE_OUT is not a guess: every `Tab` node in both component sets carries
+   transitionDuration 300 and transitionEasing EASE_OUT, which is what Figma would
+   have played on the prototype's variant swap. EASE_OUT is cubic-bezier(0,0,.58,1). */
+:root{--ax-ht-t:.3s cubic-bezier(0,0,.58,1)}
+.ax-ht-tab{cursor:pointer;-webkit-user-select:none;user-select:none}
+.ax-ht-tab:focus-visible{outline:2px solid #df3f17;outline-offset:2px;border-radius:3px}
+/* Added only after the first paint, so the page does not animate itself on load. */
+.ax-ht-anim{transition:left var(--ax-ht-t),top var(--ax-ht-t),width var(--ax-ht-t),
+            height var(--ax-ht-t),color var(--ax-ht-t)}
+/* The grid cross-dissolves while its own box tweens, which is how smart-animate reads
+   a swap where the tiles hold position and only the labels and the count change. */
+.ax-ht-grid{transition:top var(--ax-ht-t),height var(--ax-ht-t),opacity .15s linear}
+@media (prefers-reduced-motion:reduce){
+  .ax-ht-anim,.ax-ht-grid{transition:none}
+}
+</style>
+<script>
+/* ---- HERO SEARCH-TYPE TABS (Products / Services / AI Agents) ----
+
+   In Figma this widget is a COMPONENT_SET with three variants and the tab click is
+   a prototype variant swap, so only the default "Products" state survives the export.
+   `reactions` are absent from the REST dump entirely, so nothing in the pipeline can
+   infer the other two. This restores them at runtime.
+
+   Rather than ship two more copies of the markup, the existing tiles are re-labelled
+   and re-positioned, because all three variants reuse one grid: same tile size, same
+   column and row pitch, same 12,12 inset inside the grid container. Only the label
+   set, the tile count, and the container height change. Numbers below are lifted
+   straight from the component sets, in Figma px relative to each variant's own root:
+
+     desktop  6843:20157   variants 6843:20156 / 20155 / 20154   root 660x178
+     mobile   6866:26213   variants 6866:26212 / 26211 / 26210   root 382x258/204/170
+
+   To regenerate after a design change, dump the set and read `Tab` frames, the grid
+   container and its `Text` children:
+     curl -H "X-Figma-Token: $FIGMA_TOKEN" \
+       "https://api.figma.com/v1/files/oskhBYvi1Q7GGPqrqABZQp/nodes?ids=6843:20157"
+
+   Everything is written in vw, the unit the whole page is laid out in, so the widget
+   keeps scaling with the viewport exactly as the static export does. */
+(function () {
+  var TABS = ['Products', 'Services', 'AI Agents'];
+
+  /* Per breakpoint: tile geometry, then per variant the three `Tab` frame rects
+     [x, width] relative to the tab-list background, the grid container box, and the
+     labels. `boxes` is the number of tile rectangles to paint, which is NOT always the
+     label count: the desktop Services variant keeps two empty tiles in the second row
+     so the card does not look half-drawn.
+
+     Tab rects are carried for all three tabs, not just the active one, because the
+     labels have to be re-placed on every switch: _uifx.html re-centres any element it
+     considers a control, and role="tab" (correctly) makes these controls, so it moves
+     them off the exported left. Positioning from Figma rather than trying to preserve
+     the export's value makes that harmless. Desktop rects shift by a pixel between
+     variants because the active tab grows slightly; mobile rects are identical. */
+  var SPEC = {
+    desktop: {
+      tileW: 158, tileH: 44, colPitch: 158, rowPitch: 44, cols: 4,
+      inset: [12, 12],           // tile origin inside the grid container
+      cardH: null,               // desktop card is a fixed height in all variants
+      pillY: 2,                  // pill offset inside the tab-list background
+      variants: {
+        'Products':  { tabs: [[2,77],[79,73],[152,83]], grid: [10, 112], boxes: 8,
+                       labels: ['SupplierX','OrderX','Xpense','ManufeX',
+                                'LogystiX','SetuMove','CRM 360','QUIC'] },
+        'Services':  { tabs: [[2,76],[78,74],[152,83]], grid: [10, 112], boxes: 8,
+                       labels: ['SAP','AWS','GCP','ANTHROPIC',
+                                'Multi Cloud CMS','AI & DATA'] },
+        'AI Agents': { tabs: [[2,76],[78,73],[151,84]], grid: [32, 68],  boxes: 4,
+                       labels: ['JARVIS','AEONXIQ','DATASETU.AI','SETUEDGE'] }
+      }
+    },
+    mobile: {
+      tileW: 177, tileH: 44, colPitch: 177, rowPitch: 44, cols: 2,
+      inset: [12, 12],
+      cardH: true,               // mobile card shrinks with the tile count
+      pillY: 2,
+      variants: {
+        'Products':  { tabs: [[2,76],[78,73],[151,83]], grid: [10, 200], boxes: 8, card: [222, 220],
+                       labels: ['SupplierX','OrderX','Xpense','ManufeX',
+                                'LogystiX','SetuMove','CRM 360','QUIC'] },
+        'Services':  { tabs: [[2,76],[78,73],[151,83]], grid: [10, 156], boxes: 6, card: [168, 166],
+                       labels: ['SAP','AWS','GCP','ANTHROPIC',
+                                'Multi Cloud CMS','AI & DATA'] },
+        'AI Agents': { tabs: [[2,76],[78,73],[151,83]], grid: [10, 112], boxes: 4, card: [134, 132],
+                       labels: ['JARVIS','AEONXIQ','DATASETU.AI','SETUEDGE'] }
+      }
+    }
+  };
+
+  var ACTIVE = 'rgb(223, 63, 23)', IDLE = 'rgb(134, 149, 170)';
+
+  function txt(e) { return (e.textContent || '').replace(/\s+/g, ' ').trim(); }
+  function vw(el, prop) { return parseFloat((el.style[prop] || '').replace('vw', '')) || 0; }
+  function setvw(el, prop, n) { el.style[prop] = n.toFixed(4) + 'vw'; }
+  function rect(el) { return el.getBoundingClientRect(); }
+
+  /* The widget: three sibling .g-t labels reading Products / Services / AI Agents.
+     Matching on the label trio rather than on a class is deliberate -- _gen.py derives
+     class names from Figma layer names, which are all "Container" here. */
+  function findWidgets() {
+    var out = [];
+    [].forEach.call(document.querySelectorAll('.g-t'), function (e) {
+      if (txt(e) !== TABS[0]) return;
+      var p = e.parentElement;
+      if (!p) return;
+      var kids = [].filter.call(p.children, function (c) {
+        return c.classList.contains('g-t') && TABS.indexOf(txt(c)) > -1;
+      });
+      if (kids.length === 3) out.push({ wrap: p, labels: kids });
+    });
+    return out;
+  }
+
+  function build(w) {
+    var wrap = w.wrap, labels = w.labels;
+    var lr = labels.map(rect);
+    var bounds = {
+      l: Math.min.apply(null, lr.map(function (r) { return r.left; })),
+      r: Math.max.apply(null, lr.map(function (r) { return r.right; })),
+      t: Math.min.apply(null, lr.map(function (r) { return r.top; })),
+      b: Math.max.apply(null, lr.map(function (r) { return r.bottom; }))
+    };
+    var boxes = [].filter.call(wrap.children, function (c) {
+      return c.classList.contains('g-b');
+    });
+
+    /* The tab-list background is the painted box behind all three labels; the pill is
+       the smaller box behind only the active one. Both are flat siblings of the labels
+       in the export, so they are identified by geometry, not by order. */
+    var strip = null, pill = null;
+    boxes.forEach(function (b) {
+      var r = rect(b);
+      if (r.top > bounds.b || r.bottom < bounds.t) return;
+      if (r.left <= bounds.l + 1 && r.right >= bounds.r - 1) {
+        if (!strip || r.width < rect(strip).width) strip = b;
+      } else if (r.left <= lr[0].left + 1 && r.right >= lr[0].right - 1) {
+        pill = b;
+      }
+    });
+
+    /* The card below the tabs, and inside it the grid container holding the tiles. */
+    var inner = null;
+    boxes.forEach(function (b) {
+      if (rect(b).top < bounds.b) return;
+      var g = b.querySelector(':scope > .g-b.g-clip');
+      if (g && g.querySelectorAll(':scope > .g-t').length >= 4) inner = b;
+    });
+    if (!inner) return null;
+    var gridBox = inner.querySelector(':scope > .g-b.g-clip');
+
+    /* The outer card is the sibling box sitting directly behind `inner`. */
+    var ir = rect(inner), outer = null;
+    boxes.forEach(function (b) {
+      if (b === inner) return;
+      var r = rect(b);
+      if (r.left <= ir.left + 1 && r.right >= ir.right - 1 &&
+          r.top <= ir.top + 1 && r.bottom >= ir.bottom - 1) {
+        if (!outer || rect(outer).height > r.height) outer = b;
+      }
+    });
+
+    var tiles = [].filter.call(gridBox.children, function (c) {
+      return c.classList.contains('g-b');
+    });
+    var tileLabels = [].filter.call(gridBox.children, function (c) {
+      return c.classList.contains('g-t');
+    });
+    if (!tiles.length) return null;
+
+    /* vw per Figma px, read off a tile whose Figma width we know. Deriving it rather
+       than hardcoding 100/1920 keeps this correct inside the .ax-mob block, which is
+       laid out at 100/430. */
+    var mob = !!wrap.closest('.ax-mob');
+    var spec = SPEC[mob ? 'mobile' : 'desktop'];
+    var unit = vw(tiles[0], 'width') / spec.tileW;
+    if (!unit) return null;
+
+    return { wrap: wrap, labels: labels, strip: strip, pill: pill, inner: inner,
+             outer: outer, gridBox: gridBox, tiles: tiles, tileLabels: tileLabels,
+             spec: spec, unit: unit, current: TABS[0] };
+  }
+
+  /* Everything outside the tile grid: the tab labels, the sliding pill, the grid
+     container's own box, and (mobile only) the card that shrinks with the row count.
+     All of it is plain left/top/width/height, so the CSS transition carries it. */
+  function applyChrome(W, name) {
+    var v = W.spec.variants[name], u = W.unit, s = W.spec;
+    var stripLeft = W.strip ? vw(W.strip, 'left') : 0;
+
+    W.labels.forEach(function (el, i) {
+      var on = txt(el) === name;
+      el.style.color = on ? ACTIVE : IDLE;
+      el.style.fontWeight = on ? '600' : '400';
+      el.setAttribute('aria-selected', on ? 'true' : 'false');
+      el.tabIndex = on ? 0 : -1;
+      /* Span the whole tab and centre, which both matches Figma (every label is
+         centred in its tab) and undoes _uifx.html's own centring pass. */
+      if (W.strip) {
+        setvw(el, 'left', stripLeft + v.tabs[i][0] * u);
+        setvw(el, 'width', v.tabs[i][1] * u);
+        el.style.textAlign = 'center';
+      }
+    });
+
+    if (W.pill && W.strip) {
+      var a = TABS.indexOf(name);
+      setvw(W.pill, 'left', stripLeft + v.tabs[a][0] * u);
+      setvw(W.pill, 'top', vw(W.strip, 'top') + s.pillY * u);
+      setvw(W.pill, 'width', v.tabs[a][1] * u);
+    }
+
+    setvw(W.gridBox, 'top', v.grid[0] * u);
+    setvw(W.gridBox, 'height', v.grid[1] * u);
+
+    /* Mobile only: the white card and its border box shrink with the row count. */
+    if (s.cardH && v.card) {
+      if (W.outer) setvw(W.outer, 'height', v.card[0] * u);
+      setvw(W.inner, 'height', v.card[1] * u);
+    }
+  }
+
+  /* The tile boxes and their labels. Swapped at the midpoint of the cross-dissolve,
+     never tweened: the tiles hold the same slots in every variant, so only the count
+     and the text actually differ. */
+  function applyGrid(W, name) {
+    var v = W.spec.variants[name], u = W.unit, s = W.spec;
+
+    W.tiles.forEach(function (tile, i) {
+      var on = i < v.boxes;
+      tile.style.display = on ? '' : 'none';
+      if (!on) return;
+      var col = i % s.cols, row = (i / s.cols) | 0;
+      setvw(tile, 'left', (s.inset[0] + col * s.colPitch) * u);
+      setvw(tile, 'top', (s.inset[1] + row * s.rowPitch) * u);
+    });
+
+    W.tileLabels.forEach(function (lab, i) {
+      var text = v.labels[i];
+      if (!text || i >= v.boxes) { lab.style.display = 'none'; return; }
+      lab.style.display = '';
+      lab.textContent = text;
+      var col = i % s.cols, row = (i / s.cols) | 0;
+      var labH = vw(lab, 'height');
+      setvw(lab, 'left', (s.inset[0] + col * s.colPitch) * u);
+      setvw(lab, 'width', s.tileW * u);
+      setvw(lab, 'top', (s.inset[1] + row * s.rowPitch) * u + (s.tileH * u - labH) / 2);
+      lab.style.textAlign = 'center';
+    });
+  }
+
+  var REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)');
+
+  function paint(W, name, animate) {
+    if (!W.spec.variants[name]) return;
+    W.current = name;
+    /* A newer click invalidates a swap still waiting on its midpoint, otherwise
+       clicking through all three fast lands the grid on the wrong variant. */
+    W.token = (W.token || 0) + 1;
+    var token = W.token;
+
+    applyChrome(W, name);
+
+    if (!animate || (REDUCED && REDUCED.matches)) {
+      W.gridBox.style.opacity = '';
+      applyGrid(W, name);
+      return;
+    }
+    W.gridBox.style.opacity = '0';
+    setTimeout(function () {
+      if (W.token !== token) return;
+      applyGrid(W, name);
+      W.gridBox.style.opacity = '1';
+    }, 150);
+  }
+
+  function wire(W) {
+    var strip = W.strip;
+    if (strip) strip.setAttribute('role', 'tablist');
+
+    W.labels.forEach(function (el, i) {
+      /* _uifx.html's CTA pass turns any short label inside a painted pill into a
+         role="link" that navigates to "#". These are tabs, so take them back. */
+      el.classList.add('ax-ht-tab');
+      el.setAttribute('role', 'tab');
+      el.removeAttribute('data-cta');
+      if (el.getAttribute('href') === '#') el.removeAttribute('href');
+
+      var go = function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        paint(W, txt(el), true);
+        el.focus();
+      };
+      /* Capture, so the CTA pass's own click handler on this element never runs. */
+      el.addEventListener('click', go, true);
+      el.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') return go(e);
+        var d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+        if (!d) return;
+        e.preventDefault();
+        var n = W.labels[(i + d + W.labels.length) % W.labels.length];
+        paint(W, txt(n), true);
+        n.focus();
+      });
+    });
+
+    /* Re-assert the layout after a resize: every value written above is in vw, so it
+       survives on its own, but _uifx.html and the reveal pass both re-measure on
+       resize and have been seen to re-apply a stale left. */
+    var t;
+    window.addEventListener('resize', function () {
+      clearTimeout(t);
+      t = setTimeout(function () { paint(W, W.current, false); }, 150);
+    });
+  }
+
+  function init() {
+    findWidgets().forEach(function (w) {
+      var W = build(w);
+      if (!W) return;
+      wire(W);
+      paint(W, TABS[0], false);
+      /* Arm the transitions only now: doing it before the first paint would animate
+         the widget into place as the page loads. A timeout rather than
+         requestAnimationFrame, which does not fire at all in a background tab and
+         would leave the widget un-armed until the tab is first looked at. */
+      setTimeout(function () {
+        W.gridBox.classList.add('ax-ht-grid');
+        [W.pill, W.inner, W.outer].concat(W.labels).forEach(function (el) {
+          if (el) el.classList.add('ax-ht-anim');
+        });
+      }, 0);
+    });
+  }
+
+  /* After the other enhancers, so the CTA pass has already stamped its role="link"
+     and can be undone in one place. */
+  if (document.readyState === 'complete') setTimeout(init, 0);
+  else window.addEventListener('load', function () { setTimeout(init, 0); });
+})();
+</script>
+
+<style id="ax-prodtabs-css">
+/* 300ms / EASE_OUT again: every `Tab` node in both Container (Products) sets carries
+   transitionDuration 300 and transitionEasing EASE_OUT. */
+.ax-pt-tab{cursor:pointer}
+.ax-pt-tab:focus-visible{outline:2px solid #df3f17;outline-offset:2px}
+.ax-pt-box{transition:border-color .3s cubic-bezier(0,0,.58,1)}
+.ax-pt-lbl{transition:color .3s cubic-bezier(0,0,.58,1)}
+/* The panels are twelve unrelated product screenshots, so a cross-dissolve is the
+   honest read of the variant swap: there is nothing to tween between them. */
+.ax-pt-panel{transition:opacity .15s linear}
+@media (prefers-reduced-motion:reduce){
+  .ax-pt-box,.ax-pt-lbl,.ax-pt-panel{transition:none}
+}
+</style>
+<script>
+/* ---- PRODUCT TABS (the twelve-product strip) ----
+
+   Same problem as the hero tabs. In Figma this section is an INSTANCE of a
+   COMPONENT_SET with twelve variants and the tab click is a prototype variant swap
+   that the export cannot carry, so only the SupplierX variant survived and eleven of
+   the twelve tabs were inert.
+
+     desktop  set 6795:23870   instance 6795:23913
+     mobile   set 6893:27393   instance 6893:27539
+
+   What actually differs between the twelve variants is ONE thing: the screenshot
+   filling the tab panel. The heading, the strip and the panel frame are identical. So
+   this swaps the panel's background image and moves the active border, rather than
+   shipping twelve copies of the section.
+
+   The tables are generated, not hand-typed. `box` is the image rectangle relative to
+   its clipping panel and `sizing` is _gen.image_sizing_css() for that fill, so each
+   crop matches what a static export of that variant would have produced. Regenerate by
+   walking the component set and reading the first IMAGE fill under 'Tab Panel:margin'.
+
+   Desktop currently reuses ONE placeholder screenshot for Setu Move, QuiC, Jarvis,
+   Data Setu.ai and Setu Edge; mobile has real shots for all but Setu Edge. That is a
+   gap in the design, not a bug here: those tabs work, they just repeat an image until
+   the real ones are drawn. */
+(function () {
+  var SPEC = {
+    desktop: {
+      /* Desktop moves the border AND the label weight; mobile moves only the border,
+         because Figma's own mobile variants leave tab 0's label bold in every state. */
+      weights: true,
+      panes: [
+      { label: 'SupplierX',     ref: '59aaccb6d152a67424f6bd4fbf46df577bdd9ff5',
+        box: [0.0417, 0.0417, 71.6146, 46.8229],
+        sizing: 'background-size:71.6146vw 47.6095vw;background-position:-0.0000vw 0.0289vw;background-repeat:no-repeat;' },
+      { label: 'OrderX',        ref: '7f4ebb15712b6e8306e590a80755af65f4e5b1e8',
+        box: [0.0417, 0.0417, 71.5833, 52.6933],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'Xpense',        ref: '055a6847a0cb6e745984e1a704db491809493a01',
+        box: [0.0417, 0.0417, 71.6146, 40.3125],
+        sizing: 'background-size:71.9220vw 96.9014vw;background-position:-0.1419vw -0.0000vw;background-repeat:no-repeat;' },
+      { label: 'ManufeX',       ref: '94d8ee820081df4a95384f2b45e4c0892d857aa0',
+        box: [0.0417, 0.0417, 71.6146, 50.9375],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'LogytstiX',     ref: '2714267af9e02b4b2ebcea0c1790f496f03e7899',
+        box: [0.0417, 0.0417, 71.6146, 47.6562],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'CRM 360',       ref: 'a18023954288f9a1fc4834dd71f70970453a9ea3',
+        box: [0.0417, 0.0417, 71.6146, 34.6875],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'Setu Move',     ref: '5fd0e3417a71ad9ce0ea61b32d9cd17bdce414ca',
+        box: [0.0417, 0.0417, 71.5833, 29.9566],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'QuiC',          ref: '5fd0e3417a71ad9ce0ea61b32d9cd17bdce414ca',
+        box: [0.0417, 0.0417, 71.5833, 29.9566],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'Jarvis',        ref: '5fd0e3417a71ad9ce0ea61b32d9cd17bdce414ca',
+        box: [0.0417, 0.0417, 71.5833, 29.9566],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'AeonxIQ',       ref: 'e35ee9e51c72f197dcd30547c51270218a80b07b',
+        box: [0.0417, 0.0417, 71.5833, 34.3578],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'Data Setu.ai',  ref: '5fd0e3417a71ad9ce0ea61b32d9cd17bdce414ca',
+        box: [0.0417, 0.0417, 71.5833, 29.9566],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'Setu Edge',     ref: '5fd0e3417a71ad9ce0ea61b32d9cd17bdce414ca',
+        box: [0.0417, 0.0417, 71.5833, 29.9566],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' }
+      ]
+    },
+    mobile: {
+      weights: false,
+      panes: [
+      { label: 'SupplierX',     ref: '59aaccb6d152a67424f6bd4fbf46df577bdd9ff5',
+        box: [0.0, 1.8605, 92.5581, 60.4651],
+        sizing: 'background-size:92.5581vw 61.4809vw;background-position:-0.0000vw 0.0373vw;background-repeat:no-repeat;' },
+      { label: 'OrderX',        ref: '7f4ebb15712b6e8306e590a80755af65f4e5b1e8',
+        box: [0.0, 1.8605, 92.5581, 68.1395],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'Xpense',        ref: '055a6847a0cb6e745984e1a704db491809493a01',
+        box: [0.0, 1.8605, 92.5581, 52.093],
+        sizing: 'background-size:92.9555vw 125.2189vw;background-position:-0.1834vw -0.0000vw;background-repeat:no-repeat;' },
+      { label: 'ManufeX',       ref: '94d8ee820081df4a95384f2b45e4c0892d857aa0',
+        box: [0.0, 1.8605, 92.5581, 65.814],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'LogytstiX',     ref: '2714267af9e02b4b2ebcea0c1790f496f03e7899',
+        box: [0.0, 1.8605, 92.5581, 61.6279],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'CRM 360',       ref: 'a18023954288f9a1fc4834dd71f70970453a9ea3',
+        box: [0.0, 1.8605, 92.5581, 44.8837],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'Setu Move',     ref: 'ee4434788170addd06348da234f893d00dafa364',
+        box: [0.0, 1.8605, 92.5581, 60.4651],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'QuiC',          ref: '0ccfb371b06ba329344ddc992cf1ae382c8e04a1',
+        box: [0.0, 1.8605, 92.5581, 60.4651],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'Jarvis',        ref: '1747adadc621799435cb0199e2362493ede4a712',
+        box: [0.0, 1.8605, 92.5581, 60.4651],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'AeonxIQ',       ref: 'e35ee9e51c72f197dcd30547c51270218a80b07b',
+        box: [0.0, 1.8605, 92.5581, 44.425],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'Data Setu.ai',  ref: '52e0c2a51736b95c964d9fed3772f646f8c94219',
+        box: [0.0, 1.8605, 92.5581, 60.4651],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'Setu Edge',     ref: '1747adadc621799435cb0199e2362493ede4a712',
+        box: [0.0, 1.8605, 92.5581, 60.4651],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' }
+      ]
+    }
+  };
+
+  var ACTIVE_BORDER = 'rgb(223, 63, 23)', IDLE_BORDER = 'rgb(213, 218, 226)';
+  var ACTIVE_TEXT = 'rgb(35, 39, 46)', IDLE_TEXT = 'rgb(82, 96, 119)';
+
+  function txt(e) { return (e.textContent || '').replace(/\s+/g, ' ').trim(); }
+  function norm(s) { return s.replace(/[^a-z0-9]/gi, '').toLowerCase(); }
+
+  /* Identified by contents, because _gen.py names every one of these layers
+     "Container". _uifx.html title-cases the labels ("QuiC" -> "Quic"), which is why
+     the comparison is on the normalised form. */
+  function findStrips() {
+    var out = [];
+    ['desktop', 'mobile'].forEach(function (key) {
+      var spec = SPEC[key];
+      var want = spec.panes.map(function (p) { return norm(p.label); });
+      [].forEach.call(document.querySelectorAll('.g-b.g-clip'), function (el) {
+        var mob = !!el.closest('.ax-mob');
+        if (mob !== (key === 'mobile')) return;
+        var labels = [].filter.call(el.children, function (c) { return c.classList.contains('g-t'); });
+        if (labels.length !== want.length) return;
+        if (!want.every(function (w, i) { return norm(txt(labels[i])) === w; })) return;
+        out.push({ strip: el, spec: spec, labels: labels });
+      });
+    });
+    return out;
+  }
+
+  function wire(w) {
+    var strip = w.strip, spec = w.spec, labels = w.labels;
+    var boxes = [].filter.call(strip.children, function (c) {
+      return c.classList.contains('g-b') && !c.classList.contains('g-clip');
+    });
+    if (boxes.length !== labels.length) return;
+
+    /* The panel is the image the first variant shipped with. Looking it up by that ref
+       rather than by position means a section reshuffle cannot silently retarget it. */
+    var scope = strip.closest('.ax-mob') || document;
+    var panel = scope.querySelector('.g-img[data-ref="' + spec.panes[0].ref + '"]');
+    if (!panel) return;
+
+    var current = 0, token = 0;
+
+    function apply(i) {
+      var p = spec.panes[i];
+      panel.setAttribute('data-ref', p.ref);
+      panel.style.left = p.box[0] + 'vw';
+      panel.style.top = p.box[1] + 'vw';
+      panel.style.width = p.box[2] + 'vw';
+      panel.style.height = p.box[3] + 'vw';
+      /* The export writes background sizing as a shorthand-free set of longhands; drop
+         the old ones wholesale rather than trying to override each. */
+      panel.style.cssText = panel.style.cssText.replace(
+        /background-size:[^;]*;?|background-position:[^;]*;?|background-repeat:[^;]*;?/g, '');
+      panel.style.backgroundImage = 'url(/assets/gen/' + p.ref + '.png)';
+      panel.style.cssText += ';' + p.sizing;
+    }
+
+    function select(i, animate) {
+      if (animate && i === current) return;
+      current = i;
+      var mine = ++token;
+
+      boxes.forEach(function (b, n) { b.style.borderColor = n === i ? ACTIVE_BORDER : IDLE_BORDER; });
+      labels.forEach(function (l, n) {
+        l.setAttribute('aria-selected', n === i ? 'true' : 'false');
+        l.tabIndex = n === i ? 0 : -1;
+        if (!spec.weights) return;
+        l.style.color = n === i ? ACTIVE_TEXT : IDLE_TEXT;
+        l.style.fontWeight = n === i ? '600' : '400';
+      });
+
+      if (!animate) { apply(i); return; }
+
+      /* Hold the fade open until the screenshot has actually decoded: these are 1-2MB
+         PNGs, and swapping on a fixed timer showed an empty panel on a cold cache. */
+      var ready = false, faded = false;
+      var img = new Image();
+      var swap = function () {
+        if (!ready || !faded || token !== mine) return;
+        apply(i);
+        panel.style.opacity = '1';
+      };
+      img.onload = img.onerror = function () { ready = true; swap(); };
+      img.src = '/assets/gen/' + spec.panes[i].ref + '.png';
+
+      panel.style.opacity = '0';
+      setTimeout(function () { faded = true; swap(); }, 150);
+    }
+
+    strip.setAttribute('role', 'tablist');
+    labels.forEach(function (l, i) {
+      l.classList.add('ax-pt-tab', 'ax-pt-lbl');
+      l.setAttribute('role', 'tab');
+      boxes[i].classList.add('ax-pt-box', 'ax-pt-tab');
+      var go = function (e) { e.preventDefault(); e.stopPropagation(); select(i, true); l.focus(); };
+      l.addEventListener('click', go, true);
+      boxes[i].addEventListener('click', go, true);
+      l.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') return go(e);
+        var d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+        if (!d) return;
+        e.preventDefault();
+        var n = (i + d + labels.length) % labels.length;
+        select(n, true);
+        labels[n].focus();
+        if (labels[n].scrollIntoView) labels[n].scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      });
+    });
+
+    /* The icons sit between the boxes and the labels in the flat export and would
+       otherwise swallow the click. */
+    [].forEach.call(strip.querySelectorAll('.g-vec, .g-img'), function (v) {
+      if (v !== panel) v.style.pointerEvents = 'none';
+    });
+
+    select(0, false);
+    setTimeout(function () { panel.classList.add('ax-pt-panel'); }, 0);
+  }
+
+  function init() { findStrips().forEach(wire); }
+
+  if (document.readyState === 'complete') setTimeout(init, 0);
+  else window.addEventListener('load', function () { setTimeout(init, 0); });
+})();
+</script>
+
 </body>
 </html>

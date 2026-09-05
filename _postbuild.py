@@ -30,6 +30,8 @@ UIFX = open(os.path.join(_HERE, '_uifx.html'), encoding='utf-8').read()
 ANNC = open(os.path.join(_HERE, '_annc.html'), encoding='utf-8').read()
 MOBFX = open(os.path.join(_HERE, '_mobfx.html'), encoding='utf-8').read()
 COOKIE = open(os.path.join(_HERE, '_cookie.html'), encoding='utf-8').read()
+HEROTABS = open(os.path.join(_HERE, '_herotabs.html'), encoding='utf-8').read()
+PRODTABS = open(os.path.join(_HERE, '_prodtabs.html'), encoding='utf-8').read()
 
 # Site-wide fragments, as (sentinel, source filename), for `--refresh` to strip before
 # the injection guards below re-add the edited copy. Order does not matter; each is
@@ -43,6 +45,8 @@ GLOBAL_FRAGMENTS = [
     ('ax-ctawash-css', '_ctawash.html'),
     ('ax-stathov-css', '_stathov.html'),
     ('ax-cookie-css', '_cookie.html'),
+    ('ax-herotabs-css', '_herotabs.html'),
+    ('ax-prodtabs-css', '_prodtabs.html'),
 ]
 
 # Page-scoped fragments. These are big (the contact-form one carries two inert <template>
@@ -195,7 +199,7 @@ def main():
     # caller of this script expects.
     refresh = '--refresh' in sys.argv
     only = [a for a in sys.argv[1:] if not a.startswith('-')]
-    stats = {'gptw': 0, 'mobnav': 0, 'ctawash': 0, 'burst': 0, 'cursor': 0, 'preload': 0, 'navload': 0, 'counters': 0, 'mobfx': 0, 'scoped': 0, 'hover': 0, 'scrollrow': 0, 'cookie': 0, 'refreshed': 0}
+    stats = {'gptw': 0, 'mobnav': 0, 'ctawash': 0, 'burst': 0, 'cursor': 0, 'preload': 0, 'navload': 0, 'counters': 0, 'mobfx': 0, 'scoped': 0, 'hover': 0, 'scrollrow': 0, 'cookie': 0, 'herotabs': 0, 'prodtabs': 0, 'refreshed': 0}
     bids = burst_ids()
     for f in glob.glob('**/index.html', recursive=True) + ['_chrome.html']:
         try:
@@ -250,6 +254,15 @@ def main():
         if 'ax-navload-css' not in s and '</body>' in s:
             s = s.replace('</body>', NAVLOAD + '\n</body>', 1)
             stats['navload'] += 1
+        # After UIFX: its CTA pass stamps role="link" on any short label sitting in a
+        # painted pill, which is exactly what these tabs look like. The tab wiring
+        # undoes that, so it has to run second.
+        if 'ax-herotabs-css' not in s and '</body>' in s:
+            s = s.replace('</body>', HEROTABS + '\n</body>', 1)
+            stats['herotabs'] = stats.get('herotabs', 0) + 1
+        if 'ax-prodtabs-css' not in s and '</body>' in s:
+            s = s.replace('</body>', PRODTABS + '\n</body>', 1)
+            stats['prodtabs'] = stats.get('prodtabs', 0) + 1
         if 'ax-pre-css' not in s and '</head>' in s and '<body>' in s and '</body>' in s:
             s = s.replace('</head>', PRE_HEAD + '\n</head>', 1)
             s = s.replace('<body>', '<body>\n' + PRE_BODY, 1)
