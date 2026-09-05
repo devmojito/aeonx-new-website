@@ -33,6 +33,7 @@ COOKIE = open(os.path.join(_HERE, '_cookie.html'), encoding='utf-8').read()
 HEROTABS = open(os.path.join(_HERE, '_herotabs.html'), encoding='utf-8').read()
 PRODTABS = open(os.path.join(_HERE, '_prodtabs.html'), encoding='utf-8').read()
 TESTICARDS = open(os.path.join(_HERE, '_testicards.html'), encoding='utf-8').read()
+PTGLOW = open(os.path.join(_HERE, '_ptglow.html'), encoding='utf-8').read()
 
 # Site-wide fragments, as (sentinel, source filename), for `--refresh` to strip before
 # the injection guards below re-add the edited copy. Order does not matter; each is
@@ -49,6 +50,7 @@ GLOBAL_FRAGMENTS = [
     ('ax-herotabs-css', '_herotabs.html'),
     ('ax-prodtabs-css', '_prodtabs.html'),
     ('ax-testicards-css', '_testicards.html'),
+    ('ax-ptglow-css', '_ptglow.html'),
 ]
 
 # Page-scoped fragments. These are big (the contact-form one carries two inert <template>
@@ -201,7 +203,7 @@ def main():
     # caller of this script expects.
     refresh = '--refresh' in sys.argv
     only = [a for a in sys.argv[1:] if not a.startswith('-')]
-    stats = {'gptw': 0, 'mobnav': 0, 'ctawash': 0, 'burst': 0, 'cursor': 0, 'preload': 0, 'navload': 0, 'counters': 0, 'mobfx': 0, 'scoped': 0, 'hover': 0, 'scrollrow': 0, 'cookie': 0, 'herotabs': 0, 'prodtabs': 0, 'testicards': 0, 'refreshed': 0}
+    stats = {'gptw': 0, 'mobnav': 0, 'ctawash': 0, 'burst': 0, 'cursor': 0, 'preload': 0, 'navload': 0, 'counters': 0, 'mobfx': 0, 'scoped': 0, 'hover': 0, 'scrollrow': 0, 'cookie': 0, 'herotabs': 0, 'prodtabs': 0, 'testicards': 0, 'ptglow': 0, 'refreshed': 0}
     bids = burst_ids()
     for f in glob.glob('**/index.html', recursive=True) + ['_chrome.html']:
         try:
@@ -268,6 +270,9 @@ def main():
         if 'ax-testicards-css' not in s and '</body>' in s:
             s = s.replace('</body>', TESTICARDS + '\n</body>', 1)
             stats['testicards'] = stats.get('testicards', 0) + 1
+        if 'ax-ptglow-css' not in s and '</body>' in s:
+            s = s.replace('</body>', PTGLOW + '\n</body>', 1)
+            stats['ptglow'] = stats.get('ptglow', 0) + 1
         if 'ax-pre-css' not in s and '</head>' in s and '<body>' in s and '</body>' in s:
             s = s.replace('</head>', PRE_HEAD + '\n</head>', 1)
             s = s.replace('<body>', '<body>\n' + PRE_BODY, 1)

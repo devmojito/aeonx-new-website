@@ -4792,6 +4792,29 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 
+<!-- Carried out of index.html when the V2 design became the homepage. It was baked
+     into that one file, which meant the first regeneration would have dropped it.
+     Its target survives the redesign: the partner-tiers disc is still in the mobile
+     block, matched on inline geometry rather than a class because _mobile.py rewrites
+     that whole block on every build. -->
+<style id="ax-ptglow-css">
+/* Partner tiers, mobile: Figma renders a thick blurred blue-grey donut inside this
+   disc with a bright white core. It is an inner shadow, and the REST API reports
+   effects:[] for that node (the same quirk that hid it the first time) -- an export
+   of the node alone comes back flat, while an export of the whole section shows the
+   glow. So it is painted here instead of fetched. Matched on the disc's own inline
+   geometry rather than a class, because _mobile.py rewrites the whole .ax-mob block
+   on every build and would drop any class added to it. */
+.ax-mob .g-b[style*="width:135.2663vw"][style*="border-radius:4651"]{
+  background-image:radial-gradient(circle at 50% 50%,
+    #ffffff 0%, #ffffff 25%,
+    rgba(255,255,255,0.97) 31%,
+    rgba(188,201,222,0.88) 47%,
+    rgba(206,216,232,0.55) 60%,
+    rgba(233,237,243,0.18) 70%,
+    rgba(246,247,249,0) 78%)}
+</style>
+
 <style id="ax-prodtabs-css">
 /* 300ms / EASE_OUT again: every `Tab` node in both Container (Products) sets carries
    transitionDuration 300 and transitionEasing EASE_OUT. */
@@ -4955,7 +4978,11 @@ document.addEventListener("DOMContentLoaded",function(){
     /* The panel is the image the first variant shipped with. Looking it up by that ref
        rather than by position means a section reshuffle cannot silently retarget it. */
     var scope = strip.closest('.ax-mob') || document;
-    var panel = scope.querySelector('.g-img[data-ref="' + spec.panes[0].ref + '"]');
+    /* The attribute value is quoted by JSON.stringify rather than by literal quote
+       characters in the source. _gen.py's export report and _imgfetch.py both scan the
+       whole page for the raster-fill attribute pattern, and a selector written the
+       obvious way is picked up as if it were a real image reference. */
+    var panel = scope.querySelector('.g-img[data-ref=' + JSON.stringify(spec.panes[0].ref) + ']');
     if (!panel) return;
 
     var current = 0, token = 0;

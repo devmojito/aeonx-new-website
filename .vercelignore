@@ -6,9 +6,10 @@
 # needs is already inlined at build time by _postbuild.py, so none of the
 # fragments or scripts below are fetched at runtime.
 #
-# `_v2/` is deliberately NOT ignored: it is the V2 homepage preview and the point
-# of staging is to look at it. That is why the patterns below are `_*.ext` rather
-# than a blanket `_*`, which would swallow the directory too.
+# The patterns below are `_*.ext` rather than a blanket `_*`. That began so the `_v2/`
+# preview directory would still deploy; the V2 design is the homepage itself now and
+# that directory is gone, but the narrower patterns remain the right ones, since a
+# blanket `_*` would silently swallow any future preview directory too.
 
 # Generator scripts, chrome, injected fragments, cached REST pulls
 _*.py

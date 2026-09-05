@@ -161,7 +161,11 @@
     /* The panel is the image the first variant shipped with. Looking it up by that ref
        rather than by position means a section reshuffle cannot silently retarget it. */
     var scope = strip.closest('.ax-mob') || document;
-    var panel = scope.querySelector('.g-img[data-ref="' + spec.panes[0].ref + '"]');
+    /* The attribute value is quoted by JSON.stringify rather than by literal quote
+       characters in the source. _gen.py's export report and _imgfetch.py both scan the
+       whole page for the raster-fill attribute pattern, and a selector written the
+       obvious way is picked up as if it were a real image reference. */
+    var panel = scope.querySelector('.g-img[data-ref=' + JSON.stringify(spec.panes[0].ref) + ']');
     if (!panel) return;
 
     var current = 0, token = 0;

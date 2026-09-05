@@ -3,11 +3,13 @@
 Dual-layout: CSS hides everything but .ax-mob under 768px.
 Reuses _gen.build_body with FACTOR monkeypatched to mobile scale.
 Usage: python3 _mobile.py [--dry]            (--dry only prints frame->route mapping)
-       python3 _mobile.py --only 5637:45944 --out _v2/index.html
+       python3 _mobile.py --only 5637:45944 --out index.html
 
---only restricts the build to one mobile frame and --out overrides where its block
-is injected. Both exist so the V2 homepage preview can carry its own mobile layout
-without rewriting the live index.html, which is hand-managed.
+--only restricts the build to one mobile frame; --out overrides where its block is
+injected. They exist so the homepage can be rebuilt on its own: a plain run rewrites
+all 40 mobile pages, which is a lot of churn when only one frame has moved. The
+homepage's own route already resolves to index.html via OVERRIDE, so --out is only
+needed when writing somewhere other than a frame's mapped route.
 """
 import json, re, os, sys
 import _gen

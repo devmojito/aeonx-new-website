@@ -1039,7 +1039,11 @@ def main():
     main_open = f'<main class="ax-page" style="height:{vw(page_h_px)}">'
     html_out = top + '\n' + main_open + '\n' + body + '\n' + footer + '\n' + bottom
     import os
-    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    # dirname is '' for a bare filename, which makedirs rejects. Every generated page
+    # used to live in a subdirectory, so this only shows up once the homepage itself
+    # is generated to index.html at the repo root.
+    if os.path.dirname(out_path):
+        os.makedirs(os.path.dirname(out_path), exist_ok=True)
     open(out_path, 'w', encoding='utf-8').write(html_out)
     # report image refs needing export
     refs = set(re.findall(r'data-ref="([^"]+)"', html_out))
