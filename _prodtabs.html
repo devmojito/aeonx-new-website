@@ -233,6 +233,8 @@
       });
     });
 
+    unclip(strip, boxes);
+
     /* The icons sit between the boxes and the labels in the flat export and would
        otherwise swallow the click. */
     [].forEach.call(strip.querySelectorAll('.g-vec, .g-img'), function (v) {
@@ -241,6 +243,50 @@
 
     select(0, false);
     setTimeout(function () { panel.classList.add('ax-pt-panel'); }, 0);
+  }
+
+  /* Figma's own strip clips two of its tabs, and the export reproduces it faithfully.
+     The QuiC tab is 5.6px taller than the row because its logo carries a strapline,
+     and the Setu Edge tab's right edge lands exactly on the strip's, so overflow:hidden
+     eats one border off each. The strip paints nothing itself -- no background, no
+     border of its own -- so adjusting its clip box is invisible, and nothing sits to
+     its right. */
+  function unclip(strip, boxes) {
+    var W = parseFloat(strip.style.width), H = parseFloat(strip.style.height);
+    if (isNaN(W) || isNaN(H)) return;
+
+    var maxRight = 0;
+    boxes.forEach(function (b) {
+      maxRight = Math.max(maxRight, parseFloat(b.style.left) + parseFloat(b.style.width));
+    });
+    /* Only when the row actually fits. The mobile strip is a horizontal scroller whose
+       tabs are meant to run well past its edge; widening that would defeat it. */
+    if (maxRight > W + 0.5) return;
+
+    /* A hair over, so the last tab's border is not lost to sub-pixel rounding at the
+       clip boundary. box-sizing draws it inside the tab, so it fits arithmetically and
+       only rounding takes it. */
+    strip.style.width = (W + 0.05).toFixed(4) + 'vw';
+
+    boxes.forEach(function (b) {
+      var h = parseFloat(b.style.height);
+      if (isNaN(h) || h <= H + 1e-6) return;
+      /* Bring the tall tab back to the row height rather than growing the strip: the
+         panel sits flush under the strip, so a taller strip would drop that border on
+         top of it. Figma grew the box symmetrically, so its icon and label sit half the
+         difference low and read as misaligned against the other eleven -- lift them by
+         the same half so the whole row lines up. */
+      var shift = (h - H) / 2;
+      var l = parseFloat(b.style.left), w = parseFloat(b.style.width);
+      [].forEach.call(strip.children, function (c) {
+        if (c === b) return;
+        var cl = parseFloat(c.style.left);
+        if (isNaN(cl) || cl < l - 0.01 || cl > l + w + 0.01) return;
+        var ct = parseFloat(c.style.top);
+        if (!isNaN(ct)) c.style.top = (ct - shift).toFixed(4) + 'vw';
+      });
+      b.style.height = H.toFixed(4) + 'vw';
+    });
   }
 
   function init() { findStrips().forEach(wire); }
