@@ -5634,10 +5634,11 @@ document.addEventListener("DOMContentLoaded",function(){
    this swaps the panel's background image and moves the active border, rather than
    shipping twelve copies of the section.
 
-   The tables are generated, not hand-typed. `box` is the image rectangle relative to
-   its clipping panel and `sizing` is _gen.image_sizing_css() for that fill, so each
-   crop matches what a static export of that variant would have produced. Regenerate by
-   walking the component set and reading the first IMAGE fill under 'Tab Panel:margin'.
+   The tables are generated, not hand-typed. `size` is the image rectangle's width and
+   height, and `sizing` is _gen.image_sizing_css() for that fill, so each crop matches
+   what a static export of that variant would have produced. Regenerate by walking the
+   component set and reading the first IMAGE fill under 'Tab Panel:margin'. Position is
+   deliberately absent: see apply().
 
    Desktop currently reuses ONE placeholder screenshot for Setu Move, QuiC, Jarvis,
    Data Setu.ai and Setu Edge; mobile has real shots for all but Setu Edge. That is a
@@ -5651,40 +5652,40 @@ document.addEventListener("DOMContentLoaded",function(){
       weights: true,
       panes: [
       { label: 'SupplierX',     ref: '59aaccb6d152a67424f6bd4fbf46df577bdd9ff5',
-        box: [0.0417, 0.0417, 71.6146, 46.8229],
+        size: [71.6146, 46.8229],
         sizing: 'background-size:71.6146vw 47.6095vw;background-position:-0.0000vw 0.0289vw;background-repeat:no-repeat;' },
       { label: 'OrderX',        ref: '7f4ebb15712b6e8306e590a80755af65f4e5b1e8',
-        box: [0.0417, 0.0417, 71.5833, 52.6933],
+        size: [71.5833, 52.6933],
         sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
       { label: 'Xpense',        ref: '055a6847a0cb6e745984e1a704db491809493a01',
-        box: [0.0417, 0.0417, 71.6146, 40.3125],
+        size: [71.6146, 40.3125],
         sizing: 'background-size:71.9220vw 96.9014vw;background-position:-0.1419vw -0.0000vw;background-repeat:no-repeat;' },
       { label: 'ManufeX',       ref: '94d8ee820081df4a95384f2b45e4c0892d857aa0',
-        box: [0.0417, 0.0417, 71.6146, 50.9375],
+        size: [71.6146, 50.9375],
         sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
       { label: 'LogytstiX',     ref: '2714267af9e02b4b2ebcea0c1790f496f03e7899',
-        box: [0.0417, 0.0417, 71.6146, 47.6562],
+        size: [71.6146, 47.6562],
         sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
       { label: 'CRM 360',       ref: 'a18023954288f9a1fc4834dd71f70970453a9ea3',
-        box: [0.0417, 0.0417, 71.6146, 34.6875],
+        size: [71.6146, 34.6875],
         sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
       { label: 'Setu Move',     ref: '5fd0e3417a71ad9ce0ea61b32d9cd17bdce414ca',
-        box: [0.0417, 0.0417, 71.5833, 29.9566],
+        size: [71.5833, 29.9566],
         sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
       { label: 'QuiC',          ref: '5fd0e3417a71ad9ce0ea61b32d9cd17bdce414ca',
-        box: [0.0417, 0.0417, 71.5833, 29.9566],
+        size: [71.5833, 29.9566],
         sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
       { label: 'Jarvis',        ref: '5fd0e3417a71ad9ce0ea61b32d9cd17bdce414ca',
-        box: [0.0417, 0.0417, 71.5833, 29.9566],
+        size: [71.5833, 29.9566],
         sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
       { label: 'AeonxIQ',       ref: 'e35ee9e51c72f197dcd30547c51270218a80b07b',
-        box: [0.0417, 0.0417, 71.5833, 34.3578],
+        size: [71.5833, 34.3578],
         sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
       { label: 'Data Setu.ai',  ref: '5fd0e3417a71ad9ce0ea61b32d9cd17bdce414ca',
-        box: [0.0417, 0.0417, 71.5833, 29.9566],
+        size: [71.5833, 29.9566],
         sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
       { label: 'Setu Edge',     ref: '5fd0e3417a71ad9ce0ea61b32d9cd17bdce414ca',
-        box: [0.0417, 0.0417, 71.5833, 29.9566],
+        size: [71.5833, 29.9566],
         sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' }
       ]
     },
@@ -5692,40 +5693,40 @@ document.addEventListener("DOMContentLoaded",function(){
       weights: false,
       panes: [
       { label: 'SupplierX',     ref: '59aaccb6d152a67424f6bd4fbf46df577bdd9ff5',
-        box: [0.0, 1.8605, 92.5581, 60.4651],
+        size: [92.5581, 60.4651],
         sizing: 'background-size:92.5581vw 61.4809vw;background-position:-0.0000vw 0.0373vw;background-repeat:no-repeat;' },
       { label: 'OrderX',        ref: '7f4ebb15712b6e8306e590a80755af65f4e5b1e8',
-        box: [0.0, 1.8605, 92.5581, 68.1395],
+        size: [92.5581, 68.1395],
         sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
       { label: 'Xpense',        ref: '055a6847a0cb6e745984e1a704db491809493a01',
-        box: [0.0, 1.8605, 92.5581, 52.093],
+        size: [92.5581, 52.093],
         sizing: 'background-size:92.9555vw 125.2189vw;background-position:-0.1834vw -0.0000vw;background-repeat:no-repeat;' },
       { label: 'ManufeX',       ref: '94d8ee820081df4a95384f2b45e4c0892d857aa0',
-        box: [0.0, 1.8605, 92.5581, 65.814],
+        size: [92.5581, 65.814],
         sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
       { label: 'LogytstiX',     ref: '2714267af9e02b4b2ebcea0c1790f496f03e7899',
-        box: [0.0, 1.8605, 92.5581, 61.6279],
+        size: [92.5581, 61.6279],
         sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
       { label: 'CRM 360',       ref: 'a18023954288f9a1fc4834dd71f70970453a9ea3',
-        box: [0.0, 1.8605, 92.5581, 44.8837],
+        size: [92.5581, 44.8837],
         sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
       { label: 'Setu Move',     ref: 'ee4434788170addd06348da234f893d00dafa364',
-        box: [0.0, 1.8605, 92.5581, 60.4651],
+        size: [92.5581, 60.4651],
         sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
       { label: 'QuiC',          ref: '0ccfb371b06ba329344ddc992cf1ae382c8e04a1',
-        box: [0.0, 1.8605, 92.5581, 60.4651],
+        size: [92.5581, 60.4651],
         sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
       { label: 'Jarvis',        ref: '1747adadc621799435cb0199e2362493ede4a712',
-        box: [0.0, 1.8605, 92.5581, 60.4651],
+        size: [92.5581, 60.4651],
         sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
       { label: 'AeonxIQ',       ref: 'e35ee9e51c72f197dcd30547c51270218a80b07b',
-        box: [0.0, 1.8605, 92.5581, 44.425],
+        size: [92.5581, 44.425],
         sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
       { label: 'Data Setu.ai',  ref: '52e0c2a51736b95c964d9fed3772f646f8c94219',
-        box: [0.0, 1.8605, 92.5581, 60.4651],
+        size: [92.5581, 60.4651],
         sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
       { label: 'Setu Edge',     ref: '1747adadc621799435cb0199e2362493ede4a712',
-        box: [0.0, 1.8605, 92.5581, 60.4651],
+        size: [92.5581, 60.4651],
         sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' }
       ]
     }
@@ -5779,10 +5780,16 @@ document.addEventListener("DOMContentLoaded",function(){
     function apply(i) {
       var p = spec.panes[i];
       panel.setAttribute('data-ref', p.ref);
-      panel.style.left = p.box[0] + 'vw';
-      panel.style.top = p.box[1] + 'vw';
-      panel.style.width = p.box[2] + 'vw';
-      panel.style.height = p.box[3] + 'vw';
+      /* Size only. The panel's left/top are NOT set here, and must not be: every one
+         of the twelve variants shares a single box origin, so there was never anything
+         to switch, and the value is relative to the Figma node that clips the panel
+         rather than to the element's DOM offset parent. On desktop those happen to be
+         the same node and writing it looked harmless; on mobile they are not, and it
+         threw the panel to the top of the page, where it sat behind the fixed navbar
+         and peeked out above and below it. The generator already places this element
+         correctly for every variant. */
+      panel.style.width = p.size[0] + 'vw';
+      panel.style.height = p.size[1] + 'vw';
       /* The export writes background sizing as a shorthand-free set of longhands; drop
          the old ones wholesale rather than trying to override each. */
       panel.style.cssText = panel.style.cssText.replace(
