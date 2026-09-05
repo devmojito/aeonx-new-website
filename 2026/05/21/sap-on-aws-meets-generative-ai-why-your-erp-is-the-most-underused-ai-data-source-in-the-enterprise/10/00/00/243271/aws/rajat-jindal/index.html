@@ -5598,13 +5598,40 @@ document.addEventListener("DOMContentLoaded",function(){
     }
 
     strip.setAttribute('role', 'tablist');
+
+    /* One capture listener on the strip rather than one per tab. _uifx.html's CTA pass
+       binds its own click handler to whichever labels it decides are links -- here it
+       claimed SupplierX, OrderX, Xpense and ManufeX -- and it is injected first, so a
+       per-label listener of ours is registered second and never sees the event. Capture
+       runs outermost-in, so a listener on their shared ancestor beats all of them.
+
+       This is why those four tabs did nothing. It went unnoticed because the obvious
+       test walks the tabs in order, and clicking tab 0 while tab 0 is already selected
+       is indistinguishable from a tab that works. */
+    strip.addEventListener('click', function (e) {
+      var t = e.target, idx = -1;
+      while (t && t !== strip && idx < 0) {
+        idx = labels.indexOf(t);
+        if (idx < 0) idx = boxes.indexOf(t);
+        t = t.parentElement;
+      }
+      if (idx < 0) return;
+      e.preventDefault();
+      e.stopPropagation();
+      select(idx, true);
+      labels[idx].focus();
+    }, true);
+
     labels.forEach(function (l, i) {
       l.classList.add('ax-pt-tab', 'ax-pt-lbl');
       l.setAttribute('role', 'tab');
       boxes[i].classList.add('ax-pt-box', 'ax-pt-tab');
-      var go = function (e) { e.preventDefault(); e.stopPropagation(); select(i, true); l.focus(); };
-      l.addEventListener('click', go, true);
-      boxes[i].addEventListener('click', go, true);
+      /* Undo the CTA pass's own treatment so these read as tabs, not links. */
+      l.classList.remove('ax-fx-link');
+      boxes[i].classList.remove('ax-fx-link');
+      if (boxes[i].getAttribute('role') === 'link') boxes[i].removeAttribute('role');
+      if (l.getAttribute('href') === '#') l.removeAttribute('href');
+      var go = function (e) { e.preventDefault(); select(i, true); l.focus(); };
       l.addEventListener('keydown', function (e) {
         if (e.key === 'Enter' || e.key === ' ') return go(e);
         var d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
@@ -5618,6 +5645,7 @@ document.addEventListener("DOMContentLoaded",function(){
     });
 
     unclip(strip, boxes);
+    alignRow(strip, boxes, labels);
 
     /* The icons sit between the boxes and the labels in the flat export and would
        otherwise swallow the click. */
@@ -5670,6 +5698,59 @@ document.addEventListener("DOMContentLoaded",function(){
         if (!isNaN(ct)) c.style.top = (ct - shift).toFixed(4) + 'vw';
       });
       b.style.height = H.toFixed(4) + 'vw';
+    });
+  }
+
+  /* The most common value in a list, used to decide what "the row" is rather than
+     trusting tab 0: whichever metric ten or eleven of the twelve tabs share is the
+     row, and the odd ones out are the slips. */
+  function modal(vals) {
+    var n = {}, best = null;
+    vals.forEach(function (v) {
+      if (v == null) return;
+      n[v] = (n[v] || 0) + 1;
+      if (best === null || n[v] > n[best]) best = v;
+    });
+    return best;
+  }
+
+  /* Setu Edge is drawn to different metrics than the other eleven: its icon box is
+     28px where theirs are 36, and because the box is shorter its label sits 4px above
+     the row. The icon is centred correctly, so only its size is wrong; the label is
+     genuinely out of line, and that is what reads as a misaligned cell. */
+  function alignRow(strip, boxes, labels) {
+    var lt = modal(labels.map(function (l) { return l.style.top; }));
+    if (lt) labels.forEach(function (l) { if (l.style.top !== lt) l.style.top = lt; });
+
+    /* One icon element per tab, found by horizontal containment. Some mobile tabs nest
+       their art deeper than the strip's own children, so those resolve to nothing and
+       are left alone rather than guessed at. */
+    var icons = boxes.map(function (b) {
+      var l = parseFloat(b.style.left), w = parseFloat(b.style.width);
+      var hits = [].filter.call(strip.children, function (c) {
+        if (c === b || c.classList.contains('g-t') || c.classList.contains('ax-pt-box')) return false;
+        var cl = parseFloat(c.style.left);
+        return !isNaN(cl) && cl >= l - 0.01 && cl <= l + w + 0.01;
+      });
+      return hits.length === 1 ? hits[0] : null;
+    });
+
+    /* Height, not width: the QuiC logo is legitimately wider than the rest because it
+       carries a strapline, and it already matches the row's height. */
+    var ih = modal(icons.map(function (i) { return i && i.style.height; }));
+    if (!ih) return;
+    icons.forEach(function (ic) {
+      if (!ic || ic.style.height === ih) return;
+      var h = parseFloat(ic.style.height), w = parseFloat(ic.style.width);
+      var t = parseFloat(ic.style.top), l = parseFloat(ic.style.left);
+      var nh = parseFloat(ih);
+      if (isNaN(h) || isNaN(w) || isNaN(t) || isNaN(l) || !h) return;
+      var nw = w * (nh / h);
+      /* Grow about the centre it already sits on, so the row's optical line holds. */
+      ic.style.height = nh.toFixed(4) + 'vw';
+      ic.style.width = nw.toFixed(4) + 'vw';
+      ic.style.top = (t - (nh - h) / 2).toFixed(4) + 'vw';
+      ic.style.left = (l - (nw - w) / 2).toFixed(4) + 'vw';
     });
   }
 
