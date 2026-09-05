@@ -51,3 +51,5 @@ AeonX-Deployment-Architecture.pdf
 # Agent worktrees: a full duplicate of the repo. Left untracked it also skews any
 # page/asset count that walks the tree (it doubled the static-site figures once).
 .claude/worktrees/
+.vercel
+.env*
