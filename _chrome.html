@@ -1697,6 +1697,8 @@ document.addEventListener("DOMContentLoaded",function(){
       mTop = tabs[0].T + tabs[0].H + 4;
       mBot = ctrl ? ctrl.T - 4 : bottom + 140;
     }
+    var byEl = new Map();
+    box.forEach(function(b){ byEl.set(b.el, b); });
     var slides = box.filter(function(b){
       if (b.el.parentElement !== host) return false;
       if (ctrl && b.el === ctrl.el) return false;
@@ -1709,6 +1711,29 @@ document.addEventListener("DOMContentLoaded",function(){
       var k = Math.floor((b.L - cols[0]) / stride);
       return k >= 0 && k < count && Math.abs((b.L - cols[0]) - k * stride) < stride * 0.9;
     }).map(function(b){ return b.el; });
+    /* Completeness pass, BEFORE anything moves. The column test above decides
+       membership from a stride derived by heuristic, and when it drops one box the row
+       tears in half: the slide's copy travels and its white plate stays, or the
+       reverse. The homepage's Business AI row lost the plates for cards 3 and 4, and
+       the row above it lost the plate for card 3 only, so the failure is not even a
+       clean "everything past column N".
+
+       The comment below already states the lesson: nothing should be deciding which
+       boxes move. Every direct child of host sharing the row's vertical band is part
+       of the row, so take it. Bounded by width, because a band-wide box at the same
+       top is the row's backdrop or its art, not a slide.
+
+       This has to merge into `slides` rather than adopt afterwards: the move order is
+       the paint order, so a plate appended after the text it sits behind covers it. */
+    var picked = new Set(slides);
+    [].slice.call(host.children).forEach(function(e){
+      if (picked.has(e) || (ctrl && e === ctrl.el)) return;
+      var b = byEl.get(e);
+      if (!b || !b.W || b.W > stride * 1.15) return;
+      if (b.T < mTop || b.T > mBot) return;
+      slides.push(e);
+    });
+
     if (slides.length < 2) return;
     /* DOM order, so moving them into the track cannot change what paints over what */
     slides.sort(function(a, b){
@@ -1720,6 +1745,19 @@ document.addEventListener("DOMContentLoaded",function(){
     track.dataset.axRow = rowId;
     host.insertBefore(track, slides[0]);
     slides.forEach(function(e){ e.classList.add('ax-carm'); track.appendChild(e); });
+
+    /* Completeness pass: adopt anything still sitting in the row's own band.
+       The column test above decides membership from a stride derived by heuristic,
+       and when it drops one box the row tears in half -- the slide's copy travels
+       and its white plate stays, or the reverse. The homepage's Business AI row lost
+       the plates for cards 3 and 4, and the row above it lost the plate for card 3
+       only, so the failure is not even a clean "everything past column N".
+
+       The comment above this block already says the lesson: nothing should be
+       deciding which boxes move. Every remaining direct child of host that shares
+       the row's vertical band is part of the row by construction, so take it. Bounded
+       by width, because a band-wide box at the same top is the row's own backdrop or
+       art, not a slide. */
 
     var i = tabs ? 0 : startIdx;         /* tabbed bands open on the FIRST tab */
     var userTook = false;
