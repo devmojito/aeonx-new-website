@@ -36,6 +36,7 @@ TESTICARDS = open(os.path.join(_HERE, '_testicards.html'), encoding='utf-8').rea
 PTGLOW = open(os.path.join(_HERE, '_ptglow.html'), encoding='utf-8').read()
 PTORBIT = open(os.path.join(_HERE, '_ptorbit.html'), encoding='utf-8').read()
 TCMQ = open(os.path.join(_HERE, '_tcmq.html'), encoding='utf-8').read()
+FRPAGER = open(os.path.join(_HERE, '_frpager.html'), encoding='utf-8').read()
 
 # Site-wide fragments, as (sentinel, source filename), for `--refresh` to strip before
 # the injection guards below re-add the edited copy. Order does not matter; each is
@@ -55,6 +56,7 @@ GLOBAL_FRAGMENTS = [
     ('ax-ptglow-css', '_ptglow.html'),
     ('ax-ptorbit-css', '_ptorbit.html'),
     ('ax-tcmq-css', '_tcmq.html'),
+    ('ax-frp-css', '_frpager.html'),
 ]
 
 # Page-scoped fragments. These are big (the contact-form one carries two inert <template>
@@ -283,6 +285,9 @@ def main():
         if 'ax-tcmq-css' not in s and '</body>' in s:
             s = s.replace('</body>', TCMQ + '\n</body>', 1)
             stats['tcmq'] = stats.get('tcmq', 0) + 1
+        if 'ax-frp-css' not in s and '</body>' in s:
+            s = s.replace('</body>', FRPAGER + '\n</body>', 1)
+            stats['frpager'] = stats.get('frpager', 0) + 1
         if 'ax-pre-css' not in s and '</head>' in s and '<body>' in s and '</body>' in s:
             s = s.replace('</head>', PRE_HEAD + '\n</head>', 1)
             s = s.replace('<body>', '<body>\n' + PRE_BODY, 1)

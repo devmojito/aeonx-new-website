@@ -9,10 +9,16 @@
 .ax-ptorb{position:absolute;left:0;top:0;width:100%;height:100%;
   pointer-events:none;transform-origin:var(--ax-orb-x,50%) var(--ax-orb-y,50%);
   animation:ax-ptorb-spin 72s linear infinite;will-change:transform}
+/* --ax-b0 is the badge's OWN rotation, which the export writes inline as a
+   transform. A keyframe replaces transform outright, so without folding that angle
+   into the animation the counter-rotation would wipe it and every badge would ride
+   the ring tilted. */
 .ax-ptorb-b{transform-origin:50% 50%;pointer-events:auto;
   animation:ax-ptorb-rev 72s linear infinite;will-change:transform}
 @keyframes ax-ptorb-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-@keyframes ax-ptorb-rev{from{transform:rotate(0deg)}to{transform:rotate(-360deg)}}
+@keyframes ax-ptorb-rev{
+  from{transform:rotate(calc(var(--ax-b0,0deg)))}
+  to{transform:rotate(calc(var(--ax-b0,0deg) - 360deg))}}
 /* Rest on hover so a logo can actually be read and clicked. */
 .ax-ptorb:hover,.ax-ptorb:hover .ax-ptorb-b{animation-play-state:paused}
 @media (prefers-reduced-motion:reduce){
@@ -116,6 +122,28 @@
     /* Insert where the first badge was, so paint order over the disc is unchanged. */
     host.insertBefore(orb, r.badges[0]);
     r.badges.forEach(function (b) { b.classList.add('ax-ptorb-b'); orb.appendChild(b); });
+
+    /* Round the plates. In Figma each badge is a `Link` frame with cornerRadius 500,
+       a circle, holding a square `Background` rectangle that the frame clips away. The
+       export flattens that: the plate ships as a bare square with no radius and no
+       clipping wrapper, so its corners stick out past the circular badge. Static, that
+       reads as a faint grey box behind each logo; rotating, any drift between the
+       wrapper's animation and a plate's own counter-rotation shows as a visibly tilted
+       square. A circle has neither problem, and it is what the design specifies.
+
+       Only the plates: sized off the largest piece on the ring, so the logo sitting on
+       top of each plate is left alone. */
+    var maxW = 0;
+    r.badges.forEach(function (b) { maxW = Math.max(maxW, num(b, 'width') || 0); });
+    r.badges.forEach(function (b) {
+      var w = num(b, 'width');
+      if (w && w >= maxW - 0.01) b.style.borderRadius = '50%';
+      /* Hand the badge's own angle to the counter-rotation keyframes, then drop the
+         inline transform so the animation is the only thing writing it. */
+      var m = /rotate\((-?[\d.]+)deg\)/.exec(b.style.transform || '');
+      b.style.setProperty('--ax-b0', (m ? m[1] : '0') + 'deg');
+      b.style.transform = '';
+    });
     return true;
   }
 

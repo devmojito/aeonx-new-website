@@ -138,6 +138,12 @@
       box.style.top = newTop.toFixed(4) + 'vw';
       box.style.height = (top + h - newTop).toFixed(4) + 'vw';
       q.style.height = box.style.height;
+      /* Figma parks the body a little ABOVE its own clip (top:-0.4948vw on desktop,
+         -2.2093vw on mobile) because the placeholder was meant to overflow and the
+         designer pulled the first line up to the card's rule. The box clips, so the
+         top of the first line was being sliced off. Nothing sits above the body now
+         that the window has grown, so start it at the window's own edge. */
+      if ((parseFloat(q.style.top) || 0) < 0) q.style.top = '0vw';
       box.dataset.axGrown = '1';
     });
     return quotes.length;

@@ -736,6 +736,13 @@ def solve_local_size(W, H, a, b, c, d):
         return W, H
     return w, h
 
+def add_style(html, extra):
+    """Append declarations to the first style="..." of an emitted element."""
+    if not extra or not html:
+        return html
+    return html.replace('style="', 'style="' + extra, 1)
+
+
 def emit_rotated(n, ox, oy):
     """Reconstruct a transformed raster container (e.g. the tilted logo cards) as
     a CSS-transformed wrapper whose children are placed in its local frame.
@@ -782,14 +789,15 @@ def emit_rotated(n, ox, oy):
             klass += ' g-clip'
     out = [f'<div class="{klass}"{extra} style="{style}">']
 
-    def place(m):
+    def place(m, acc=0.0):
         if m is not n and m.get('visible', True) is False:
             return
         if m is n:
             for ch in m.get('children', []):
-                place(ch)
+                place(ch, 0.0)
             return
         mt = m.get('type')
+        mth = acc + (m.get('rotation') or 0.0)
         mbb = m.get('absoluteBoundingBox')
         if mbb:
             if abs(det) < 1e-9:
@@ -798,12 +806,30 @@ def emit_rotated(n, ox, oy):
             dy = (mbb['y'] + mbb['height'] / 2.0) - ory
             lxc = (d * dx - c * dy) / det                   # M^-1 * (dx, dy)
             lyc = (-b * dx + a * dy) / det
-            lw, lh = solve_local_size(mbb['width'], mbb['height'], a, b, c, d)
+            # A child may carry a rotation of its own ON TOP of the wrapper's. The
+            # docstring's "children carry no transform of their own" holds for the
+            # tilted logo cards this was written for, but not everywhere: the
+            # featured-review rail is a Paragraph frame at 180 deg holding its label
+            # at a further 90 deg, and the export was solving that label's size
+            # against the wrapper alone. A 148x24 line of text came out as a 24x148
+            # column, so "FEATURED REVIEW" wrapped one or two letters per line and
+            # read as a garbled block. absoluteBoundingBox is the AABB of the NET
+            # transform, so solve against wrapper x child and re-apply the child's
+            # own angle in the wrapper's local frame.
+            if abs(mth) > 0.01:
+                cm, sm = math.cos(mth), math.sin(mth)
+                na, nb = a * cm + c * sm, b * cm + d * sm
+                nc, nd = c * cm - a * sm, d * cm - b * sm
+                lw, lh = solve_local_size(mbb['width'], mbb['height'], na, nb, nc, nd)
+            else:
+                lw, lh = solve_local_size(mbb['width'], mbb['height'], a, b, c, d)
             ll, lt = lxc - lw / 2.0, lyc - lh / 2.0
+            spin = (f"transform:rotate({math.degrees(mth):.4f}deg);"
+                    f"transform-origin:50% 50%;") if abs(mth) > 0.01 else ''
             if mt == 'TEXT':
-                out.append(emit_text(m, ll, lt, lw, lh)); return
+                out.append(add_style(emit_text(m, ll, lt, lw, lh), spin)); return
             if mt in ('RECTANGLE', 'ELLIPSE', 'LINE'):
-                out.append(emit_box(m, ll, lt, lw, lh)); return
+                out.append(add_style(emit_box(m, ll, lt, lw, lh), spin)); return
             if mt in ('VECTOR', 'BOOLEAN_OPERATION', 'STAR', 'REGULAR_POLYGON'):
                 if m.get('fillGeometry') or m.get('strokeGeometry'):
                     out.append(emit_vector(m, ll, lt, lw, lh))
@@ -819,9 +845,9 @@ def emit_rotated(n, ox, oy):
                 if m.get('fills') or m.get('strokes'):
                     box = emit_box(m, ll, lt, lw, lh)
                     if box:
-                        out.append(box)
+                        out.append(add_style(box, spin))
         for ch in m.get('children', []):
-            place(ch)
+            place(ch, mth)
 
     place(n)
     out.append('</div>')
