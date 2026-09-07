@@ -593,6 +593,8 @@ def emit_vector(n, left, top, w, h):
 VEC_EXPORTS = set()  # figma node ids to render as SVG assets
 # Vector clusters with null render bounds and no exported SVG: reported, never emitted.
 VEC_MISSING = set()
+# Figma column-grid overlays suppressed by is_layout_guide().
+GUIDES_SKIPPED = set()
 
 def subtree_flags(n):
     """Scan a node's visible subtree: (has_vector, has_text, has_image)."""
@@ -832,10 +834,46 @@ SKIP_NODES = {
                     # slide, throwing off the dot count for the 3 real executives
 }
 
-def walk(n, ox, oy, out, depth=0):
+def is_layout_guide(n, parent):
+    """A designer's column-grid overlay left visible in the Figma file.
+
+    The testimonials band ships six of these: childless 1x2032 FRAMEs on a 270px pitch,
+    solid #8695aa, sitting in a 1350x1396 parent that does not clip -- so they overflow
+    636px above and below and draw vertical rules straight through the section.
+
+    The discriminator is overflow, not size or colour. A real hairline divider is sized
+    to the box it divides; a grid guide is sized to the artboard and spills out of
+    whatever it happens to be parented to. Across the whole file that separates the
+    18 guides (6 desktop home, 6 mobile home, 6 on the old Home/SAP frame) from every
+    legitimate rule -- including the 1x1003 dividers in the CKHB case study's Outcome
+    section, which fit inside their 1024-tall parent and are kept.
+
+    Restricted to childless, fill-only nodes so a thin CONTAINER of real content, or a
+    stroked `Line N`, can never match.
+    """
+    if not parent:
+        return False
+    bb = n.get('absoluteBoundingBox') or {}
+    pb = parent.get('absoluteBoundingBox') or {}
+    w, h = bb.get('width') or 0, bb.get('height') or 0
+    ph = pb.get('height') or 0
+    if not (w and h and ph):
+        return False
+    if w > 2.5 or n.get('children') or n.get('strokes'):
+        return False
+    if not any(f.get('type') == 'SOLID' and f.get('visible', True)
+               for f in (n.get('fills') or [])):
+        return False
+    return h > ph + 1
+
+
+def walk(n, ox, oy, out, depth=0, parent=None):
     if n.get('visible', True) is False:
         return
     if n.get('id') in SKIP_NODES:
+        return
+    if is_layout_guide(n, parent):
+        GUIDES_SKIPPED.add(n['id'])
         return
     name = n.get('name', '')
     # skip shared chrome instances/frames - we reuse our own
@@ -941,14 +979,14 @@ def walk_children(n, ox, oy, out, depth):
     mask = kids[0] if kids and kids[0].get('isMask') else None
     if not mask:
         for c in kids:
-            walk(c, ox, oy, out, depth+1)
+            walk(c, ox, oy, out, depth + 1, n)
         return
     img = mask_image_css(mask)
     rest = kids[1:]
     mb = mask.get('absoluteBoundingBox')
     if not img or not mb:
         for c in rest:
-            walk(c, ox, oy, out, depth+1)
+            walk(c, ox, oy, out, depth + 1, n)
         return
     style = (f"position:absolute;left:{vw(mb['x']-ox)};top:{vw(mb['y']-oy)};"
              f"width:{vw(mb['width'])};height:{vw(mb['height'])};"
@@ -957,7 +995,7 @@ def walk_children(n, ox, oy, out, depth):
              "-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;")
     out.append(f'<div class="g-mask" style="{style}">')
     for c in rest:
-        walk(c, mb['x'], mb['y'], out, depth+1)
+        walk(c, mb['x'], mb['y'], out, depth+1, n)
     out.append('</div>')
 
 def mask_image_css(mask):

@@ -5559,5 +5559,261 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 
+<style id="ax-tcmq-css">
+/* Trusted Companies: Figma already draws ten columns of logos inside a four-column
+   window (a 140.6vw strip clipped to 56.25vw), so the row is authored to travel. It
+   just has no motion of its own. Run it as a marquee.
+
+   No hover pause. The row is meant to run continuously, and a cursor left resting
+   anywhere over it stopped the marquee outright, which reads as the loop having ended.
+   Nothing pauses it except reduced-motion. */
+.ax-tcmq__track{will-change:transform;animation:ax-tcmq-roll 60s linear infinite}
+@keyframes ax-tcmq-roll{
+  from{transform:translateX(0)}
+  to{transform:translateX(calc(var(--ax-mq-strip) * -1))}
+}
+@media (prefers-reduced-motion:reduce){.ax-tcmq__track{animation:none}}
+</style>
+<script>
+/* ---- TRUSTED COMPANIES MARQUEE ----
+
+   This shipped before as `ax-tcmq-css` baked into the old hand-managed index.html. The
+   V2 swap dropped it on a check for `.ax-tcmq__track` -- but that class was hand-added
+   to the old markup, so a generated page can never carry it and the check could only
+   ever say "no target". The row has been sitting still since.
+
+   The strip is found by shape rather than by class, so it survives a rebuild: a clipped
+   box holding exactly one child that is at least twice as wide as its window and itself
+   holds eight or more tiles. That is precisely "a row authored to travel", and nothing
+   else on the page matches it -- the carousels put their slides in a track this script
+   would reject, because a carousel track is a zero-size positioned box, not a wide one.
+
+   The loop distance is derived, not hardcoded. The old copy carried a literal 140.625vw
+   and a note that the emitted lefts are rounded to four decimals, so the keyframe landed
+   about 3px away from where the clone actually sat and the row hitched once per cycle.
+   Here the strip span comes from the tiles' own pitch, and the final distance is then
+   measured off the laid-out clone, which is exact by construction. */
+(function () {
+  function num(el, prop) {
+    var m = /(-?[\d.]+)vw/.exec(String((el.style && el.style[prop]) || ''));
+    return m ? parseFloat(m[1]) : null;
+  }
+
+  /* The content span of one copy of the strip: the tile pitch times the column count.
+     Taken from the tiles themselves so a design change in column count or width cannot
+     leave a stale constant behind. */
+  function stripSpan(track) {
+    var lefts = [];
+    [].forEach.call(track.children, function (e) {
+      var l = num(e, 'left');
+      if (l !== null && lefts.indexOf(l) < 0) lefts.push(l);
+    });
+    if (lefts.length < 2) return null;
+    lefts.sort(function (a, b) { return a - b; });
+    var pitch = Infinity;
+    for (var i = 1; i < lefts.length; i++) {
+      var d = lefts[i] - lefts[i - 1];
+      if (d > 0.01 && d < pitch) pitch = d;
+    }
+    if (!isFinite(pitch)) return null;
+    return (lefts[lefts.length - 1] - lefts[0]) + pitch;
+  }
+
+  function findTrack() {
+    var hit = null;
+    [].forEach.call(document.querySelectorAll('.g-b.g-clip'), function (win) {
+      if (hit) return;
+      var ww = num(win, 'width');
+      if (!ww) return;
+      var kids = [].filter.call(win.children, function (c) {
+        return c.classList && c.classList.contains('g-b');
+      });
+      if (kids.length !== 1) return;
+      var track = kids[0];
+      var tw = num(track, 'width');
+      if (!tw || tw < ww * 2) return;                 /* authored to travel */
+      if (track.children.length < 8) return;          /* a real row of tiles */
+      hit = track;
+    });
+    return hit;
+  }
+
+  function init() {
+    var track = findTrack();
+    if (!track || track.dataset.axCloned) return;
+    var STRIP = stripSpan(track);
+    if (!STRIP) return;
+    track.dataset.axCloned = '1';
+    track.classList.add('ax-tcmq__track');
+
+    var kids = [].slice.call(track.children);
+    kids.forEach(function (el) {
+      var l = num(el, 'left');
+      if (l === null) return;
+      var c = el.cloneNode(true);
+      c.setAttribute('aria-hidden', 'true');
+      c.style.left = (l + STRIP) + 'vw';
+      c.dataset.axClone = '1';
+      track.appendChild(c);
+    });
+    track.style.width = (STRIP * 2) + 'vw';
+
+    /* Measure the loop distance off the laid-out clone rather than trusting the vw
+       literal, so the seam is exact: first clone minus first original, in real px. */
+    function measure() {
+      var a = kids[0], b = track.querySelector('[data-ax-clone]');
+      if (!a || !b) return;
+      track.style.setProperty('--ax-mq-strip', (b.offsetLeft - a.offsetLeft) + 'px');
+    }
+    measure();
+    addEventListener('resize', function () {
+      clearTimeout(window.__tcmqT);
+      window.__tcmqT = setTimeout(measure, 150);
+    });
+  }
+
+  /* After the reveal and carousel passes, so the row is not re-parented under us. */
+  if (document.readyState === 'complete') setTimeout(init, 0);
+  else addEventListener('load', function () { setTimeout(init, 0); });
+})();
+</script>
+
+<style id="ax-ptorbit-css">
+/* ---- "Earned where it matters." partner ring ----
+   The partner marks orbit the disc. The badges are Figma's own elements at Figma's own
+   coordinates and the disc behind them is Figma's own render; only the motion is added,
+   because the file carries no prototype interaction for this section.
+
+   The wrapper turns and each badge turns back by the same amount, so a logo orbits
+   without ever tipping. Only the badges move: the disc and its glow stay put. */
+.ax-ptorb{position:absolute;left:0;top:0;width:100%;height:100%;
+  pointer-events:none;transform-origin:var(--ax-orb-x,50%) var(--ax-orb-y,50%);
+  animation:ax-ptorb-spin 72s linear infinite;will-change:transform}
+.ax-ptorb-b{transform-origin:50% 50%;pointer-events:auto;
+  animation:ax-ptorb-rev 72s linear infinite;will-change:transform}
+@keyframes ax-ptorb-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes ax-ptorb-rev{from{transform:rotate(0deg)}to{transform:rotate(-360deg)}}
+/* Rest on hover so a logo can actually be read and clicked. */
+.ax-ptorb:hover,.ax-ptorb:hover .ax-ptorb-b{animation-play-state:paused}
+@media (prefers-reduced-motion:reduce){
+  .ax-ptorb,.ax-ptorb-b{animation:none!important}
+}
+</style>
+<script>
+/* ---- PARTNER RING ROTATION ----
+
+   This existed before as `ax-ptorbit-css` baked into the old hand-managed index.html.
+   The V2 swap dropped it, because the check for whether it was still needed looked for
+   `.ax-ptorb` -- a class this script CREATES at runtime. With the script not running it
+   could never be present, so the check was guaranteed to say "no target" no matter what
+   was on the page. Same false negative killed the Trusted Companies marquee.
+
+   The old version anchored on data-ref="bake-ptdisc-desk" / "bake-ptdisc-mob", the two
+   pre-baked disc images. Only the mobile one survives on the V2 homepage: the desktop
+   bake maps Figma node 6564:26542, which lives on the OLD canvas, so it never fires for
+   a page generated from the V2 canvas. Anchoring on geometry instead covers both, and
+   does not care which canvas a page came from.
+
+   The signature is a big square disc with eight or more smaller siblings whose centres
+   all sit the same distance from the disc's centre. On the V2 desktop homepage that is
+   the 35.16vw Overlay+Shadow disc ringed by twelve partner marks; on mobile it is the
+   same twelve around the baked disc.
+
+   A badge is THREE elements, not one: two `g-b` plates (the white pill and its shadow
+   ring) plus a `g-img` logo, and only the logo carries artwork. An earlier attempt here
+   filtered for "square sibling carrying art" and grouped by width, which matched only
+   the logos, and every logo is a slightly different size, so no group ever reached the
+   threshold and the ring was silently skipped. Everything on the circle moves, whatever
+   it is; each piece counter-rotates about its own centre, so a badge stays upright no
+   matter how many elements it is made of. */
+(function () {
+  var MIN_BADGES = 8;
+  var TOL = 0.12;          /* radii must agree within 12% to count as a circle */
+
+  function num(el, prop) {
+    var m = /(-?[\d.]+)vw/.exec(String((el.style && el.style[prop]) || ''));
+    return m ? parseFloat(m[1]) : null;
+  }
+
+  function centre(e) {
+    var l = num(e, 'left'), t = num(e, 'top'), w = num(e, 'width'), h = num(e, 'height');
+    if (l === null || t === null || !w || !h) return null;
+    return { x: l + w / 2, y: t + h / 2, w: w, h: h };
+  }
+
+  function ring(host) {
+    var hw = num(host, 'width');
+    if (!hw) return null;
+
+    /* The disc: the one child that fills most of the host and is square. Spin about ITS
+       centre, not the badges' bounding box -- the marks are not evenly distributed, so
+       their own centroid is off and the ring would visibly wobble. */
+    var disc = null, discC = null;
+    [].forEach.call(host.children, function (e) {
+      var c = centre(e);
+      if (!c || c.w < hw * 0.5) return;
+      if (Math.abs(c.w - c.h) > c.w * 0.06) return;
+      if (!disc || c.w > discC.w) { disc = e; discC = c; }
+    });
+    if (!disc) return null;
+
+    /* Everything small enough to be a badge piece, measured from the disc's centre. */
+    var cand = [];
+    [].forEach.call(host.children, function (e) {
+      if (e === disc || !e.classList || e.classList.contains('ax-ptorb')) return;
+      var c = centre(e);
+      if (!c || c.w > discC.w * 0.25) return;
+      cand.push({ e: e, r: Math.hypot(c.x - discC.x, c.y - discC.y) });
+    });
+    if (cand.length < MIN_BADGES) return null;
+
+    /* Keep the ones actually on the circle. Median radius, not mean: a stray element
+       parked at the centre would drag a mean badly. */
+    var sorted = cand.map(function (c) { return c.r; }).sort(function (a, b) { return a - b; });
+    var med = sorted[Math.floor(sorted.length / 2)];
+    if (!med) return null;
+    var on = cand.filter(function (c) { return Math.abs(c.r - med) <= med * TOL; });
+    if (on.length < MIN_BADGES) return null;
+
+    return { badges: on.map(function (c) { return c.e; }), cx: discC.x, cy: discC.y };
+  }
+
+  function spin(host) {
+    if (host.querySelector(':scope > .ax-ptorb')) return false;
+    var r = ring(host);
+    if (!r) return false;
+
+    var hw = num(host, 'width'), hh = num(host, 'height');
+    var orb = document.createElement('div');
+    orb.className = 'ax-ptorb';
+    orb.setAttribute('aria-hidden', 'false');
+    /* Turn about the badges' own centre. Expressed as a percentage of the host so it
+       stays correct at any viewport width, since the layout is in vw throughout. */
+    if (hw && hh) {
+      orb.style.setProperty('--ax-orb-x', (r.cx / hw * 100).toFixed(3) + '%');
+      orb.style.setProperty('--ax-orb-y', (r.cy / hh * 100).toFixed(3) + '%');
+    }
+    /* Insert where the first badge was, so paint order over the disc is unchanged. */
+    host.insertBefore(orb, r.badges[0]);
+    r.badges.forEach(function (b) { b.classList.add('ax-ptorb-b'); orb.appendChild(b); });
+    return true;
+  }
+
+  function run() {
+    var n = 0;
+    [].forEach.call(document.querySelectorAll('.g-b, .g-b.g-clip'), function (host) {
+      if (host.children.length < MIN_BADGES) return;
+      if (spin(host)) n++;
+    });
+    return n;
+  }
+
+  /* After the reveal pass and the carousel have finished moving things, so a badge is
+     not adopted out from under us. */
+  if (document.readyState === 'complete') setTimeout(run, 0);
+  else addEventListener('load', function () { setTimeout(run, 0); });
+})();
+</script>
+
 </body>
 </html>
