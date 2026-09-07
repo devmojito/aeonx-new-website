@@ -6375,12 +6375,48 @@ document.addEventListener("DOMContentLoaded",function(){
       }
     }
 
+    /* Figma sizes each caption box to the exact string it was authored with: the org
+       box is 3.5938vw, which fits "Raymond" and nothing longer. Swap in "CIO, CK Birla
+       Hospitals" and the line no longer fits, and a nowrap line wider than its box is
+       NOT centred -- CSS pins it to the start edge and lets it overflow the end. So the
+       org sat hard against its box's left edge and ran off to the right while the name
+       above it stayed centred, which is the misalignment.
+
+       Grow the box to the string instead, about whichever edge the design aligns to, so
+       the axis Figma set is the axis every name keeps. The original geometry is stashed
+       on first use and restored before each measurement: without that, a box widened for
+       a long string stays wide, and the next shorter string centres inside the wrong
+       box. */
+    function refit(e) {
+      if (!e) return;
+      if (e.dataset.axL === undefined) {
+        e.dataset.axL = e.style.left;
+        e.dataset.axW = e.style.width;
+      }
+      e.style.left = e.dataset.axL;
+      e.style.width = e.dataset.axW;
+      var l = parseFloat(e.dataset.axL), w = parseFloat(e.dataset.axW);
+      if (isNaN(l) || isNaN(w)) return;
+      var px = innerWidth / 100;
+      if (!px) return;
+      var r = document.createRange();
+      r.selectNodeContents(e);
+      var need = r.getBoundingClientRect().width / px;
+      if (need <= w + 0.01) return;                 /* it already fits: leave Figma's box */
+      var ta = getComputedStyle(e).textAlign;
+      if (ta === 'center') e.style.left = (l - (need - w) / 2).toFixed(4) + 'vw';
+      else if (ta === 'right') e.style.left = (l - (need - w)).toFixed(4) + 'vw';
+      e.style.width = need.toFixed(4) + 'vw';
+    }
+
     var i = 0;
     function paint() {
       var s = STORIES[i];
       quote.textContent = s.q;
       if (nameEl) nameEl.textContent = s.name;
       if (orgEl) orgEl.textContent = s.org;
+      refit(nameEl);
+      refit(orgEl);
       if (layer) {
         if (s.src) {
           layer.style.backgroundImage =
@@ -6440,7 +6476,9 @@ document.addEventListener("DOMContentLoaded",function(){
     });
     addEventListener('resize', function () {
       clearTimeout(window.__frpT);
-      window.__frpT = setTimeout(fit, 150);
+      window.__frpT = setTimeout(function () {
+        fit(); refit(nameEl); refit(orgEl);
+      }, 150);
     });
     paint();
     restart();
