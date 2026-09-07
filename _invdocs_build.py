@@ -115,6 +115,70 @@ JS = r'''<style id="ax-invdocs-css">
     var ds=datasetFor(railTexts.map(function(r){ return r.t; }));
     if(!ds) return;
 
+    /* Figma drew a FIXED number of rail slots -- three on this page -- so a category
+       added to the library afterwards has nowhere to render and is simply
+       unreachable. That is how "ESOP Disclosure" arrived (Sep 2026): a compliance tab
+       the design predates. Clone the last slot for each unmatched category, on the
+       rail's own pitch, the same way the document rows are clones of the design's own
+       row. The rail wires itself by matching label text to category name, so a cloned
+       slot binds to its documents without being told which index it is.
+
+       Only the left-hand column counts as rail: the "All" chip and the FY chips sit
+       beside the search bar and must not be mistaken for a slot to clone. */
+    (function(){
+      var col=railTexts.filter(function(r){ return r.b.r<sb.l-0.5; });
+      if(col.length<2) return;
+      var last=col[col.length-1], prev=col[col.length-2];
+      var pitch=last.b.t-prev.b.t;
+      if(!(pitch>0.2)) return;
+      var missing=ds.cats.filter(function(c){
+        var cn=norm(c.c);
+        return !col.some(function(r){ var n=norm(r.t);
+          return n&&(cn.indexOf(n)>-1||n.indexOf(cn)>-1); });
+      });
+      if(!missing.length) return;
+
+      /* the group drawn behind the last label: its row plate, and the count badge */
+      var plate=null, plateA=Infinity, badge=null, badgeTx=null;
+      var mid=last.b.t+last.b.h/2;
+      kids.forEach(function(k,ki){
+        var b=boxes[ki]; if(!b) return;
+        var isB=/g-b/.test(k.className||''), isT=/g-t/.test(k.className||'');
+        if(isB&&b.l<=last.b.l+0.1&&b.r>=last.b.r-0.1&&b.t<=last.b.t+0.1&&b.b>=last.b.b-0.1){
+          var a=b.w*b.h; if(a<plateA){ plateA=a; plate=k; }
+          return;
+        }
+        if(b.l<last.b.r) return;
+        if(b.t+b.h/2<mid-0.6||b.t+b.h/2>mid+0.6) return;
+        if(isB&&!badge) badge=k;
+        else if(isT&&!badgeTx&&/^\d+$/.test(txt(k))) badgeTx=k;
+      });
+
+      var lb=box(last.el);
+      missing.forEach(function(c,mi){
+        var dy=pitch*(mi+1);
+        function put(src){
+          if(!src||!src.parentNode) return null;
+          var b=box(src); if(!b) return null;
+          var cl=src.cloneNode(true);
+          setv(cl,'top',b.t+dy);
+          src.parentNode.appendChild(cl);
+          return cl;
+        }
+        put(plate);
+        var lab=put(last.el); if(!lab||!lb) return;
+        var bg=put(badge), bt=put(badgeTx);
+        lab.textContent=c.c;
+        lab.classList.remove('is-on');
+        /* the slot was sized to its own word; a longer name would be clipped */
+        setv(lab,'width',Math.max(lb.w, c.c.length*lb.h*0.46));
+        railTexts.push({el:lab,t:c.c,
+          b:{l:lb.l,t:lb.t+dy,w:lb.w,h:lb.h,r:lb.r,b:lb.b+dy}});
+        if(bt){ var qb=box(badgeTx);
+          if(qb) counts.push({el:bt,b:{l:qb.l,t:qb.t+dy,w:qb.w,h:qb.h,r:qb.r,b:qb.b+dy}}); }
+      });
+    })();
+
     /* --- the list area: widest box under the search bar --- */
     var list=null;
     kids.forEach(function(k,i){
