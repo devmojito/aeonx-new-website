@@ -174,25 +174,51 @@
           drawAll();
         }
 
-        var raf = null;
+        var raf = null, clientX = 0, clientY = 0, haveP = false;
+        function frame() {
+          raf = null;
+          var wasHot = hot;
+          hot = false;
+          if (haveP) {
+            /* One rect read per frame rather than per pointermove: the band moves
+               with the page, so the rect cannot be cached across a scroll. */
+            var r = cv.getBoundingClientRect();
+            if (r.width && clientX >= r.left && clientX <= r.right &&
+                clientY >= r.top && clientY <= r.bottom) {
+              hot = true;
+              px = (clientX - r.left) / scale;
+              py = (clientY - r.top) / scale;
+            }
+          }
+          /* Nothing to repaint if the field is at rest and stays at rest. */
+          if (!hot && !wasHot) return;
+          displace();
+        }
         function schedule() {
           if (raf !== null) return;
-          raf = requestAnimationFrame(function () { raf = null; displace(); });
+          raf = requestAnimationFrame(frame);
         }
-        function toLocal(e) {
-          var r = cv.getBoundingClientRect();
-          px = (e.clientX - r.left) / scale;
-          py = (e.clientY - r.top) / scale;
-        }
+        /* The pointer NEVER reaches this canvas. The band sits at the bottom of the
+           hero's stacking order and every point over it hit-tests to one of the
+           absolutely positioned boxes painted after it -- the card, the tile grid,
+           their backdrops. Listening on the canvas looked correct in a test that
+           dispatched events straight at it, which is exactly the check that cannot
+           fail: dispatchEvent skips hit-testing. Listen on the window and decide
+           membership from the canvas's own rect instead.
+
+           The canvas is also click-through, so putting it under the hero cannot
+           swallow a press meant for the tabs or the CTAs. */
+        cv.style.pointerEvents = 'none';
         var REDUCED = matchMedia('(prefers-reduced-motion:reduce)');
         if (!REDUCED.matches) {
-          cv.addEventListener('pointermove', function (e) { hot = true; toLocal(e); schedule(); });
-          cv.addEventListener('pointerleave', function () { hot = false; schedule(); });
-          /* The band is clipped by an ancestor, so the pointer can leave the canvas
-             without a leave event ever firing on it. */
-          addEventListener('scroll', function () {
-            if (hot) { hot = false; schedule(); }
+          addEventListener('pointermove', function (e) {
+            clientX = e.clientX; clientY = e.clientY; haveP = true; schedule();
           }, { passive: true });
+          addEventListener('pointerleave', function () {
+            haveP = false; schedule();
+          }, { passive: true });
+          addEventListener('blur', function () { haveP = false; schedule(); });
+          addEventListener('scroll', function () { schedule(); }, { passive: true });
         }
 
         if (!size()) return;
