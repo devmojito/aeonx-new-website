@@ -5911,198 +5911,6 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 
-<style id="ax-tcmq-css">
-/* Trusted Companies: Figma already draws ten columns of logos inside a four-column
-   window (a 140.6vw strip clipped to 56.25vw), so the row is authored to travel. It
-   just has no motion of its own. Run it as a marquee.
-
-   No hover pause. The row is meant to run continuously, and a cursor left resting
-   anywhere over it stopped the marquee outright, which reads as the loop having ended.
-   Nothing pauses it except reduced-motion. */
-.ax-tcmq__track{will-change:transform;animation:ax-tcmq-roll 60s linear infinite}
-@keyframes ax-tcmq-roll{
-  from{transform:translateX(0)}
-  to{transform:translateX(calc(var(--ax-mq-strip) * -1))}
-}
-@media (prefers-reduced-motion:reduce){.ax-tcmq__track{animation:none}}
-</style>
-<script>
-/* ---- TRUSTED COMPANIES MARQUEE ----
-
-   This shipped before as `ax-tcmq-css` baked into the old hand-managed index.html. The
-   V2 swap dropped it on a check for `.ax-tcmq__track` -- but that class was hand-added
-   to the old markup, so a generated page can never carry it and the check could only
-   ever say "no target". The row has been sitting still since.
-
-   The strip is found by shape rather than by class, so it survives a rebuild: a clipped
-   box holding exactly one child that is at least twice as wide as its window and itself
-   holds eight or more tiles. That is precisely "a row authored to travel", and nothing
-   else on the page matches it -- the carousels put their slides in a track this script
-   would reject, because a carousel track is a zero-size positioned box, not a wide one.
-
-   The loop distance is derived, not hardcoded. The old copy carried a literal 140.625vw
-   and a note that the emitted lefts are rounded to four decimals, so the keyframe landed
-   about 3px away from where the clone actually sat and the row hitched once per cycle.
-   Here the strip span comes from the tiles' own pitch, and the final distance is then
-   measured off the laid-out clone, which is exact by construction. */
-(function () {
-  function num(el, prop) {
-    var m = /(-?[\d.]+)vw/.exec(String((el.style && el.style[prop]) || ''));
-    return m ? parseFloat(m[1]) : null;
-  }
-
-  /* The content span of one copy of the strip: the tile pitch times the column count.
-     Taken from the tiles themselves so a design change in column count or width cannot
-     leave a stale constant behind. */
-  function stripSpan(track, ww) {
-    var lefts = [];
-    [].forEach.call(track.children, function (e) {
-      var l = num(e, 'left'), w = num(e, 'width');
-      if (l === null) return;
-      /* A backdrop as wide as the window is not a tile and would collapse the pitch. */
-      if (ww && w !== null && w >= ww * 0.9) return;
-      if (lefts.indexOf(l) < 0) lefts.push(l);
-    });
-    if (lefts.length < 2) return null;
-    lefts.sort(function (a, b) { return a - b; });
-    var pitch = Infinity;
-    for (var i = 1; i < lefts.length; i++) {
-      var d = lefts[i] - lefts[i - 1];
-      if (d > 0.01 && d < pitch) pitch = d;
-    }
-    if (!isFinite(pitch)) return null;
-    return (lefts[lefts.length - 1] - lefts[0]) + pitch;
-  }
-
-  /* Every row on the page that is AUTHORED TO TRAVEL: a clipped window over a set of
-     equal-width cells laid out on a constant pitch whose total span is at least twice
-     the window. Two rows match -- Trusted Companies, and the hero's client logos,
-     which is 20 cells of 14.0625vw inside a 77.4vw window.
-
-     The cells are found by pitch rather than by counting children, because a row's
-     first child is often a full-width backdrop plate rather than a cell; anything as
-     wide as the window itself is background, not a tile. */
-  function cellsOf(track, ww) {
-    var cells = [].filter.call(track.children, function (c) {
-      return c.classList && c.classList.contains('g-b') &&
-             num(c, 'left') !== null && num(c, 'width') !== null;
-    });
-    return cells.filter(function (c) { return num(c, 'width') < ww * 0.9; });
-  }
-
-  /* A logo row's cells hold artwork and nothing else. This is what separates a row
-     that should run by itself from one the reader is meant to drag: the leadership
-     and case-study rows are over-wide in exactly the same way, but their cards carry
-     names and copy, and marching those past the eye would make them unreadable.
-     Without this guard _scrollrow.html's rows would all be taken over site-wide. */
-  function wordless(cells) {
-    return cells.every(function (c) {
-      var t = c.querySelectorAll('.g-t');
-      for (var i = 0; i < t.length; i++) {
-        if ((t[i].textContent || '').trim()) return false;
-      }
-      return true;
-    });
-  }
-
-  function findTracks() {
-    var out = [];
-    [].forEach.call(document.querySelectorAll('.g-b.g-clip'), function (win) {
-      var ww = num(win, 'width');
-      if (!ww) return;
-      [].forEach.call(win.children, function (track) {
-        if (!track.classList || !track.classList.contains('g-b')) return;
-        if (track.dataset.axCloned) return;
-        var cells = cellsOf(track, ww);
-        if (cells.length < 8) return;
-        if (!wordless(cells)) return;
-        var span = stripSpan(track, ww);
-        if (!span || span < ww * 2) return;
-        out.push({ track: track, span: span, ww: ww });
-      });
-    });
-    return out;
-  }
-
-  function arm(hit) {
-    var track = hit.track, STRIP = hit.span, ww = hit.ww;
-    if (track.dataset.axCloned) return false;
-    track.dataset.axCloned = '1';
-
-    /* A row that scrolls itself must not also be draggable: _scrollrow.html turns this
-       same over-wide row into a manual scroller with its own scrollbar and edge fades,
-       and the two readings fight -- the user drags, the animation drags back. The
-       marquee wins for this row; every other .ax-srow on the site is untouched. */
-    if (track.classList.contains('ax-srow')) {
-      track.classList.remove('ax-srow');
-      track.scrollLeft = 0;
-    }
-    var wrap = track.parentElement;
-    if (wrap) {
-      [].forEach.call(wrap.querySelectorAll('.ax-srow-fade'), function (f) { f.remove(); });
-      wrap.classList.remove('ax-srow-wrap');
-    }
-
-    /* Anything in the row that is NOT a tile -- the full-width plate that draws the
-       row's hairline frame -- has to stop travelling with it, or the frame slides off
-       and the row loses its outline. Both boxes sit at the same origin, so moving it
-       up to the window keeps it exactly where Figma drew it. */
-    if (wrap) {
-      [].slice.call(track.children).forEach(function (c) {
-        if (!c.classList || !c.classList.contains('g-b')) return;
-        var w = num(c, 'width');
-        if (w !== null && w >= ww * 0.9) wrap.insertBefore(c, track);
-      });
-    }
-
-    track.classList.add('ax-tcmq__track');
-    /* One pace for every row, rather than one duration. The keyframe runs the whole
-       loop in 60s, so a row with twice the travel would move twice as fast and the
-       two would read as unrelated. Speed is pinned to what the Trusted Companies row
-       has always run at: 140.625vw in 60s. */
-    track.style.animationDuration = (STRIP / (140.625 / 60)).toFixed(2) + 's';
-
-    var kids = cellsOf(track, ww);
-    kids.forEach(function (el) {
-      var l = num(el, 'left');
-      if (l === null) return;
-      var c = el.cloneNode(true);
-      c.setAttribute('aria-hidden', 'true');
-      c.style.left = (l + STRIP) + 'vw';
-      c.dataset.axClone = '1';
-      track.appendChild(c);
-    });
-    /* The window clips, so the track may be declared narrower than its own contents;
-       widening it is what lets the clone sit past the seam. */
-    track.style.width = (STRIP * 2) + 'vw';
-
-    /* Measure the loop distance off the laid-out clone rather than trusting the vw
-       literal: the emitted lefts are rounded to 4 decimals, so a literal keyframe
-       lands a few px from where the clone actually sits and the row hitches once per
-       cycle. offsetLeft is the browser's own layout, so it is exact. */
-    function measure() {
-      var a = kids[0], b = track.querySelector('[data-ax-clone]');
-      if (!a || !b) return;
-      track.style.setProperty('--ax-mq-strip', (b.offsetLeft - a.offsetLeft) + 'px');
-    }
-    measure();
-    addEventListener('resize', function () {
-      clearTimeout(track.__mqT);
-      track.__mqT = setTimeout(measure, 150);
-    });
-    return true;
-  }
-
-  function init() {
-    findTracks().forEach(arm);
-  }
-
-  /* After the reveal and carousel passes, so the row is not re-parented under us. */
-  if (document.readyState === 'complete') setTimeout(init, 0);
-  else addEventListener('load', function () { setTimeout(init, 0); });
-})();
-</script>
-
 <style id="ax-herotabs-css">
 /* 300ms / EASE_OUT is not a guess: every `Tab` node in the component set carries
    transitionDuration 300 and transitionEasing EASE_OUT, which is what Figma would
@@ -6735,6 +6543,217 @@ document.addEventListener("DOMContentLoaded",function(){
   }
   if (document.readyState === 'complete') setTimeout(run, 0);
   else addEventListener('load', function () { setTimeout(run, 0); });
+})();
+</script>
+
+<style id="ax-tcmq-css">
+/* Trusted Companies: Figma already draws ten columns of logos inside a four-column
+   window (a 140.6vw strip clipped to 56.25vw), so the row is authored to travel. It
+   just has no motion of its own. Run it as a marquee.
+
+   No hover pause. The row is meant to run continuously, and a cursor left resting
+   anywhere over it stopped the marquee outright, which reads as the loop having ended.
+   Nothing pauses it except reduced-motion. */
+.ax-tcmq__track{will-change:transform;animation:ax-tcmq-roll 60s linear infinite}
+@keyframes ax-tcmq-roll{
+  from{transform:translateX(0)}
+  to{transform:translateX(calc(var(--ax-mq-strip) * -1))}
+}
+@media (prefers-reduced-motion:reduce){.ax-tcmq__track{animation:none}}
+</style>
+<script>
+/* ---- TRUSTED COMPANIES MARQUEE ----
+
+   This shipped before as `ax-tcmq-css` baked into the old hand-managed index.html. The
+   V2 swap dropped it on a check for `.ax-tcmq__track` -- but that class was hand-added
+   to the old markup, so a generated page can never carry it and the check could only
+   ever say "no target". The row has been sitting still since.
+
+   The strip is found by shape rather than by class, so it survives a rebuild: a clipped
+   box holding exactly one child that is at least twice as wide as its window and itself
+   holds eight or more tiles. That is precisely "a row authored to travel", and nothing
+   else on the page matches it -- the carousels put their slides in a track this script
+   would reject, because a carousel track is a zero-size positioned box, not a wide one.
+
+   The loop distance is derived, not hardcoded. The old copy carried a literal 140.625vw
+   and a note that the emitted lefts are rounded to four decimals, so the keyframe landed
+   about 3px away from where the clone actually sat and the row hitched once per cycle.
+   Here the strip span comes from the tiles' own pitch, and the final distance is then
+   measured off the laid-out clone, which is exact by construction. */
+(function () {
+  function num(el, prop) {
+    var m = /(-?[\d.]+)vw/.exec(String((el.style && el.style[prop]) || ''));
+    return m ? parseFloat(m[1]) : null;
+  }
+
+  /* The content span of one copy of the strip: the tile pitch times the column count.
+     Taken from the tiles themselves so a design change in column count or width cannot
+     leave a stale constant behind. */
+  function stripSpan(track, ww) {
+    var lefts = [];
+    [].forEach.call(track.children, function (e) {
+      var l = num(e, 'left'), w = num(e, 'width');
+      if (l === null) return;
+      /* A backdrop as wide as the window is not a tile and would collapse the pitch. */
+      if (ww && w !== null && w >= ww * 0.9) return;
+      if (lefts.indexOf(l) < 0) lefts.push(l);
+    });
+    if (lefts.length < 2) return null;
+    lefts.sort(function (a, b) { return a - b; });
+    var pitch = Infinity;
+    for (var i = 1; i < lefts.length; i++) {
+      var d = lefts[i] - lefts[i - 1];
+      if (d > 0.01 && d < pitch) pitch = d;
+    }
+    if (!isFinite(pitch)) return null;
+    return (lefts[lefts.length - 1] - lefts[0]) + pitch;
+  }
+
+  /* Every row on the page that is AUTHORED TO TRAVEL: a clipped window over a set of
+     equal-width cells laid out on a constant pitch whose total span is at least twice
+     the window. Two rows match -- Trusted Companies, and the hero's client logos,
+     which is 20 cells of 14.0625vw inside a 77.4vw window.
+
+     The cells are found by pitch rather than by counting children, because a row's
+     first child is often a full-width backdrop plate rather than a cell; anything as
+     wide as the window itself is background, not a tile. */
+  function cellsOf(track, ww) {
+    var cells = [].filter.call(track.children, function (c) {
+      return c.classList && c.classList.contains('g-b') &&
+             num(c, 'left') !== null && num(c, 'width') !== null;
+    });
+    return cells.filter(function (c) { return num(c, 'width') < ww * 0.9; });
+  }
+
+  /* A logo row's cells hold artwork and nothing else. This is what separates a row
+     that should run by itself from one the reader is meant to drag: the leadership
+     and case-study rows are over-wide in exactly the same way, but their cards carry
+     names and copy, and marching those past the eye would make them unreadable.
+     Without this guard _scrollrow.html's rows would all be taken over site-wide. */
+  function wordless(cells) {
+    return cells.every(function (c) {
+      var t = c.querySelectorAll('.g-t');
+      for (var i = 0; i < t.length; i++) {
+        if ((t[i].textContent || '').trim()) return false;
+      }
+      return true;
+    });
+  }
+
+  function findTracks() {
+    var out = [];
+    [].forEach.call(document.querySelectorAll('.g-b.g-clip'), function (win) {
+      var ww = num(win, 'width');
+      if (!ww) return;
+      /* A marquee window is something the reader looks THROUGH, so it cannot be wider
+         than the page. The mobile block carries rows whose clip box is 345vw -- those
+         are laid out wide and scrolled, not windowed, and matching one cloned 20 cards
+         for a loop distance that measured 0px. */
+      if (ww > 100) return;
+      [].forEach.call(win.children, function (track) {
+        if (!track.classList || !track.classList.contains('g-b')) return;
+        if (track.dataset.axCloned) return;
+        var cells = cellsOf(track, ww);
+        if (cells.length < 8) return;
+        if (!wordless(cells)) return;
+        var span = stripSpan(track, ww);
+        if (!span || span < ww * 2) return;
+        out.push({ track: track, span: span, ww: ww });
+      });
+    });
+    return out;
+  }
+
+  function arm(hit) {
+    var track = hit.track, STRIP = hit.span, ww = hit.ww;
+    if (track.dataset.axCloned) return false;
+    track.dataset.axCloned = '1';
+
+    /* A row that scrolls itself must not also be draggable: _scrollrow.html turns this
+       same over-wide row into a manual scroller with its own scrollbar and edge fades,
+       and the two readings fight -- the user drags, the animation drags back. The
+       marquee wins for this row; every other .ax-srow on the site is untouched. */
+    var w0 = track.style.width, wasSrow = track.classList.contains('ax-srow');
+    if (wasSrow) {
+      track.classList.remove('ax-srow');
+      track.scrollLeft = 0;
+    }
+    var wrap = track.parentElement;
+    if (wrap) {
+      [].forEach.call(wrap.querySelectorAll('.ax-srow-fade'), function (f) { f.remove(); });
+      wrap.classList.remove('ax-srow-wrap');
+    }
+
+    /* Anything in the row that is NOT a tile -- the full-width plate that draws the
+       row's hairline frame -- has to stop travelling with it, or the frame slides off
+       and the row loses its outline. Both boxes sit at the same origin, so moving it
+       up to the window keeps it exactly where Figma drew it. */
+    if (wrap) {
+      [].slice.call(track.children).forEach(function (c) {
+        if (!c.classList || !c.classList.contains('g-b')) return;
+        var w = num(c, 'width');
+        if (w !== null && w >= ww * 0.9) wrap.insertBefore(c, track);
+      });
+    }
+
+    track.classList.add('ax-tcmq__track');
+    /* One pace for every row, rather than one duration. The keyframe runs the whole
+       loop in 60s, so a row with twice the travel would move twice as fast and the
+       two would read as unrelated. Speed is pinned to what the Trusted Companies row
+       has always run at: 140.625vw in 60s. */
+    track.style.animationDuration = (STRIP / (140.625 / 60)).toFixed(2) + 's';
+
+    var kids = cellsOf(track, ww);
+    kids.forEach(function (el) {
+      var l = num(el, 'left');
+      if (l === null) return;
+      var c = el.cloneNode(true);
+      c.setAttribute('aria-hidden', 'true');
+      c.style.left = (l + STRIP) + 'vw';
+      c.dataset.axClone = '1';
+      track.appendChild(c);
+    });
+    /* The window clips, so the track may be declared narrower than its own contents;
+       widening it is what lets the clone sit past the seam. */
+    track.style.width = (STRIP * 2) + 'vw';
+
+    /* Measure the loop distance off the laid-out clone rather than trusting the vw
+       literal: the emitted lefts are rounded to 4 decimals, so a literal keyframe
+       lands a few px from where the clone actually sits and the row hitches once per
+       cycle. offsetLeft is the browser's own layout, so it is exact. */
+    function measure() {
+      var a = kids[0], b = track.querySelector('[data-ax-clone]');
+      if (!a || !b) return;
+      track.style.setProperty('--ax-mq-strip', (b.offsetLeft - a.offsetLeft) + 'px');
+    }
+    measure();
+    /* If the loop distance comes out at zero the row cannot travel, and leaving it
+       armed would ship the clones and the stripped scrollbar for no motion at all.
+       Put everything back rather than animate nothing. */
+    if (!parseFloat(track.style.getPropertyValue('--ax-mq-strip'))) {
+      [].forEach.call(track.querySelectorAll('[data-ax-clone]'), function (c) { c.remove(); });
+      track.classList.remove('ax-tcmq__track');
+      track.style.removeProperty('--ax-mq-strip');
+      track.style.animationDuration = '';
+      track.style.width = w0;
+      if (wasSrow) track.classList.add('ax-srow');
+      delete track.dataset.axCloned;
+      return false;
+    }
+    addEventListener('resize', function () {
+      clearTimeout(track.__mqT);
+      track.__mqT = setTimeout(measure, 150);
+    });
+    return true;
+  }
+
+  function init() {
+    findTracks().forEach(arm);
+  }
+
+  /* After the reveal and carousel passes, so the row is not re-parented under us. */
+  if (document.readyState === 'complete') setTimeout(init, 0);
+  else addEventListener('load', function () { setTimeout(init, 0); });
 })();
 </script>
 

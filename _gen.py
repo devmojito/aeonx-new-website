@@ -381,6 +381,22 @@ def emit_text(n, left, top, w, h):
                   f"background-clip:text;-webkit-text-fill-color:transparent;color:transparent;")
     if ls:
         style += f"letter-spacing:{vw(ls)};"
+    # Figma applies casing as a text PROPERTY, not in the characters themselves: a
+    # label authored "SupplierX" with textCase UPPER renders as SUPPLIERX. Dropping it
+    # shipped the mobile hero's product tiles in mixed case against a design that is
+    # uppercase. Only UPPER is used in this file today; the rest are mapped anyway so
+    # the next one does not go silently missing.
+    tc = st.get('textCase')
+    if tc == 'UPPER':
+        style += "text-transform:uppercase;"
+    elif tc == 'LOWER':
+        style += "text-transform:lowercase;"
+    elif tc == 'TITLE':
+        style += "text-transform:capitalize;"
+    elif tc in ('SMALL_CAPS', 'SMALL_CAPS_FORCED'):
+        style += "font-variant-caps:small-caps;"
+        if tc == 'SMALL_CAPS_FORCED':
+            style += "text-transform:uppercase;"
     op = n.get('opacity', 1)
     if op < 1:
         style += f"opacity:{op};"

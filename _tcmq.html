@@ -97,6 +97,11 @@
     [].forEach.call(document.querySelectorAll('.g-b.g-clip'), function (win) {
       var ww = num(win, 'width');
       if (!ww) return;
+      /* A marquee window is something the reader looks THROUGH, so it cannot be wider
+         than the page. The mobile block carries rows whose clip box is 345vw -- those
+         are laid out wide and scrolled, not windowed, and matching one cloned 20 cards
+         for a loop distance that measured 0px. */
+      if (ww > 100) return;
       [].forEach.call(win.children, function (track) {
         if (!track.classList || !track.classList.contains('g-b')) return;
         if (track.dataset.axCloned) return;
@@ -120,7 +125,8 @@
        same over-wide row into a manual scroller with its own scrollbar and edge fades,
        and the two readings fight -- the user drags, the animation drags back. The
        marquee wins for this row; every other .ax-srow on the site is untouched. */
-    if (track.classList.contains('ax-srow')) {
+    var w0 = track.style.width, wasSrow = track.classList.contains('ax-srow');
+    if (wasSrow) {
       track.classList.remove('ax-srow');
       track.scrollLeft = 0;
     }
@@ -173,6 +179,19 @@
       track.style.setProperty('--ax-mq-strip', (b.offsetLeft - a.offsetLeft) + 'px');
     }
     measure();
+    /* If the loop distance comes out at zero the row cannot travel, and leaving it
+       armed would ship the clones and the stripped scrollbar for no motion at all.
+       Put everything back rather than animate nothing. */
+    if (!parseFloat(track.style.getPropertyValue('--ax-mq-strip'))) {
+      [].forEach.call(track.querySelectorAll('[data-ax-clone]'), function (c) { c.remove(); });
+      track.classList.remove('ax-tcmq__track');
+      track.style.removeProperty('--ax-mq-strip');
+      track.style.animationDuration = '';
+      track.style.width = w0;
+      if (wasSrow) track.classList.add('ax-srow');
+      delete track.dataset.axCloned;
+      return false;
+    }
     addEventListener('resize', function () {
       clearTimeout(track.__mqT);
       track.__mqT = setTimeout(measure, 150);
