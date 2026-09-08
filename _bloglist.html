@@ -78,6 +78,7 @@
     el.classList.add('ax-bl-hit');
     if(!el.hasAttribute('tabindex')) el.setAttribute('tabindex','0');
     el.setAttribute('role','link');
+    el.dataset.axTo=url;
     if(el.__axgo){ el.__axgo.url=url; return; }
     var box={url:url};
     el.__axgo=box;

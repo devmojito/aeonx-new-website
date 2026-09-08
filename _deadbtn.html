@@ -1,0 +1,136 @@
+<style id="ax-deadbtn-css">
+/* ---- BUTTONS WITH NOWHERE TO GO ----
+   Figma draws more CTAs than the site has pages for, and a pill that looks live and
+   does nothing is worse than one that is visibly unavailable: the reader spends a
+   click finding out. Anything the linkifiers could not resolve is greyed and taken
+   out of the tab order, so it reads as unavailable rather than broken.
+
+   Paint only, and only on the pill itself, so the label keeps whatever Figma gave
+   it and nothing shifts. */
+.ax-dead{filter:grayscale(1);opacity:.45;pointer-events:none!important;cursor:default!important;
+  box-shadow:none!important;transform:none!important}
+.ax-dead *{pointer-events:none!important;cursor:default!important}
+</style>
+<script>
+/* ---- DEAD CONTROLS ----
+   The rule the client asked for: no button may take a reader to "#", and a button
+   with no page behind it is greyed out and cannot be clicked.
+
+   Two ways a control ends up dead. An <a href="#"> is dead outright. A Figma pill is
+   dead when no script claimed it: the CTA linkifiers set data-ax-to when they resolve
+   a destination and skip the pill entirely when they cannot, so a pill wearing a
+   button skin with no destination is one the design drew and the site cannot honour.
+
+   The interesting half is what is NOT dead. Plenty of real controls navigate nowhere
+   by design -- form submits, carousel arrows, tabs, filters, the cookie bar, the
+   search trigger -- and greying those would break the page. They are recognised by
+   the markers their own scripts leave behind rather than by name, so a new control
+   is live the moment it is wired, without this file being told about it. */
+(function () {
+  /* Markers every wired control on the site already carries. */
+  var WIRED = '[data-ax-to],[data-axcta],[data-axms],[data-cta],[data-axpill],' +
+              '[data-ax-owned],[role="tab"],[role="tablist"],[type="submit"],' +
+              '[type="button"],[type="reset"],.ax-cf-in,.ax-ck__b,.ax-frp-btn,' +
+              '.ax-nav__burger,.ax-mnav__burger,#ax-search-btn,.ax-search,' +
+              '.ax-csf-link,.ax-carm,.ax-pstrip-tab,.ax-ht-tab,.ax-mm__si,.ax-annc';
+
+  function real(href) {
+    if (!href) return false;
+    href = href.trim();
+    return href !== '#' && href.slice(0, 1) !== '#' ? true : false;
+  }
+
+  /* A control is live if it can navigate, or if a script has claimed it, or if it
+     sits inside something that has -- a label inside a wired pill is not its own
+     dead button. */
+  function live(el) {
+    if (el.dataset && el.dataset.axTo) return true;
+    if (el.tagName === 'A' && real(el.getAttribute('href'))) return true;
+    if (el.closest(WIRED)) return true;
+    /* A form is a destination of its own: everything inside one is doing a job. */
+    if (el.closest('form')) return true;
+    return false;
+  }
+
+  /* A pointer cursor and a hover colour on something that cannot be clicked is the
+     same lie as a dead button, but the answer is different: these are headings and
+     body copy that a hover pass dressed as links (four footer column titles, the
+     footer tagline, the product names in the hero band). Greying a heading would be
+     absurd -- it is not a control -- so the affordance is simply taken away and the
+     text goes back to being text. */
+  var AFFORD = ['ax-fx-link', 'ax-hv-txt', 'ax-hv-arrow', 'ax-fx-pill', 'ax-fx-soc'];
+
+  function unafford(el) {
+    if (el.dataset.axFlat) return;
+    el.dataset.axFlat = '1';
+    AFFORD.forEach(function (c) { el.classList.remove(c); });
+    el.style.cursor = 'default';
+    el.removeAttribute('role');
+    el.removeAttribute('tabindex');
+  }
+
+  function kill(el) {
+    if (el.dataset.axDead) return;
+    el.dataset.axDead = '1';
+    el.classList.add('ax-dead');
+    el.setAttribute('aria-disabled', 'true');
+    el.removeAttribute('role');
+    el.removeAttribute('tabindex');
+    if (el.tagName === 'A') el.removeAttribute('href');   /* not a link any more */
+  }
+
+  function sweep() {
+    /* 1. Anchors pointing at nothing. The announcement bar is excluded above: it
+          carries the baked "#" until the API answers, and hides itself when there
+          is nothing to announce. */
+    [].forEach.call(document.querySelectorAll('a'), function (a) {
+      var h = a.getAttribute('href');
+      if (h === null || real(h)) return;
+      if (a.closest(WIRED)) return;
+      kill(a);
+    });
+
+    /* 2. Pills the linkifiers left unclaimed. The skin classes are _hover.html's own
+          classification of "this is a button", so this asks the same question the
+          rest of the site already answers rather than inventing a second rule. */
+    [].forEach.call(document.querySelectorAll('.ax-hv-fill,.ax-hv-out'), function (el) {
+      if (live(el)) return;
+      kill(el);
+    });
+
+    /* 3. Mega-menu entries with no page. The menu already draws these as a <span>
+          rather than an <a>, and already has a look for one -- Anthropic ships as
+          ax-mm2__ln--soon, greyed and click-through-proof. Seven more entries were
+          spans without that class, so they read as live links and did nothing:
+          Customer References, Research Reports, Annual Reports, Quarterly Results,
+          BSE Disclosures, BRSR, Investor Grievances. Give them the look the menu
+          already has rather than inventing a second one. */
+    [].forEach.call(document.querySelectorAll('.ax-mm2__ln,.ax-mm__ln'), function (el) {
+      if (el.tagName === 'A' && real(el.getAttribute('href'))) return;
+      if (el.dataset.axTo) return;
+      el.classList.add('ax-mm2__ln--soon');
+      el.setAttribute('aria-disabled', 'true');
+    });
+
+    /* 4. Text dressed as a link with nowhere to go. An anchor anywhere in or around
+          it counts: the footer's phone and email are real links inside a styled
+          wrapper, and the wrapper is not the dead thing. */
+    [].forEach.call(document.querySelectorAll('.' + AFFORD.join(',.')), function (el) {
+      if (live(el)) return;
+      if (el.querySelector('a[href]')) return;
+      if (el.getAttribute('role') === 'link' || el.getAttribute('role') === 'button') return;
+      if (el.closest('.ax-mm,.ax-mm2')) return;      /* handled as a menu entry above */
+      unafford(el);
+    });
+  }
+
+  /* The linkifiers run on load and again at 140/200/400ms, so this runs after the
+     last of them and once more, late, for anything injected by a tab switch. */
+  function boot() {
+    setTimeout(sweep, 700);
+    setTimeout(sweep, 1600);
+  }
+  if (document.readyState === 'complete') boot();
+  else addEventListener('load', boot);
+})();
+</script>

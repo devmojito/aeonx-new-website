@@ -67,6 +67,7 @@
   }
   function go(el,url,blank){
     el.setAttribute('role','link');
+    el.dataset.axTo=url;
     if(!el.hasAttribute('tabindex')) el.setAttribute('tabindex','0');
     var nav=function(){ blank?window.open(url,'_blank','noopener'):(location.href=url); };
     el.addEventListener('click',nav);

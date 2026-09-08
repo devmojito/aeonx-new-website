@@ -246,6 +246,7 @@
         return frag;
       }
       frag.setAttribute('role','link');
+      frag.dataset.axTo=doc.u;
       frag.setAttribute('tabindex','0');
       frag.setAttribute('aria-label',doc.t+(doc.d?(', '+doc.d):'')+', PDF');
       var open=function(){ window.open(doc.u,'_blank','noopener'); };

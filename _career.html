@@ -50,6 +50,7 @@
       var url='/contact-us/'+(r?('?role='+encodeURIComponent(r)):'');
       pill.classList.add('ax-career-apply');
       pill.setAttribute('role','link');
+      pill.dataset.axTo='apply';
       pill.setAttribute('tabindex','0');
       pill.setAttribute('aria-label', r?('Apply for '+r):'Apply');
       /* document capture: the chrome CTA pass registers first on the one pill it

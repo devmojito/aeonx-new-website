@@ -215,6 +215,7 @@
         c.sector=((c.post&&c.post.s)||(tag?txt(tag):'')).toUpperCase();
         if(c.post){
           c.shell.setAttribute('role','link'); c.shell.setAttribute('tabindex','0');
+          c.shell.dataset.axTo=c.post.u;
           var go=function(){ location.href=c.post.u; };
           c.mem.forEach(function(m){ m.el.classList.add('ax-csf-link'); capture(m.el,go); });
           c.shell.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' ') go(e); });

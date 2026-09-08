@@ -27,6 +27,7 @@ MAIL_NEW = '><a href="mailto:sales@aeonx.digital">sales@aeonx.digital</a><'
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 CTAWASH = open(os.path.join(_HERE, '_ctawash.html'), encoding='utf-8').read()
+DEADBTN = open(os.path.join(_HERE, '_deadbtn.html'), encoding='utf-8').read()
 CURSOR = open(os.path.join(_HERE, '_cursor.html'), encoding='utf-8').read()
 NAVLOAD = open(os.path.join(_HERE, '_navload.html'), encoding='utf-8').read()
 COUNTERS = open(os.path.join(_HERE, '_counters.html'), encoding='utf-8').read()
@@ -68,6 +69,7 @@ GLOBAL_FRAGMENTS = [
     ('ax-frp-css', '_frpager.html'),
     ('ax-mmsuite-css', '_mmsuite.html'),
     ('ax-herowave-css', '_herowave.html'),
+    ('ax-deadbtn-css', '_deadbtn.html'),
 ]
 
 # Page-scoped fragments. These are big (the contact-form one carries two inert <template>
@@ -305,6 +307,11 @@ def main():
         if 'ax-herowave-css' not in s and '</body>' in s:
             s = s.replace('</body>', HEROWAVE + '\n</body>', 1)
             stats['herowave'] = stats.get('herowave', 0) + 1
+        # Last of the site-wide fragments on purpose: it judges what every other one
+        # has already wired, so it has to be injected after them.
+        if 'ax-deadbtn-css' not in s and '</body>' in s:
+            s = s.replace('</body>', DEADBTN + '\n</body>', 1)
+            stats['deadbtn'] = stats.get('deadbtn', 0) + 1
         if 'ax-pre-css' not in s and '</head>' in s and '<body>' in s and '</body>' in s:
             s = s.replace('</head>', PRE_HEAD + '\n</head>', 1)
             s = s.replace('<body>', '<body>\n' + PRE_BODY, 1)
@@ -343,7 +350,7 @@ def main():
         if s != o:
             open(f, 'w', encoding='utf-8').write(s)
     print(f"postbuild: annc {stats.get('annc', 0)}, refreshed {stats['refreshed']}, gptw {stats['gptw']}, mobile-nav {stats['mobnav']}, "
-          f"footer-mail {stats.get('mail', 0)}, "
+          f"footer-mail {stats.get('mail', 0)}, dead-btn {stats.get('deadbtn', 0)}, "
           f"cta-wash {stats['ctawash']}, hero-burst-blur {stats['burst']}, "
           f"cursor {stats['cursor']}, preloader {stats['preload']}, "
           f"nav-loader {stats['navload']}, counters {stats['counters']}, "

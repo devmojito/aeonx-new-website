@@ -117,6 +117,17 @@
     try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) {}
   }
 
+  /* The bar ships with href="#" baked in from the design. Until the API says there
+     is somewhere to go, it is not a link: no page on the site may take a reader to
+     a hash. apply() puts a real href back the moment one arrives. */
+  [].forEach.call(document.querySelectorAll('a.ax-annc'), function (bar) {
+    var h = bar.getAttribute('href');
+    if (!h || h.charAt(0) === '#') {
+      bar.removeAttribute('href');
+      bar.style.cursor = 'default';
+    }
+  });
+
   var last = remembered();
   apply(last && last.active && last.text ? last : { active: false });
 
