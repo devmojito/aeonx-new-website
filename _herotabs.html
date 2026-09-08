@@ -187,9 +187,27 @@
         if (c.classList.contains('g-t')) label = c;
         else if (!icon) icon = c;
       });
-      return { plate: p, icon: icon, label: label, box: pb,
-               icon0: icon ? (icon.tagName === 'IMG' ? icon.getAttribute('src')
-                                                     : icon.style.backgroundImage) : null,
+      /* A vector icon exports as a bare <img>, but a raster one exports as a
+         clipping wrapper with a .g-img inside it. Claiming the wrapper and
+         setting a background on it looks like it works and does nothing: the
+         child still paints the ORIGINAL product's artwork on top, so AeonX.IQ
+         and Data Setu.ai wore whichever raster the Products row had in that
+         slot. Descend to the element that actually paints. */
+      var paint = icon;
+      while (paint && paint.tagName !== 'IMG') {
+        var inner = paint.querySelector('img, .g-img');
+        if (!inner) break;
+        paint = inner;
+      }
+      return { plate: p, icon: icon, paint: paint, label: label, box: pb,
+               icon0: paint ? (paint.tagName === 'IMG' ? paint.getAttribute('src')
+                                                       : paint.style.backgroundImage) : null,
+               /* The raster's own background-size/position frame a specific
+                  bitmap; an SVG dropped into them would be cropped by the same
+                  numbers. Keep them to restore, and paint swapped art contained
+                  and centred instead. */
+               bgSize0: paint ? paint.style.backgroundSize : null,
+               bgPos0: paint ? paint.style.backgroundPosition : null,
                labelBox: label ? boxOf(label) : null,
                iconBox: icon ? boxOf(icon) : null };
     });
@@ -291,13 +309,26 @@
       }
       if (s.icon) {
         s.icon.style.display = '';
+        /* Positioned on the claimed element, painted on the one that actually
+           draws: for a raster tile those are a clipping wrapper and the .g-img
+           inside it, and setting a background on the wrapper alone left the
+           child painting the old product's artwork straight over the top. */
         if (item[1]) {
           var url = '/assets/vec/' + item[1] + '.svg';
-          if (s.icon.tagName === 'IMG') s.icon.setAttribute('src', url);
-          else s.icon.style.backgroundImage = 'url(' + url + ')';
+          if (s.paint.tagName === 'IMG') s.paint.setAttribute('src', url);
+          else {
+            s.paint.style.backgroundImage = 'url(' + url + ')';
+            s.paint.style.backgroundSize = 'contain';
+            s.paint.style.backgroundPosition = 'center';
+            s.paint.style.backgroundRepeat = 'no-repeat';
+          }
         } else if (s.icon0) {
-          if (s.icon.tagName === 'IMG') s.icon.setAttribute('src', s.icon0);
-          else s.icon.style.backgroundImage = s.icon0;
+          if (s.paint.tagName === 'IMG') s.paint.setAttribute('src', s.icon0);
+          else {
+            s.paint.style.backgroundImage = s.icon0;
+            s.paint.style.backgroundSize = s.bgSize0 || '';
+            s.paint.style.backgroundPosition = s.bgPos0 || '';
+          }
         }
       }
 
