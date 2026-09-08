@@ -18,6 +18,13 @@ GPTW_FIX = '/assets/partners/gptw-certified.png'
 MOB_OLD = 'body>*:not(.ax-mob){display:none!important}'
 MOB_NEW = 'body>*:not(.ax-mob):not(.ax-mnav){display:none!important}'
 
+# The mobile footer's contact line is still Figma's placeholder, 43 times over in
+# the mobile canvas and so on every page that has a mobile block. The address the
+# rest of the site publishes is sales@aeonx.digital, and the desktop footer makes
+# the same line a mailto, so this does both.
+MAIL_OLD = '>support@doss.com<'
+MAIL_NEW = '><a href="mailto:sales@aeonx.digital">sales@aeonx.digital</a><'
+
 _HERE = os.path.dirname(os.path.abspath(__file__))
 CTAWASH = open(os.path.join(_HERE, '_ctawash.html'), encoding='utf-8').read()
 CURSOR = open(os.path.join(_HERE, '_cursor.html'), encoding='utf-8').read()
@@ -325,6 +332,9 @@ def main():
         if MOB_OLD in s:
             s = s.replace(MOB_OLD, MOB_NEW)
             stats['mobnav'] += 1
+        if MAIL_OLD in s:
+            s = s.replace(MAIL_OLD, MAIL_NEW)
+            stats['mail'] = stats.get('mail', 0) + 1
         if bids:
             b = blur_bursts(s, bids)
             if b != s:
@@ -333,6 +343,7 @@ def main():
         if s != o:
             open(f, 'w', encoding='utf-8').write(s)
     print(f"postbuild: annc {stats.get('annc', 0)}, refreshed {stats['refreshed']}, gptw {stats['gptw']}, mobile-nav {stats['mobnav']}, "
+          f"footer-mail {stats.get('mail', 0)}, "
           f"cta-wash {stats['ctawash']}, hero-burst-blur {stats['burst']}, "
           f"cursor {stats['cursor']}, preloader {stats['preload']}, "
           f"nav-loader {stats['navload']}, counters {stats['counters']}, "
