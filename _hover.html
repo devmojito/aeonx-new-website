@@ -59,6 +59,32 @@
 /* background-clip MUST be padding-box: these pills carry a 1px border, and a background
    defaults to border-box, so the wash paints UNDER and PAST the border out to the square
    border-box edge -- which showed as cream corners escaping the rounded orange outline. */
+/* ---- WHITE BUTTONS: POSITION-AWARE FILL ----
+   A white pill fills from the point the pointer crossed its edge, and drains back
+   toward wherever it leaves. Only white ones: a solid brand button has nothing to
+   fill with, so those keep the sweep below.
+
+   The circle is a real child rather than a pseudo-element because its origin is a
+   measurement, and a pseudo-element cannot be given one without writing a rule per
+   button. The pill already clips (Figma gives it overflow:hidden and a radius), so
+   the circle needs no shape of its own beyond being round. It is the FIRST child
+   and the label is the second, so paint order alone keeps the label on top -- no
+   z-index, nothing to fight the inline styles the export writes.
+
+   Colour is the same 10% brand tint the sweep used; this changes how the fill
+   arrives, not what the button looks like once it has. */
+.ax-hv-out.ax-hv-pa-on{background-image:none}
+/* The nav's TALK TO US is the same white button but hand-built chrome, so it lays
+   its label out as a bare text node and clips nothing. Give it what the exported
+   pills already have. */
+.ax-hv-pa-on{position:relative;overflow:hidden}
+.ax-hv-pa-lbl{position:relative}
+.ax-hv-pa{position:absolute;left:0;top:0;width:0;height:0;border-radius:50%;
+  background:rgba(223,63,23,.10);transform:translate(-50%,-50%);pointer-events:none;
+  transition:width .42s cubic-bezier(.22,.61,.36,1),height .42s cubic-bezier(.22,.61,.36,1),
+             left .42s cubic-bezier(.22,.61,.36,1),top .42s cubic-bezier(.22,.61,.36,1)}
+@media (prefers-reduced-motion:reduce){.ax-hv-pa{transition:none}}
+
 .ax-hv-fill,.ax-hv-out{background-repeat:no-repeat;background-position:left center;
   background-size:0 100%;background-clip:padding-box;-webkit-background-clip:padding-box}
 .ax-hv-fill{background-image:linear-gradient(90deg,rgba(255,255,255,.20),rgba(255,255,255,.20))}
@@ -403,8 +429,57 @@
     /* skinClass can carry a modifier ("ax-hv-fill ax-hv-fill--pale"), and
        classList.add() throws on a string containing a space -- split it. */
     g.skinClass.split(/\s+/).filter(Boolean).forEach(function(c){ g.skin.el.classList.add(c); });
+    if (g.skinClass.indexOf('ax-hv-out') >= 0) positionAware(g.skin.el);
     MAP.set(g.skin.el, g);
   }
+  /* The fill grows from where the pointer crossed the edge to a circle big enough to
+     reach the far corner, and on the way out it slides to the exit point as it
+     collapses -- so the motion always reads as coming from the pointer rather than
+     from a fixed side. Radius is measured to the furthest corner from the entry
+     point, which is what makes it cover the pill from any entry. */
+  function positionAware(el){
+    if (el.dataset.axPa) return;
+    el.dataset.axPa = '1';
+    el.classList.add('ax-hv-pa-on');
+    /* A label that is a bare text node cannot be painted over the circle by order
+       alone, because a positioned child beats un-positioned inline content whatever
+       the order. Wrap it so it is positioned too, and order decides again. */
+    if (!el.firstElementChild && (el.textContent || '').trim()){
+      var lbl = document.createElement('span');
+      lbl.className = 'ax-hv-pa-lbl';
+      lbl.textContent = el.textContent;
+      el.textContent = '';
+      el.appendChild(lbl);
+    }
+    var dot = document.createElement('span');
+    dot.className = 'ax-hv-pa';
+    dot.setAttribute('aria-hidden', 'true');
+    el.insertBefore(dot, el.firstChild);
+    function at(ev){
+      var r = el.getBoundingClientRect();
+      if (!r.width) return null;
+      return { x: ev.clientX - r.left, y: ev.clientY - r.top, w: r.width, h: r.height };
+    }
+    function place(p){
+      dot.style.left = p.x + 'px';
+      dot.style.top = p.y + 'px';
+    }
+    el.addEventListener('pointerenter', function(ev){
+      var p = at(ev); if (!p) return;
+      place(p);
+      dot.style.width = '0'; dot.style.height = '0';
+      void dot.offsetWidth;                       /* start the grow from the entry point */
+      var d = 2 * Math.max(
+        Math.hypot(p.x, p.y), Math.hypot(p.w - p.x, p.y),
+        Math.hypot(p.x, p.h - p.y), Math.hypot(p.w - p.x, p.h - p.y));
+      dot.style.width = d + 'px'; dot.style.height = d + 'px';
+    });
+    el.addEventListener('pointerleave', function(ev){
+      var p = at(ev); if (p) place(p);
+      dot.style.width = '0'; dot.style.height = '0';
+    });
+  }
+
   function setOn(g, on){
     if (!g || g.on === on) return;
     g.on = on;
@@ -785,7 +860,14 @@
     });
   }
 
-  function boot(){ scan(); listen(); }
+  /* The nav button is chrome, which scan() deliberately skips, so it is named here.
+     It is the one white button on every page, which is exactly the case the client
+     asked for. */
+  function chromeWhites(){
+    [].forEach.call(document.querySelectorAll('.ax-nav__btn--talk'), positionAware);
+  }
+
+  function boot(){ scan(); listen(); chromeWhites(); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
   /* the .ax-mob block and the chrome's own CTA pass can land after us */
