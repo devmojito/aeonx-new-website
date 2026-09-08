@@ -6354,9 +6354,6 @@ document.addEventListener("DOMContentLoaded",function(){
    parse keeps the LAST fill at each position, which is what the flat image shows. */
 (function () {
   var SRC = /6944-35720\.svg/;
-  var R = 78;             /* influence radius, in the SVG's own units */
-  var PUSH = 30;          /* how far a tile under the cursor is thrown */
-  var SPRING = 0.055, DAMP = 0.82;
 
   function parse(text) {
     var re = /<path d="M([\d.-]+) ([\d.-]+)H([\d.-]+)V([\d.-]+)[^"]*"\s+fill="(#[0-9a-fA-F]{3,8})"/g;
@@ -6398,20 +6395,24 @@ document.addEventListener("DOMContentLoaded",function(){
         var ctx = cv.getContext('2d', { alpha: true });
         var N = cells.length;
         var dx = new Float32Array(N), dy = new Float32Array(N);
-        var vx = new Float32Array(N), vy = new Float32Array(N);
-        /* A fixed per-tile bias so a shove scatters rather than expanding a clean
-           ring. Derived from the index, not random, so it is stable across frames. */
-        var bx = new Float32Array(N), by = new Float32Array(N);
+
+        /* Per-tile constants, in the same ranges cotool bakes into its own dot data
+           (jm .35-1, jo/jp +-.5, jcx/jcy +-1.2). Ours are derived from the index
+           rather than stored, so they are stable across frames without shipping a
+           second data file. */
+        var jm = new Float32Array(N), jo = new Float32Array(N), jp = new Float32Array(N);
+        var jcx = new Float32Array(N), jcy = new Float32Array(N);
+        function rnd(i, salt) { var v = Math.sin((i + 1) * salt) * 43758.5453; return v - Math.floor(v); }
         for (var i = 0; i < N; i++) {
-          var a = Math.sin(i * 12.9898) * 43758.5453;
-          var b = Math.sin(i * 78.233) * 12345.6789;
-          bx[i] = (a - Math.floor(a)) - 0.5;
-          by[i] = (b - Math.floor(b)) - 0.5;
+          jm[i]  = 0.35 + rnd(i, 12.9898) * 0.65;
+          jo[i]  = rnd(i, 78.233) - 0.5;
+          jp[i]  = rnd(i, 37.719) - 0.5;
+          jcx[i] = rnd(i, 94.673) * 2.4 - 1.2;
+          jcy[i] = rnd(i, 15.137) * 2.4 - 1.2;
         }
 
-        /* Buckets over the home positions. Repainting all 6286 tiles every frame ran
-           at ~22fps; only a patch around the cursor ever changes, so the frame redraws
-           just that patch and needs to find the tiles inside it quickly. */
+        /* Buckets over the home positions, so a move only touches the tiles it can
+           actually reach instead of all 6286. */
         var GS = 32, grid = {};
         function key(gx, gy) { return gx + ',' + gy; }
         for (var i = 0; i < N; i++) {
@@ -6421,13 +6422,26 @@ document.addEventListener("DOMContentLoaded",function(){
         function eachIn(x0, y0, x1, y1, fn) {
           var gx0 = Math.floor(x0 / GS), gx1 = Math.floor(x1 / GS);
           var gy0 = Math.floor(y0 / GS), gy1 = Math.floor(y1 / GS);
-          for (var gx = gx0; gx <= gx1; gx++) {
+          for (var gx = gx0; gx <= gx1; gx++)
             for (var gy = gy0; gy <= gy1; gy++) {
-              var b = grid[key(gx, gy)];
-              if (b) for (var k = 0; k < b.length; k++) fn(b[k]);
+              var bk = grid[key(gx, gy)];
+              if (bk) for (var k = 0; k < bk.length; k++) fn(bk[k]);
             }
-          }
         }
+
+        /* cotool's numbers are expressed against an 8px dot grid in a 1160x565 box.
+           Ours is a different pitch, so they are converted into grid units and back
+           rather than copied raw -- otherwise the disturbance covers a different
+           number of tiles and reads as a different effect. */
+        var lx = [];
+        for (var i = 0; i < N; i++) if (lx.indexOf(cells[i].x) < 0) lx.push(cells[i].x);
+        lx.sort(function (p, q) { return p - q; });
+        var pitch = Infinity;
+        for (var i = 1; i < lx.length; i++) { var d = lx[i] - lx[i - 1]; if (d > 0.01 && d < pitch) pitch = d; }
+        if (!isFinite(pitch)) pitch = 8;
+        var INFLUENCE = 10 * pitch;      /* cotool: 80 over an 8px grid */
+        var PUSH = 7.25 * pitch;         /* cotool: 58 */
+        var K = 8 / pitch;               /* keeps the ripple wavelengths grid-relative */
 
         var scale = 1, dpr = 1;
         function size() {
@@ -6441,16 +6455,16 @@ document.addEventListener("DOMContentLoaded",function(){
           return true;
         }
 
-        function paint(list) {
-          var byCol = {};
-          for (var k = 0; k < list.length; k++) {
-            var i = list[k], c = cells[i];
-            (byCol[c.c] || (byCol[c.c] = [])).push(i);
-          }
-          for (var col in byCol) {
+        var byCol = {};
+        for (var i = 0; i < N; i++) (byCol[cells[i].c] || (byCol[cells[i].c] = [])).push(i);
+        var colours = Object.keys(byCol);
+
+        function drawAll() {
+          ctx.clearRect(0, 0, VW, VH);
+          for (var k = 0; k < colours.length; k++) {
+            var col = colours[k], idx = byCol[col];
             ctx.fillStyle = col;
             ctx.beginPath();
-            var idx = byCol[col];
             for (var j = 0; j < idx.length; j++) {
               var i2 = idx[j], c2 = cells[i2];
               ctx.rect(c2.x + dx[i2], c2.y + dy[i2], c2.w, c2.h);
@@ -6459,58 +6473,41 @@ document.addEventListener("DOMContentLoaded",function(){
           }
         }
 
-        function drawAll() {
-          ctx.clearRect(0, 0, VW, VH);
-          var all = [];
-          for (var i = 0; i < N; i++) all.push(i);
-          paint(all);
-        }
-
-        /* Only tiles that are moving, or are close enough to be pushed, get physics. */
-        var active = [], inActive = new Uint8Array(N);
-        function wake(i) { if (!inActive[i]) { inActive[i] = 1; active.push(i); } }
-
-        var px = -1e6, py = -1e6, running = false, hot = false;
-
-        function step() {
-          if (hot) eachIn(px - R, py - R, px + R, py + R, wake);
-
-          var kept = [];
-          for (var k = 0; k < active.length; k++) {
-            var i = active[k], c = cells[i];
-            var cxp = c.x + c.w / 2, cyp = c.y + c.h / 2;
-            if (hot) {
-              var ox = cxp + dx[i] - px, oy = cyp + dy[i] - py;
-              var d2 = ox * ox + oy * oy;
-              if (d2 < R * R) {
-                var d = Math.sqrt(d2) || 0.001;
-                var f = (1 - d / R); f = f * f * PUSH;
-                vx[i] += (ox / d) * f * 0.12 + bx[i] * f * 0.09;
-                vy[i] += (oy / d) * f * 0.12 + by[i] * f * 0.09;
-              }
-            }
-            vx[i] += -dx[i] * SPRING; vy[i] += -dy[i] * SPRING;
-            vx[i] *= DAMP; vy[i] *= DAMP;
-            dx[i] += vx[i]; dy[i] += vy[i];
-            if (Math.abs(vx[i]) < 0.02 && Math.abs(vy[i]) < 0.02 &&
-                Math.abs(dx[i]) < 0.02 && Math.abs(dy[i]) < 0.02) {
-              dx[i] = dy[i] = vx[i] = vy[i] = 0; inActive[i] = 0;
-            } else kept.push(i);
+        /* Displacement is a pure function of where the cursor is -- no velocity, no
+           spring. That is cotool's model and it is why the field snaps back the
+           instant the pointer leaves rather than wobbling home. An earlier version
+           here integrated a spring, which read as jelly instead of a disturbance. */
+        var px = 0, py = 0, hot = false, moved = [];
+        function displace() {
+          for (var k = 0; k < moved.length; k++) { dx[moved[k]] = 0; dy[moved[k]] = 0; }
+          moved.length = 0;
+          if (hot) {
+            eachIn(px - INFLUENCE, py - INFLUENCE, px + INFLUENCE, py + INFLUENCE, function (i) {
+              var c = cells[i], X = c.x + c.w / 2, Y = c.y + c.h / 2;
+              var rx = X - px, ry = Y - py;
+              var dist = Math.sqrt(rx * rx + ry * ry);
+              if (dist >= INFLUENCE) return;
+              var t = 1 - dist / INFLUENCE;
+              var ox = jo[i] + 0.72 * jcx[i] +
+                       0.22 * Math.sin(0.016 * K * rx + 0.018 * K * X) +
+                       0.12 * Math.cos(0.012 * K * ry);
+              var oy = jp[i] + 0.72 * jcy[i] +
+                       0.22 * Math.cos(0.016 * K * ry + 0.018 * K * Y) +
+                       0.12 * Math.sin(0.012 * K * rx);
+              ox -= 0.2 * oy; oy += 0.2 * ox;                    /* swirl, not a radial shove */
+              var amp = t * t * t * (t * (6 * t - 15) + 10) * PUSH * (0.28 + 0.72 * jm[i]);
+              dx[i] = ox * amp; dy[i] = oy * amp;
+              moved.push(i);
+            });
           }
-          active = kept;
-
-          /* A full repaint, deliberately. Measured on this page: 6286 rects grouped
-             into three fills costs 0.83ms, which is nothing against a 16ms budget. An
-             earlier version tracked a dirty rectangle instead, and because the cursor
-             sweeps and tiles settle slowly that rectangle grew to cover the swept path
-             -- more bookkeeping AND more painting than just redrawing everything. */
           drawAll();
-
-          if (active.length || hot) requestAnimationFrame(step);
-          else running = false;
         }
-        function kick() { if (!running) { running = true; requestAnimationFrame(step); } }
 
+        var raf = null;
+        function schedule() {
+          if (raf !== null) return;
+          raf = requestAnimationFrame(function () { raf = null; displace(); });
+        }
         function toLocal(e) {
           var r = cv.getBoundingClientRect();
           px = (e.clientX - r.left) / scale;
@@ -6518,11 +6515,13 @@ document.addEventListener("DOMContentLoaded",function(){
         }
         var REDUCED = matchMedia('(prefers-reduced-motion:reduce)');
         if (!REDUCED.matches) {
-          cv.addEventListener('pointermove', function (e) { hot = true; toLocal(e); kick(); });
-          cv.addEventListener('pointerleave', function () { hot = false; kick(); });
+          cv.addEventListener('pointermove', function (e) { hot = true; toLocal(e); schedule(); });
+          cv.addEventListener('pointerleave', function () { hot = false; schedule(); });
           /* The band is clipped by an ancestor, so the pointer can leave the canvas
              without a leave event ever firing on it. */
-          addEventListener('scroll', function () { hot = false; }, { passive: true });
+          addEventListener('scroll', function () {
+            if (hot) { hot = false; schedule(); }
+          }, { passive: true });
         }
 
         if (!size()) return;
@@ -6639,26 +6638,36 @@ document.addEventListener("DOMContentLoaded",function(){
     });
   }
 
+  /* The window is the nearest CLIPPING ancestor no wider than the page -- not simply
+     the track's parent. On mobile the client-logo strip is a 693vw row inside a 313vw
+     box inside the real 100vw clip, so looking only one level up found a "window"
+     wider than the screen and skipped the row entirely: it sat static, showing about
+     one and a half logos. */
+  function windowFor(track) {
+    var p = track.parentElement;
+    while (p) {
+      var w = num(p, 'width');
+      if (p.classList && p.classList.contains('g-clip') && w && w <= 100) return { el: p, w: w };
+      p = p.parentElement;
+    }
+    return null;
+  }
+
   function findTracks() {
-    var out = [];
-    [].forEach.call(document.querySelectorAll('.g-b.g-clip'), function (win) {
-      var ww = num(win, 'width');
-      if (!ww) return;
-      /* A marquee window is something the reader looks THROUGH, so it cannot be wider
-         than the page. The mobile block carries rows whose clip box is 345vw -- those
-         are laid out wide and scrolled, not windowed, and matching one cloned 20 cards
-         for a loop distance that measured 0px. */
-      if (ww > 100) return;
-      [].forEach.call(win.children, function (track) {
-        if (!track.classList || !track.classList.contains('g-b')) return;
-        if (track.dataset.axCloned) return;
-        var cells = cellsOf(track, ww);
-        if (cells.length < 8) return;
-        if (!wordless(cells)) return;
-        var span = stripSpan(track, ww);
-        if (!span || span < ww * 2) return;
-        out.push({ track: track, span: span, ww: ww });
-      });
+    var out = [], seen = [];
+    [].forEach.call(document.querySelectorAll('.g-b'), function (track) {
+      if (track.dataset.axCloned) return;
+      var win = windowFor(track);
+      if (!win) return;
+      var cells = cellsOf(track, win.w);
+      if (cells.length < 8) return;
+      if (!wordless(cells)) return;
+      var span = stripSpan(track, win.w);
+      if (!span || span < win.w * 2) return;
+      /* Nested boxes can both qualify; keep the outermost so the row is armed once. */
+      for (var i = 0; i < seen.length; i++) if (seen[i].contains(track)) return;
+      seen.push(track);
+      out.push({ track: track, span: span, ww: win.w });
     });
     return out;
   }
@@ -6696,11 +6705,6 @@ document.addEventListener("DOMContentLoaded",function(){
     }
 
     track.classList.add('ax-tcmq__track');
-    /* One pace for every row, rather than one duration. The keyframe runs the whole
-       loop in 60s, so a row with twice the travel would move twice as fast and the
-       two would read as unrelated. Speed is pinned to what the Trusted Companies row
-       has always run at: 140.625vw in 60s. */
-    track.style.animationDuration = (STRIP / (140.625 / 60)).toFixed(2) + 's';
 
     var kids = cellsOf(track, ww);
     kids.forEach(function (el) {
@@ -6720,10 +6724,18 @@ document.addEventListener("DOMContentLoaded",function(){
        literal: the emitted lefts are rounded to 4 decimals, so a literal keyframe
        lands a few px from where the clone actually sits and the row hitches once per
        cycle. offsetLeft is the browser's own layout, so it is exact. */
+    /* Pace is set in PIXELS per second, not vw. Pinning it in vw kept one duration
+       across breakpoints, which meant the mobile block -- laid out against a 430px
+       base -- crawled at about 10px/s while desktop ran at 34. Mobile is given a
+       brisker pace than desktop because its window is a fraction of the width and a
+       logo would otherwise take seven seconds just to cross. */
+    var PXPS = track.closest('.ax-mob') ? 55 : 33.75;
     function measure() {
       var a = kids[0], b = track.querySelector('[data-ax-clone]');
       if (!a || !b) return;
-      track.style.setProperty('--ax-mq-strip', (b.offsetLeft - a.offsetLeft) + 'px');
+      var px = b.offsetLeft - a.offsetLeft;
+      track.style.setProperty('--ax-mq-strip', px + 'px');
+      if (px > 0) track.style.animationDuration = (px / PXPS).toFixed(2) + 's';
     }
     measure();
     /* If the loop distance comes out at zero the row cannot travel, and leaving it

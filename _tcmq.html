@@ -92,26 +92,36 @@
     });
   }
 
+  /* The window is the nearest CLIPPING ancestor no wider than the page -- not simply
+     the track's parent. On mobile the client-logo strip is a 693vw row inside a 313vw
+     box inside the real 100vw clip, so looking only one level up found a "window"
+     wider than the screen and skipped the row entirely: it sat static, showing about
+     one and a half logos. */
+  function windowFor(track) {
+    var p = track.parentElement;
+    while (p) {
+      var w = num(p, 'width');
+      if (p.classList && p.classList.contains('g-clip') && w && w <= 100) return { el: p, w: w };
+      p = p.parentElement;
+    }
+    return null;
+  }
+
   function findTracks() {
-    var out = [];
-    [].forEach.call(document.querySelectorAll('.g-b.g-clip'), function (win) {
-      var ww = num(win, 'width');
-      if (!ww) return;
-      /* A marquee window is something the reader looks THROUGH, so it cannot be wider
-         than the page. The mobile block carries rows whose clip box is 345vw -- those
-         are laid out wide and scrolled, not windowed, and matching one cloned 20 cards
-         for a loop distance that measured 0px. */
-      if (ww > 100) return;
-      [].forEach.call(win.children, function (track) {
-        if (!track.classList || !track.classList.contains('g-b')) return;
-        if (track.dataset.axCloned) return;
-        var cells = cellsOf(track, ww);
-        if (cells.length < 8) return;
-        if (!wordless(cells)) return;
-        var span = stripSpan(track, ww);
-        if (!span || span < ww * 2) return;
-        out.push({ track: track, span: span, ww: ww });
-      });
+    var out = [], seen = [];
+    [].forEach.call(document.querySelectorAll('.g-b'), function (track) {
+      if (track.dataset.axCloned) return;
+      var win = windowFor(track);
+      if (!win) return;
+      var cells = cellsOf(track, win.w);
+      if (cells.length < 8) return;
+      if (!wordless(cells)) return;
+      var span = stripSpan(track, win.w);
+      if (!span || span < win.w * 2) return;
+      /* Nested boxes can both qualify; keep the outermost so the row is armed once. */
+      for (var i = 0; i < seen.length; i++) if (seen[i].contains(track)) return;
+      seen.push(track);
+      out.push({ track: track, span: span, ww: win.w });
     });
     return out;
   }
@@ -149,11 +159,6 @@
     }
 
     track.classList.add('ax-tcmq__track');
-    /* One pace for every row, rather than one duration. The keyframe runs the whole
-       loop in 60s, so a row with twice the travel would move twice as fast and the
-       two would read as unrelated. Speed is pinned to what the Trusted Companies row
-       has always run at: 140.625vw in 60s. */
-    track.style.animationDuration = (STRIP / (140.625 / 60)).toFixed(2) + 's';
 
     var kids = cellsOf(track, ww);
     kids.forEach(function (el) {
@@ -173,10 +178,18 @@
        literal: the emitted lefts are rounded to 4 decimals, so a literal keyframe
        lands a few px from where the clone actually sits and the row hitches once per
        cycle. offsetLeft is the browser's own layout, so it is exact. */
+    /* Pace is set in PIXELS per second, not vw. Pinning it in vw kept one duration
+       across breakpoints, which meant the mobile block -- laid out against a 430px
+       base -- crawled at about 10px/s while desktop ran at 34. Mobile is given a
+       brisker pace than desktop because its window is a fraction of the width and a
+       logo would otherwise take seven seconds just to cross. */
+    var PXPS = track.closest('.ax-mob') ? 55 : 33.75;
     function measure() {
       var a = kids[0], b = track.querySelector('[data-ax-clone]');
       if (!a || !b) return;
-      track.style.setProperty('--ax-mq-strip', (b.offsetLeft - a.offsetLeft) + 'px');
+      var px = b.offsetLeft - a.offsetLeft;
+      track.style.setProperty('--ax-mq-strip', px + 'px');
+      if (px > 0) track.style.animationDuration = (px / PXPS).toFixed(2) + 's';
     }
     measure();
     /* If the loop distance comes out at zero the row cannot travel, and leaving it
