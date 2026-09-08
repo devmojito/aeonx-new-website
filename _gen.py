@@ -871,14 +871,9 @@ def emit_rotated(n, ox, oy):
 
 SKIP_NODES = {
     '5232:15038', '5246:15149',  # baked navbar + announcement in Home hero (chrome provides these)
-    '6719:38058', '6719:38059',  # same pair on the V2 homepage: 'Component 42' is a second
-                    # navbar and 'Link' a second announcement strip, both duplicating what
-                    # _chrome.html already renders. They are named nothing like "Nav Bar",
-                    # so walk()'s depth<=1 name check never caught them. They sat exactly
-                    # under the fixed header and were invisible for as long as the two
-                    # happened to be the same height; a taller header, a wrapped
-                    # announcement line, or any zoom that breaks that coincidence slides
-                    # the baked pair into view and the page shows two of each.
+    # The V2 homepage carried the same pair as 'Component 42' and 'Link'; so does
+    # every sub-page. They are handled by shape in walk() rather than listed here,
+    # because the ids differ per page.
     '5637:52052',  # Leadership/mobile: unfilled 4th executive slot ("[NEEDS INPUT: Name]",
                     # generic placeholder photo) -- shipping it added a phantom 4th carousel
                     # slide, throwing off the dot count for the 3 real executives
@@ -932,6 +927,25 @@ def walk(n, ox, oy, out, depth=0, parent=None):
         return
     t = n.get('type')
     bb = n.get('absoluteBoundingBox')
+    # The design also draws the navbar and the announcement strip into the top of
+    # every page, under names the check above cannot catch: 'Component 42' and
+    # 'Link'. The chrome renders both, so these are duplicates. They sat invisible
+    # behind the fixed header for as long as the two were the same height, and
+    # became two navbars the moment they were not -- the announcement bar hides
+    # itself when there is nothing to announce, and the header loses 44px.
+    #
+    # Name alone is not enough ('Link' is used 2264 times), so the test is name
+    # plus position: a direct child of the page frame, at the very top, the height
+    # the chrome piece is. Measured across all three canvases that matches exactly
+    # the 36 navbars and 36 strips and nothing else.
+    #
+    # Desktop only. Mobile hides the chrome header outright, so its baked strip is
+    # the only announcement it has and must stay.
+    if depth <= 1 and bb and 100 / FACTOR > 1000:
+        if name == 'Component 42' and bb['height'] < 120:
+            return
+        if name == 'Link' and bb['height'] <= 60 and (bb['y'] - oy) < 60:
+            return
     if t == 'TEXT' and bb:
         out.append(emit_text(n, bb['x']-ox, bb['y']-oy, bb['width'], bb['height']))
         return

@@ -24,19 +24,25 @@
   /* Hiding the bar shortens the fixed header, and a page whose layout reserved a
      strip for it is then left with an empty band under the nav.
 
-     Only some pages reserve it. Sub-pages start their content at 0 and sit under
-     the nav regardless; the V2 homepage starts at 5.885vw, which is the bar plus
-     the nav, because Figma drew both. So the reserve is detected rather than
-     assumed: if the topmost thing on the page begins at or below the bar's own
-     height, that space was meant for the bar, and with no bar the page moves up
-     by exactly that much. A negative margin is enough -- everything inside is
-     absolutely positioned against .ax-page, so the whole page travels together
-     and the document gets shorter by the same amount.
+     Only some pages reserve it. The V2 homepage starts its content at 5.885vw,
+     which is the bar plus the nav, because Figma drew both above the fold. A
+     sub-page starts at 2.29vw and its hero art is meant to run up under the nav,
+     so it reserves nothing and must not move.
+
+     That is the discriminator: the page reserved the strip only if its topmost
+     element begins at or below the WHOLE header, bar included. Comparing against
+     the bar alone would catch the sub-pages too, since their 44px start happens
+     to equal the bar's height. With the reserve confirmed the page moves up by
+     the bar's height and nothing else. A negative margin is enough: everything
+     inside is absolutely positioned against .ax-page, so the whole page travels
+     together and the document gets shorter by the same amount.
 
      Measured while the bar is still visible, and in vw, so a resize keeps it. */
   function reclaim(bar) {
     var h = bar.getBoundingClientRect().height;
-    if (!(h > 1) || !window.innerWidth) return;
+    var header = bar.closest('header') || bar.parentElement;
+    var H = header ? header.getBoundingClientRect().height : 0;
+    if (!(h > 1) || !(H > h) || !window.innerWidth) return;
     var page = document.querySelector('main.ax-page');
     if (!page || page.closest('.ax-mob')) return;   /* mobile hides the chrome outright */
     var top = Infinity;
@@ -44,7 +50,7 @@
       var t = el.getBoundingClientRect().top;
       if (t < top) top = t;
     });
-    if (!(top >= h - 1)) return;                    /* nothing was reserved */
+    if (!(top >= H - 1)) return;                    /* nothing was reserved */
     page.style.marginTop = '-' + (h / window.innerWidth * 100).toFixed(4) + 'vw';
   }
 
