@@ -69,8 +69,6 @@
      default variant, and pixel-for-pixel what the still used to show. */
   .ax-mms__t,.ax-mms__h{animation:none}
 }
-.ax-mms__i--8{width:91.3793%;height:37.9310%}
-.ax-mms__i--12{width:48.2759%;height:48.2759%}
 .ax-mms__t--1{--fx:63.7931%;--fy:39.6552%;--gx:84.4828%;--gy:47.4138%}
 .ax-mms__t--2{--fx:232.7586%;--fy:17.2414%;--gx:222.4138%;--gy:47.4138%}
 .ax-mms__t--3{--fx:437.9310%;--fy:32.7586%;--gx:360.3448%;--gy:47.4138%}
@@ -94,19 +92,21 @@
    illustration entirely. They are stale for unrelated reasons and must be left alone
    rather than given this animation. */
 (function () {
+  /* One asset per tile, each the 36x36 icon frame inside the set's Product group --
+     the icon, not the group, so the holder circle stays a CSS shape and can still
+     morph into the grid's rounded square.
+
+     Ten are unchanged and keep the files they had. Two are new marks: QUIC was an
+     89x36 wordmark and Setu Edge a 28x28 pair of braces, and both are now square
+     36x36 logos. That is what the per-icon width overrides above used to be for,
+     and why they are gone -- every tile is square now. */
   var ICONS = [
-      ['ax-mms__i','/assets/gen/mm-icon-01.svg'],
-      ['ax-mms__i','/assets/gen/mm-icon-02.webp'],
-      ['ax-mms__i','/assets/gen/mm-icon-03.webp'],
-      ['ax-mms__i','/assets/gen/mm-icon-04.svg'],
-      ['ax-mms__i','/assets/gen/mm-icon-05.svg'],
-      ['ax-mms__i','/assets/gen/mm-icon-06.webp'],
-      ['ax-mms__i','/assets/gen/mm-icon-07.svg'],
-      ['ax-mms__i ax-mms__i--8','/assets/gen/mm-icon-08.svg'],
-      ['ax-mms__i','/assets/gen/mm-icon-09.webp'],
-      ['ax-mms__i','/assets/gen/mm-icon-10.webp'],
-      ['ax-mms__i','/assets/gen/mm-icon-11.svg'],
-      ['ax-mms__i ax-mms__i--12','/assets/gen/mm-icon-12.svg']
+      '/assets/gen/mm-icon-01.svg',  '/assets/gen/mm-icon-02.webp',
+      '/assets/gen/mm-icon-03.webp', '/assets/gen/mm-icon-04.svg',
+      '/assets/gen/mm-icon-05.svg',  '/assets/gen/mm-icon-06.webp',
+      '/assets/gen/mm-icon-07.svg',  '/assets/gen/mm-icon-08.svg',
+      '/assets/gen/mm-icon-09.webp', '/assets/gen/mm-icon-10.webp',
+      '/assets/gen/mm-icon-11.svg',  '/assets/gen/mm-icon-12.svg'
   ];
   function build() {
     var n = 0;
@@ -117,14 +117,14 @@
          display:block, width:100%, aspect-ratio 396/353 and margin-top:auto. */
       stage.className = 'ax-mm2__feat-img ax-mms';
       stage.setAttribute('aria-hidden', 'true');
-      ICONS.forEach(function (spec, i) {
+      ICONS.forEach(function (src, i) {
         var t = document.createElement('span');
         t.className = 'ax-mms__t ax-mms__t--' + (i + 1);
         var h = document.createElement('span');
         h.className = 'ax-mms__h';
         var ic = document.createElement('img');
-        ic.className = spec[0];
-        ic.src = spec[1];
+        ic.className = 'ax-mms__i';
+        ic.src = src;
         ic.alt = '';
         ic.setAttribute('decoding', 'async');
         t.appendChild(h);

@@ -3232,160 +3232,6 @@ document.addEventListener('DOMContentLoaded',function(){
 })();
 </script>
 
-<style id="ax-mmsuite-css">
-/* ---- Mega-menu "Explore" illustration ----
-   Figma component set 6924:20276 is not a still. It holds two variants of the same
-   twelve products and animates between them:
-
-     6924:20275  03-floating-layout   58x58 circular tiles, scattered
-     6924:20274  01-product-grid      60x60 rounded squares (r=16), even ring
-
-   Its own prototype, read off the live file, is a two-way AFTER_TIMEOUT loop:
-   floating -> grid over 1437ms, hold the grid 1600ms, grid -> floating over 2875ms.
-   Period 5913ms, SMART_ANIMATE both ways. Floating is the set's default variant and
-   the state the placed instance carries, so it is where the loop starts and rests.
-
-   The site shipped a single PNG of the floating state, which is why this exists.
-
-   Only the twelve tiles move. Company-Logo is at identical coordinates in both
-   variants and the background is a flat #FAF9F7 plate, so both are static here.
-
-   The holder is drawn in CSS rather than baked into each tile image. It has to be:
-   the tile is a circle in one state and a rounded square in the other, and no amount
-   of scaling turns one bitmap into the other. Only the icon is an exported asset, and
-   the icon is the same size in both states -- verified on all twelve -- so it sits
-   centred and never scales, while the white holder under it morphs size and radius. */
-.ax-mms{position:relative;overflow:hidden;background:#FAF9F7}
-.ax-mms__t{position:absolute;left:0;top:0;width:14.6465%;height:16.4306%;
-  transform:translate(var(--fx),var(--fy));
-  animation:ax-mms-move 5.913s infinite;animation-play-state:paused}
-/* The holder is a separate layer from the icon so it can scale 58->60 on its own.
-   Radius 26.6667% is Figma's r=16 on the 60-unit grid tile, which is the same
-   fraction of the box at either scale. */
-.ax-mms__h{position:absolute;inset:0;background:#fff;border-radius:50%;
-  animation:ax-mms-hold 5.913s infinite;animation-play-state:paused}
-.ax-mms__i{position:absolute;left:50%;top:50%;width:62.0690%;height:62.0690%;
-  transform:translate(-50%,-50%);pointer-events:none}
-.ax-mms__logo{position:absolute;left:36.4899%;top:39.3768%;
-  width:27.0202%;height:21.2465%;pointer-events:none}
-
-/* Keyframe stops: grid reached at 1437/5913 = 24.308%, held to
-   (1437+1600)/5913 = 51.367%, back to floating at 100%. Figma names the spring
-   BOUNCY but exposes no stiffness or damping, so the house overshoot curve stands
-   in for it; it is the same curve _stathov.html and the chrome already use. */
-@keyframes ax-mms-move{
-  0%      {transform:translate(var(--fx),var(--fy));
-           animation-timing-function:cubic-bezier(.34,1.56,.64,1)}
-  24.308% {transform:translate(var(--gx),var(--gy));animation-timing-function:linear}
-  51.367% {transform:translate(var(--gx),var(--gy));
-           animation-timing-function:cubic-bezier(.34,1.56,.64,1)}
-  100%    {transform:translate(var(--fx),var(--fy))}
-}
-@keyframes ax-mms-hold{
-  0%      {transform:scale(1);border-radius:50%;
-           animation-timing-function:cubic-bezier(.34,1.56,.64,1)}
-  24.308% {transform:scale(1.0344828);border-radius:26.6667%;
-           animation-timing-function:linear}
-  51.367% {transform:scale(1.0344828);border-radius:26.6667%;
-           animation-timing-function:cubic-bezier(.34,1.56,.64,1)}
-  100%    {transform:scale(1);border-radius:50%}
-}
-
-/* The panels are display:block with visibility:hidden above 1024px, not display:none,
-   so an animation inside a closed panel would run unwatched for the life of the page.
-   Run it only while a panel is actually open. Pausing rather than restarting is
-   deliberate: paused at 0% the tiles sit in the floating resting state, and a reopen
-   resumes rather than snapping. */
-.ax-mm.is-open .ax-mms__t,.ax-mm.is-open .ax-mms__h{animation-play-state:running}
-
-@media (prefers-reduced-motion:reduce){
-  /* Parks every tile on the base rule, which is the floating layout: the set's own
-     default variant, and pixel-for-pixel what the still used to show. */
-  .ax-mms__t,.ax-mms__h{animation:none}
-}
-.ax-mms__i--8{width:91.3793%;height:37.9310%}
-.ax-mms__i--12{width:48.2759%;height:48.2759%}
-.ax-mms__t--1{--fx:63.7931%;--fy:39.6552%;--gx:84.4828%;--gy:47.4138%}
-.ax-mms__t--2{--fx:232.7586%;--fy:17.2414%;--gx:222.4138%;--gy:47.4138%}
-.ax-mms__t--3{--fx:437.9310%;--fy:32.7586%;--gx:360.3448%;--gy:47.4138%}
-.ax-mms__t--4{--fx:536.2069%;--fy:151.7241%;--gx:498.2759%;--gy:47.4138%}
-.ax-mms__t--5{--fx:534.4828%;--fy:329.3103%;--gx:84.4828%;--gy:185.3448%}
-.ax-mms__t--6{--fx:481.0345%;--fy:474.1379%;--gx:498.2759%;--gy:185.3448%}
-.ax-mms__t--7{--fx:320.6897%;--fy:481.0345%;--gx:84.4828%;--gy:323.2759%}
-.ax-mms__t--8{--fx:150.0000%;--fy:467.2414%;--gx:498.2759%;--gy:323.2759%}
-.ax-mms__t--9{--fx:32.7586%;--fy:375.8621%;--gx:84.4828%;--gy:461.2069%}
-.ax-mms__t--10{--fx:32.7586%;--fy:217.2414%;--gx:222.4138%;--gy:461.2069%}
-.ax-mms__t--11{--fx:367.2414%;--fy:143.1034%;--gx:360.3448%;--gy:461.2069%}
-.ax-mms__t--12{--fx:172.4138%;--fy:343.1034%;--gx:498.2759%;--gy:461.2069%}
-</style>
-<script>
-/* ---- MEGA-MENU EXPLORE ILLUSTRATION ----
-   Swaps the static PNG for the animated stage. Progressive enhancement: with no JS
-   the original <img> stays exactly as it is, so the card is never empty.
-
-   Guarded on the filename because four legal pages (cookie-policy, privacy-policy,
-   terms-and-conditions, sitemap) still carry an older featured card with a different
-   illustration entirely. They are stale for unrelated reasons and must be left alone
-   rather than given this animation. */
-(function () {
-  var ICONS = [
-      ['ax-mms__i','/assets/gen/mm-icon-01.svg'],
-      ['ax-mms__i','/assets/gen/mm-icon-02.webp'],
-      ['ax-mms__i','/assets/gen/mm-icon-03.webp'],
-      ['ax-mms__i','/assets/gen/mm-icon-04.svg'],
-      ['ax-mms__i','/assets/gen/mm-icon-05.svg'],
-      ['ax-mms__i','/assets/gen/mm-icon-06.webp'],
-      ['ax-mms__i','/assets/gen/mm-icon-07.svg'],
-      ['ax-mms__i ax-mms__i--8','/assets/gen/mm-icon-08.svg'],
-      ['ax-mms__i','/assets/gen/mm-icon-09.webp'],
-      ['ax-mms__i','/assets/gen/mm-icon-10.webp'],
-      ['ax-mms__i','/assets/gen/mm-icon-11.svg'],
-      ['ax-mms__i ax-mms__i--12','/assets/gen/mm-icon-12.svg']
-  ];
-  function build() {
-    var n = 0;
-    [].forEach.call(document.querySelectorAll('img.ax-mm2__feat-img'), function (img) {
-      if ((img.getAttribute('src') || '').indexOf('mm-explore-suite') < 0) return;
-      var stage = document.createElement('div');
-      /* Reuse the image's own class so the card box is untouched: it already carries
-         display:block, width:100%, aspect-ratio 396/353 and margin-top:auto. */
-      stage.className = 'ax-mm2__feat-img ax-mms';
-      stage.setAttribute('aria-hidden', 'true');
-      ICONS.forEach(function (spec, i) {
-        var t = document.createElement('span');
-        t.className = 'ax-mms__t ax-mms__t--' + (i + 1);
-        var h = document.createElement('span');
-        h.className = 'ax-mms__h';
-        var ic = document.createElement('img');
-        ic.className = spec[0];
-        ic.src = spec[1];
-        ic.alt = '';
-        ic.setAttribute('decoding', 'async');
-        t.appendChild(h);
-        t.appendChild(ic);
-        stage.appendChild(t);
-      });
-      /* Logo last: Figma paints Company-Logo above Products, and in the floating
-         state tile 12 overlaps the logo box. */
-      var logo = document.createElement('img');
-      logo.className = 'ax-mms__logo';
-      logo.src = '/assets/gen/mm-logo.webp';
-      logo.alt = '';
-      logo.setAttribute('decoding', 'async');
-      stage.appendChild(logo);
-      img.parentNode.replaceChild(stage, img);
-      n++;
-    });
-    return n;
-  }
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', build);
-  } else {
-    build();
-  }
-})();
-</script>
-
 <style id="ax-tcmq-css">
 /* Trusted Companies: Figma already draws ten columns of logos inside a four-column
    window (a 140.6vw strip clipped to 56.25vw), so the row is authored to travel. It
@@ -7105,6 +6951,160 @@ document.addEventListener("DOMContentLoaded",function(){
   });
   addEventListener('resize',function(){ clearTimeout(window.__axfxR);
     window.__axfxR=setTimeout(function(){ centerLabels(); spaceArrows(); },200); });
+})();
+</script>
+
+<style id="ax-mmsuite-css">
+/* ---- Mega-menu "Explore" illustration ----
+   Figma component set 6924:20276 is not a still. It holds two variants of the same
+   twelve products and animates between them:
+
+     6924:20275  03-floating-layout   58x58 circular tiles, scattered
+     6924:20274  01-product-grid      60x60 rounded squares (r=16), even ring
+
+   Its own prototype, read off the live file, is a two-way AFTER_TIMEOUT loop:
+   floating -> grid over 1437ms, hold the grid 1600ms, grid -> floating over 2875ms.
+   Period 5913ms, SMART_ANIMATE both ways. Floating is the set's default variant and
+   the state the placed instance carries, so it is where the loop starts and rests.
+
+   The site shipped a single PNG of the floating state, which is why this exists.
+
+   Only the twelve tiles move. Company-Logo is at identical coordinates in both
+   variants and the background is a flat #FAF9F7 plate, so both are static here.
+
+   The holder is drawn in CSS rather than baked into each tile image. It has to be:
+   the tile is a circle in one state and a rounded square in the other, and no amount
+   of scaling turns one bitmap into the other. Only the icon is an exported asset, and
+   the icon is the same size in both states -- verified on all twelve -- so it sits
+   centred and never scales, while the white holder under it morphs size and radius. */
+.ax-mms{position:relative;overflow:hidden;background:#FAF9F7}
+.ax-mms__t{position:absolute;left:0;top:0;width:14.6465%;height:16.4306%;
+  transform:translate(var(--fx),var(--fy));
+  animation:ax-mms-move 5.913s infinite;animation-play-state:paused}
+/* The holder is a separate layer from the icon so it can scale 58->60 on its own.
+   Radius 26.6667% is Figma's r=16 on the 60-unit grid tile, which is the same
+   fraction of the box at either scale. */
+.ax-mms__h{position:absolute;inset:0;background:#fff;border-radius:50%;
+  animation:ax-mms-hold 5.913s infinite;animation-play-state:paused}
+.ax-mms__i{position:absolute;left:50%;top:50%;width:62.0690%;height:62.0690%;
+  transform:translate(-50%,-50%);pointer-events:none}
+.ax-mms__logo{position:absolute;left:36.4899%;top:39.3768%;
+  width:27.0202%;height:21.2465%;pointer-events:none}
+
+/* Keyframe stops: grid reached at 1437/5913 = 24.308%, held to
+   (1437+1600)/5913 = 51.367%, back to floating at 100%. Figma names the spring
+   BOUNCY but exposes no stiffness or damping, so the house overshoot curve stands
+   in for it; it is the same curve _stathov.html and the chrome already use. */
+@keyframes ax-mms-move{
+  0%      {transform:translate(var(--fx),var(--fy));
+           animation-timing-function:cubic-bezier(.34,1.56,.64,1)}
+  24.308% {transform:translate(var(--gx),var(--gy));animation-timing-function:linear}
+  51.367% {transform:translate(var(--gx),var(--gy));
+           animation-timing-function:cubic-bezier(.34,1.56,.64,1)}
+  100%    {transform:translate(var(--fx),var(--fy))}
+}
+@keyframes ax-mms-hold{
+  0%      {transform:scale(1);border-radius:50%;
+           animation-timing-function:cubic-bezier(.34,1.56,.64,1)}
+  24.308% {transform:scale(1.0344828);border-radius:26.6667%;
+           animation-timing-function:linear}
+  51.367% {transform:scale(1.0344828);border-radius:26.6667%;
+           animation-timing-function:cubic-bezier(.34,1.56,.64,1)}
+  100%    {transform:scale(1);border-radius:50%}
+}
+
+/* The panels are display:block with visibility:hidden above 1024px, not display:none,
+   so an animation inside a closed panel would run unwatched for the life of the page.
+   Run it only while a panel is actually open. Pausing rather than restarting is
+   deliberate: paused at 0% the tiles sit in the floating resting state, and a reopen
+   resumes rather than snapping. */
+.ax-mm.is-open .ax-mms__t,.ax-mm.is-open .ax-mms__h{animation-play-state:running}
+
+@media (prefers-reduced-motion:reduce){
+  /* Parks every tile on the base rule, which is the floating layout: the set's own
+     default variant, and pixel-for-pixel what the still used to show. */
+  .ax-mms__t,.ax-mms__h{animation:none}
+}
+.ax-mms__t--1{--fx:63.7931%;--fy:39.6552%;--gx:84.4828%;--gy:47.4138%}
+.ax-mms__t--2{--fx:232.7586%;--fy:17.2414%;--gx:222.4138%;--gy:47.4138%}
+.ax-mms__t--3{--fx:437.9310%;--fy:32.7586%;--gx:360.3448%;--gy:47.4138%}
+.ax-mms__t--4{--fx:536.2069%;--fy:151.7241%;--gx:498.2759%;--gy:47.4138%}
+.ax-mms__t--5{--fx:534.4828%;--fy:329.3103%;--gx:84.4828%;--gy:185.3448%}
+.ax-mms__t--6{--fx:481.0345%;--fy:474.1379%;--gx:498.2759%;--gy:185.3448%}
+.ax-mms__t--7{--fx:320.6897%;--fy:481.0345%;--gx:84.4828%;--gy:323.2759%}
+.ax-mms__t--8{--fx:150.0000%;--fy:467.2414%;--gx:498.2759%;--gy:323.2759%}
+.ax-mms__t--9{--fx:32.7586%;--fy:375.8621%;--gx:84.4828%;--gy:461.2069%}
+.ax-mms__t--10{--fx:32.7586%;--fy:217.2414%;--gx:222.4138%;--gy:461.2069%}
+.ax-mms__t--11{--fx:367.2414%;--fy:143.1034%;--gx:360.3448%;--gy:461.2069%}
+.ax-mms__t--12{--fx:172.4138%;--fy:343.1034%;--gx:498.2759%;--gy:461.2069%}
+</style>
+<script>
+/* ---- MEGA-MENU EXPLORE ILLUSTRATION ----
+   Swaps the static PNG for the animated stage. Progressive enhancement: with no JS
+   the original <img> stays exactly as it is, so the card is never empty.
+
+   Guarded on the filename because four legal pages (cookie-policy, privacy-policy,
+   terms-and-conditions, sitemap) still carry an older featured card with a different
+   illustration entirely. They are stale for unrelated reasons and must be left alone
+   rather than given this animation. */
+(function () {
+  /* One asset per tile, each the 36x36 icon frame inside the set's Product group --
+     the icon, not the group, so the holder circle stays a CSS shape and can still
+     morph into the grid's rounded square.
+
+     Ten are unchanged and keep the files they had. Two are new marks: QUIC was an
+     89x36 wordmark and Setu Edge a 28x28 pair of braces, and both are now square
+     36x36 logos. That is what the per-icon width overrides above used to be for,
+     and why they are gone -- every tile is square now. */
+  var ICONS = [
+      '/assets/gen/mm-icon-01.svg',  '/assets/gen/mm-icon-02.webp',
+      '/assets/gen/mm-icon-03.webp', '/assets/gen/mm-icon-04.svg',
+      '/assets/gen/mm-icon-05.svg',  '/assets/gen/mm-icon-06.webp',
+      '/assets/gen/mm-icon-07.svg',  '/assets/gen/mm-icon-08.svg',
+      '/assets/gen/mm-icon-09.webp', '/assets/gen/mm-icon-10.webp',
+      '/assets/gen/mm-icon-11.svg',  '/assets/gen/mm-icon-12.svg'
+  ];
+  function build() {
+    var n = 0;
+    [].forEach.call(document.querySelectorAll('img.ax-mm2__feat-img'), function (img) {
+      if ((img.getAttribute('src') || '').indexOf('mm-explore-suite') < 0) return;
+      var stage = document.createElement('div');
+      /* Reuse the image's own class so the card box is untouched: it already carries
+         display:block, width:100%, aspect-ratio 396/353 and margin-top:auto. */
+      stage.className = 'ax-mm2__feat-img ax-mms';
+      stage.setAttribute('aria-hidden', 'true');
+      ICONS.forEach(function (src, i) {
+        var t = document.createElement('span');
+        t.className = 'ax-mms__t ax-mms__t--' + (i + 1);
+        var h = document.createElement('span');
+        h.className = 'ax-mms__h';
+        var ic = document.createElement('img');
+        ic.className = 'ax-mms__i';
+        ic.src = src;
+        ic.alt = '';
+        ic.setAttribute('decoding', 'async');
+        t.appendChild(h);
+        t.appendChild(ic);
+        stage.appendChild(t);
+      });
+      /* Logo last: Figma paints Company-Logo above Products, and in the floating
+         state tile 12 overlaps the logo box. */
+      var logo = document.createElement('img');
+      logo.className = 'ax-mms__logo';
+      logo.src = '/assets/gen/mm-logo.webp';
+      logo.alt = '';
+      logo.setAttribute('decoding', 'async');
+      stage.appendChild(logo);
+      img.parentNode.replaceChild(stage, img);
+      n++;
+    });
+    return n;
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', build);
+  } else {
+    build();
+  }
 })();
 </script>
 
