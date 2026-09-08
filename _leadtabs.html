@@ -9,10 +9,23 @@
 .ax-lt-tab>.g-t{transition:color .25s ease}
 .ax-lt-tab:focus-visible{outline:2px solid rgb(35,39,46);outline-offset:-3px}
 .ax-lt-tab[aria-selected="true"]:focus-visible{outline-color:rgb(255,255,255)}
-.ax-lt-panel{transition:opacity .16s ease}
-.ax-lt-pulse{opacity:0}
+/* The roster is a horizontal scroller, and the tab strip and the headline sit
+   INSIDE it -- one Figma box holds the lot. Dragging the cards therefore dragged
+   the tabs and the heading off the left edge with them. They are pinned by the
+   opposite of the scroll instead of being re-parented, which would mean
+   recomputing absolute coordinates that Figma owns. */
+.ax-lt-pin{will-change:transform}
+
+/* The cards go out and come back rather than snapping. The transition has to live
+   on the element the class is toggled on -- it used to be declared on one and
+   applied to another, which is why the change was instant however long the
+   duration said. */
+.ax-lt-card{transition:opacity .2s ease,transform .28s cubic-bezier(.22,.61,.36,1)}
+.ax-lt-card.is-out{opacity:0;transform:translateY(0.7vw) scale(.985)}
+
 @media (prefers-reduced-motion:reduce){
-  .ax-lt-tab,.ax-lt-tab>.g-t,.ax-lt-panel{transition:none}
+  .ax-lt-tab,.ax-lt-tab>.g-t,.ax-lt-card{transition:none}
+  .ax-lt-card.is-out{opacity:1;transform:none}
 }
 </style>
 <script>
@@ -113,7 +126,20 @@
                e.querySelectorAll('.g-t').length >= 2;
       }).sort(function(a, b){ return (num(a,'left') || 0) - (num(b,'left') || 0); });
     }
-    if (first) first.classList.add('ax-lt-panel');
+    /* Everything in the scroller that is NOT a card -- the tab strip, the headline,
+       the section's own backdrop -- is held still while the cards move. */
+    var row = first && first.parentElement;
+    if (row){
+      var pins = [].filter.call(row.children, function(e){ return cards.indexOf(e) < 0; });
+      pins.forEach(function(e){ e.classList.add('ax-lt-pin'); });
+      var pin = function(){
+        var x = row.scrollLeft;
+        pins.forEach(function(e){ e.style.transform = x ? 'translateX(' + x + 'px)' : ''; });
+      };
+      row.addEventListener('scroll', pin, { passive: true });
+      pin();
+    }
+    cards.forEach(function(c){ c.classList.add('ax-lt-card'); });
 
     /* Roster A is whatever the page shipped -- read rather than restated, so a Figma
        re-pull of the exported tab carries through without touching this file. */
@@ -186,20 +212,37 @@
         tabs[i].setAttribute('tabindex', on ? '0' : '-1');
       }
     }
+    var swapping = false;
     function select(sel, focus){
-      if (sel !== cur){
+      if (sel !== cur && !swapping){
         cur = sel;
         paint(sel);
         if (head) head.textContent = sel ? B_HEAD : A_HEAD;
-        if (first){
-          first.parentElement.classList.add('ax-lt-pulse');
-          setTimeout(function(){
-            render(sel ? B_ROSTER : A_ROSTER);
-            first.parentElement.classList.remove('ax-lt-pulse');
-          }, 160);
-        } else {
+        swapping = true;
+        /* Staggered by position, so the row reads as one movement left to right
+           rather than every card blinking at once. */
+        cards.forEach(function(c, i){
+          c.style.transitionDelay = (i * 22) + 'ms';
+          c.classList.add('is-out');
+        });
+        setTimeout(function(){
           render(sel ? B_ROSTER : A_ROSTER);
-        }
+          if (row) row.scrollLeft = 0;          /* a new roster starts at its first card */
+          /* One frame with the new content still hidden, so the browser paints it
+             out-of-view before the class comes off and the transition can run. */
+          requestAnimationFrame(function(){
+            requestAnimationFrame(function(){
+              cards.forEach(function(c, i){
+                c.style.transitionDelay = (i * 22) + 'ms';
+                c.classList.remove('is-out');
+              });
+              setTimeout(function(){
+                cards.forEach(function(c){ c.style.transitionDelay = ''; });
+                swapping = false;
+              }, 320 + cards.length * 22);
+            });
+          });
+        }, 200 + cards.length * 22);
       }
       if (focus) tabs[sel].focus();
     }

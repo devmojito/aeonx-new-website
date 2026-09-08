@@ -7058,235 +7058,6 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 
-<style id="ax-ltabs-css">
-/* Leadership department tabs ("PRACTICE & PROGRAMME" / "SALES & GROWTH").
-   Both rosters are authored in Figma, as the two variants of the "Tab Switch"
-   component set: PRACTICE & PROGRAMME is the one the page exports, SALES & GROWTH
-   sits in the variant the export cannot reach. The second roster is carried here,
-   read out of that variant, so switching tabs changes the people rather than
-   pulsing the same seven cards. */
-.ax-lt-tab{cursor:pointer;transition:background-color .25s ease}
-.ax-lt-tab>.g-t{transition:color .25s ease}
-.ax-lt-tab:focus-visible{outline:2px solid rgb(35,39,46);outline-offset:-3px}
-.ax-lt-tab[aria-selected="true"]:focus-visible{outline-color:rgb(255,255,255)}
-.ax-lt-panel{transition:opacity .16s ease}
-.ax-lt-pulse{opacity:0}
-@media (prefers-reduced-motion:reduce){
-  .ax-lt-tab,.ax-lt-tab>.g-t,.ax-lt-panel{transition:none}
-}
-</style>
-<script>
-/* ---- LEADERSHIP DEPARTMENT TABS ---- */
-(function(){
-  var A_TXT = 'PRACTICE & PROGRAMME', B_TXT = 'SALES & GROWTH';
-  var FILL = ['transparent', 'rgb(223,63,23)'];
-  var LBL  = ['rgb(82,96,119)', 'rgb(255,255,255)'];
-  var uid = 0;
-
-  /* Read out of Figma's "Property 1=SALES & GROWTH" variant (4917:12179): the card
-     order is the variant's own left-to-right order, and each photo is the image fill
-     on the card at that position. Priyank Pancholi appears twice in the design, in
-     two different roles, and is left as the design has it. */
-  var A_HEAD = 'The people who run each line.';
-  var B_HEAD = 'Who picks up the phone when you call.';
-  var B_ROSTER = [
-    ['Karan Sankhyan',   'PROGRAM MANAGER - FUNCTIONAL & PRE-SALES', 'b1d57f35bafe181cad3098cfc8a5b1f4829d6402'],
-    ['Priyank Pancholi', 'SALES HEAD',                               '64db4ccb89556617da6da44ace85e1060d8f70d0'],
-    ['Sharad Raina',     'VP - PRODUCT AND CLOUD',                   '593741555ee545a3acef5333502c2061cda74c82'],
-    ['Priyanka Singh',   'BUSINESS DEVELOPMENT MANAGER',             '6b190190a4e276b2f09543c1b4610d5249f038dc'],
-    ['Milan Hota',       'REGIONAL SALES MANAGER - MIDDLE EAST',     '1e3e2f95bcae0f9d1b795bd8f6255dc44664717e'],
-    ['Vicky Gandhi',     'SENIOR PROJECT MANAGER · SAP',         'ac7bcb165778feecb0d1a21fe79a91389827c744'],
-    ['Pranav Patil',     'SENIOR PROJECT MANAGER · SAP',         'a88270096d9cfca494c81d95acfe8264a8ea30e0'],
-    ['Priyank Pancholi', 'REGION HEAD',                              '64db4ccb89556617da6da44ace85e1060d8f70d0']
-  ];
-
-  function txt(e){ return (e.textContent || '').replace(/\s+/g,' ').trim(); }
-  function num(el, k){
-    var m = (el.getAttribute('style') || '').match(new RegExp(k + ':\\s*(-?[0-9.]+)vw'));
-    return m ? parseFloat(m[1]) : null;
-  }
-  function setvw(el, k, v){
-    var s = el.getAttribute('style') || '';
-    el.setAttribute('style', s.replace(new RegExp(k + ':\\s*-?[0-9.]+vw'), k + ':' + v.toFixed(4) + 'vw'));
-  }
-
-  /* The photo is a background-image sized by the export; only the ref changes, so the
-     url is swapped in place and whatever sizing Figma wrote is left alone. .webp is
-     what _webp.py repoints every fill to, and the .png is the fallback for a page
-     served before that ran. */
-  function setPhoto(el, ref){
-    var s = el.getAttribute('style') || '';
-    var ext = /\.webp\)/.test(s) ? 'webp' : 'png';
-    el.setAttribute('style', s.replace(/url\([^)]*\)/, 'url(/assets/gen/' + ref + '.' + ext + ')'));
-    el.setAttribute('data-ref', ref);
-  }
-
-  /* A badge is a fixed-width pill from Figma, sized for the label it shipped with.
-     A different role is a different length, so the pill is resized to its new text
-     and the label recentred inside it -- 12px each side, which is what the design
-     uses. Without this, "REGIONAL SALES MANAGER - MIDDLE EAST" in a pill cut for
-     "PROGRAM MANAGER · DATA & AI" would run out of both ends. */
-  function fitBadge(pill, label){
-    var vwpx = (document.documentElement.clientWidth || window.innerWidth || 1920) / 100;
-    if (!vwpx) return;
-    var prevW = label.style.width, prevWS = label.style.whiteSpace;
-    label.style.width = 'auto'; label.style.whiteSpace = 'nowrap';
-    var ink = label.getBoundingClientRect().width;
-    label.style.width = prevW; label.style.whiteSpace = prevWS;
-    if (!ink) return;
-    var pad = 12 * vwpx / 19.2;                 /* 12px at Figma's 1920 reference */
-    var want = (ink + 2 * pad) / vwpx;
-    var pl = num(pill, 'left'), ll = num(label, 'left');
-    if (pl === null || ll === null) return;
-    setvw(pill, 'width', want);
-    setvw(label, 'width', (ink / vwpx));
-    setvw(label, 'left', pl + pad / vwpx);
-  }
-
-  function setup(scope){
-    var labels = [], all = scope.querySelectorAll('.g-t');
-    for (var i = 0; i < all.length; i++){
-      var t = txt(all[i]);
-      if ((t === A_TXT || t === B_TXT) && !all[i].closest('[data-ax-lt]')) labels.push(all[i]);
-      if (labels.length === 2) break;
-    }
-    if (labels.length !== 2 || txt(labels[0]) !== A_TXT || txt(labels[1]) !== B_TXT) return;
-
-    var tabs = labels.map(function(l){ return l.parentElement; });
-    if (!tabs[0].classList.contains('g-b') || !tabs[1].classList.contains('g-b')) return;
-    var strip = tabs[0].parentElement;
-    if (tabs[1].parentElement !== strip) return;
-    strip.setAttribute('data-ax-lt', '1');
-
-    /* One card, used to find the row it sits in. */
-    var first = strip.nextElementSibling;
-    while (first && !(first.classList && first.classList.contains('g-clip'))) first = first.nextElementSibling;
-
-    /* Every card on the roster row: the cards share a top, so that is what picks
-       them out of a row that also holds the row's own backdrop. */
-    var cards = [];
-    if (first && first.parentElement){
-      var t0 = num(first, 'top');
-      cards = [].filter.call(first.parentElement.children, function(e){
-        return e.classList && e.classList.contains('g-clip') &&
-               num(e, 'top') !== null && Math.abs(num(e, 'top') - t0) < 0.2 &&
-               e.querySelectorAll('.g-t').length >= 2;
-      }).sort(function(a, b){ return (num(a,'left') || 0) - (num(b,'left') || 0); });
-    }
-    if (first) first.classList.add('ax-lt-panel');
-
-    /* Roster A is whatever the page shipped -- read rather than restated, so a Figma
-       re-pull of the exported tab carries through without touching this file. */
-    var A_ROSTER = cards.map(function(c){
-      var g = c.querySelectorAll('.g-t'), img = c.querySelector('[data-ref]');
-      return [g[1] ? txt(g[1]) : '', g[0] ? txt(g[0]) : '', img ? img.getAttribute('data-ref') : ''];
-    });
-
-    var head = null;
-    var hs = scope.querySelectorAll('.g-t');
-    for (i = 0; i < hs.length; i++) if (txt(hs[i]) === A_HEAD){ head = hs[i]; break; }
-
-    /* The second roster is one card longer than the first. The extra is a clone of
-       the last card, offset by the row's own pitch, so it inherits every style the
-       export wrote instead of being built here. */
-    function ensure(n){
-      while (cards.length < n && cards.length >= 2){
-        var last = cards[cards.length - 1];
-        var pitch = (num(cards[1], 'left') || 0) - (num(cards[0], 'left') || 0);
-        var c = last.cloneNode(true);
-        c.dataset.axLtExtra = '1';
-        setvw(c, 'left', (num(last, 'left') || 0) + pitch);
-        last.parentElement.appendChild(c);
-        cards.push(c);
-      }
-    }
-
-    function render(roster){
-      ensure(roster.length);
-      cards.forEach(function(c, i){
-        var row = roster[i];
-        if (!row){ c.style.display = 'none'; return; }
-        c.style.removeProperty('display');
-        var g = c.querySelectorAll('.g-t');
-        var img = c.querySelector('[data-ref]');
-        if (g[1]) g[1].textContent = row[0];
-        if (g[0]) g[0].textContent = row[1];
-        if (img && row[2]) setPhoto(img, row[2]);
-        /* the pill is the .g-b the badge label sits over */
-        var pill = null, lr = g[0] && g[0].getBoundingClientRect();
-        if (lr) [].forEach.call(c.querySelectorAll('.g-b'), function(b){
-          var r = b.getBoundingClientRect();
-          if (r.width && r.left <= lr.left + 3 && r.right >= lr.right - 3 &&
-              r.top <= lr.top + 3 && r.bottom >= lr.bottom - 3) pill = b;
-        });
-        if (pill && g[0]) fitBadge(pill, g[0]);
-      });
-    }
-
-    var n = ++uid, cur = 0;
-    strip.setAttribute('role', 'tablist');
-    strip.setAttribute('aria-label', 'Leadership by department');
-    if (first){ first.id = 'ax-lt-p' + n; first.setAttribute('role', 'tabpanel'); }
-
-    for (i = 0; i < 2; i++){
-      tabs[i].classList.add('ax-lt-tab');
-      tabs[i].id = 'ax-lt-t' + n + i;
-      tabs[i].setAttribute('role', 'tab');
-      tabs[i].setAttribute('aria-selected', i === 0 ? 'true' : 'false');
-      tabs[i].setAttribute('tabindex', i === 0 ? '0' : '-1');
-      if (first) tabs[i].setAttribute('aria-controls', first.id);
-    }
-
-    function paint(sel){
-      for (var i = 0; i < 2; i++){
-        var on = i === sel;
-        tabs[i].style.backgroundColor = FILL[on ? 1 : 0];
-        labels[i].style.color = LBL[on ? 1 : 0];
-        tabs[i].setAttribute('aria-selected', on ? 'true' : 'false');
-        tabs[i].setAttribute('tabindex', on ? '0' : '-1');
-      }
-    }
-    function select(sel, focus){
-      if (sel !== cur){
-        cur = sel;
-        paint(sel);
-        if (head) head.textContent = sel ? B_HEAD : A_HEAD;
-        if (first){
-          first.parentElement.classList.add('ax-lt-pulse');
-          setTimeout(function(){
-            render(sel ? B_ROSTER : A_ROSTER);
-            first.parentElement.classList.remove('ax-lt-pulse');
-          }, 160);
-        } else {
-          render(sel ? B_ROSTER : A_ROSTER);
-        }
-      }
-      if (focus) tabs[sel].focus();
-    }
-    for (i = 0; i < 2; i++) (function(i){
-      tabs[i].addEventListener('click', function(){ select(i); });
-      tabs[i].addEventListener('keydown', function(e){
-        var k = e.key;
-        if (k === 'Enter' || k === ' ' || k === 'Spacebar'){ e.preventDefault(); select(i); }
-        else if (k === 'ArrowRight' || k === 'ArrowLeft' || k === 'Home' || k === 'End'){
-          e.preventDefault(); select(i === 0 ? 1 : 0, true);
-        }
-      });
-    })(i);
-  }
-
-  function init(){
-    setup(document);
-    var mob = document.querySelector('.ax-mob');
-    if (mob) setup(mob);
-  }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-  else init();
-  /* the roster row is also a scroller other passes re-measure, so settle after them */
-  addEventListener('load', function(){ setTimeout(init, 300); });
-})();
-</script>
-
 <style id="ax-mmsuite-css">
 /* ---- Mega-menu "Explore" illustration ----
    Figma component set 6924:20276 is not a still. It holds two variants of the same
@@ -7438,6 +7209,278 @@ document.addEventListener("DOMContentLoaded",function(){
   } else {
     build();
   }
+})();
+</script>
+
+<style id="ax-ltabs-css">
+/* Leadership department tabs ("PRACTICE & PROGRAMME" / "SALES & GROWTH").
+   Both rosters are authored in Figma, as the two variants of the "Tab Switch"
+   component set: PRACTICE & PROGRAMME is the one the page exports, SALES & GROWTH
+   sits in the variant the export cannot reach. The second roster is carried here,
+   read out of that variant, so switching tabs changes the people rather than
+   pulsing the same seven cards. */
+.ax-lt-tab{cursor:pointer;transition:background-color .25s ease}
+.ax-lt-tab>.g-t{transition:color .25s ease}
+.ax-lt-tab:focus-visible{outline:2px solid rgb(35,39,46);outline-offset:-3px}
+.ax-lt-tab[aria-selected="true"]:focus-visible{outline-color:rgb(255,255,255)}
+/* The roster is a horizontal scroller, and the tab strip and the headline sit
+   INSIDE it -- one Figma box holds the lot. Dragging the cards therefore dragged
+   the tabs and the heading off the left edge with them. They are pinned by the
+   opposite of the scroll instead of being re-parented, which would mean
+   recomputing absolute coordinates that Figma owns. */
+.ax-lt-pin{will-change:transform}
+
+/* The cards go out and come back rather than snapping. The transition has to live
+   on the element the class is toggled on -- it used to be declared on one and
+   applied to another, which is why the change was instant however long the
+   duration said. */
+.ax-lt-card{transition:opacity .2s ease,transform .28s cubic-bezier(.22,.61,.36,1)}
+.ax-lt-card.is-out{opacity:0;transform:translateY(0.7vw) scale(.985)}
+
+@media (prefers-reduced-motion:reduce){
+  .ax-lt-tab,.ax-lt-tab>.g-t,.ax-lt-card{transition:none}
+  .ax-lt-card.is-out{opacity:1;transform:none}
+}
+</style>
+<script>
+/* ---- LEADERSHIP DEPARTMENT TABS ---- */
+(function(){
+  var A_TXT = 'PRACTICE & PROGRAMME', B_TXT = 'SALES & GROWTH';
+  var FILL = ['transparent', 'rgb(223,63,23)'];
+  var LBL  = ['rgb(82,96,119)', 'rgb(255,255,255)'];
+  var uid = 0;
+
+  /* Read out of Figma's "Property 1=SALES & GROWTH" variant (4917:12179): the card
+     order is the variant's own left-to-right order, and each photo is the image fill
+     on the card at that position. Priyank Pancholi appears twice in the design, in
+     two different roles, and is left as the design has it. */
+  var A_HEAD = 'The people who run each line.';
+  var B_HEAD = 'Who picks up the phone when you call.';
+  var B_ROSTER = [
+    ['Karan Sankhyan',   'PROGRAM MANAGER - FUNCTIONAL & PRE-SALES', 'b1d57f35bafe181cad3098cfc8a5b1f4829d6402'],
+    ['Priyank Pancholi', 'SALES HEAD',                               '64db4ccb89556617da6da44ace85e1060d8f70d0'],
+    ['Sharad Raina',     'VP - PRODUCT AND CLOUD',                   '593741555ee545a3acef5333502c2061cda74c82'],
+    ['Priyanka Singh',   'BUSINESS DEVELOPMENT MANAGER',             '6b190190a4e276b2f09543c1b4610d5249f038dc'],
+    ['Milan Hota',       'REGIONAL SALES MANAGER - MIDDLE EAST',     '1e3e2f95bcae0f9d1b795bd8f6255dc44664717e'],
+    ['Vicky Gandhi',     'SENIOR PROJECT MANAGER · SAP',         'ac7bcb165778feecb0d1a21fe79a91389827c744'],
+    ['Pranav Patil',     'SENIOR PROJECT MANAGER · SAP',         'a88270096d9cfca494c81d95acfe8264a8ea30e0'],
+    ['Priyank Pancholi', 'REGION HEAD',                              '64db4ccb89556617da6da44ace85e1060d8f70d0']
+  ];
+
+  function txt(e){ return (e.textContent || '').replace(/\s+/g,' ').trim(); }
+  function num(el, k){
+    var m = (el.getAttribute('style') || '').match(new RegExp(k + ':\\s*(-?[0-9.]+)vw'));
+    return m ? parseFloat(m[1]) : null;
+  }
+  function setvw(el, k, v){
+    var s = el.getAttribute('style') || '';
+    el.setAttribute('style', s.replace(new RegExp(k + ':\\s*-?[0-9.]+vw'), k + ':' + v.toFixed(4) + 'vw'));
+  }
+
+  /* The photo is a background-image sized by the export; only the ref changes, so the
+     url is swapped in place and whatever sizing Figma wrote is left alone. .webp is
+     what _webp.py repoints every fill to, and the .png is the fallback for a page
+     served before that ran. */
+  function setPhoto(el, ref){
+    var s = el.getAttribute('style') || '';
+    var ext = /\.webp\)/.test(s) ? 'webp' : 'png';
+    el.setAttribute('style', s.replace(/url\([^)]*\)/, 'url(/assets/gen/' + ref + '.' + ext + ')'));
+    el.setAttribute('data-ref', ref);
+  }
+
+  /* A badge is a fixed-width pill from Figma, sized for the label it shipped with.
+     A different role is a different length, so the pill is resized to its new text
+     and the label recentred inside it -- 12px each side, which is what the design
+     uses. Without this, "REGIONAL SALES MANAGER - MIDDLE EAST" in a pill cut for
+     "PROGRAM MANAGER · DATA & AI" would run out of both ends. */
+  function fitBadge(pill, label){
+    var vwpx = (document.documentElement.clientWidth || window.innerWidth || 1920) / 100;
+    if (!vwpx) return;
+    var prevW = label.style.width, prevWS = label.style.whiteSpace;
+    label.style.width = 'auto'; label.style.whiteSpace = 'nowrap';
+    var ink = label.getBoundingClientRect().width;
+    label.style.width = prevW; label.style.whiteSpace = prevWS;
+    if (!ink) return;
+    var pad = 12 * vwpx / 19.2;                 /* 12px at Figma's 1920 reference */
+    var want = (ink + 2 * pad) / vwpx;
+    var pl = num(pill, 'left'), ll = num(label, 'left');
+    if (pl === null || ll === null) return;
+    setvw(pill, 'width', want);
+    setvw(label, 'width', (ink / vwpx));
+    setvw(label, 'left', pl + pad / vwpx);
+  }
+
+  function setup(scope){
+    var labels = [], all = scope.querySelectorAll('.g-t');
+    for (var i = 0; i < all.length; i++){
+      var t = txt(all[i]);
+      if ((t === A_TXT || t === B_TXT) && !all[i].closest('[data-ax-lt]')) labels.push(all[i]);
+      if (labels.length === 2) break;
+    }
+    if (labels.length !== 2 || txt(labels[0]) !== A_TXT || txt(labels[1]) !== B_TXT) return;
+
+    var tabs = labels.map(function(l){ return l.parentElement; });
+    if (!tabs[0].classList.contains('g-b') || !tabs[1].classList.contains('g-b')) return;
+    var strip = tabs[0].parentElement;
+    if (tabs[1].parentElement !== strip) return;
+    strip.setAttribute('data-ax-lt', '1');
+
+    /* One card, used to find the row it sits in. */
+    var first = strip.nextElementSibling;
+    while (first && !(first.classList && first.classList.contains('g-clip'))) first = first.nextElementSibling;
+
+    /* Every card on the roster row: the cards share a top, so that is what picks
+       them out of a row that also holds the row's own backdrop. */
+    var cards = [];
+    if (first && first.parentElement){
+      var t0 = num(first, 'top');
+      cards = [].filter.call(first.parentElement.children, function(e){
+        return e.classList && e.classList.contains('g-clip') &&
+               num(e, 'top') !== null && Math.abs(num(e, 'top') - t0) < 0.2 &&
+               e.querySelectorAll('.g-t').length >= 2;
+      }).sort(function(a, b){ return (num(a,'left') || 0) - (num(b,'left') || 0); });
+    }
+    /* Everything in the scroller that is NOT a card -- the tab strip, the headline,
+       the section's own backdrop -- is held still while the cards move. */
+    var row = first && first.parentElement;
+    if (row){
+      var pins = [].filter.call(row.children, function(e){ return cards.indexOf(e) < 0; });
+      pins.forEach(function(e){ e.classList.add('ax-lt-pin'); });
+      var pin = function(){
+        var x = row.scrollLeft;
+        pins.forEach(function(e){ e.style.transform = x ? 'translateX(' + x + 'px)' : ''; });
+      };
+      row.addEventListener('scroll', pin, { passive: true });
+      pin();
+    }
+    cards.forEach(function(c){ c.classList.add('ax-lt-card'); });
+
+    /* Roster A is whatever the page shipped -- read rather than restated, so a Figma
+       re-pull of the exported tab carries through without touching this file. */
+    var A_ROSTER = cards.map(function(c){
+      var g = c.querySelectorAll('.g-t'), img = c.querySelector('[data-ref]');
+      return [g[1] ? txt(g[1]) : '', g[0] ? txt(g[0]) : '', img ? img.getAttribute('data-ref') : ''];
+    });
+
+    var head = null;
+    var hs = scope.querySelectorAll('.g-t');
+    for (i = 0; i < hs.length; i++) if (txt(hs[i]) === A_HEAD){ head = hs[i]; break; }
+
+    /* The second roster is one card longer than the first. The extra is a clone of
+       the last card, offset by the row's own pitch, so it inherits every style the
+       export wrote instead of being built here. */
+    function ensure(n){
+      while (cards.length < n && cards.length >= 2){
+        var last = cards[cards.length - 1];
+        var pitch = (num(cards[1], 'left') || 0) - (num(cards[0], 'left') || 0);
+        var c = last.cloneNode(true);
+        c.dataset.axLtExtra = '1';
+        setvw(c, 'left', (num(last, 'left') || 0) + pitch);
+        last.parentElement.appendChild(c);
+        cards.push(c);
+      }
+    }
+
+    function render(roster){
+      ensure(roster.length);
+      cards.forEach(function(c, i){
+        var row = roster[i];
+        if (!row){ c.style.display = 'none'; return; }
+        c.style.removeProperty('display');
+        var g = c.querySelectorAll('.g-t');
+        var img = c.querySelector('[data-ref]');
+        if (g[1]) g[1].textContent = row[0];
+        if (g[0]) g[0].textContent = row[1];
+        if (img && row[2]) setPhoto(img, row[2]);
+        /* the pill is the .g-b the badge label sits over */
+        var pill = null, lr = g[0] && g[0].getBoundingClientRect();
+        if (lr) [].forEach.call(c.querySelectorAll('.g-b'), function(b){
+          var r = b.getBoundingClientRect();
+          if (r.width && r.left <= lr.left + 3 && r.right >= lr.right - 3 &&
+              r.top <= lr.top + 3 && r.bottom >= lr.bottom - 3) pill = b;
+        });
+        if (pill && g[0]) fitBadge(pill, g[0]);
+      });
+    }
+
+    var n = ++uid, cur = 0;
+    strip.setAttribute('role', 'tablist');
+    strip.setAttribute('aria-label', 'Leadership by department');
+    if (first){ first.id = 'ax-lt-p' + n; first.setAttribute('role', 'tabpanel'); }
+
+    for (i = 0; i < 2; i++){
+      tabs[i].classList.add('ax-lt-tab');
+      tabs[i].id = 'ax-lt-t' + n + i;
+      tabs[i].setAttribute('role', 'tab');
+      tabs[i].setAttribute('aria-selected', i === 0 ? 'true' : 'false');
+      tabs[i].setAttribute('tabindex', i === 0 ? '0' : '-1');
+      if (first) tabs[i].setAttribute('aria-controls', first.id);
+    }
+
+    function paint(sel){
+      for (var i = 0; i < 2; i++){
+        var on = i === sel;
+        tabs[i].style.backgroundColor = FILL[on ? 1 : 0];
+        labels[i].style.color = LBL[on ? 1 : 0];
+        tabs[i].setAttribute('aria-selected', on ? 'true' : 'false');
+        tabs[i].setAttribute('tabindex', on ? '0' : '-1');
+      }
+    }
+    var swapping = false;
+    function select(sel, focus){
+      if (sel !== cur && !swapping){
+        cur = sel;
+        paint(sel);
+        if (head) head.textContent = sel ? B_HEAD : A_HEAD;
+        swapping = true;
+        /* Staggered by position, so the row reads as one movement left to right
+           rather than every card blinking at once. */
+        cards.forEach(function(c, i){
+          c.style.transitionDelay = (i * 22) + 'ms';
+          c.classList.add('is-out');
+        });
+        setTimeout(function(){
+          render(sel ? B_ROSTER : A_ROSTER);
+          if (row) row.scrollLeft = 0;          /* a new roster starts at its first card */
+          /* One frame with the new content still hidden, so the browser paints it
+             out-of-view before the class comes off and the transition can run. */
+          requestAnimationFrame(function(){
+            requestAnimationFrame(function(){
+              cards.forEach(function(c, i){
+                c.style.transitionDelay = (i * 22) + 'ms';
+                c.classList.remove('is-out');
+              });
+              setTimeout(function(){
+                cards.forEach(function(c){ c.style.transitionDelay = ''; });
+                swapping = false;
+              }, 320 + cards.length * 22);
+            });
+          });
+        }, 200 + cards.length * 22);
+      }
+      if (focus) tabs[sel].focus();
+    }
+    for (i = 0; i < 2; i++) (function(i){
+      tabs[i].addEventListener('click', function(){ select(i); });
+      tabs[i].addEventListener('keydown', function(e){
+        var k = e.key;
+        if (k === 'Enter' || k === ' ' || k === 'Spacebar'){ e.preventDefault(); select(i); }
+        else if (k === 'ArrowRight' || k === 'ArrowLeft' || k === 'Home' || k === 'End'){
+          e.preventDefault(); select(i === 0 ? 1 : 0, true);
+        }
+      });
+    })(i);
+  }
+
+  function init(){
+    setup(document);
+    var mob = document.querySelector('.ax-mob');
+    if (mob) setup(mob);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+  /* the roster row is also a scroller other passes re-measure, so settle after them */
+  addEventListener('load', function(){ setTimeout(init, 300); });
 })();
 </script>
 
