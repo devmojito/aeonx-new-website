@@ -6099,451 +6099,6 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 
-<style id="ax-cform-css">
-/* The contact panels are flattened Figma output: every field is a dummy TEXT div
-   inside a bordered box, not a real form control -- nothing was typeable, nothing
-   submitted. Real <input>/<select>/<textarea> elements are grafted in at the exact
-   geometry of the div they replace, matched by LABEL TEXT (not hardcoded offsets),
-   so this survives a Figma re-pull. No backend exists on this static site, so
-   submission goes through mailto: -- no account, no key, no paid SaaS, works today. */
-.ax-cf-in{position:absolute;box-sizing:border-box;border:none;outline:none;background:transparent;
-  font-family:'Nunito Sans',sans-serif;color:rgb(35,39,46);padding:0;margin:0;width:100%!important}
-.ax-cf-in::placeholder{color:rgb(134,149,170)}
-.ax-cf-box{transition:border-color .15s ease}
-.ax-cf-box:focus-within{border-color:rgb(223,63,23)!important}
-textarea.ax-cf-in{resize:vertical;font-family:'Nunito Sans',sans-serif}
-select.ax-cf-in{cursor:pointer;appearance:none;-webkit-appearance:none}
-.ax-cf-err{border-color:rgb(220,38,38)!important}
-/* The country-code chip: the select fills the whole chip so the flag and the chevron
-   are part of its hit area (they are drawn as siblings ON TOP of it and are made
-   pointer-transparent in JS), and the label keeps its designed x via padding. */
-select.ax-cf-code{left:0!important;top:0!important;height:100%!important;cursor:pointer}
-.ax-cf-msg{position:absolute;font-family:'Nunito Sans',sans-serif;font-weight:500;
-  color:rgb(2,51,89);transition:opacity .2s ease}
-</style>
-<script>
-/* ---- CONTACT FORM: REAL FIELDS + LIVE SUBMIT (mailto FALLBACK) ---- */
-(function(){
-  var MAILTO = 'sales@aeonx.digital';
-  /* Same resolution _invdocs.html uses: window.AX_API_BASE set explicitly, or
-     localhost during local dev, or nothing (staging keeps the old behaviour
-     rather than pointing at a backend that may not exist there yet). */
-  var API_BASE=(window.AX_API_BASE||
-    (/^(localhost|127\.0\.0\.1)$/.test(location.hostname)?'http://localhost:8000':''))
-    .replace(/\/+$/,'');
-  /* Figma's own labels, mapped to what the API expects. A lead must never be
-     silently dropped over a naming mismatch, so this list is the single
-     place that mapping lives -- not duplicated per field below. */
-  var API_FIELD={'Company name':'company_name','Full name':'full_name','Email ID':'email',
-    'Country Code':'country_code','Phone Number':'phone_number','Role':'role',
-    'Additional Information':'additional_information','Region':'region',
-    'Type of engagement':'type_of_engagement','Timeline':'timeline',
-    'Brief Description':'brief_description'};
-
-  function txt(e){ return (e.textContent || '').replace(/\s+/g,' ').replace(/[*]$/,'').trim(); }
-  function styleOf(el){ return el.getAttribute('style') || ''; }
-
-  /* Move every absolutely-positioned child of `div` into a same-styled <form>, then
-     swap the div out for the form. Children resolve position against the nearest
-     positioned ancestor, so as long as the form keeps the div's own inline style
-     (position:absolute + the same box) everything inside stays pixel-identical. */
-  function divToForm(div){
-    var form = document.createElement('form');
-    form.setAttribute('style', styleOf(div));
-    form.className = div.className;
-    form.setAttribute('novalidate', '');
-    while (div.firstChild) form.appendChild(div.firstChild);
-    div.parentNode.replaceChild(form, div);
-    return form;
-  }
-
-  /* Replace a dummy label div with a real control at the SAME geometry, inheriting
-     its font styles so nothing visually shifts. `mk` builds the actual element. */
-  function swap(box, dummy, mk){
-    var st = styleOf(dummy);
-    var el = mk();
-    el.className = 'ax-cf-in';
-    el.setAttribute('style', st.replace(/color:[^;]+;?/, '').replace(/white-space:[^;]+;?/, ''));
-    dummy.parentNode.replaceChild(el, dummy);
-    box.classList.add('ax-cf-box');
-    return el;
-  }
-
-  function findLabelBox(scope, label, wantChip){
-    var ts = scope.querySelectorAll('.g-t');
-    for (var i = 0; i < ts.length; i++)
-      if (txt(ts[i]) === label){
-        var box = ts[i].nextElementSibling;
-        while (box && !(box.classList && box.classList.contains('g-b'))) box = box.nextElementSibling;
-        if (!box) continue;
-        /* Phone Number is drawn as TWO boxes -- a narrow country-code chip (flag +
-           chevron) and the number box beside it. Taking the first one put the input
-           in the 108px chip and left the number box showing its "XXXXX-XXXXX"
-           filler, which is why that field looked a third the size of every other.
-           Among the boxes on this field's row, take the WIDEST: for every other
-           field that is still the first one. `wantChip` returns the narrow one
-           instead, so the country-code chip itself can be wired as a real control. */
-        /* Width comes from the INLINE style, not a rect: this runs once before the
-           panel has been laid out, where every rect measures 0 and the chip would
-           win by default -- then again after, giving two inputs for one field. */
-        var wOf = function(el){
-          var m = (el.getAttribute('style') || '').match(/width:\s*([\d.]+)vw/);
-          return m ? parseFloat(m[1]) : el.getBoundingClientRect().width;
-        };
-        var tOf = function(el){
-          var m = (el.getAttribute('style') || '').match(/top:\s*([\d.]+)vw/);
-          return m ? parseFloat(m[1]) : el.getBoundingClientRect().top;
-        };
-        var chip = box;
-        var best = box, bw = wOf(box), bt = tOf(box);
-        var n = box.nextElementSibling;
-        for (var k = 0; k < 4 && n; k++, n = n.nextElementSibling){
-          /* Stop at the next field's LABEL. Skipping over it (as this used to)
-             let the widest-box search cross into a box that belongs to another
-             question: on the desktop enquiry panel, Region and "Type of
-             engagement" sit side by side on one row, so Region's search walked
-             past the "Type of engagement" label, found its wider box and
-             claimed it -- leaving that question with no control at all and
-             dropping it from every submission. The phone chip + number pair
-             this search exists for has no label between the two boxes, so it
-             is unaffected. */
-          if (n.classList && n.classList.contains('g-t')) break;
-          if (!(n.classList && n.classList.contains('g-b'))) continue;
-          if (Math.abs(tOf(n) - bt) > 0.4) break;            /* next row down */
-          if (wOf(n) > bw && dummyIn(n)){ bw = wOf(n); best = n; }
-        }
-        return wantChip ? chip : best;
-      }
-    return null;
-  }
-  function dummyIn(box){
-    for (var i = 0; i < box.children.length; i++)
-      if (box.children[i].classList.contains('g-t')) return box.children[i];
-    return null;
-  }
-
-  function field(scope, label, opts){
-    opts = opts || {};
-    /* init() runs twice (DOMContentLoaded and load). Without this the second pass
-       grafts a SECOND input for the same field. */
-    var had = scope.querySelector('[name="' + label.replace(/"/g, '') + '"]');
-    if (had) return had;
-    var box = findLabelBox(scope, label);
-    if (!box) return null;
-    var dummy = dummyIn(box);
-    if (!dummy) return null;
-    var el = swap(box, dummy, function(){
-      var e = document.createElement(opts.tag === 'textarea' ? 'textarea' : 'input');
-      if (opts.tag !== 'textarea') e.type = opts.type || 'text';
-      return e;
-    });
-    el.name = label;
-    el.placeholder = opts.placeholder || label;
-    if (opts.required) el.required = true;
-    if (opts.pattern) el.pattern = opts.pattern;
-    return el;
-  }
-
-  function selectField(scope, label, options, opts){
-    opts = opts || {};
-    /* Same guard field() carries, and for a worse failure than a duplicate.
-       init() runs twice (DOMContentLoaded and load). On the second pass this
-       field's own box no longer holds a dummy -- it was replaced by the select
-       on pass one -- so findLabelBox's "widest box on this row" search walks on
-       and returns the NEXT field's box instead, which still has one. That put a
-       second Region select into the "Type of engagement" slot and left that
-       question with no control at all, silently dropping it from every
-       submission. */
-    var already = scope.querySelector('[name="' + (opts.name || label).replace(/"/g, '') + '"]');
-    if (already) return already;
-    var box = findLabelBox(scope, label, opts.chip);
-    if (!box) return null;
-    var dummy = dummyIn(box);
-    if (!dummy) return null;
-    var el = swap(box, dummy, function(){ return document.createElement('select'); });
-    el.name = opts.name || label;
-    el.required = true;
-    options.forEach(function(o){
-      var opt = document.createElement('option');
-      opt.value = o; opt.textContent = o;
-      el.appendChild(opt);
-    });
-    return el;
-  }
-
-  function findByText(scope, label){
-    /* Case-insensitive on purpose: the Title Case pass rewrites CTA labels
-       ("Reset form" -> "Reset Form") and whichever fragment runs first wins, so an
-       exact match silently found nothing and left the Reset button dead. */
-    var want = String(label).toLowerCase();
-    var ts = scope.querySelectorAll('.g-t');
-    for (var i = 0; i < ts.length; i++) if (txt(ts[i]).toLowerCase() === want) return ts[i];
-    return null;
-  }
-
-  /* The clickable pill for a button label.
-     Figma exports a button as the coloured RECT and its LABEL as SIBLINGS, not as
-     parent and child -- so label.closest('.g-b') walks straight PAST the pill and
-     lands on whatever big box encloses the whole area. That is what made the entire
-     form panel a submit target: any click anywhere in it ran validation, which
-     focuses the first invalid field, so clicking "Full name" snapped focus back to
-     "Company name". Find the pill by GEOMETRY instead: the smallest .g-b whose rect
-     contains the label's, capped so a section box can never qualify. Falls back to
-     the label itself -- never to an ancestor, because being wrong here means
-     hijacking clicks for the whole panel again. */
-  function pillFor(form, label){
-    var lr = label.getBoundingClientRect();
-    if (!lr.width || !lr.height) return label;
-    var la = lr.width * lr.height, best = null, bestA = Infinity;
-    form.querySelectorAll('.g-b').forEach(function(b){
-      if (b.contains(label)) return;              /* an ancestor, not a sibling pill */
-      var br = b.getBoundingClientRect();
-      if (!br.width || !br.height) return;
-      var ba = br.width * br.height;
-      if (ba > la * 8) return;                    /* far bigger than its label = not a pill */
-      if (!(lr.left >= br.left - 3 && lr.right <= br.right + 3 &&
-            lr.top >= br.top - 3 && lr.bottom <= br.bottom + 3)) return;
-      if (ba < bestA){ bestA = ba; best = b; }
-    });
-    return best || label;
-  }
-
-  function wireSubmit(form, subjectPrefix, kind){
-    var msgHost = null, prev = null, busy = false;
-
-    function say(text, hold){
-      if (!msgHost){
-        msgHost = form.querySelector('.g-t:last-of-type');
-        if (msgHost) prev = msgHost.textContent;
-      }
-      if (!msgHost) return;
-      msgHost.textContent = text;
-      if (hold) setTimeout(function(){ if (msgHost) msgHost.textContent = prev; }, hold);
-    }
-
-    /* The original behaviour, kept as the fallback path. It is also the reason
-       this whole endpoint exists: mailto: silently loses the enquiry on any
-       device with no mail client configured, which is most work laptops. */
-    function mailto(){
-      var lines = [];
-      [].slice.call(form.elements).forEach(function(el){
-        if (!el.name || !el.value) return;
-        lines.push(el.name + ': ' + el.value);
-      });
-      var subject = encodeURIComponent(subjectPrefix + ' -- ' + (form.querySelector('[name="Full name"]') || {}).value);
-      var body = encodeURIComponent(lines.join('\n'));
-      window.location.href = 'mailto:' + MAILTO + '?subject=' + subject + '&body=' + body;
-      say('Opening your email client with this message ready to send...', 6000);
-    }
-
-    form.addEventListener('submit', function(e){
-      e.preventDefault();
-      if (busy) return;                     /* double-submit = duplicate lead */
-      var bad = [].slice.call(form.querySelectorAll('.ax-cf-err'));
-      bad.forEach(function(b){ b.classList.remove('ax-cf-err'); });
-      if (!form.checkValidity()){
-        var first = null;
-        [].slice.call(form.elements).forEach(function(el){
-          if (el.willValidate && !el.checkValidity()){
-            (el.closest('.g-b') || el).classList.add('ax-cf-err');
-            if (!first) first = el;
-          }
-        });
-        if (first) first.focus();
-        return;
-      }
-
-      /* '' is the correct same-origin base; see note in _chrome.html. */
-      if (!window.fetch){ mailto(); return; }
-
-      var payload = { kind: kind === 'A' ? 'talk' : 'enquiry', source_page: location.pathname };
-      [].slice.call(form.elements).forEach(function(el){
-        var key = API_FIELD[el.name];
-        if (key && el.value) payload[key] = el.value;
-      });
-
-      busy = true;
-      say('Sending...');
-      fetch(API_BASE + '/api/contact/', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(payload)
-      }).then(function(r){
-        if (r.ok){
-          form.reset();
-          say('Thank you — we have your enquiry and will be in touch shortly.', 8000);
-          return;
-        }
-        /* 429 is the rate limiter, and it is the one failure where retrying
-           via email would just re-send what we already rejected. Everything
-           else means we did not record the enquiry, so fall back rather than
-           lose it. */
-        if (r.status === 429){
-          say('You have sent several enquiries already — please email ' + MAILTO + '.', 10000);
-          return;
-        }
-        mailto();
-      }).catch(function(){
-        mailto();                            /* offline / API down / CORS */
-      }).then(function(){ busy = false; });
-    });
-  }
-
-  function wirePanel(scope, kind){
-    /* the marker must be set on the FINAL <form>, not the div: divToForm() discards
-       the original element outright, so anything set on it before the swap is lost
-       and this would re-wire on every scan */
-    var form = scope.tagName === 'FORM' ? scope : divToForm(scope);
-    if (form.dataset.axCform) return;
-    form.dataset.axCform = '1';
-
-    field(form, 'Company name', { required:true, placeholder:'Your company name' });
-    field(form, 'Full name', { required:true, placeholder:'Your full name' });
-    field(form, 'Email ID', { required:true, type:'email', placeholder:'you@company.com' });
-    /* "XXXXX-XXXXX" is Figma's filler, not a hint anyone can act on -- a real
-       example number reads as an instruction instead of noise. */
-    field(form, 'Phone Number', { required:true, type:'tel', placeholder:'98765 43210',
-      pattern:'[0-9 ()+-]{6,}' });   /* a hyphen LAST needs no escape; the old \\-\\s made an invalid range, so browsers dropped the pattern and the field accepted letters */
-    /* The country-code chip beside Phone Number ("IND(+91)") was static Figma text --
-       flag + label + chevron drawn to look like a dropdown, wired to nothing. Made a
-       plain editable box instead of a picker: neither icon means anything without a
-       list to open or a country actually chosen, so both are hidden and the field
-       takes over the flag's own left inset instead of leaving a gap where it was. */
-    var codeBox = findLabelBox(form, 'Phone Number', true);
-    var codeDummy = codeBox && dummyIn(codeBox);
-    if (codeDummy){
-      var code = swap(codeBox, codeDummy, function(){ return document.createElement('input'); });
-      code.type = 'text';
-      code.name = 'Country Code';
-      code.placeholder = 'IND(+91)';
-      code.required = true;
-      var icons = [].slice.call(codeBox.querySelectorAll('.g-vec'));
-      if (icons.length){
-        code.style.left = icons[0].style.left;
-        icons.forEach(function(v){ v.style.display = 'none'; });
-      }
-    }
-
-    if (kind === 'A'){
-      field(form, 'Role', { required:true, placeholder:'Your role' });
-      field(form, 'Additional Information', { tag:'textarea', placeholder:'Any additional information about your quotation' });
-    } else {
-      selectField(form, 'Region', ['India', 'UAE', 'Other']);
-      selectField(form, 'Type of engagement', ['RISE with SAP', 'GROW with SAP',
-        'SAP AMS (AXIOM)', 'AWS', 'Google Cloud', 'Multi-cloud CMS', 'AXIOM AI Platform', 'Other']);
-      selectField(form, 'Timeline', ['0-3 Months', '3-6 Months', '6-12 Months', '12+ Months']);
-      field(form, 'Brief Description', { tag:'textarea',
-        placeholder:"Tell us what you're trying to do, what's in your way, and what done looks like." });
-    }
-
-    /* Both buttons are intercepted at DOCUMENT CAPTURE. The chrome CTA linkifier
-       registers its own navigate handler on these pills before this fragment runs,
-       and at the target phase listeners fire in registration order regardless of the
-       capture flag -- a same-element listener is simply too late (this is why Reset
-       looked wired and still did nothing). Matching by click POINT as well as target
-       covers the invisible shells that sit over the pills. */
-    function capture(el, fn){
-      document.addEventListener('click', function(e){
-        var t = e.target, hit = (t && t.nodeType === 1 && (el === t || el.contains(t)));
-        if (!hit && (e.clientX || e.clientY)){
-          var r = el.getBoundingClientRect();
-          hit = r.width > 0 && e.clientX >= r.left && e.clientX <= r.right &&
-                e.clientY >= r.top && e.clientY <= r.bottom;
-        }
-        if (!hit) return;
-        e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
-        fn();
-      }, true);
-    }
-
-    /* Figma also leaves the dummy phone string drawn as plain text beside the field
-       ("XXXXX-XXXXX"). It is not a placeholder, it is a picture of one, so it sits
-       there whatever the reader types -- remove it. */
-    [].slice.call(form.querySelectorAll('.g-t')).forEach(function(e){
-      if (e.children.length) return;
-      if (/^[Xx]{4,}\s*[-\u2013]?\s*[Xx]{4,}$/.test(txt(e))) e.style.display = 'none';
-    });
-
-    var resetBtn = findByText(form, 'Reset Form');
-    if (resetBtn){
-      var resetPill = pillFor(form, resetBtn);
-      resetPill.style.cursor = 'pointer';
-      resetPill.setAttribute('role', 'button');
-      resetPill.setAttribute('tabindex', '0');
-      var doReset = function(){
-        form.reset();
-        /* form.reset() only restores DEFAULT values, and these fields are grafted in
-           with their user text as the live value -- clear them explicitly. */
-        form.querySelectorAll('input,textarea').forEach(function(i){ i.value = ''; });
-        form.querySelectorAll('select').forEach(function(sel){ sel.selectedIndex = 0; });
-      };
-      capture(resetPill, doReset);
-      resetPill.addEventListener('keydown', function(e){
-        if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); doReset(); } });
-    }
-    /* the RPF/RFP spelling is corrected at runtime by _uifx, so accept both */
-    var sendLabel = findByText(form, 'Send Message') || findByText(form, 'Send RFP Request')
-                 || findByText(form, 'Send RPF Request');
-    if (sendLabel){
-      var sendPill = pillFor(form, sendLabel);
-      sendPill.style.cursor = 'pointer';
-      sendPill.setAttribute('role', 'button');
-      sendPill.setAttribute('tabindex', '0');
-      var doSend = function(){
-        if (form.requestSubmit) form.requestSubmit();
-        else form.dispatchEvent(new Event('submit', {cancelable:true}));
-      };
-      capture(sendPill, doSend);
-      sendPill.addEventListener('keydown', function(e){
-        if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); doSend(); } });
-    }
-    wireSubmit(form, kind === 'A' ? 'Talk to AeonX' : 'Project enquiry', kind);
-  }
-
-  function scan(){
-    /* Each panel is identified by walking up from a field label to the surrounding
-       white box; both panels reuse the same label set, so this runs once per panel
-       as each becomes available (variant B is injected by _formtabs.html). The
-       outer panel wrapper (the whole card: grey info column + white form box as
-       siblings) also "contains" all four labels via its subtree and would
-       otherwise match too -- keep only the innermost candidate, or the outer one
-       gets converted into a form wrapping an already-real inner form, and a
-       nested form's own .elements is empty per spec (silently dead). */
-    var candidates = [];
-    document.querySelectorAll('.g-b.g-clip').forEach(function(box){
-      if (box.dataset.axCform) return;
-      var isPanel = findLabelBox(box, 'Company name') && findLabelBox(box, 'Full name') &&
-                    findLabelBox(box, 'Email ID') && findLabelBox(box, 'Phone Number');
-      if (isPanel) candidates.push(box);
-    });
-    var panels = candidates.filter(function(c){
-      return !candidates.some(function(o){ return o !== c && c.contains(o); });
-    });
-    panels.forEach(function(box){
-      var kind = findLabelBox(box, 'Role') ? 'A' : (findLabelBox(box, 'Region') ? 'B' : null);
-      if (kind) wirePanel(box, kind);
-    });
-  }
-
-  function init(){
-    scan();
-    /* variant B is cloned in by _formtabs.html's own init, which runs in the same
-       DOMContentLoaded phase -- a MutationObserver catches it whichever order the
-       two scripts settle in, and disconnects once both known panels are wired. */
-    var seen = 0;
-    var mo = new MutationObserver(function(){
-      scan();
-      seen = document.querySelectorAll('[data-ax-cform]').length;
-      if (seen >= 2) mo.disconnect();
-    });
-    mo.observe(document.body, { childList:true, subtree:true });
-    setTimeout(function(){ mo.disconnect(); }, 4000);
-  }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-  else init();
-})();
-</script>
-
 <style id="ax-herotabs-css">
 /* 300ms / EASE_OUT is not a guess: every `Tab` node in the component set carries
    transitionDuration 300 and transitionEasing EASE_OUT, which is what Figma would
@@ -7960,6 +7515,507 @@ select.ax-cf-code{left:0!important;top:0!important;height:100%!important;cursor:
   });
   addEventListener('resize',function(){ clearTimeout(window.__axfxR);
     window.__axfxR=setTimeout(function(){ centerLabels(); spaceArrows(); },200); });
+})();
+</script>
+
+<style id="ax-cform-css">
+/* The contact panels are flattened Figma output: every field is a dummy TEXT div
+   inside a bordered box, not a real form control -- nothing was typeable, nothing
+   submitted. Real <input>/<select>/<textarea> elements are grafted in at the exact
+   geometry of the div they replace, matched by LABEL TEXT (not hardcoded offsets),
+   so this survives a Figma re-pull. No backend exists on this static site, so
+   submission goes through mailto: -- no account, no key, no paid SaaS, works today. */
+.ax-cf-in{position:absolute;box-sizing:border-box;border:none;outline:none;background:transparent;
+  font-family:'Nunito Sans',sans-serif;color:rgb(35,39,46);padding:0;margin:0;width:100%!important}
+.ax-cf-in::placeholder{color:rgb(134,149,170)}
+.ax-cf-box{transition:border-color .15s ease}
+.ax-cf-box:focus-within{border-color:rgb(223,63,23)!important}
+textarea.ax-cf-in{resize:vertical;font-family:'Nunito Sans',sans-serif}
+select.ax-cf-in{cursor:pointer;appearance:none;-webkit-appearance:none}
+.ax-cf-err{border-color:rgb(220,38,38)!important}
+/* The country-code chip: the select fills the whole chip so the flag and the chevron
+   are part of its hit area (they are drawn as siblings ON TOP of it and are made
+   pointer-transparent in JS), and the label keeps its designed x via padding. */
+select.ax-cf-code{left:0!important;top:0!important;height:100%!important;cursor:pointer}
+.ax-cf-msg{position:absolute;font-family:'Nunito Sans',sans-serif;font-weight:500;
+  color:rgb(2,51,89);transition:opacity .2s ease}
+</style>
+<script>
+/* ---- CONTACT FORM: REAL FIELDS + LIVE SUBMIT (mailto FALLBACK) ---- */
+(function(){
+  var MAILTO = 'sales@aeonx.digital';
+  /* Same resolution _invdocs.html uses: window.AX_API_BASE set explicitly, or
+     localhost during local dev, or nothing (staging keeps the old behaviour
+     rather than pointing at a backend that may not exist there yet). */
+  var API_BASE=(window.AX_API_BASE||
+    (/^(localhost|127\.0\.0\.1)$/.test(location.hostname)?'http://localhost:8000':''))
+    .replace(/\/+$/,'');
+  /* Figma's own labels, mapped to what the API expects. A lead must never be
+     silently dropped over a naming mismatch, so this list is the single
+     place that mapping lives -- not duplicated per field below. */
+  var API_FIELD={'Company name':'company_name','Full name':'full_name','Email ID':'email',
+    'Country Code':'country_code','Phone Number':'phone_number','Role':'role',
+    'Additional Information':'additional_information','Region':'region',
+    'Type of engagement':'type_of_engagement','Timeline':'timeline',
+    'Brief Description':'brief_description'};
+
+  function txt(e){ return (e.textContent || '').replace(/\s+/g,' ').replace(/[*]$/,'').trim(); }
+  function styleOf(el){ return el.getAttribute('style') || ''; }
+
+  /* Move every absolutely-positioned child of `div` into a same-styled <form>, then
+     swap the div out for the form. Children resolve position against the nearest
+     positioned ancestor, so as long as the form keeps the div's own inline style
+     (position:absolute + the same box) everything inside stays pixel-identical. */
+  function divToForm(div){
+    var form = document.createElement('form');
+    form.setAttribute('style', styleOf(div));
+    form.className = div.className;
+    form.setAttribute('novalidate', '');
+    while (div.firstChild) form.appendChild(div.firstChild);
+    div.parentNode.replaceChild(form, div);
+    return form;
+  }
+
+  /* Replace a dummy label div with a real control at the SAME geometry, inheriting
+     its font styles so nothing visually shifts. `mk` builds the actual element. */
+  function swap(box, dummy, mk){
+    var st = styleOf(dummy);
+    var el = mk();
+    el.className = 'ax-cf-in';
+    el.setAttribute('style', st.replace(/color:[^;]+;?/, '').replace(/white-space:[^;]+;?/, ''));
+    dummy.parentNode.replaceChild(el, dummy);
+    box.classList.add('ax-cf-box');
+    return el;
+  }
+
+  function findLabelBox(scope, label, wantChip){
+    var ts = scope.querySelectorAll('.g-t');
+    for (var i = 0; i < ts.length; i++)
+      if (txt(ts[i]) === label){
+        var box = ts[i].nextElementSibling;
+        while (box && !(box.classList && box.classList.contains('g-b'))) box = box.nextElementSibling;
+        if (!box) continue;
+        /* Phone Number is drawn as TWO boxes -- a narrow country-code chip (flag +
+           chevron) and the number box beside it. Taking the first one put the input
+           in the 108px chip and left the number box showing its "XXXXX-XXXXX"
+           filler, which is why that field looked a third the size of every other.
+           Among the boxes on this field's row, take the WIDEST: for every other
+           field that is still the first one. `wantChip` returns the narrow one
+           instead, so the country-code chip itself can be wired as a real control. */
+        /* Width comes from the INLINE style, not a rect: this runs once before the
+           panel has been laid out, where every rect measures 0 and the chip would
+           win by default -- then again after, giving two inputs for one field. */
+        var wOf = function(el){
+          var m = (el.getAttribute('style') || '').match(/width:\s*([\d.]+)vw/);
+          return m ? parseFloat(m[1]) : el.getBoundingClientRect().width;
+        };
+        var tOf = function(el){
+          var m = (el.getAttribute('style') || '').match(/top:\s*([\d.]+)vw/);
+          return m ? parseFloat(m[1]) : el.getBoundingClientRect().top;
+        };
+        var chip = box;
+        var best = box, bw = wOf(box), bt = tOf(box);
+        var n = box.nextElementSibling;
+        for (var k = 0; k < 4 && n; k++, n = n.nextElementSibling){
+          /* Stop at the next field's LABEL. Skipping over it (as this used to)
+             let the widest-box search cross into a box that belongs to another
+             question: on the desktop enquiry panel, Region and "Type of
+             engagement" sit side by side on one row, so Region's search walked
+             past the "Type of engagement" label, found its wider box and
+             claimed it -- leaving that question with no control at all and
+             dropping it from every submission. The phone chip + number pair
+             this search exists for has no label between the two boxes, so it
+             is unaffected. */
+          if (n.classList && n.classList.contains('g-t')) break;
+          if (!(n.classList && n.classList.contains('g-b'))) continue;
+          if (Math.abs(tOf(n) - bt) > 0.4) break;            /* next row down */
+          if (wOf(n) > bw && dummyIn(n)){ bw = wOf(n); best = n; }
+        }
+        return wantChip ? chip : best;
+      }
+    return null;
+  }
+  function dummyIn(box){
+    for (var i = 0; i < box.children.length; i++)
+      if (box.children[i].classList.contains('g-t')) return box.children[i];
+    return null;
+  }
+
+  function field(scope, label, opts){
+    opts = opts || {};
+    /* init() runs twice (DOMContentLoaded and load). Without this the second pass
+       grafts a SECOND input for the same field. */
+    var had = scope.querySelector('[name="' + label.replace(/"/g, '') + '"]');
+    if (had) return had;
+    var box = findLabelBox(scope, label);
+    if (!box) return null;
+    var dummy = dummyIn(box);
+    if (!dummy) return null;
+    var el = swap(box, dummy, function(){
+      var e = document.createElement(opts.tag === 'textarea' ? 'textarea' : 'input');
+      if (opts.tag !== 'textarea') e.type = opts.type || 'text';
+      return e;
+    });
+    el.name = label;
+    el.placeholder = opts.placeholder || label;
+    if (opts.required) el.required = true;
+    if (opts.pattern) el.pattern = opts.pattern;
+    return el;
+  }
+
+  function selectField(scope, label, options, opts){
+    opts = opts || {};
+    /* Same guard field() carries, and for a worse failure than a duplicate.
+       init() runs twice (DOMContentLoaded and load). On the second pass this
+       field's own box no longer holds a dummy -- it was replaced by the select
+       on pass one -- so findLabelBox's "widest box on this row" search walks on
+       and returns the NEXT field's box instead, which still has one. That put a
+       second Region select into the "Type of engagement" slot and left that
+       question with no control at all, silently dropping it from every
+       submission. */
+    var already = scope.querySelector('[name="' + (opts.name || label).replace(/"/g, '') + '"]');
+    if (already) return already;
+    var box = findLabelBox(scope, label, opts.chip);
+    if (!box) return null;
+    var dummy = dummyIn(box);
+    if (!dummy) return null;
+    var el = swap(box, dummy, function(){ return document.createElement('select'); });
+    el.name = opts.name || label;
+    el.required = true;
+    options.forEach(function(o){
+      var opt = document.createElement('option');
+      opt.value = o; opt.textContent = o;
+      el.appendChild(opt);
+    });
+    return el;
+  }
+
+  function findByText(scope, label){
+    /* Case-insensitive on purpose: the Title Case pass rewrites CTA labels
+       ("Reset form" -> "Reset Form") and whichever fragment runs first wins, so an
+       exact match silently found nothing and left the Reset button dead. */
+    var want = String(label).toLowerCase();
+    var ts = scope.querySelectorAll('.g-t');
+    for (var i = 0; i < ts.length; i++) if (txt(ts[i]).toLowerCase() === want) return ts[i];
+    return null;
+  }
+
+  /* The clickable pill for a button label.
+     Figma exports a button as the coloured RECT and its LABEL as SIBLINGS, not as
+     parent and child -- so label.closest('.g-b') walks straight PAST the pill and
+     lands on whatever big box encloses the whole area. That is what made the entire
+     form panel a submit target: any click anywhere in it ran validation, which
+     focuses the first invalid field, so clicking "Full name" snapped focus back to
+     "Company name". Find the pill by GEOMETRY instead: the smallest .g-b whose rect
+     contains the label's, capped so a section box can never qualify. Falls back to
+     the label itself -- never to an ancestor, because being wrong here means
+     hijacking clicks for the whole panel again. */
+  function pillFor(form, label){
+    var lr = label.getBoundingClientRect();
+    if (!lr.width || !lr.height) return label;
+    var la = lr.width * lr.height, best = null, bestA = Infinity;
+    form.querySelectorAll('.g-b').forEach(function(b){
+      if (b.contains(label)) return;              /* an ancestor, not a sibling pill */
+      var br = b.getBoundingClientRect();
+      if (!br.width || !br.height) return;
+      var ba = br.width * br.height;
+      if (ba > la * 8) return;                    /* far bigger than its label = not a pill */
+      if (!(lr.left >= br.left - 3 && lr.right <= br.right + 3 &&
+            lr.top >= br.top - 3 && lr.bottom <= br.bottom + 3)) return;
+      if (ba < bestA){ bestA = ba; best = b; }
+    });
+    return best || label;
+  }
+
+  function wireSubmit(form, subjectPrefix, kind){
+    var msgHost = null, prev = null, busy = false;
+
+    function say(text, hold){
+      if (!msgHost){
+        msgHost = form.querySelector('.g-t:last-of-type');
+        if (msgHost) prev = msgHost.textContent;
+      }
+      if (!msgHost) return;
+      msgHost.textContent = text;
+      if (hold) setTimeout(function(){ if (msgHost) msgHost.textContent = prev; }, hold);
+    }
+
+    /* The original behaviour, kept as the fallback path. It is also the reason
+       this whole endpoint exists: mailto: silently loses the enquiry on any
+       device with no mail client configured, which is most work laptops. */
+    function mailto(){
+      var lines = [];
+      [].slice.call(form.elements).forEach(function(el){
+        if (!el.name || !el.value) return;
+        lines.push(el.name + ': ' + el.value);
+      });
+      var subject = encodeURIComponent(subjectPrefix + ' -- ' + (form.querySelector('[name="Full name"]') || {}).value);
+      var body = encodeURIComponent(lines.join('\n'));
+      window.location.href = 'mailto:' + MAILTO + '?subject=' + subject + '&body=' + body;
+      say('Opening your email client with this message ready to send...', 6000);
+    }
+
+    form.addEventListener('submit', function(e){
+      e.preventDefault();
+      if (busy) return;                     /* double-submit = duplicate lead */
+      var bad = [].slice.call(form.querySelectorAll('.ax-cf-err'));
+      bad.forEach(function(b){ b.classList.remove('ax-cf-err'); });
+      if (!form.checkValidity()){
+        var first = null;
+        [].slice.call(form.elements).forEach(function(el){
+          if (el.willValidate && !el.checkValidity()){
+            (el.closest('.g-b') || el).classList.add('ax-cf-err');
+            if (!first) first = el;
+          }
+        });
+        if (first) first.focus();
+        return;
+      }
+
+      /* '' is the correct same-origin base; see note in _chrome.html. */
+      if (!window.fetch){ mailto(); return; }
+
+      var payload = { kind: kind === 'A' ? 'talk' : 'enquiry', source_page: location.pathname };
+      [].slice.call(form.elements).forEach(function(el){
+        var key = API_FIELD[el.name];
+        if (key && el.value) payload[key] = el.value;
+      });
+
+      busy = true;
+      say('Sending...');
+      fetch(API_BASE + '/api/contact/', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+      }).then(function(r){
+        if (r.ok){
+          form.reset();
+          say('Thank you — we have your enquiry and will be in touch shortly.', 8000);
+          return;
+        }
+        /* 429 is the rate limiter, and it is the one failure where retrying
+           via email would just re-send what we already rejected. Everything
+           else means we did not record the enquiry, so fall back rather than
+           lose it. */
+        if (r.status === 429){
+          say('You have sent several enquiries already — please email ' + MAILTO + '.', 10000);
+          return;
+        }
+        mailto();
+      }).catch(function(){
+        mailto();                            /* offline / API down / CORS */
+      }).then(function(){ busy = false; });
+    });
+  }
+
+  /* ---- FIELDS DRAWN IN A STATE ----
+     Two fields were exported mid-interaction rather than at rest: Full name
+     carries the orange focus ring and Email ID the green "valid" fill, baked
+     into the box's own inline style. At rest every field on this form looks the
+     same, so the odd ones out are snapped back to whatever the majority of boxes
+     agree on and the real states are left to :focus-within and .ax-cf-err. Taking
+     the majority rather than naming a colour means a palette change in Figma
+     carries through instead of being overwritten.
+
+     The number box is a separate problem: it is drawn with NO left border so it
+     can sit flush against the country-code chip, but the two overlap by a pixel,
+     so the box paints over the chip's right edge and the field reads as open on
+     that side. It gets a left border matching its own other three. */
+  function normalise(form){
+    var boxes = [].slice.call(form.querySelectorAll('.ax-cf-box'));
+    if (boxes.length < 3) return;
+    function modal(pick){
+      var t = {}, best = null;
+      boxes.forEach(function(b){ var v = pick(b); if (!v) return; t[v] = (t[v] || 0) + 1; });
+      Object.keys(t).forEach(function(k){ if (!best || t[k] > t[best]) best = k; });
+      return (best && t[best] * 2 > boxes.length) ? best : null;
+    }
+    var bg = modal(function(b){ return getComputedStyle(b).backgroundColor; });
+    var bc = modal(function(b){ return getComputedStyle(b).borderTopColor; });
+    boxes.forEach(function(b){
+      var cs = getComputedStyle(b);
+      if (bg && cs.backgroundColor !== bg) b.style.backgroundColor = bg;
+      if (bc && cs.borderTopColor !== bc) b.style.borderColor = bc;
+      if (parseFloat(cs.borderLeftWidth) < 0.01 && parseFloat(cs.borderTopWidth) > 0.01){
+        b.style.borderLeftWidth = cs.borderTopWidth;
+        b.style.borderLeftStyle = cs.borderTopStyle;
+        b.style.borderLeftColor = bc || cs.borderTopColor;
+      }
+    });
+  }
+
+  /* A tel input accepts anything at all, so "abcd" was a valid phone number as far
+     as the browser was concerned and only the pattern caught it, at submit. Reject
+     the keystroke instead. Digits, spaces and the punctuation a real number uses
+     are kept; the caret is put back where it was so editing mid-string still
+     works. */
+  function digitsOnly(el){
+    if (el.dataset.axDigits) return;      /* init() runs twice */
+    el.dataset.axDigits = '1';
+    el.addEventListener('input', function(){
+      var v = el.value, clean = v.replace(/[^\d\s+()-]/g, '');
+      if (clean === v) return;
+      var at = el.selectionStart - (v.length - clean.length);
+      el.value = clean;
+      try { el.setSelectionRange(at, at); } catch (e) {}
+    });
+  }
+
+  function wirePanel(scope, kind){
+    /* the marker must be set on the FINAL <form>, not the div: divToForm() discards
+       the original element outright, so anything set on it before the swap is lost
+       and this would re-wire on every scan */
+    var form = scope.tagName === 'FORM' ? scope : divToForm(scope);
+    if (form.dataset.axCform) return;
+    form.dataset.axCform = '1';
+
+    field(form, 'Company name', { required:true, placeholder:'Your company name' });
+    field(form, 'Full name', { required:true, placeholder:'Your full name' });
+    field(form, 'Email ID', { required:true, type:'email', placeholder:'you@company.com' });
+    /* "XXXXX-XXXXX" is Figma's filler, not a hint anyone can act on -- a real
+       example number reads as an instruction instead of noise. */
+    var phone = field(form, 'Phone Number', { required:true, type:'tel', placeholder:'98765 43210',
+      pattern:'[0-9 ()+-]{6,}' });   /* a hyphen LAST needs no escape; the old \\-\\s made an invalid range, so browsers dropped the pattern and the field accepted letters */
+    if (phone) digitsOnly(phone);
+    /* The country-code chip beside Phone Number ("IND(+91)") was static Figma text --
+       flag + label + chevron drawn to look like a dropdown, wired to nothing. Made a
+       plain editable box instead of a picker: neither icon means anything without a
+       list to open or a country actually chosen, so both are hidden and the field
+       takes over the flag's own left inset instead of leaving a gap where it was. */
+    var codeBox = findLabelBox(form, 'Phone Number', true);
+    var codeDummy = codeBox && dummyIn(codeBox);
+    if (codeDummy){
+      var code = swap(codeBox, codeDummy, function(){ return document.createElement('input'); });
+      code.type = 'text';
+      code.name = 'Country Code';
+      code.placeholder = 'IND(+91)';
+      code.required = true;
+      var icons = [].slice.call(codeBox.querySelectorAll('.g-vec'));
+      if (icons.length){
+        code.style.left = icons[0].style.left;
+        icons.forEach(function(v){ v.style.display = 'none'; });
+      }
+    }
+
+    if (kind === 'A'){
+      field(form, 'Role', { required:true, placeholder:'Your role' });
+      field(form, 'Additional Information', { tag:'textarea', placeholder:'Any additional information about your quotation' });
+    } else {
+      selectField(form, 'Region', ['India', 'UAE', 'Other']);
+      selectField(form, 'Type of engagement', ['RISE with SAP', 'GROW with SAP',
+        'SAP AMS (AXIOM)', 'AWS', 'Google Cloud', 'Multi-cloud CMS', 'AXIOM AI Platform', 'Other']);
+      selectField(form, 'Timeline', ['0-3 Months', '3-6 Months', '6-12 Months', '12+ Months']);
+      field(form, 'Brief Description', { tag:'textarea',
+        placeholder:"Tell us what you're trying to do, what's in your way, and what done looks like." });
+    }
+
+    /* Both buttons are intercepted at DOCUMENT CAPTURE. The chrome CTA linkifier
+       registers its own navigate handler on these pills before this fragment runs,
+       and at the target phase listeners fire in registration order regardless of the
+       capture flag -- a same-element listener is simply too late (this is why Reset
+       looked wired and still did nothing). Matching by click POINT as well as target
+       covers the invisible shells that sit over the pills. */
+    function capture(el, fn){
+      document.addEventListener('click', function(e){
+        var t = e.target, hit = (t && t.nodeType === 1 && (el === t || el.contains(t)));
+        if (!hit && (e.clientX || e.clientY)){
+          var r = el.getBoundingClientRect();
+          hit = r.width > 0 && e.clientX >= r.left && e.clientX <= r.right &&
+                e.clientY >= r.top && e.clientY <= r.bottom;
+        }
+        if (!hit) return;
+        e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+        fn();
+      }, true);
+    }
+
+    /* Figma also leaves the dummy phone string drawn as plain text beside the field
+       ("XXXXX-XXXXX"). It is not a placeholder, it is a picture of one, so it sits
+       there whatever the reader types -- remove it. */
+    [].slice.call(form.querySelectorAll('.g-t')).forEach(function(e){
+      if (e.children.length) return;
+      if (/^[Xx]{4,}\s*[-\u2013]?\s*[Xx]{4,}$/.test(txt(e))) e.style.display = 'none';
+    });
+
+    var resetBtn = findByText(form, 'Reset Form');
+    if (resetBtn){
+      var resetPill = pillFor(form, resetBtn);
+      resetPill.style.cursor = 'pointer';
+      resetPill.setAttribute('role', 'button');
+      resetPill.setAttribute('tabindex', '0');
+      var doReset = function(){
+        form.reset();
+        /* form.reset() only restores DEFAULT values, and these fields are grafted in
+           with their user text as the live value -- clear them explicitly. */
+        form.querySelectorAll('input,textarea').forEach(function(i){ i.value = ''; });
+        form.querySelectorAll('select').forEach(function(sel){ sel.selectedIndex = 0; });
+      };
+      capture(resetPill, doReset);
+      resetPill.addEventListener('keydown', function(e){
+        if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); doReset(); } });
+    }
+    /* the RPF/RFP spelling is corrected at runtime by _uifx, so accept both */
+    var sendLabel = findByText(form, 'Send Message') || findByText(form, 'Send RFP Request')
+                 || findByText(form, 'Send RPF Request');
+    if (sendLabel){
+      var sendPill = pillFor(form, sendLabel);
+      sendPill.style.cursor = 'pointer';
+      sendPill.setAttribute('role', 'button');
+      sendPill.setAttribute('tabindex', '0');
+      var doSend = function(){
+        if (form.requestSubmit) form.requestSubmit();
+        else form.dispatchEvent(new Event('submit', {cancelable:true}));
+      };
+      capture(sendPill, doSend);
+      sendPill.addEventListener('keydown', function(e){
+        if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); doSend(); } });
+    }
+    wireSubmit(form, kind === 'A' ? 'Talk to AeonX' : 'Project enquiry', kind);
+    /* Last, so every box has been claimed and the majority is the real one. */
+    normalise(form);
+  }
+
+  function scan(){
+    /* Each panel is identified by walking up from a field label to the surrounding
+       white box; both panels reuse the same label set, so this runs once per panel
+       as each becomes available (variant B is injected by _formtabs.html). The
+       outer panel wrapper (the whole card: grey info column + white form box as
+       siblings) also "contains" all four labels via its subtree and would
+       otherwise match too -- keep only the innermost candidate, or the outer one
+       gets converted into a form wrapping an already-real inner form, and a
+       nested form's own .elements is empty per spec (silently dead). */
+    var candidates = [];
+    document.querySelectorAll('.g-b.g-clip').forEach(function(box){
+      if (box.dataset.axCform) return;
+      var isPanel = findLabelBox(box, 'Company name') && findLabelBox(box, 'Full name') &&
+                    findLabelBox(box, 'Email ID') && findLabelBox(box, 'Phone Number');
+      if (isPanel) candidates.push(box);
+    });
+    var panels = candidates.filter(function(c){
+      return !candidates.some(function(o){ return o !== c && c.contains(o); });
+    });
+    panels.forEach(function(box){
+      var kind = findLabelBox(box, 'Role') ? 'A' : (findLabelBox(box, 'Region') ? 'B' : null);
+      if (kind) wirePanel(box, kind);
+    });
+  }
+
+  function init(){
+    scan();
+    /* variant B is cloned in by _formtabs.html's own init, which runs in the same
+       DOMContentLoaded phase -- a MutationObserver catches it whichever order the
+       two scripts settle in, and disconnects once both known panels are wired. */
+    var seen = 0;
+    var mo = new MutationObserver(function(){
+      scan();
+      seen = document.querySelectorAll('[data-ax-cform]').length;
+      if (seen >= 2) mo.disconnect();
+    });
+    mo.observe(document.body, { childList:true, subtree:true });
+    setTimeout(function(){ mo.disconnect(); }, 4000);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
 })();
 </script>
 

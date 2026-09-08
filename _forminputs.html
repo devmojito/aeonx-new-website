@@ -288,6 +288,59 @@ select.ax-cf-code{left:0!important;top:0!important;height:100%!important;cursor:
     });
   }
 
+  /* ---- FIELDS DRAWN IN A STATE ----
+     Two fields were exported mid-interaction rather than at rest: Full name
+     carries the orange focus ring and Email ID the green "valid" fill, baked
+     into the box's own inline style. At rest every field on this form looks the
+     same, so the odd ones out are snapped back to whatever the majority of boxes
+     agree on and the real states are left to :focus-within and .ax-cf-err. Taking
+     the majority rather than naming a colour means a palette change in Figma
+     carries through instead of being overwritten.
+
+     The number box is a separate problem: it is drawn with NO left border so it
+     can sit flush against the country-code chip, but the two overlap by a pixel,
+     so the box paints over the chip's right edge and the field reads as open on
+     that side. It gets a left border matching its own other three. */
+  function normalise(form){
+    var boxes = [].slice.call(form.querySelectorAll('.ax-cf-box'));
+    if (boxes.length < 3) return;
+    function modal(pick){
+      var t = {}, best = null;
+      boxes.forEach(function(b){ var v = pick(b); if (!v) return; t[v] = (t[v] || 0) + 1; });
+      Object.keys(t).forEach(function(k){ if (!best || t[k] > t[best]) best = k; });
+      return (best && t[best] * 2 > boxes.length) ? best : null;
+    }
+    var bg = modal(function(b){ return getComputedStyle(b).backgroundColor; });
+    var bc = modal(function(b){ return getComputedStyle(b).borderTopColor; });
+    boxes.forEach(function(b){
+      var cs = getComputedStyle(b);
+      if (bg && cs.backgroundColor !== bg) b.style.backgroundColor = bg;
+      if (bc && cs.borderTopColor !== bc) b.style.borderColor = bc;
+      if (parseFloat(cs.borderLeftWidth) < 0.01 && parseFloat(cs.borderTopWidth) > 0.01){
+        b.style.borderLeftWidth = cs.borderTopWidth;
+        b.style.borderLeftStyle = cs.borderTopStyle;
+        b.style.borderLeftColor = bc || cs.borderTopColor;
+      }
+    });
+  }
+
+  /* A tel input accepts anything at all, so "abcd" was a valid phone number as far
+     as the browser was concerned and only the pattern caught it, at submit. Reject
+     the keystroke instead. Digits, spaces and the punctuation a real number uses
+     are kept; the caret is put back where it was so editing mid-string still
+     works. */
+  function digitsOnly(el){
+    if (el.dataset.axDigits) return;      /* init() runs twice */
+    el.dataset.axDigits = '1';
+    el.addEventListener('input', function(){
+      var v = el.value, clean = v.replace(/[^\d\s+()-]/g, '');
+      if (clean === v) return;
+      var at = el.selectionStart - (v.length - clean.length);
+      el.value = clean;
+      try { el.setSelectionRange(at, at); } catch (e) {}
+    });
+  }
+
   function wirePanel(scope, kind){
     /* the marker must be set on the FINAL <form>, not the div: divToForm() discards
        the original element outright, so anything set on it before the swap is lost
@@ -301,8 +354,9 @@ select.ax-cf-code{left:0!important;top:0!important;height:100%!important;cursor:
     field(form, 'Email ID', { required:true, type:'email', placeholder:'you@company.com' });
     /* "XXXXX-XXXXX" is Figma's filler, not a hint anyone can act on -- a real
        example number reads as an instruction instead of noise. */
-    field(form, 'Phone Number', { required:true, type:'tel', placeholder:'98765 43210',
+    var phone = field(form, 'Phone Number', { required:true, type:'tel', placeholder:'98765 43210',
       pattern:'[0-9 ()+-]{6,}' });   /* a hyphen LAST needs no escape; the old \\-\\s made an invalid range, so browsers dropped the pattern and the field accepted letters */
+    if (phone) digitsOnly(phone);
     /* The country-code chip beside Phone Number ("IND(+91)") was static Figma text --
        flag + label + chevron drawn to look like a dropdown, wired to nothing. Made a
        plain editable box instead of a picker: neither icon means anything without a
@@ -397,6 +451,8 @@ select.ax-cf-code{left:0!important;top:0!important;height:100%!important;cursor:
         if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); doSend(); } });
     }
     wireSubmit(form, kind === 'A' ? 'Talk to AeonX' : 'Project enquiry', kind);
+    /* Last, so every box has been claimed and the majority is the real one. */
+    normalise(form);
   }
 
   function scan(){

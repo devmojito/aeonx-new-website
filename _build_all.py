@@ -148,3 +148,10 @@ subprocess.run([_sys.executable, '_postbuild.py'], check=False)
 # toggle has nothing to switch to.
 print('injecting mobile hero SAP variant (_herosap.py)...')
 subprocess.run([_sys.executable, '_herosap.py'], check=False)
+# Every page has to drop exactly one of the two navbars it is handed: the one the
+# design draws in, and the one the chrome renders. That has gone wrong three
+# separate ways and each time it was the client who noticed, so it is checked here
+# on every build. The legal pages are NOT rebuilt by this script -- they copy a
+# slice of a generated page -- so run `python3 _legal.py` if this names them.
+print('checking for duplicate navbars (_navcheck.py)...')
+subprocess.run([_sys.executable, '_navcheck.py'], check=False)

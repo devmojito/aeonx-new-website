@@ -121,7 +121,16 @@ def split_children(s):
 
 
 def hero_markup():
-    """The Shareholding Pattern hero: every top-level element above HERO_END."""
+    """The Shareholding Pattern hero: every top-level element above HERO_END.
+
+    Copying a slice of a generated page means these four pages inherit whatever
+    that page had, including its mistakes, and then freeze it: a rebuild of the
+    source does not touch them. That is how the duplicate navbar outlived two
+    fixes -- it was gone from all 91 generated pages and still sitting in the
+    legal four, because nothing re-ran this. So anything that looks like chrome
+    stops the build rather than being copied. The chrome comes from get_shell();
+    a second copy in the hero slice is always a bug.
+    """
     s = io.open(SRC_PAGE, encoding='utf-8').read()
     i = s.index('<main class="ax-page"')
     i = s.index('>', i) + 1
@@ -131,7 +140,15 @@ def hero_markup():
         m = re.search(r'top:(-?[\d.]+)vw', el[:400])
         if m and float(m.group(1)) < HERO_END - 0.01:
             kept.append(el)
-    return '\n'.join(kept)
+    blob = '\n'.join(kept)
+    for pat, what in ((r'top:2\.7604vw;\s*width:97\.3958vw', 'the exported navbar plate'),
+                      (r'Grep, Embeddings', 'the exported announcement strip')):
+        if re.search(pat, blob):
+            raise SystemExit(
+                'refusing to build: %s is still in %s, so the hero slice would carry '
+                'a second navbar onto every legal page. Rebuild the source page first.'
+                % (what, SRC_PAGE))
+    return blob
 
 
 def esc(t):
