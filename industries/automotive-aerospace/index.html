@@ -6976,5 +6976,223 @@ img.g-vec[src*="6138-26173"]{animation:ax-gear-ccw 104s linear infinite}
 })();
 </script>
 
+<style id="ax-herowave-css">
+/* ---- Hero mosaic: cursor interaction ----
+   The band ships as one flat 479KB <img>, so nothing in it is addressable. It is
+   really 6286 small squares in three brand colours, and those coordinates are the
+   art itself -- read them out of the file and the same picture can be drawn to a
+   canvas, where the cursor can push individual tiles around. */
+.ax-wave{display:block;touch-action:pan-y}
+@media (prefers-reduced-motion:reduce){.ax-wave{pointer-events:none}}
+</style>
+<script>
+/* ---- HERO MOSAIC, CURSOR-REACTIVE ----
+
+   Figma draws the hero's wave as 6286 <path> squares, exported to one SVG and placed
+   as an <img>. That is correct and pixel-exact, but an image cannot react to anything.
+   This reads the squares back out of that same file -- so the picture is still Figma's,
+   not a reinterpretation -- redraws them on a canvas, and lets the pointer displace the
+   tiles it passes over. They spring back when it leaves.
+
+   Canvas rather than inline SVG on purpose: 6286 nodes is a heavy DOM, and moving even
+   a few hundred of them per frame through style writes drops frames. Filling 6286 rects
+   grouped by colour is a couple of milliseconds, and the loop only runs while something
+   is actually moving.
+
+   The file draws some squares twice, a colour over a colour, so a later path wins. The
+   parse keeps the LAST fill at each position, which is what the flat image shows. */
+(function () {
+  var SRC = /6944-35720\.svg/;
+  var R = 78;             /* influence radius, in the SVG's own units */
+  var PUSH = 30;          /* how far a tile under the cursor is thrown */
+  var SPRING = 0.055, DAMP = 0.82;
+
+  function parse(text) {
+    var re = /<path d="M([\d.-]+) ([\d.-]+)H([\d.-]+)V([\d.-]+)[^"]*"\s+fill="(#[0-9a-fA-F]{3,8})"/g;
+    var seen = {}, order = [], m;
+    while ((m = re.exec(text))) {
+      var x1 = parseFloat(m[1]), y1 = parseFloat(m[2]);
+      var x0 = parseFloat(m[3]), y2 = parseFloat(m[4]);
+      var w = x1 - x0, h = y2 - y1;
+      if (!(w > 0) || !(h > 0)) continue;
+      var key = Math.round(x0 * 2) + ',' + Math.round(y1 * 2);
+      var cell = seen[key];
+      if (!cell) { cell = seen[key] = { x: x0, y: y1, w: w, h: h }; order.push(cell); }
+      cell.c = m[5];      /* last fill at this position is the one that paints */
+    }
+    return order;
+  }
+
+  function mount(img) {
+    var box = img.getBoundingClientRect();
+    if (!box.width) return;
+
+    fetch(img.getAttribute('src'), { credentials: 'omit' })
+      .then(function (r) { return r.ok ? r.text() : null; })
+      .then(function (text) {
+        if (!text) return;
+        var vb = /viewBox="0 0 ([\d.]+) ([\d.]+)"/.exec(text);
+        var VW = vb ? parseFloat(vb[1]) : 1674, VH = vb ? parseFloat(vb[2]) : 512;
+        var cells = parse(text);
+        if (cells.length < 100) return;
+
+        var cv = document.createElement('canvas');
+        cv.className = (img.className || '').replace(/g-vec/, '').trim() + ' ax-wave';
+        cv.setAttribute('aria-hidden', 'true');
+        /* Same box, same stacking slot: the placement _gen.py computed is correct and
+           the ancestor's overflow:hidden still does Figma's crop. */
+        cv.setAttribute('style', img.getAttribute('style'));
+        img.parentNode.replaceChild(cv, img);
+
+        var ctx = cv.getContext('2d', { alpha: true });
+        var N = cells.length;
+        var dx = new Float32Array(N), dy = new Float32Array(N);
+        var vx = new Float32Array(N), vy = new Float32Array(N);
+        /* A fixed per-tile bias so a shove scatters rather than expanding a clean
+           ring. Derived from the index, not random, so it is stable across frames. */
+        var bx = new Float32Array(N), by = new Float32Array(N);
+        for (var i = 0; i < N; i++) {
+          var a = Math.sin(i * 12.9898) * 43758.5453;
+          var b = Math.sin(i * 78.233) * 12345.6789;
+          bx[i] = (a - Math.floor(a)) - 0.5;
+          by[i] = (b - Math.floor(b)) - 0.5;
+        }
+
+        /* Buckets over the home positions. Repainting all 6286 tiles every frame ran
+           at ~22fps; only a patch around the cursor ever changes, so the frame redraws
+           just that patch and needs to find the tiles inside it quickly. */
+        var GS = 32, grid = {};
+        function key(gx, gy) { return gx + ',' + gy; }
+        for (var i = 0; i < N; i++) {
+          var g = key((cells[i].x / GS) | 0, (cells[i].y / GS) | 0);
+          (grid[g] || (grid[g] = [])).push(i);
+        }
+        function eachIn(x0, y0, x1, y1, fn) {
+          var gx0 = Math.floor(x0 / GS), gx1 = Math.floor(x1 / GS);
+          var gy0 = Math.floor(y0 / GS), gy1 = Math.floor(y1 / GS);
+          for (var gx = gx0; gx <= gx1; gx++) {
+            for (var gy = gy0; gy <= gy1; gy++) {
+              var b = grid[key(gx, gy)];
+              if (b) for (var k = 0; k < b.length; k++) fn(b[k]);
+            }
+          }
+        }
+
+        var scale = 1, dpr = 1;
+        function size() {
+          var r = cv.getBoundingClientRect();
+          if (!r.width) return false;
+          dpr = Math.min(window.devicePixelRatio || 1, 2);
+          cv.width = Math.round(r.width * dpr);
+          cv.height = Math.round(r.height * dpr);
+          scale = r.width / VW;
+          ctx.setTransform(dpr * scale, 0, 0, dpr * scale, 0, 0);
+          return true;
+        }
+
+        function paint(list) {
+          var byCol = {};
+          for (var k = 0; k < list.length; k++) {
+            var i = list[k], c = cells[i];
+            (byCol[c.c] || (byCol[c.c] = [])).push(i);
+          }
+          for (var col in byCol) {
+            ctx.fillStyle = col;
+            ctx.beginPath();
+            var idx = byCol[col];
+            for (var j = 0; j < idx.length; j++) {
+              var i2 = idx[j], c2 = cells[i2];
+              ctx.rect(c2.x + dx[i2], c2.y + dy[i2], c2.w, c2.h);
+            }
+            ctx.fill();
+          }
+        }
+
+        function drawAll() {
+          ctx.clearRect(0, 0, VW, VH);
+          var all = [];
+          for (var i = 0; i < N; i++) all.push(i);
+          paint(all);
+        }
+
+        /* Only tiles that are moving, or are close enough to be pushed, get physics. */
+        var active = [], inActive = new Uint8Array(N);
+        function wake(i) { if (!inActive[i]) { inActive[i] = 1; active.push(i); } }
+
+        var px = -1e6, py = -1e6, running = false, hot = false;
+
+        function step() {
+          if (hot) eachIn(px - R, py - R, px + R, py + R, wake);
+
+          var kept = [];
+          for (var k = 0; k < active.length; k++) {
+            var i = active[k], c = cells[i];
+            var cxp = c.x + c.w / 2, cyp = c.y + c.h / 2;
+            if (hot) {
+              var ox = cxp + dx[i] - px, oy = cyp + dy[i] - py;
+              var d2 = ox * ox + oy * oy;
+              if (d2 < R * R) {
+                var d = Math.sqrt(d2) || 0.001;
+                var f = (1 - d / R); f = f * f * PUSH;
+                vx[i] += (ox / d) * f * 0.12 + bx[i] * f * 0.09;
+                vy[i] += (oy / d) * f * 0.12 + by[i] * f * 0.09;
+              }
+            }
+            vx[i] += -dx[i] * SPRING; vy[i] += -dy[i] * SPRING;
+            vx[i] *= DAMP; vy[i] *= DAMP;
+            dx[i] += vx[i]; dy[i] += vy[i];
+            if (Math.abs(vx[i]) < 0.02 && Math.abs(vy[i]) < 0.02 &&
+                Math.abs(dx[i]) < 0.02 && Math.abs(dy[i]) < 0.02) {
+              dx[i] = dy[i] = vx[i] = vy[i] = 0; inActive[i] = 0;
+            } else kept.push(i);
+          }
+          active = kept;
+
+          /* A full repaint, deliberately. Measured on this page: 6286 rects grouped
+             into three fills costs 0.83ms, which is nothing against a 16ms budget. An
+             earlier version tracked a dirty rectangle instead, and because the cursor
+             sweeps and tiles settle slowly that rectangle grew to cover the swept path
+             -- more bookkeeping AND more painting than just redrawing everything. */
+          drawAll();
+
+          if (active.length || hot) requestAnimationFrame(step);
+          else running = false;
+        }
+        function kick() { if (!running) { running = true; requestAnimationFrame(step); } }
+
+        function toLocal(e) {
+          var r = cv.getBoundingClientRect();
+          px = (e.clientX - r.left) / scale;
+          py = (e.clientY - r.top) / scale;
+        }
+        var REDUCED = matchMedia('(prefers-reduced-motion:reduce)');
+        if (!REDUCED.matches) {
+          cv.addEventListener('pointermove', function (e) { hot = true; toLocal(e); kick(); });
+          cv.addEventListener('pointerleave', function () { hot = false; kick(); });
+          /* The band is clipped by an ancestor, so the pointer can leave the canvas
+             without a leave event ever firing on it. */
+          addEventListener('scroll', function () { hot = false; }, { passive: true });
+        }
+
+        if (!size()) return;
+        drawAll();
+        addEventListener('resize', function () {
+          clearTimeout(cv.__t);
+          cv.__t = setTimeout(function () { if (size()) drawAll(); }, 150);
+        });
+      })
+      .catch(function () {});
+  }
+
+  function run() {
+    [].forEach.call(document.querySelectorAll('img.g-vec'), function (img) {
+      if (SRC.test(img.getAttribute('src') || '')) mount(img);
+    });
+  }
+  if (document.readyState === 'complete') setTimeout(run, 0);
+  else addEventListener('load', function () { setTimeout(run, 0); });
+})();
+</script>
+
 </body>
 </html>
