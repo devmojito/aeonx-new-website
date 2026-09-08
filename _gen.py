@@ -649,6 +649,34 @@ def svg_intrinsic(nid):
         SVG_DIMS[nid] = dim
     return SVG_DIMS[nid]
 
+def ink_bounds(n):
+    """Union of the render bounds of everything drawn INSIDE n.
+
+    A node's own render bounds include its effects; its children's do not include
+    the parent's, so their union is the extent of the actual geometry an SVG
+    export contains. Returns None when n has no drawing descendants.
+    """
+    box = None
+    def walk(m, top=False):
+        nonlocal box
+        if m.get('visible', True) is False:
+            return
+        if not top:
+            r = m.get('absoluteRenderBounds')
+            if r and r.get('width') and r.get('height'):
+                if box is None:
+                    box = dict(r)
+                else:
+                    x0 = min(box['x'], r['x']); y0 = min(box['y'], r['y'])
+                    x1 = max(box['x'] + box['width'], r['x'] + r['width'])
+                    y1 = max(box['y'] + box['height'], r['y'] + r['height'])
+                    box.update(x=x0, y=y0, width=x1 - x0, height=y1 - y0)
+        for c in m.get('children', ()) or ():
+            walk(c)
+    walk(n, True)
+    return box
+
+
 def render_box(n, ox, oy):
     """Placement box for an exported asset. Figma normally crops SVG/PNG exports to
     the node's render bounds (post-clip/effects), so that is the default. But a node
@@ -660,6 +688,16 @@ def render_box(n, ox, oy):
     .ax-page's) then reproduces Figma's clip."""
     bb = n['absoluteBoundingBox']
     rb = n.get('absoluteRenderBounds') or bb
+    # Render bounds are post-EFFECT as well as post-clip, and an SVG export carries
+    # no drop shadow. A shadowed node therefore reports bounds wider than the file,
+    # and anchoring the file to them puts the art wherever the shadow reached: the
+    # stat cards' corner crosshair landed 44px left of its slot, straight across the
+    # number. The geometry's own extent is the union of the descendants' render
+    # bounds, which carry no shadow of the parent's, so that is what the file should
+    # follow. Only the ANCHOR moves; which sides were clipped is still read off the
+    # node's own bounds against its layout box, where both sides of the comparison
+    # are inflated the same way and the answer stays right.
+    anchor = rb
     dim = svg_intrinsic(n['id'])
     if dim:
         fits = lambda b: abs(dim[0]-b['width']) <= 1.5 and abs(dim[1]-b['height']) <= 1.5
@@ -678,6 +716,9 @@ def render_box(n, ox, oy):
         if dim[0] and dim[1] and w and h:
             wok = abs(dim[0]-w) <= 1.5
             hok = abs(dim[1]-h) <= 1.5
+            if wok and hok:
+                # The export IS the render box: nothing to reason about.
+                return rb['x']-ox, rb['y']-oy, w, h
             if wok != hok:
                 if wok: h = w * dim[1] / dim[0]
                 else:   w = h * dim[0] / dim[1]
@@ -694,8 +735,30 @@ def render_box(n, ox, oy):
             lclip = rb['x'] > bb['x'] + 0.5
             tclip = rb['y'] > bb['y'] + 0.5
             if lclip or tclip:
-                x = rb['x'] + rb['width'] - dim[0] if lclip else rb['x']
-                y = rb['y'] + rb['height'] - dim[1] if tclip else rb['y']
+                # The node's own render bounds can be the layout box intersected with
+                # the clip rather than the ink -- Figma reports a GROUP that way -- and
+                # then they say nothing about where the export's content sits. The
+                # descendants' render bounds are the ink, so anchor on those when they
+                # are inset: the stat cards' corner crosshair reported 187 and its two
+                # paths 231.5, which is exactly the 44px it sat left of its slot,
+                # across the number.
+                ink = ink_bounds(n)
+                def start(lo, size, clipped, key):
+                    # A clipped edge IS the ink's edge, so the render bounds carry the
+                    # information and the export is anchored by its far side. An
+                    # UNCLIPPED edge is just the layout edge, and for a GROUP that is
+                    # what Figma reports whatever the geometry does -- the stat cards'
+                    # crosshair reported 187 while both of its paths start at 231.5,
+                    # which is exactly the 44px it sat left of its slot, across the
+                    # number. There the descendants' bounds are the ink and the layout
+                    # edge says nothing, so follow them.
+                    if clipped:
+                        return rb[lo] + rb[size] - dim[key]
+                    if ink and ink['width'] and ink['height'] and ink[lo] - rb[lo] > 2:
+                        return ink[lo]
+                    return rb[lo]
+                x = start('x', 'width', lclip, 0)
+                y = start('y', 'height', tclip, 1)
                 return x-ox, y-oy, dim[0], dim[1]
     return rb['x']-ox, rb['y']-oy, rb['width'], rb['height']
 
