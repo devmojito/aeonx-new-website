@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import ContactSubmission
+from .models import ContactSubmission, NewsletterSubscriber
 
 
 class ContactSubmissionSerializer(serializers.ModelSerializer):
@@ -24,3 +24,13 @@ class ContactSubmissionSerializer(serializers.ModelSerializer):
                 if not attrs.get(f):
                     raise serializers.ValidationError({f: "This field is required."})
         return attrs
+
+
+class NewsletterSubscriberSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NewsletterSubscriber
+        fields = ["email", "source_page"]
+        # `email` is unique, and a repeat sign-up is a normal thing a reader does,
+        # not an error to show them. The view upserts, so the uniqueness check is
+        # dropped here rather than turned into a 400 they cannot act on.
+        extra_kwargs = {"email": {"validators": []}}

@@ -19,8 +19,9 @@ from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
 
-from .models import ContactSubmission
-from .serializers import ContactSubmissionSerializer
+from .models import ContactSubmission, NewsletterSubscriber
+from .serializers import (ContactSubmissionSerializer,
+                          NewsletterSubscriberSerializer)
 
 logger = logging.getLogger(__name__)
 
@@ -124,3 +125,37 @@ class ContactSubmissionView(APIView):
         except Exception:  # noqa: BLE001 -- the submission is already saved; never lose it over mail
             logger.exception("contact notification email failed for submission %s", submission.pk)
             return False
+
+
+class NewsletterRateThrottle(AnonRateThrottle):
+    scope = "newsletter"
+
+
+class NewsletterSubscribeView(APIView):
+    """`POST /api/newsletter/`
+
+    Idempotent on the address: signing up twice is something readers do, so the
+    second one reactivates the row rather than failing with "already exists",
+    which is not something they can act on.
+    """
+
+    throttle_classes = [NewsletterRateThrottle]
+
+    def post(self, request):
+        serializer = NewsletterSubscriberSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data["email"].strip().lower()
+
+        sub, created = NewsletterSubscriber.objects.update_or_create(
+            email=email,
+            defaults={
+                "is_active": True,
+                "source_page": serializer.validated_data.get("source_page", "")[:200],
+                "ip_address": ContactSubmissionView._client_ip(request),
+                "user_agent": request.META.get("HTTP_USER_AGENT", "")[:500],
+            },
+        )
+        return Response(
+            {"ok": True, "created": created},
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+        )

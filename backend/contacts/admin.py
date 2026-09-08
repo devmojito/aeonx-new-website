@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import ContactSubmission
+from .models import ContactSubmission, NewsletterSubscriber
 
 
 @admin.register(ContactSubmission)
@@ -49,3 +49,15 @@ class ContactSubmissionAdmin(admin.ModelAdmin):
     def mark_unhandled(self, request, queryset):
         n = queryset.update(is_handled=False)
         self.message_user(request, f"{n} submission(s) marked not handled.")
+
+
+@admin.register(NewsletterSubscriber)
+class NewsletterSubscriberAdmin(admin.ModelAdmin):
+    list_display = ("created_at", "email", "is_active", "source_page")
+    list_filter = ("is_active", "created_at")
+    search_fields = ("email",)
+    date_hierarchy = "created_at"
+    # is_active is the only field anyone should touch: it is how an unsubscribe is
+    # honoured without destroying the record that they once opted in.
+    readonly_fields = ("email", "source_page", "ip_address", "user_agent",
+                       "created_at", "updated_at")

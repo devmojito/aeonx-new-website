@@ -257,6 +257,7 @@ REST_FRAMEWORK = {
         # a script cannot flood the inbox or the database. Per-IP, so one
         # aggressive caller cannot exhaust the budget for everyone else.
         "contact": env("CONTACT_THROTTLE_RATE", "10/hour"),
+        "newsletter": env("NEWSLETTER_THROTTLE_RATE", "20/hour"),
     },
 }
 

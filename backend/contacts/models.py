@@ -63,3 +63,33 @@ class ContactSubmission(models.Model):
 
     def __str__(self):
         return f"{self.full_name} ({self.company_name}) — {self.get_kind_display()}"
+
+
+class NewsletterSubscriber(models.Model):
+    """A footer newsletter sign-up.
+
+    Same reasoning as ContactSubmission: the footer used to confirm "we have
+    your address" and then hold it nowhere, which is worse than a dead button
+    because the reader believes they subscribed. One row per address, so a
+    second sign-up from the same person updates rather than duplicates.
+    """
+    email = models.EmailField(unique=True)
+
+    is_active = models.BooleanField(
+        default=True, help_text="Untick instead of deleting, to honour an unsubscribe."
+    )
+
+    # Provenance -- spam triage only, never shown publicly.
+    source_page = models.CharField(max_length=200, blank=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.CharField(max_length=500, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "newsletter subscriber"
+
+    def __str__(self):
+        return self.email

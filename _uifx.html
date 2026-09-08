@@ -22,7 +22,10 @@
 .ax-fx-input::placeholder{color:rgb(134,149,170)}
 .ax-fx-box{transition:border-color .18s ease}
 .ax-fx-box:focus-within{border-color:rgb(223,63,23)!important}
-.ax-fx-note{position:absolute;font-family:'Nunito Sans',sans-serif;font-weight:600;
+/* Above the cookie bar. The note sits in the footer, the bar is fixed over the
+   bottom of the viewport, and the bar won: the confirmation appeared underneath
+   it, which is why clicking Subscribe looked like it did nothing at all. */
+.ax-fx-note{z-index:2147483000;position:absolute;font-family:'Nunito Sans',sans-serif;font-weight:600;
   font-size:0.7292vw;line-height:1.0417vw;color:rgb(21,128,61);opacity:0;
   transition:opacity .25s ease;pointer-events:none;white-space:nowrap}
 .ax-fx-note.on{opacity:1}
@@ -424,6 +427,14 @@
      the dummy with a real <input>, stop the navigation, validate, and confirm in
      place. No backend exists on a static site, so the address is handed to the
      team's mailbox and the user is told plainly that they are subscribed. */
+  /* Same resolution the announcement bar and the contact form use: an explicit
+     override, localhost during local dev, or empty -- which is correct on
+     production, where one CloudFront distribution serves both the site and the
+     API, so a relative path is same-origin. */
+  var API_BASE=(window.AX_API_BASE||
+    (/^(localhost|127\.0\.0\.1)$/.test(location.hostname)?'http://localhost:8000':''))
+    .replace(/\/+$/,'');
+
   function newsletter(){
     var foot=document.querySelector('section.ax-footer');
     if(!foot||foot.dataset.axNews) return;
@@ -504,27 +515,41 @@
       if(!v||!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(v)){
         say('Enter a valid work email address.',true); input.focus(); return;
       }
-      say('');                       /* shows the note, content set just below */
+      say('Subscribing\u2026');
       input.value='';
-      /* Do NOT open mail automatically. Any programmatic mailto -- location.href or
-         a synthesised anchor click -- is a navigation attempt, and on a browser with
-         no mail handler registered it unloads the page: that is what kept being
-         reported as "Subscribe redirects to the contact page". The address is
-         confirmed in place and offered as a plain link the reader may choose to
-         click, so nothing can ever take them off the page.
-         CLIENT OWES a real newsletter endpoint; until then this is the honest
-         behaviour rather than a silent no-op. */
-      var href='mailto:sales@aeonx.digital'
+      /* The address is POSTed and stored. This used to say "we have your address"
+         and hold it nowhere, which is worse than a dead button: the reader believes
+         they subscribed. It now goes to /api/newsletter/, the same origin the
+         contact form and the announcement bar use, and lands in a row the team can
+         see at /manage/.
+
+         Still no programmatic mailto on any path. A mailto is a navigation attempt,
+         and a browser with no mail handler registered unloads the page -- that is
+         what kept being reported as "Subscribe redirects to the contact page". If
+         the API cannot be reached the address is offered as a link the reader may
+         choose to click, and nothing takes them anywhere on its own. */
+      var mailHref='mailto:sales@aeonx.digital'
         +'?subject='+encodeURIComponent('Newsletter subscription')
         +'&body='+encodeURIComponent('Please subscribe this address to the AeonX newsletter: '+v);
-      note.innerHTML='';
-      note.appendChild(document.createTextNode(
-        'Thanks \u2014 we have your address. '));
-      var a=document.createElement('a');
-      a.href=href; a.textContent='Email it to the team';
-      a.className='ax-fx-note-link';
-      a.setAttribute('rel','noopener noreferrer');
-      note.appendChild(a);
+      function offerMail(){
+        note.classList.add('err');
+        note.innerHTML='';
+        note.appendChild(document.createTextNode('Could not reach us just now. '));
+        var a=document.createElement('a');
+        a.href=mailHref; a.textContent='Email it to the team';
+        a.className='ax-fx-note-link';
+        a.setAttribute('rel','noopener noreferrer');
+        note.appendChild(a);
+      }
+      if(!window.fetch){ offerMail(); return; }
+      fetch(API_BASE+'/api/newsletter/', {
+        method:'POST', credentials:'omit',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({ email:v, source_page:location.pathname })
+      }).then(function(r){
+        if(!r.ok) throw new Error(r.status);
+        say('Thanks \u2014 you are on the list.');
+      }).catch(offerMail);
     }
     /* DOCUMENT-capture interception, not a same-element listener: at the target
        phase listeners run in REGISTRATION order regardless of the capture flag,
