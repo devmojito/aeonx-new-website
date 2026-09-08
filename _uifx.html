@@ -325,6 +325,11 @@
       if(!pill) return;
       var pr=pill.getBoundingClientRect();
       var lbl=[].slice.call(document.querySelectorAll('.g-t')).filter(function(t){
+        /* A tab is not a CTA. The hero's Products/AI Agents/Services labels sit in a
+           painted strip that looks exactly like a pill, so this pass used to centre
+           them against a phantom arrow and shift "AI Agents" 3px off the position
+           Figma exported. _herotabs.html claims them at parse time, before this runs. */
+        if(t.classList.contains('ax-ht-tab')) return false;
         var r=t.getBoundingClientRect();
         return r.width&&r.left>=pr.left-4&&r.right<=pr.right+4&&
                r.top>=pr.top-6&&r.bottom<=pr.bottom+6&&txt(t);
