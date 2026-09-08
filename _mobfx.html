@@ -353,12 +353,22 @@
       if (g.length < 3) return;
       /* A chip/tab row has text labels interleaved with its icons; scrolling only
          the images while the labels stay put is exactly the "animating for no
-         reason" bug. Logo strips have no text in-band: skip rows that do. */
+         reason" bug. Logo strips have no text in-band: skip rows that do.
+
+         Overlap is the wrong test for this, and the homepage product strip proved
+         it: a tab puts its label UNDER its icon, so the two bands never intersect
+         and twelve product marks marched out from under their own cards. The
+         labels belong to the icons even though they sit below them, so the test
+         is proximity -- text within one and a half strip-heights, above or below.
+         A real logo band has nothing that close; anything further off is a
+         heading or a paragraph and is none of this row's business. */
       var rTop = Math.min.apply(null, g.map(function(b){ return b.T; }));
       var rBot = Math.max.apply(null, g.map(function(b){ return b.T + b.H; }));
+      var near = (rBot - rTop) * 1.5;
       var hasText = box.some(function(b){
         return /g-t/.test(b.el.className) && b.el.parentElement === host &&
-               b.T < rBot && b.T + b.H > rTop && (b.el.textContent || '').trim();
+               b.T < rBot + near && b.T + b.H > rTop - near &&
+               (b.el.textContent || '').trim();
       });
       if (hasText) return;
       var stripW = span + W * 0.08;
