@@ -21,12 +21,39 @@
      !API_BASE made every page skip the API on production entirely. */
   if (!window.fetch) return;
 
+  /* Hiding the bar shortens the fixed header, and a page whose layout reserved a
+     strip for it is then left with an empty band under the nav.
+
+     Only some pages reserve it. Sub-pages start their content at 0 and sit under
+     the nav regardless; the V2 homepage starts at 5.885vw, which is the bar plus
+     the nav, because Figma drew both. So the reserve is detected rather than
+     assumed: if the topmost thing on the page begins at or below the bar's own
+     height, that space was meant for the bar, and with no bar the page moves up
+     by exactly that much. A negative margin is enough -- everything inside is
+     absolutely positioned against .ax-page, so the whole page travels together
+     and the document gets shorter by the same amount.
+
+     Measured while the bar is still visible, and in vw, so a resize keeps it. */
+  function reclaim(bar) {
+    var h = bar.getBoundingClientRect().height;
+    if (!(h > 1) || !window.innerWidth) return;
+    var page = document.querySelector('main.ax-page');
+    if (!page || page.closest('.ax-mob')) return;   /* mobile hides the chrome outright */
+    var top = Infinity;
+    [].forEach.call(page.children, function (el) {
+      var t = el.getBoundingClientRect().top;
+      if (t < top) top = t;
+    });
+    if (!(top >= h - 1)) return;                    /* nothing was reserved */
+    page.style.marginTop = '-' + (h / window.innerWidth * 100).toFixed(4) + 'vw';
+  }
+
   function apply(d) {
     var bars = document.querySelectorAll('a.ax-annc, .ax-annc');
     if (!bars.length) return;
     [].forEach.call(bars, function (bar) {
       var txt = bar.querySelector('.ax-annc__txt');
-      if (!d.active || !d.text) { bar.hidden = true; bar.style.display = 'none'; return; }
+      if (!d.active || !d.text) { reclaim(bar); bar.hidden = true; bar.style.display = 'none'; return; }
       bar.hidden = false;
       bar.style.removeProperty('display');
       if (txt) txt.textContent = d.text;

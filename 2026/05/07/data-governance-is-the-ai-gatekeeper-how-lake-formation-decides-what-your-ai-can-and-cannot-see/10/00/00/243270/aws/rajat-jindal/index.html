@@ -3965,68 +3965,6 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 
-<style id="ax-annc-css">
-/* Nothing to style: the bar already has its design. This block only exists so
-   _postbuild.py has a sentinel to test for. */
-</style>
-<script>
-/* ---- ANNOUNCEMENT BAR, EDITED FROM /manage/ ----
-   The strip above the nav is baked into all 91 pages, so changing its wording used
-   to mean a rebuild and a redeploy -- which is why it shipped carrying Figma's
-   placeholder ("Grep, Embeddings, or Both? ... June 30th") for months. It now reads
-   siteconfig.Announcement at runtime.
-
-   Same contract as the investor document browser: with no API reachable the page
-   keeps whatever is baked into it, so an outage degrades to slightly stale copy
-   rather than an empty orange band. */
-(function () {
-  var API_BASE = (window.AX_API_BASE ||
-    (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8000' : ''))
-    .replace(/\/+$/, '');
-  /* Empty string is the CORRECT base: the site and the API are served by one
-     CloudFront distribution, so a relative fetch is same-origin. Testing for
-     !API_BASE made every page skip the API on production entirely. */
-  if (!window.fetch) return;
-
-  function apply(d) {
-    var bars = document.querySelectorAll('a.ax-annc, .ax-annc');
-    if (!bars.length) return;
-    [].forEach.call(bars, function (bar) {
-      var txt = bar.querySelector('.ax-annc__txt');
-      if (!d.active || !d.text) { bar.hidden = true; bar.style.display = 'none'; return; }
-      bar.hidden = false;
-      bar.style.removeProperty('display');
-      if (txt) txt.textContent = d.text;
-      if (bar.tagName === 'A') {
-        if (d.url) {
-          bar.setAttribute('href', d.url);
-          bar.style.removeProperty('cursor');
-          /* off-site links open in a new tab, matching every other external CTA */
-          if (/^https?:/i.test(d.url) && d.url.indexOf(location.host) === -1) {
-            bar.setAttribute('target', '_blank');
-            bar.setAttribute('rel', 'noopener noreferrer');
-          } else {
-            bar.removeAttribute('target');
-            bar.removeAttribute('rel');
-          }
-        } else {
-          /* No destination: keep it as text rather than a link that goes nowhere.
-             href="#" would jump to the top of the page and looks broken. */
-          bar.removeAttribute('href');
-          bar.removeAttribute('target');
-          bar.style.cursor = 'default';
-        }
-      }
-    });
-  }
-
-  fetch(API_BASE + '/api/announcement/', { credentials: 'omit' })
-    .then(function (r) { return r.ok ? r.json() : null; })
-    .then(function (d) { if (d) apply(d); })
-    .catch(function () { /* keep the baked copy */ });
-})();
-</script>
-
 <style id="ax-cookie-css">
 /* Cookie consent bar. Bottom-anchored rather than a modal: this site sets no
    tracking cookies today (see the script below), so blocking the page behind a
@@ -7094,6 +7032,95 @@ document.addEventListener("DOMContentLoaded",function(){
   }
   if (document.readyState === 'complete') setTimeout(run, 0);
   else addEventListener('load', function () { setTimeout(run, 0); });
+})();
+</script>
+
+<style id="ax-annc-css">
+/* Nothing to style: the bar already has its design. This block only exists so
+   _postbuild.py has a sentinel to test for. */
+</style>
+<script>
+/* ---- ANNOUNCEMENT BAR, EDITED FROM /manage/ ----
+   The strip above the nav is baked into all 91 pages, so changing its wording used
+   to mean a rebuild and a redeploy -- which is why it shipped carrying Figma's
+   placeholder ("Grep, Embeddings, or Both? ... June 30th") for months. It now reads
+   siteconfig.Announcement at runtime.
+
+   Same contract as the investor document browser: with no API reachable the page
+   keeps whatever is baked into it, so an outage degrades to slightly stale copy
+   rather than an empty orange band. */
+(function () {
+  var API_BASE = (window.AX_API_BASE ||
+    (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8000' : ''))
+    .replace(/\/+$/, '');
+  /* Empty string is the CORRECT base: the site and the API are served by one
+     CloudFront distribution, so a relative fetch is same-origin. Testing for
+     !API_BASE made every page skip the API on production entirely. */
+  if (!window.fetch) return;
+
+  /* Hiding the bar shortens the fixed header, and a page whose layout reserved a
+     strip for it is then left with an empty band under the nav.
+
+     Only some pages reserve it. Sub-pages start their content at 0 and sit under
+     the nav regardless; the V2 homepage starts at 5.885vw, which is the bar plus
+     the nav, because Figma drew both. So the reserve is detected rather than
+     assumed: if the topmost thing on the page begins at or below the bar's own
+     height, that space was meant for the bar, and with no bar the page moves up
+     by exactly that much. A negative margin is enough -- everything inside is
+     absolutely positioned against .ax-page, so the whole page travels together
+     and the document gets shorter by the same amount.
+
+     Measured while the bar is still visible, and in vw, so a resize keeps it. */
+  function reclaim(bar) {
+    var h = bar.getBoundingClientRect().height;
+    if (!(h > 1) || !window.innerWidth) return;
+    var page = document.querySelector('main.ax-page');
+    if (!page || page.closest('.ax-mob')) return;   /* mobile hides the chrome outright */
+    var top = Infinity;
+    [].forEach.call(page.children, function (el) {
+      var t = el.getBoundingClientRect().top;
+      if (t < top) top = t;
+    });
+    if (!(top >= h - 1)) return;                    /* nothing was reserved */
+    page.style.marginTop = '-' + (h / window.innerWidth * 100).toFixed(4) + 'vw';
+  }
+
+  function apply(d) {
+    var bars = document.querySelectorAll('a.ax-annc, .ax-annc');
+    if (!bars.length) return;
+    [].forEach.call(bars, function (bar) {
+      var txt = bar.querySelector('.ax-annc__txt');
+      if (!d.active || !d.text) { reclaim(bar); bar.hidden = true; bar.style.display = 'none'; return; }
+      bar.hidden = false;
+      bar.style.removeProperty('display');
+      if (txt) txt.textContent = d.text;
+      if (bar.tagName === 'A') {
+        if (d.url) {
+          bar.setAttribute('href', d.url);
+          bar.style.removeProperty('cursor');
+          /* off-site links open in a new tab, matching every other external CTA */
+          if (/^https?:/i.test(d.url) && d.url.indexOf(location.host) === -1) {
+            bar.setAttribute('target', '_blank');
+            bar.setAttribute('rel', 'noopener noreferrer');
+          } else {
+            bar.removeAttribute('target');
+            bar.removeAttribute('rel');
+          }
+        } else {
+          /* No destination: keep it as text rather than a link that goes nowhere.
+             href="#" would jump to the top of the page and looks broken. */
+          bar.removeAttribute('href');
+          bar.removeAttribute('target');
+          bar.style.cursor = 'default';
+        }
+      }
+    });
+  }
+
+  fetch(API_BASE + '/api/announcement/', { credentials: 'omit' })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (d) { if (d) apply(d); })
+    .catch(function () { /* keep the baked copy */ });
 })();
 </script>
 
