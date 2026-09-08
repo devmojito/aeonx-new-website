@@ -6092,6 +6092,533 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 
+<style id="ax-gearspin-css">
+/* Industries hero gears. Each industries page decorates its hero with two big
+   radial gear/fan vectors (top-left and bottom-right corner, one pair per page,
+   all ~square exports so they rotate about their own centre without wobble).
+   Selector-gated by asset id: nothing else on the site matches. The top-left
+   gear turns clockwise, the bottom-right counter-clockwise and slightly slower,
+   like a meshed pair. transform is free on these imgs (the generator writes
+   only position + blur), and the hero clip keeps the swing inside the section. */
+img.g-vec[src*="4690-13422"],
+img.g-vec[src*="6131-22640"],
+img.g-vec[src*="6138-25615"],
+img.g-vec[src*="6138-25921"],
+img.g-vec[src*="6138-26092"],
+img.g-vec[src*="6138-26187"]{animation:ax-gear-cw 80s linear infinite}
+img.g-vec[src*="4690-13425"],
+img.g-vec[src*="6138-25456"],
+img.g-vec[src*="6138-25767"],
+img.g-vec[src*="6138-25985"],
+img.g-vec[src*="6138-26117"],
+img.g-vec[src*="6138-26173"]{animation:ax-gear-ccw 104s linear infinite}
+/* Animate the standalone `rotate` property, NOT `transform`: the scroll-reveal
+   fragment leaves `transform:translateY(0)` on revealed hero elements, and a
+   keyframe to transform:rotate(360deg) against that base has MISMATCHED transform
+   lists -- the browser falls back to matrix interpolation, and rotate(360deg) AS A
+   MATRIX is the identity matrix, so the whole animation collapsed to a no-op
+   (proven: 0px screenshot diff at animation-delay:-20s). `rotate` composes with
+   any transform value and cannot collide with it. */
+@keyframes ax-gear-cw{from{rotate:0turn}to{rotate:1turn}}
+@keyframes ax-gear-ccw{from{rotate:0turn}to{rotate:-1turn}}
+@media (prefers-reduced-motion:reduce){
+  img.g-vec[src*="4690-134"],img.g-vec[src*="6131-22640"],img.g-vec[src*="6138-25"],
+  img.g-vec[src*="6138-26"]{animation:none}
+}
+</style>
+
+<style id="ax-cardex-css">
+/* ---- CARD-EXPAND HOVER (Figma ON_HOVER -> SMART_ANIMATE 0.3s) ----
+   The "Why choose us" row draws four cards with ONE expanded (wide, carrying its
+   description) and three collapsed (narrow, title only). Figma wires each collapsed
+   card to a variant where IT is the expanded one; the REST export flattens only the
+   default state, so the other three descriptions exist nowhere in the page and the
+   row never moved. _hoverspec.py harvests those descriptions; this animates the row.
+
+   Geometry comes from inline vw styles, never getBoundingClientRect: the cards sit
+   inside a scroll-reveal wrapper that starts them translated, and a rect would read
+   the animated position rather than the designed one. */
+.ax-cardex{transition:width .3s cubic-bezier(.22,.61,.36,1)}
+.ax-cardex-m{transition:transform .3s cubic-bezier(.22,.61,.36,1)}
+.ax-cardex-d{transition:opacity .22s ease}
+.ax-cardex-hit{cursor:default}
+@media (prefers-reduced-motion:reduce){
+  .ax-cardex,.ax-cardex-m,.ax-cardex-d{transition:none!important}
+}
+</style>
+<script>
+(function(){
+  /* title -> description, harvested from the Figma hover variants by _hoverspec.py */
+  var DESC={"sap angle": "S/4HANA Manufacturing RISE for the listed conglomerates, GROW for the mid-market. SAP PP, PM, QM, EWM. Plant-level rollouts with industry templates. 14 BUs live in 14 months at one listed customer, 95% fit-to-standard.", "cloud angle": "HANA on EC2 or GCP. SAP-on-AWS migration factory. AWS IoT Core and Greengrass for shop-floor telemetry. DataBridge SAP ECC to BigQuery in 2 weeks for plant analytics.", "product angle": "ManuFex with FlexMRP™ for finite scheduling 12% OEE uplift in 3 months at Tier-1 auto. SupplierX for procurement governance. Logystix for inbound/outbound logistics.", "axiom angle": "70% L1 auto-resolution on SAP tickets at a listed industrial conglomerate. AXIOM tunes per process strict on payroll, autonomous on password resets, semi-supervised on MM/PP."};
+
+  function txt(e){ return (e.textContent||'').replace(/\s+/g,' ').trim(); }
+  function num(el,p){ var v=el.style[p]; if(!v) return null;
+    var m=/^(-?[\d.]+)vw$/.exec(String(v).trim()); return m?parseFloat(m[1]):null; }
+  function box(el,root){
+    var l=num(el,'left'), t=num(el,'top'), w=num(el,'width'), h=num(el,'height');
+    if(l===null||t===null||w===null||h===null) return null;
+    var p=el.parentElement;
+    while(p&&p!==root){ var pl=num(p,'left'), pt=num(p,'top');
+      if(pl!==null) l+=pl; if(pt!==null) t+=pt; p=p.parentElement; }
+    return {el:el,l:l,t:t,w:w,h:h,r:l+w,b:t+h};
+  }
+  function inside(outer,inner,pad){
+    pad=pad||0.3;
+    return inner.l>=outer.l-pad&&inner.r<=outer.r+pad&&
+           inner.t>=outer.t-pad&&inner.b<=outer.b+pad;
+  }
+
+  function build(root){
+    var all=[].slice.call(root.querySelectorAll('.g-t,.g-b,.g-img,.g-vec'))
+      .map(function(e){ return box(e,root); }).filter(Boolean);
+    var titles=all.filter(function(o){
+      return /g-t/.test(o.el.className||'') && DESC[txt(o.el).toLowerCase()]; });
+    if(titles.length<3) return false;
+    titles.sort(function(a,b){ return a.l-b.l; });
+
+    /* each card's plate: the smallest painted box that wraps its title */
+    var cards=[];
+    titles.forEach(function(ti){
+      var plate=null;
+      all.forEach(function(o){
+        if(!/g-b/.test(o.el.className||'')) return;
+        if(o.w<ti.w||!inside(o,ti)) return;
+        if(o.h<ti.h*1.6) return;                   /* the title's own chip, not the card */
+        if(!plate||o.w*o.h<plate.w*plate.h) plate=o;
+      });
+      if(plate) cards.push({title:ti,plate:plate,key:txt(ti.el).toLowerCase()});
+    });
+    if(cards.length<3) return false;
+
+    /* everything that rides with a card: any element inside its plate */
+    cards.forEach(function(c){
+      c.parts=all.filter(function(o){ return o.el!==c.plate.el&&inside(c.plate,o); });
+      c.desc=c.parts.filter(function(o){
+        return /g-t/.test(o.el.className||'')&&txt(o.el).length>40; })[0]||null;
+    });
+
+    var ws=cards.map(function(c){ return c.plate.w; });
+    var WIDE=Math.max.apply(null,ws), NARROW=Math.min.apply(null,ws);
+    if(!(WIDE>NARROW*1.4)) return false;           /* not the expand pattern */
+    var L0=cards[0].plate.l;
+    var span=cards[cards.length-1].plate.r-L0;
+    var GAP=(span-WIDE-NARROW*(cards.length-1))/(cards.length-1);
+    if(!(GAP>-0.2)) return false;
+    var open=cards.reduce(function(a,b){ return a.plate.w>=b.plate.w?a:b; });
+
+    /* the one description in the markup is reused for whichever card is open */
+    var desc=open.desc;
+    if(!desc) return false;
+    var descOffL=desc.l-open.plate.l, descOffT=desc.t-open.plate.t, descW=desc.w;
+    desc.el.classList.add('ax-cardex-d');
+
+    /* box() reports every element in the ROOT's frame, by summing the positioned
+       ancestors on the way up. Writing one of those numbers straight back into
+       style.left/top is not the inverse of that walk -- the browser resolves an
+       absolute offset against the nearest positioned ancestor, which here is the
+       row's clip wrapper. The description was therefore pushed out by the wrapper's
+       own offset (300px right, 2115px down) and rendered over an unrelated section
+       instead of inside the open card, which is why the wide card looked empty.
+       Subtract the wrapper chain so the write lands where box() says it should. */
+    var descPad=(function(){
+      var l=0,t=0,p=desc.el.parentElement;
+      while(p&&p!==root){
+        var pl=num(p,'left'), pt=num(p,'top');
+        if(pl!==null) l+=pl;
+        if(pt!==null) t+=pt;
+        p=p.parentElement;
+      }
+      return {l:l,t:t};
+    })();
+
+    /* Figma fills the EXPANDED card peach and leaves the collapsed ones white. The
+       fill was baked onto whichever card the design drew open, so it stayed on card
+       one while the width and the description moved to whatever you hovered -- a wide
+       white card next to a narrow peach one. Both colours are read off the design
+       here and applied explicitly on every layout; never cleared to '', which
+       resolves to transparent rather than back to the design's white. */
+    /* Figma draws the OPEN card's title at the top of the card and the collapsed
+       ones centred, and every title keeps the y its own card was drawn at. Cards
+       only ever moved along x, so opening a card left its title stranded at the
+       collapsed height and closing the default card left ITS title floating near
+       the top -- visible in the row as one title out of line with the other three.
+       Both heights are read off the design and the title travels to whichever one
+       matches its card's current state. */
+    var titleOpenT=open.title.t;
+    var titleRestT=(function(){
+      for(var i=0;i<cards.length;i++) if(cards[i]!==open) return cards[i].title.t;
+      return titleOpenT;
+    })();
+
+    var OPEN_BG=getComputedStyle(open.plate.el).backgroundColor;
+    var REST_BG=(function(){
+      for(var i=0;i<cards.length;i++){
+        if(cards[i]===open) continue;
+        var bg=getComputedStyle(cards[i].plate.el).backgroundColor;
+        if(bg&&bg!==OPEN_BG) return bg;
+      }
+      return 'rgb(255,255,255)';
+    })();
+
+    cards.forEach(function(c){
+      c.plate.el.classList.add('ax-cardex');
+      c.parts.forEach(function(o){ o.el.classList.add('ax-cardex-m'); });
+      c.plate.el.classList.add('ax-cardex-m');
+    });
+
+    function layout(active){
+      var x=L0;
+      cards.forEach(function(c){
+        var w=(c===active?WIDE:NARROW);
+        var dx=x-c.plate.l;
+        c.plate.el.style.width=w+'vw';
+        c.plate.el.style.backgroundColor=(c===active?OPEN_BG:REST_BG);
+        c.plate.el.style.transform=dx?('translateX('+dx.toFixed(4)+'vw)'):'';
+        var dy=(c===active?titleOpenT:titleRestT)-c.title.t;
+        c.parts.forEach(function(o){
+          if(o.el===desc.el) return;
+          var ty=(o.el===c.title.el)?dy:0;
+          o.el.style.transform=(dx||ty)
+            ? ('translate('+dx.toFixed(4)+'vw,'+ty.toFixed(4)+'vw)') : '';
+        });
+        if(c===active){
+          desc.el.textContent=DESC[c.key]||'';
+          desc.el.style.left=(c.plate.l+descOffL-descPad.l)+'vw';
+          desc.el.style.top=(c.plate.t+descOffT-descPad.t)+'vw';
+          desc.el.style.width=descW+'vw';
+          desc.el.style.transform=dx?('translateX('+dx.toFixed(4)+'vw)'):'';
+          desc.el.style.opacity='1';
+        }
+        x+=w+GAP;
+      });
+    }
+
+    var current=open, pending=null;
+    function show(c){
+      if(c===current) return;
+      clearTimeout(pending);
+      desc.el.style.opacity='0';
+      current=c;
+      pending=setTimeout(function(){ layout(c); },120);
+    }
+    cards.forEach(function(c){
+      var hit=c.plate.el;
+      hit.classList.add('ax-cardex-hit');
+      hit.addEventListener('mouseenter',function(){ show(c); });
+      c.parts.forEach(function(o){
+        /* The description belongs to no single card: layout() relocates it into
+           whichever card is open. It is authored inside the card Figma drew open,
+           so binding it here gave it a permanent "reopen card one" handler --
+           hovering the open card's own copy snapped the row back to SAP angle,
+           and the 120ms opacity-0 window before layout() runs is why the card was
+           caught wide but blank. layout() already skips desc.el for this reason. */
+        if(o.el===desc.el) return;
+        o.el.addEventListener('mouseenter',function(){ show(c); });
+      });
+    });
+    layout(open);
+    return true;
+  }
+
+  function init(){
+    var main=document.querySelector('main.ax-page');
+    if(!main||main.dataset.axCardex) return;
+    /* desktop only: the mobile block stacks these cards, nothing to expand */
+    if(window.innerWidth&&window.innerWidth<=1024) return;
+    if(build(main)) main.dataset.axCardex='1';
+  }
+  if(document.readyState==='loading')
+    document.addEventListener('DOMContentLoaded',function(){ setTimeout(init,200); });
+  else setTimeout(init,200);
+  addEventListener('load',function(){ setTimeout(init,600); });
+})();
+</script>
+
+<style id="ax-deadbtn-css">
+/* ---- BUTTONS WITH NOWHERE TO GO ----
+   Figma draws more CTAs than the site has pages for, and a pill that looks live and
+   does nothing is worse than one that is visibly unavailable: the reader spends a
+   click finding out. Anything the linkifiers could not resolve is greyed and taken
+   out of the tab order, so it reads as unavailable rather than broken.
+
+   Paint only, and only on the pill itself, so the label keeps whatever Figma gave
+   it and nothing shifts. */
+.ax-dead{filter:grayscale(1);opacity:.45;pointer-events:none!important;cursor:default!important;
+  box-shadow:none!important;transform:none!important}
+.ax-dead *{pointer-events:none!important;cursor:default!important}
+</style>
+<script>
+/* ---- DEAD CONTROLS ----
+   The rule the client asked for: no button may take a reader to "#", and a button
+   with no page behind it is greyed out and cannot be clicked.
+
+   Two ways a control ends up dead. An <a href="#"> is dead outright. A Figma pill is
+   dead when no script claimed it: the CTA linkifiers set data-ax-to when they resolve
+   a destination and skip the pill entirely when they cannot, so a pill wearing a
+   button skin with no destination is one the design drew and the site cannot honour.
+
+   The interesting half is what is NOT dead. Plenty of real controls navigate nowhere
+   by design -- form submits, carousel arrows, tabs, filters, the cookie bar, the
+   search trigger -- and greying those would break the page. They are recognised by
+   the markers their own scripts leave behind rather than by name, so a new control
+   is live the moment it is wired, without this file being told about it. */
+(function () {
+  /* Markers every wired control on the site already carries. */
+  var WIRED = '[data-ax-to],[data-axcta],[data-axms],[data-cta],[data-axpill],' +
+              '[data-ax-owned],[role="tab"],[role="tablist"],[type="submit"],' +
+              '[type="button"],[type="reset"],.ax-cf-in,.ax-ck__b,.ax-frp-btn,' +
+              '.ax-nav__burger,.ax-mnav__burger,#ax-search-btn,.ax-search,' +
+              '.ax-csf-link,.ax-carm,.ax-pstrip-tab,.ax-ht-tab,.ax-mm__si,.ax-annc';
+
+  function real(href) {
+    if (!href) return false;
+    href = href.trim();
+    return href !== '#' && href.slice(0, 1) !== '#' ? true : false;
+  }
+
+  /* A control is live if it can navigate, or if a script has claimed it, or if it
+     sits inside something that has -- a label inside a wired pill is not its own
+     dead button. */
+  function live(el) {
+    if (el.dataset && el.dataset.axTo) return true;
+    if (el.tagName === 'A' && real(el.getAttribute('href'))) return true;
+    if (el.closest(WIRED)) return true;
+    /* A form is a destination of its own: everything inside one is doing a job. */
+    if (el.closest('form')) return true;
+    return false;
+  }
+
+  /* A pointer cursor and a hover colour on something that cannot be clicked is the
+     same lie as a dead button, but the answer is different: these are headings and
+     body copy that a hover pass dressed as links (four footer column titles, the
+     footer tagline, the product names in the hero band). Greying a heading would be
+     absurd -- it is not a control -- so the affordance is simply taken away and the
+     text goes back to being text. */
+  var AFFORD = ['ax-fx-link', 'ax-hv-txt', 'ax-hv-arrow', 'ax-fx-pill', 'ax-fx-soc'];
+
+  function unafford(el) {
+    if (el.dataset.axFlat) return;
+    el.dataset.axFlat = '1';
+    AFFORD.forEach(function (c) { el.classList.remove(c); });
+    el.style.cursor = 'default';
+    el.removeAttribute('role');
+    el.removeAttribute('tabindex');
+  }
+
+  function kill(el) {
+    if (el.dataset.axDead) return;
+    el.dataset.axDead = '1';
+    el.classList.add('ax-dead');
+    el.setAttribute('aria-disabled', 'true');
+    el.removeAttribute('role');
+    el.removeAttribute('tabindex');
+    if (el.tagName === 'A') el.removeAttribute('href');   /* not a link any more */
+  }
+
+  function sweep() {
+    /* 1. Anchors pointing at nothing. The announcement bar is excluded above: it
+          carries the baked "#" until the API answers, and hides itself when there
+          is nothing to announce. */
+    [].forEach.call(document.querySelectorAll('a'), function (a) {
+      var h = a.getAttribute('href');
+      if (h === null || real(h)) return;
+      if (a.closest(WIRED)) return;
+      kill(a);
+    });
+
+    /* 2. Pills the linkifiers left unclaimed. The skin classes are _hover.html's own
+          classification of "this is a button", so this asks the same question the
+          rest of the site already answers rather than inventing a second rule. */
+    [].forEach.call(document.querySelectorAll('.ax-hv-fill,.ax-hv-out'), function (el) {
+      if (live(el)) return;
+      kill(el);
+    });
+
+    /* 3. Mega-menu entries with no page. The menu already draws these as a <span>
+          rather than an <a>, and already has a look for one -- Anthropic ships as
+          ax-mm2__ln--soon, greyed and click-through-proof. Seven more entries were
+          spans without that class, so they read as live links and did nothing:
+          Customer References, Research Reports, Annual Reports, Quarterly Results,
+          BSE Disclosures, BRSR, Investor Grievances. Give them the look the menu
+          already has rather than inventing a second one. */
+    [].forEach.call(document.querySelectorAll('.ax-mm2__ln,.ax-mm__ln'), function (el) {
+      if (el.tagName === 'A' && real(el.getAttribute('href'))) return;
+      if (el.dataset.axTo) return;
+      el.classList.add('ax-mm2__ln--soon');
+      el.setAttribute('aria-disabled', 'true');
+    });
+
+    /* 4. Text dressed as a link with nowhere to go. An anchor anywhere in or around
+          it counts: the footer's phone and email are real links inside a styled
+          wrapper, and the wrapper is not the dead thing. */
+    [].forEach.call(document.querySelectorAll('.' + AFFORD.join(',.')), function (el) {
+      if (live(el)) return;
+      if (el.querySelector('a[href]')) return;
+      if (el.getAttribute('role') === 'link' || el.getAttribute('role') === 'button') return;
+      if (el.closest('.ax-mm,.ax-mm2')) return;      /* handled as a menu entry above */
+      unafford(el);
+    });
+  }
+
+  /* The linkifiers run on load and again at 140/200/400ms, so this runs after the
+     last of them and once more, late, for anything injected by a tab switch. */
+  function boot() {
+    setTimeout(sweep, 700);
+    setTimeout(sweep, 1600);
+  }
+  if (document.readyState === 'complete') boot();
+  else addEventListener('load', boot);
+})();
+</script>
+
+<style id="ax-annc-css">
+/* Nothing to style: the bar already has its design. This block only exists so
+   _postbuild.py has a sentinel to test for. */
+</style>
+<script>
+/* ---- ANNOUNCEMENT BAR, EDITED FROM /manage/ ----
+   The strip above the nav is baked into all 91 pages, so changing its wording used
+   to mean a rebuild and a redeploy -- which is why it shipped carrying Figma's
+   placeholder ("Grep, Embeddings, or Both? ... June 30th") for months. It now reads
+   siteconfig.Announcement at runtime.
+
+   Same contract as the investor document browser: with no API reachable the page
+   keeps whatever is baked into it, so an outage degrades to slightly stale copy
+   rather than an empty orange band. */
+(function () {
+  var API_BASE = (window.AX_API_BASE ||
+    (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8000' : ''))
+    .replace(/\/+$/, '');
+  /* Empty string is the CORRECT base: the site and the API are served by one
+     CloudFront distribution, so a relative fetch is same-origin. Testing for
+     !API_BASE made every page skip the API on production entirely. */
+  if (!window.fetch) return;
+
+  /* Hiding the bar shortens the fixed header, and a page whose layout reserved a
+     strip for it is then left with an empty band under the nav.
+
+     Only some pages reserve it. The V2 homepage starts its content at 5.885vw,
+     which is the bar plus the nav, because Figma drew both above the fold. A
+     sub-page starts at 2.29vw and its hero art is meant to run up under the nav,
+     so it reserves nothing and must not move.
+
+     That is the discriminator: the page reserved the strip only if its topmost
+     element begins at or below the WHOLE header, bar included. Comparing against
+     the bar alone would catch the sub-pages too, since their 44px start happens
+     to equal the bar's height. With the reserve confirmed the page moves up by
+     the bar's height and nothing else. A negative margin is enough: everything
+     inside is absolutely positioned against .ax-page, so the whole page travels
+     together and the document gets shorter by the same amount.
+
+     Measured while the bar is still visible, and in vw, so a resize keeps it. */
+  var shifted = null;   /* the page we pulled up, so the shift can be undone */
+
+  function reclaim(bar) {
+    if (shifted) return;
+    var h = bar.getBoundingClientRect().height;
+    var header = bar.closest('header') || bar.parentElement;
+    var H = header ? header.getBoundingClientRect().height : 0;
+    if (!(h > 1) || !(H > h) || !window.innerWidth) return;
+    var page = document.querySelector('main.ax-page');
+    if (!page || page.closest('.ax-mob')) return;   /* mobile hides the chrome outright */
+    var top = Infinity;
+    [].forEach.call(page.children, function (el) {
+      var t = el.getBoundingClientRect().top;
+      if (t < top) top = t;
+    });
+    if (!(top >= H - 1)) return;                    /* nothing was reserved */
+    shifted = { page: page, was: page.style.marginTop };
+    page.style.marginTop = '-' + (h / window.innerWidth * 100).toFixed(4) + 'vw';
+  }
+
+  function unreclaim() {
+    if (!shifted) return;
+    shifted.page.style.marginTop = shifted.was;
+    shifted = null;
+  }
+
+  function apply(d) {
+    var bars = document.querySelectorAll('a.ax-annc, .ax-annc');
+    if (!bars.length) return;
+    [].forEach.call(bars, function (bar) {
+      var txt = bar.querySelector('.ax-annc__txt');
+      if (!d.active || !d.text) { reclaim(bar); bar.hidden = true; bar.style.display = 'none'; return; }
+      unreclaim();
+      bar.hidden = false;
+      bar.style.removeProperty('display');
+      if (txt) txt.textContent = d.text;
+      if (bar.tagName === 'A') {
+        if (d.url) {
+          bar.setAttribute('href', d.url);
+          bar.style.removeProperty('cursor');
+          /* off-site links open in a new tab, matching every other external CTA */
+          if (/^https?:/i.test(d.url) && d.url.indexOf(location.host) === -1) {
+            bar.setAttribute('target', '_blank');
+            bar.setAttribute('rel', 'noopener noreferrer');
+          } else {
+            bar.removeAttribute('target');
+            bar.removeAttribute('rel');
+          }
+        } else {
+          /* No destination: keep it as text rather than a link that goes nowhere.
+             href="#" would jump to the top of the page and looks broken. */
+          bar.removeAttribute('href');
+          bar.removeAttribute('target');
+          bar.style.cursor = 'default';
+        }
+      }
+    });
+  }
+
+  /* ---- No flash of the placeholder ----
+     The bar is baked into the HTML carrying Figma's webinar copy, and the truth
+     only arrives a round trip later. Every load therefore showed the placeholder
+     for a moment and then yanked it away, taking 44px of page with it.
+
+     So the last known answer is remembered and applied here, during parse, before
+     the first paint. With nothing remembered the bar starts hidden: there is no
+     announcement most of the time, and a bar arriving a moment late is far less
+     jarring than one that appears and vanishes. Whatever the API says then wins,
+     and is remembered for next time.
+
+     Storage can throw outright in a private window, so every touch is guarded. */
+  var KEY = 'ax-annc';
+  function remembered() {
+    try { return JSON.parse(localStorage.getItem(KEY)); } catch (e) { return null; }
+  }
+  function remember(d) {
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) {}
+  }
+
+  /* The bar ships with href="#" baked in from the design. Until the API says there
+     is somewhere to go, it is not a link: no page on the site may take a reader to
+     a hash. apply() puts a real href back the moment one arrives. */
+  [].forEach.call(document.querySelectorAll('a.ax-annc'), function (bar) {
+    var h = bar.getAttribute('href');
+    if (!h || h.charAt(0) === '#') {
+      bar.removeAttribute('href');
+      bar.style.cursor = 'default';
+    }
+  });
+
+  var last = remembered();
+  apply(last && last.active && last.text ? last : { active: false });
+
+  fetch(API_BASE + '/api/announcement/', { credentials: 'omit' })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (d) {
+      if (!d) return;
+      apply(d);
+      remember(d.active && d.text ? { active: true, text: d.text, url: d.url || '' }
+                                  : { active: false });
+    })
+    /* An unreachable API leaves the remembered state showing, which is the last
+       thing the site actually published. That beats the baked copy: the baked
+       copy is a placeholder from the design file and was never true. */
+    .catch(function () {});
+})();
+</script>
+
 <style id="ax-uifx-css">
 /* Chrome interactions + newsletter. _hover.html deliberately skips header/footer
    (chrome() excludes them), so nothing in the nav or footer ever gained a hover
@@ -6774,11 +7301,20 @@ document.addEventListener("DOMContentLoaded",function(){
     var seen=new Set();
     [].slice.call(document.querySelectorAll('.g-t')).forEach(function(l){
       if(l.closest('.ax-mob')||l.children.length||l.dataset.axCentred) return;
-      var t=txt(l); if(!t||t.length>34) return;
-      if(getComputedStyle(l).textAlign!=='center') return;   /* left-aligned by design */
+      var t=txt(l); if(!t) return;
+      var cs=getComputedStyle(l);
+      /* The 34-character cut is there so a sentence inside a tinted box is not
+         mistaken for a button label. A role badge breaks it honestly: "PROGRAM
+         MANAGER - FUNCTIONAL & PRE-SALES" is 40 characters and is still a single
+         nowrap line in a 30px chip. Length alone cannot tell those apart, so a
+         one-line label in a short pill is allowed up to 60. */
+      var oneLine = cs.whiteSpace === 'nowrap' || cs.whiteSpace === 'pre';
+      if(t.length > (oneLine ? 60 : 34)) return;
+      if(cs.textAlign!=='center') return;   /* left-aligned by design */
       var pill=pillOf(l); if(!pill) return;
       var ps=pill.getAttribute('style')||'';
       if(!/background-color|border/.test(ps)||!/border-radius/.test(ps)) return;
+      if(t.length>34 && pill.getBoundingClientRect().height > 2.5*(document.documentElement.clientWidth||1920)/100) return;
       if(seen.has(pill)) return; seen.add(pill);
       var pr=pill.getBoundingClientRect();
       var rng=document.createRange(); rng.selectNodeContents(l);
@@ -6924,533 +7460,6 @@ document.addEventListener("DOMContentLoaded",function(){
   });
   addEventListener('resize',function(){ clearTimeout(window.__axfxR);
     window.__axfxR=setTimeout(function(){ centerLabels(); spaceArrows(); },200); });
-})();
-</script>
-
-<style id="ax-gearspin-css">
-/* Industries hero gears. Each industries page decorates its hero with two big
-   radial gear/fan vectors (top-left and bottom-right corner, one pair per page,
-   all ~square exports so they rotate about their own centre without wobble).
-   Selector-gated by asset id: nothing else on the site matches. The top-left
-   gear turns clockwise, the bottom-right counter-clockwise and slightly slower,
-   like a meshed pair. transform is free on these imgs (the generator writes
-   only position + blur), and the hero clip keeps the swing inside the section. */
-img.g-vec[src*="4690-13422"],
-img.g-vec[src*="6131-22640"],
-img.g-vec[src*="6138-25615"],
-img.g-vec[src*="6138-25921"],
-img.g-vec[src*="6138-26092"],
-img.g-vec[src*="6138-26187"]{animation:ax-gear-cw 80s linear infinite}
-img.g-vec[src*="4690-13425"],
-img.g-vec[src*="6138-25456"],
-img.g-vec[src*="6138-25767"],
-img.g-vec[src*="6138-25985"],
-img.g-vec[src*="6138-26117"],
-img.g-vec[src*="6138-26173"]{animation:ax-gear-ccw 104s linear infinite}
-/* Animate the standalone `rotate` property, NOT `transform`: the scroll-reveal
-   fragment leaves `transform:translateY(0)` on revealed hero elements, and a
-   keyframe to transform:rotate(360deg) against that base has MISMATCHED transform
-   lists -- the browser falls back to matrix interpolation, and rotate(360deg) AS A
-   MATRIX is the identity matrix, so the whole animation collapsed to a no-op
-   (proven: 0px screenshot diff at animation-delay:-20s). `rotate` composes with
-   any transform value and cannot collide with it. */
-@keyframes ax-gear-cw{from{rotate:0turn}to{rotate:1turn}}
-@keyframes ax-gear-ccw{from{rotate:0turn}to{rotate:-1turn}}
-@media (prefers-reduced-motion:reduce){
-  img.g-vec[src*="4690-134"],img.g-vec[src*="6131-22640"],img.g-vec[src*="6138-25"],
-  img.g-vec[src*="6138-26"]{animation:none}
-}
-</style>
-
-<style id="ax-cardex-css">
-/* ---- CARD-EXPAND HOVER (Figma ON_HOVER -> SMART_ANIMATE 0.3s) ----
-   The "Why choose us" row draws four cards with ONE expanded (wide, carrying its
-   description) and three collapsed (narrow, title only). Figma wires each collapsed
-   card to a variant where IT is the expanded one; the REST export flattens only the
-   default state, so the other three descriptions exist nowhere in the page and the
-   row never moved. _hoverspec.py harvests those descriptions; this animates the row.
-
-   Geometry comes from inline vw styles, never getBoundingClientRect: the cards sit
-   inside a scroll-reveal wrapper that starts them translated, and a rect would read
-   the animated position rather than the designed one. */
-.ax-cardex{transition:width .3s cubic-bezier(.22,.61,.36,1)}
-.ax-cardex-m{transition:transform .3s cubic-bezier(.22,.61,.36,1)}
-.ax-cardex-d{transition:opacity .22s ease}
-.ax-cardex-hit{cursor:default}
-@media (prefers-reduced-motion:reduce){
-  .ax-cardex,.ax-cardex-m,.ax-cardex-d{transition:none!important}
-}
-</style>
-<script>
-(function(){
-  /* title -> description, harvested from the Figma hover variants by _hoverspec.py */
-  var DESC={"sap angle": "S/4HANA Manufacturing RISE for the listed conglomerates, GROW for the mid-market. SAP PP, PM, QM, EWM. Plant-level rollouts with industry templates. 14 BUs live in 14 months at one listed customer, 95% fit-to-standard.", "cloud angle": "HANA on EC2 or GCP. SAP-on-AWS migration factory. AWS IoT Core and Greengrass for shop-floor telemetry. DataBridge SAP ECC to BigQuery in 2 weeks for plant analytics.", "product angle": "ManuFex with FlexMRP™ for finite scheduling 12% OEE uplift in 3 months at Tier-1 auto. SupplierX for procurement governance. Logystix for inbound/outbound logistics.", "axiom angle": "70% L1 auto-resolution on SAP tickets at a listed industrial conglomerate. AXIOM tunes per process strict on payroll, autonomous on password resets, semi-supervised on MM/PP."};
-
-  function txt(e){ return (e.textContent||'').replace(/\s+/g,' ').trim(); }
-  function num(el,p){ var v=el.style[p]; if(!v) return null;
-    var m=/^(-?[\d.]+)vw$/.exec(String(v).trim()); return m?parseFloat(m[1]):null; }
-  function box(el,root){
-    var l=num(el,'left'), t=num(el,'top'), w=num(el,'width'), h=num(el,'height');
-    if(l===null||t===null||w===null||h===null) return null;
-    var p=el.parentElement;
-    while(p&&p!==root){ var pl=num(p,'left'), pt=num(p,'top');
-      if(pl!==null) l+=pl; if(pt!==null) t+=pt; p=p.parentElement; }
-    return {el:el,l:l,t:t,w:w,h:h,r:l+w,b:t+h};
-  }
-  function inside(outer,inner,pad){
-    pad=pad||0.3;
-    return inner.l>=outer.l-pad&&inner.r<=outer.r+pad&&
-           inner.t>=outer.t-pad&&inner.b<=outer.b+pad;
-  }
-
-  function build(root){
-    var all=[].slice.call(root.querySelectorAll('.g-t,.g-b,.g-img,.g-vec'))
-      .map(function(e){ return box(e,root); }).filter(Boolean);
-    var titles=all.filter(function(o){
-      return /g-t/.test(o.el.className||'') && DESC[txt(o.el).toLowerCase()]; });
-    if(titles.length<3) return false;
-    titles.sort(function(a,b){ return a.l-b.l; });
-
-    /* each card's plate: the smallest painted box that wraps its title */
-    var cards=[];
-    titles.forEach(function(ti){
-      var plate=null;
-      all.forEach(function(o){
-        if(!/g-b/.test(o.el.className||'')) return;
-        if(o.w<ti.w||!inside(o,ti)) return;
-        if(o.h<ti.h*1.6) return;                   /* the title's own chip, not the card */
-        if(!plate||o.w*o.h<plate.w*plate.h) plate=o;
-      });
-      if(plate) cards.push({title:ti,plate:plate,key:txt(ti.el).toLowerCase()});
-    });
-    if(cards.length<3) return false;
-
-    /* everything that rides with a card: any element inside its plate */
-    cards.forEach(function(c){
-      c.parts=all.filter(function(o){ return o.el!==c.plate.el&&inside(c.plate,o); });
-      c.desc=c.parts.filter(function(o){
-        return /g-t/.test(o.el.className||'')&&txt(o.el).length>40; })[0]||null;
-    });
-
-    var ws=cards.map(function(c){ return c.plate.w; });
-    var WIDE=Math.max.apply(null,ws), NARROW=Math.min.apply(null,ws);
-    if(!(WIDE>NARROW*1.4)) return false;           /* not the expand pattern */
-    var L0=cards[0].plate.l;
-    var span=cards[cards.length-1].plate.r-L0;
-    var GAP=(span-WIDE-NARROW*(cards.length-1))/(cards.length-1);
-    if(!(GAP>-0.2)) return false;
-    var open=cards.reduce(function(a,b){ return a.plate.w>=b.plate.w?a:b; });
-
-    /* the one description in the markup is reused for whichever card is open */
-    var desc=open.desc;
-    if(!desc) return false;
-    var descOffL=desc.l-open.plate.l, descOffT=desc.t-open.plate.t, descW=desc.w;
-    desc.el.classList.add('ax-cardex-d');
-
-    /* box() reports every element in the ROOT's frame, by summing the positioned
-       ancestors on the way up. Writing one of those numbers straight back into
-       style.left/top is not the inverse of that walk -- the browser resolves an
-       absolute offset against the nearest positioned ancestor, which here is the
-       row's clip wrapper. The description was therefore pushed out by the wrapper's
-       own offset (300px right, 2115px down) and rendered over an unrelated section
-       instead of inside the open card, which is why the wide card looked empty.
-       Subtract the wrapper chain so the write lands where box() says it should. */
-    var descPad=(function(){
-      var l=0,t=0,p=desc.el.parentElement;
-      while(p&&p!==root){
-        var pl=num(p,'left'), pt=num(p,'top');
-        if(pl!==null) l+=pl;
-        if(pt!==null) t+=pt;
-        p=p.parentElement;
-      }
-      return {l:l,t:t};
-    })();
-
-    /* Figma fills the EXPANDED card peach and leaves the collapsed ones white. The
-       fill was baked onto whichever card the design drew open, so it stayed on card
-       one while the width and the description moved to whatever you hovered -- a wide
-       white card next to a narrow peach one. Both colours are read off the design
-       here and applied explicitly on every layout; never cleared to '', which
-       resolves to transparent rather than back to the design's white. */
-    /* Figma draws the OPEN card's title at the top of the card and the collapsed
-       ones centred, and every title keeps the y its own card was drawn at. Cards
-       only ever moved along x, so opening a card left its title stranded at the
-       collapsed height and closing the default card left ITS title floating near
-       the top -- visible in the row as one title out of line with the other three.
-       Both heights are read off the design and the title travels to whichever one
-       matches its card's current state. */
-    var titleOpenT=open.title.t;
-    var titleRestT=(function(){
-      for(var i=0;i<cards.length;i++) if(cards[i]!==open) return cards[i].title.t;
-      return titleOpenT;
-    })();
-
-    var OPEN_BG=getComputedStyle(open.plate.el).backgroundColor;
-    var REST_BG=(function(){
-      for(var i=0;i<cards.length;i++){
-        if(cards[i]===open) continue;
-        var bg=getComputedStyle(cards[i].plate.el).backgroundColor;
-        if(bg&&bg!==OPEN_BG) return bg;
-      }
-      return 'rgb(255,255,255)';
-    })();
-
-    cards.forEach(function(c){
-      c.plate.el.classList.add('ax-cardex');
-      c.parts.forEach(function(o){ o.el.classList.add('ax-cardex-m'); });
-      c.plate.el.classList.add('ax-cardex-m');
-    });
-
-    function layout(active){
-      var x=L0;
-      cards.forEach(function(c){
-        var w=(c===active?WIDE:NARROW);
-        var dx=x-c.plate.l;
-        c.plate.el.style.width=w+'vw';
-        c.plate.el.style.backgroundColor=(c===active?OPEN_BG:REST_BG);
-        c.plate.el.style.transform=dx?('translateX('+dx.toFixed(4)+'vw)'):'';
-        var dy=(c===active?titleOpenT:titleRestT)-c.title.t;
-        c.parts.forEach(function(o){
-          if(o.el===desc.el) return;
-          var ty=(o.el===c.title.el)?dy:0;
-          o.el.style.transform=(dx||ty)
-            ? ('translate('+dx.toFixed(4)+'vw,'+ty.toFixed(4)+'vw)') : '';
-        });
-        if(c===active){
-          desc.el.textContent=DESC[c.key]||'';
-          desc.el.style.left=(c.plate.l+descOffL-descPad.l)+'vw';
-          desc.el.style.top=(c.plate.t+descOffT-descPad.t)+'vw';
-          desc.el.style.width=descW+'vw';
-          desc.el.style.transform=dx?('translateX('+dx.toFixed(4)+'vw)'):'';
-          desc.el.style.opacity='1';
-        }
-        x+=w+GAP;
-      });
-    }
-
-    var current=open, pending=null;
-    function show(c){
-      if(c===current) return;
-      clearTimeout(pending);
-      desc.el.style.opacity='0';
-      current=c;
-      pending=setTimeout(function(){ layout(c); },120);
-    }
-    cards.forEach(function(c){
-      var hit=c.plate.el;
-      hit.classList.add('ax-cardex-hit');
-      hit.addEventListener('mouseenter',function(){ show(c); });
-      c.parts.forEach(function(o){
-        /* The description belongs to no single card: layout() relocates it into
-           whichever card is open. It is authored inside the card Figma drew open,
-           so binding it here gave it a permanent "reopen card one" handler --
-           hovering the open card's own copy snapped the row back to SAP angle,
-           and the 120ms opacity-0 window before layout() runs is why the card was
-           caught wide but blank. layout() already skips desc.el for this reason. */
-        if(o.el===desc.el) return;
-        o.el.addEventListener('mouseenter',function(){ show(c); });
-      });
-    });
-    layout(open);
-    return true;
-  }
-
-  function init(){
-    var main=document.querySelector('main.ax-page');
-    if(!main||main.dataset.axCardex) return;
-    /* desktop only: the mobile block stacks these cards, nothing to expand */
-    if(window.innerWidth&&window.innerWidth<=1024) return;
-    if(build(main)) main.dataset.axCardex='1';
-  }
-  if(document.readyState==='loading')
-    document.addEventListener('DOMContentLoaded',function(){ setTimeout(init,200); });
-  else setTimeout(init,200);
-  addEventListener('load',function(){ setTimeout(init,600); });
-})();
-</script>
-
-<style id="ax-deadbtn-css">
-/* ---- BUTTONS WITH NOWHERE TO GO ----
-   Figma draws more CTAs than the site has pages for, and a pill that looks live and
-   does nothing is worse than one that is visibly unavailable: the reader spends a
-   click finding out. Anything the linkifiers could not resolve is greyed and taken
-   out of the tab order, so it reads as unavailable rather than broken.
-
-   Paint only, and only on the pill itself, so the label keeps whatever Figma gave
-   it and nothing shifts. */
-.ax-dead{filter:grayscale(1);opacity:.45;pointer-events:none!important;cursor:default!important;
-  box-shadow:none!important;transform:none!important}
-.ax-dead *{pointer-events:none!important;cursor:default!important}
-</style>
-<script>
-/* ---- DEAD CONTROLS ----
-   The rule the client asked for: no button may take a reader to "#", and a button
-   with no page behind it is greyed out and cannot be clicked.
-
-   Two ways a control ends up dead. An <a href="#"> is dead outright. A Figma pill is
-   dead when no script claimed it: the CTA linkifiers set data-ax-to when they resolve
-   a destination and skip the pill entirely when they cannot, so a pill wearing a
-   button skin with no destination is one the design drew and the site cannot honour.
-
-   The interesting half is what is NOT dead. Plenty of real controls navigate nowhere
-   by design -- form submits, carousel arrows, tabs, filters, the cookie bar, the
-   search trigger -- and greying those would break the page. They are recognised by
-   the markers their own scripts leave behind rather than by name, so a new control
-   is live the moment it is wired, without this file being told about it. */
-(function () {
-  /* Markers every wired control on the site already carries. */
-  var WIRED = '[data-ax-to],[data-axcta],[data-axms],[data-cta],[data-axpill],' +
-              '[data-ax-owned],[role="tab"],[role="tablist"],[type="submit"],' +
-              '[type="button"],[type="reset"],.ax-cf-in,.ax-ck__b,.ax-frp-btn,' +
-              '.ax-nav__burger,.ax-mnav__burger,#ax-search-btn,.ax-search,' +
-              '.ax-csf-link,.ax-carm,.ax-pstrip-tab,.ax-ht-tab,.ax-mm__si,.ax-annc';
-
-  function real(href) {
-    if (!href) return false;
-    href = href.trim();
-    return href !== '#' && href.slice(0, 1) !== '#' ? true : false;
-  }
-
-  /* A control is live if it can navigate, or if a script has claimed it, or if it
-     sits inside something that has -- a label inside a wired pill is not its own
-     dead button. */
-  function live(el) {
-    if (el.dataset && el.dataset.axTo) return true;
-    if (el.tagName === 'A' && real(el.getAttribute('href'))) return true;
-    if (el.closest(WIRED)) return true;
-    /* A form is a destination of its own: everything inside one is doing a job. */
-    if (el.closest('form')) return true;
-    return false;
-  }
-
-  /* A pointer cursor and a hover colour on something that cannot be clicked is the
-     same lie as a dead button, but the answer is different: these are headings and
-     body copy that a hover pass dressed as links (four footer column titles, the
-     footer tagline, the product names in the hero band). Greying a heading would be
-     absurd -- it is not a control -- so the affordance is simply taken away and the
-     text goes back to being text. */
-  var AFFORD = ['ax-fx-link', 'ax-hv-txt', 'ax-hv-arrow', 'ax-fx-pill', 'ax-fx-soc'];
-
-  function unafford(el) {
-    if (el.dataset.axFlat) return;
-    el.dataset.axFlat = '1';
-    AFFORD.forEach(function (c) { el.classList.remove(c); });
-    el.style.cursor = 'default';
-    el.removeAttribute('role');
-    el.removeAttribute('tabindex');
-  }
-
-  function kill(el) {
-    if (el.dataset.axDead) return;
-    el.dataset.axDead = '1';
-    el.classList.add('ax-dead');
-    el.setAttribute('aria-disabled', 'true');
-    el.removeAttribute('role');
-    el.removeAttribute('tabindex');
-    if (el.tagName === 'A') el.removeAttribute('href');   /* not a link any more */
-  }
-
-  function sweep() {
-    /* 1. Anchors pointing at nothing. The announcement bar is excluded above: it
-          carries the baked "#" until the API answers, and hides itself when there
-          is nothing to announce. */
-    [].forEach.call(document.querySelectorAll('a'), function (a) {
-      var h = a.getAttribute('href');
-      if (h === null || real(h)) return;
-      if (a.closest(WIRED)) return;
-      kill(a);
-    });
-
-    /* 2. Pills the linkifiers left unclaimed. The skin classes are _hover.html's own
-          classification of "this is a button", so this asks the same question the
-          rest of the site already answers rather than inventing a second rule. */
-    [].forEach.call(document.querySelectorAll('.ax-hv-fill,.ax-hv-out'), function (el) {
-      if (live(el)) return;
-      kill(el);
-    });
-
-    /* 3. Mega-menu entries with no page. The menu already draws these as a <span>
-          rather than an <a>, and already has a look for one -- Anthropic ships as
-          ax-mm2__ln--soon, greyed and click-through-proof. Seven more entries were
-          spans without that class, so they read as live links and did nothing:
-          Customer References, Research Reports, Annual Reports, Quarterly Results,
-          BSE Disclosures, BRSR, Investor Grievances. Give them the look the menu
-          already has rather than inventing a second one. */
-    [].forEach.call(document.querySelectorAll('.ax-mm2__ln,.ax-mm__ln'), function (el) {
-      if (el.tagName === 'A' && real(el.getAttribute('href'))) return;
-      if (el.dataset.axTo) return;
-      el.classList.add('ax-mm2__ln--soon');
-      el.setAttribute('aria-disabled', 'true');
-    });
-
-    /* 4. Text dressed as a link with nowhere to go. An anchor anywhere in or around
-          it counts: the footer's phone and email are real links inside a styled
-          wrapper, and the wrapper is not the dead thing. */
-    [].forEach.call(document.querySelectorAll('.' + AFFORD.join(',.')), function (el) {
-      if (live(el)) return;
-      if (el.querySelector('a[href]')) return;
-      if (el.getAttribute('role') === 'link' || el.getAttribute('role') === 'button') return;
-      if (el.closest('.ax-mm,.ax-mm2')) return;      /* handled as a menu entry above */
-      unafford(el);
-    });
-  }
-
-  /* The linkifiers run on load and again at 140/200/400ms, so this runs after the
-     last of them and once more, late, for anything injected by a tab switch. */
-  function boot() {
-    setTimeout(sweep, 700);
-    setTimeout(sweep, 1600);
-  }
-  if (document.readyState === 'complete') boot();
-  else addEventListener('load', boot);
-})();
-</script>
-
-<style id="ax-annc-css">
-/* Nothing to style: the bar already has its design. This block only exists so
-   _postbuild.py has a sentinel to test for. */
-</style>
-<script>
-/* ---- ANNOUNCEMENT BAR, EDITED FROM /manage/ ----
-   The strip above the nav is baked into all 91 pages, so changing its wording used
-   to mean a rebuild and a redeploy -- which is why it shipped carrying Figma's
-   placeholder ("Grep, Embeddings, or Both? ... June 30th") for months. It now reads
-   siteconfig.Announcement at runtime.
-
-   Same contract as the investor document browser: with no API reachable the page
-   keeps whatever is baked into it, so an outage degrades to slightly stale copy
-   rather than an empty orange band. */
-(function () {
-  var API_BASE = (window.AX_API_BASE ||
-    (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8000' : ''))
-    .replace(/\/+$/, '');
-  /* Empty string is the CORRECT base: the site and the API are served by one
-     CloudFront distribution, so a relative fetch is same-origin. Testing for
-     !API_BASE made every page skip the API on production entirely. */
-  if (!window.fetch) return;
-
-  /* Hiding the bar shortens the fixed header, and a page whose layout reserved a
-     strip for it is then left with an empty band under the nav.
-
-     Only some pages reserve it. The V2 homepage starts its content at 5.885vw,
-     which is the bar plus the nav, because Figma drew both above the fold. A
-     sub-page starts at 2.29vw and its hero art is meant to run up under the nav,
-     so it reserves nothing and must not move.
-
-     That is the discriminator: the page reserved the strip only if its topmost
-     element begins at or below the WHOLE header, bar included. Comparing against
-     the bar alone would catch the sub-pages too, since their 44px start happens
-     to equal the bar's height. With the reserve confirmed the page moves up by
-     the bar's height and nothing else. A negative margin is enough: everything
-     inside is absolutely positioned against .ax-page, so the whole page travels
-     together and the document gets shorter by the same amount.
-
-     Measured while the bar is still visible, and in vw, so a resize keeps it. */
-  var shifted = null;   /* the page we pulled up, so the shift can be undone */
-
-  function reclaim(bar) {
-    if (shifted) return;
-    var h = bar.getBoundingClientRect().height;
-    var header = bar.closest('header') || bar.parentElement;
-    var H = header ? header.getBoundingClientRect().height : 0;
-    if (!(h > 1) || !(H > h) || !window.innerWidth) return;
-    var page = document.querySelector('main.ax-page');
-    if (!page || page.closest('.ax-mob')) return;   /* mobile hides the chrome outright */
-    var top = Infinity;
-    [].forEach.call(page.children, function (el) {
-      var t = el.getBoundingClientRect().top;
-      if (t < top) top = t;
-    });
-    if (!(top >= H - 1)) return;                    /* nothing was reserved */
-    shifted = { page: page, was: page.style.marginTop };
-    page.style.marginTop = '-' + (h / window.innerWidth * 100).toFixed(4) + 'vw';
-  }
-
-  function unreclaim() {
-    if (!shifted) return;
-    shifted.page.style.marginTop = shifted.was;
-    shifted = null;
-  }
-
-  function apply(d) {
-    var bars = document.querySelectorAll('a.ax-annc, .ax-annc');
-    if (!bars.length) return;
-    [].forEach.call(bars, function (bar) {
-      var txt = bar.querySelector('.ax-annc__txt');
-      if (!d.active || !d.text) { reclaim(bar); bar.hidden = true; bar.style.display = 'none'; return; }
-      unreclaim();
-      bar.hidden = false;
-      bar.style.removeProperty('display');
-      if (txt) txt.textContent = d.text;
-      if (bar.tagName === 'A') {
-        if (d.url) {
-          bar.setAttribute('href', d.url);
-          bar.style.removeProperty('cursor');
-          /* off-site links open in a new tab, matching every other external CTA */
-          if (/^https?:/i.test(d.url) && d.url.indexOf(location.host) === -1) {
-            bar.setAttribute('target', '_blank');
-            bar.setAttribute('rel', 'noopener noreferrer');
-          } else {
-            bar.removeAttribute('target');
-            bar.removeAttribute('rel');
-          }
-        } else {
-          /* No destination: keep it as text rather than a link that goes nowhere.
-             href="#" would jump to the top of the page and looks broken. */
-          bar.removeAttribute('href');
-          bar.removeAttribute('target');
-          bar.style.cursor = 'default';
-        }
-      }
-    });
-  }
-
-  /* ---- No flash of the placeholder ----
-     The bar is baked into the HTML carrying Figma's webinar copy, and the truth
-     only arrives a round trip later. Every load therefore showed the placeholder
-     for a moment and then yanked it away, taking 44px of page with it.
-
-     So the last known answer is remembered and applied here, during parse, before
-     the first paint. With nothing remembered the bar starts hidden: there is no
-     announcement most of the time, and a bar arriving a moment late is far less
-     jarring than one that appears and vanishes. Whatever the API says then wins,
-     and is remembered for next time.
-
-     Storage can throw outright in a private window, so every touch is guarded. */
-  var KEY = 'ax-annc';
-  function remembered() {
-    try { return JSON.parse(localStorage.getItem(KEY)); } catch (e) { return null; }
-  }
-  function remember(d) {
-    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) {}
-  }
-
-  /* The bar ships with href="#" baked in from the design. Until the API says there
-     is somewhere to go, it is not a link: no page on the site may take a reader to
-     a hash. apply() puts a real href back the moment one arrives. */
-  [].forEach.call(document.querySelectorAll('a.ax-annc'), function (bar) {
-    var h = bar.getAttribute('href');
-    if (!h || h.charAt(0) === '#') {
-      bar.removeAttribute('href');
-      bar.style.cursor = 'default';
-    }
-  });
-
-  var last = remembered();
-  apply(last && last.active && last.text ? last : { active: false });
-
-  fetch(API_BASE + '/api/announcement/', { credentials: 'omit' })
-    .then(function (r) { return r.ok ? r.json() : null; })
-    .then(function (d) {
-      if (!d) return;
-      apply(d);
-      remember(d.active && d.text ? { active: true, text: d.text, url: d.url || '' }
-                                  : { active: false });
-    })
-    /* An unreachable API leaves the remembered state showing, which is the last
-       thing the site actually published. That beats the baked copy: the baked
-       copy is a placeholder from the design file and was never true. */
-    .catch(function () {});
 })();
 </script>
 

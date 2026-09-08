@@ -5888,6 +5888,459 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 
+<style id="ax-nlform-css">
+/* ---- NEWSLETTER SIGNUP (/insights/newsletter/) ----
+   The designed form is three pictures: a box captioned "Your company name" under a
+   "Role*" label, a box showing jaideep.waghela@aeonx.digital -- a real person's
+   address used as filler -- and a Subscribe pill the CTA pass had linkified to
+   /contact-us/. Real fields, real validation, and a Subscribe that subscribes.
+   CLIENT OWES a newsletter endpoint; until then the address is confirmed in place
+   and offered to the team as a plain mailto link, exactly like the footer form. */
+.ax-nl-input{position:absolute;left:0;top:0;width:100%;height:100%;border:0;outline:none;
+  background:transparent;padding:0;font-family:'Nunito Sans',sans-serif;color:rgb(35,39,46)}
+.ax-nl-input::placeholder{color:rgb(134,149,170);opacity:1}
+.ax-nl-box{transition:border-color .18s ease}
+.ax-nl-box:focus-within{border-color:rgb(223,63,23)!important}
+.ax-nl-note{position:absolute;font-family:'Nunito Sans',sans-serif;font-weight:600;
+  font-size:0.7292vw;line-height:1.0417vw;color:rgb(21,128,61);opacity:0;
+  transition:opacity .25s ease;white-space:nowrap;pointer-events:none}
+.ax-nl-note.on{opacity:1;pointer-events:auto}
+.ax-nl-note.err{color:rgb(220,38,38)}
+.ax-nl-note a{color:rgb(223,63,23);text-decoration:underline}
+.ax-nl-pill{cursor:pointer}
+@media (max-width:1024px){.ax-nl-note{font-size:2.7907vw;line-height:3.4884vw}}
+@media (prefers-reduced-motion:reduce){.ax-nl-note,.ax-nl-box{transition:none}}
+</style>
+<script>
+(function(){
+  function txt(e){ return (e.textContent||'').replace(/\s+/g,' ').trim(); }
+  function num(el,p){ var v=el.style[p]; if(!v) return null;
+    var m=/^(-?[\d.]+)(vw|px)$/.exec(String(v).trim()); if(!m) return null;
+    return m[2]==='vw'?parseFloat(m[1]):parseFloat(m[1])*100/window.innerWidth; }
+
+  /* the box a label points at: the next painted sibling on the label's own row */
+  function boxFor(lab){
+    var n=lab.nextElementSibling;
+    for(var i=0;i<6&&n;i++,n=n.nextElementSibling){
+      if(!/g-b/.test(n.className||'')) continue;
+      var st=n.getAttribute('style')||'';
+      if(/background-color|border/.test(st)) return n;
+    }
+    return null;
+  }
+
+  function fieldify(lab, opts){
+    var box=boxFor(lab); if(!box) return null;
+    if(box.dataset.axNl) return box.querySelector('input');
+    var dummy=[].slice.call(box.querySelectorAll('.g-t')).filter(function(e){ return txt(e); })[0];
+    box.dataset.axNl='1';
+    box.classList.add('ax-nl-box');
+    var input=document.createElement('input');
+    input.type=opts.type||'text';
+    input.className='ax-nl-input';
+    input.placeholder=opts.placeholder;
+    input.setAttribute('aria-label',opts.label);
+    if(opts.required) input.required=true;
+    /* The input goes in the BOX, not inside the dummy text node: that node is only
+       as wide as its words (107px inside a 483px field), so an input parented to it
+       inherits a third of the field. The dummy is hidden and the input is inset to
+       fill the box, which is what the design draws. */
+    if(dummy){
+      var cs=getComputedStyle(dummy);
+      input.style.fontSize=cs.fontSize;
+      input.style.fontWeight=cs.fontWeight;
+      input.style.color=cs.color;
+      var dl=num(dummy,'left'), dt=num(dummy,'top');
+      dummy.style.display='none';
+      if(dl!==null) input.style.left=dl+'vw';
+      /* Fill the field box vertically. Sizing the input to the dummy's line box left a
+         16px-tall hit area inside a 50px-tall field, so most of a click on the field
+         landed on the card behind it. */
+      if(dt!==null){ input.style.top=dt+'vw'; input.style.height='calc(100% - '+(dt*2)+'vw)'; }
+      input.style.width=(dl!==null?('calc(100% - '+(dl*2)+'vw)'):'100%');
+    } else {
+      input.style.padding='0 0.6vw';
+    }
+    box.appendChild(input);
+    return input;
+  }
+
+  function init(){
+    var main=document.querySelector('main.ax-page');
+    if(!main||main.dataset.axNlForm) return;
+    var labels=[].slice.call(main.querySelectorAll('.g-t')).filter(function(e){
+      return e.getBoundingClientRect().width>0 && !e.closest('.ax-mob'); });
+    var emailLab=labels.filter(function(e){ return /^email id\*?$/i.test(txt(e)); })[0];
+    if(!emailLab) return;
+    main.dataset.axNlForm='1';
+    var roleLab=labels.filter(function(e){ return /^role\*?$/i.test(txt(e)); })[0];
+
+    var role=roleLab?fieldify(roleLab,{label:'Role',placeholder:'Your role'}):null;
+    var email=fieldify(emailLab,{label:'Email ID',placeholder:'you@company.com',type:'email',required:true});
+    if(!email) return;
+
+    /* the confirmation line sits under the field, in the field's own column */
+    var note=document.createElement('div');
+    note.className='ax-nl-note';
+    note.setAttribute('role','status');
+    note.setAttribute('aria-live','polite');
+    var ebox=email.closest('.ax-nl-box')||emailLab;
+    /* Figma draws the email field with its "Simple Text Input With Validation"
+       component stuck in the VERIFIED state, so an empty field shipped pale green.
+       Keep the design's colour, but make it mean what it says: neutral until the
+       address parses. */
+    var OK='rgb(220, 252, 231)';
+    if(getComputedStyle(ebox).backgroundColor===OK){
+      var paint=function(){ ebox.style.backgroundColor=
+        /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test((email.value||'').trim())?OK:'#fff'; };
+      email.addEventListener('input',paint);
+      email.addEventListener('change',paint);
+      paint();
+    }
+    var bl=num(ebox,'left'), bt=num(ebox,'top'), bh=num(ebox,'height');
+    if(bl!==null&&bt!==null) note.style.cssText='left:'+bl+'vw;top:'+(bt+(bh||2.2)+0.4)+'vw';
+    (ebox.parentElement||main).appendChild(note);
+    function say(html,bad){
+      note.innerHTML=html;
+      note.classList.toggle('err',!!bad);
+      note.classList.add('on');
+      clearTimeout(note.__t);
+      note.__t=setTimeout(function(){ note.classList.remove('on'); },9000);
+    }
+
+    var pill=labels.filter(function(e){ return /^subscribe$/i.test(txt(e)); })[0];
+    if(!pill) return;
+    var pbox=pill.parentElement;
+    while(pbox&&pbox!==main&&!/background-color/.test(pbox.getAttribute('style')||'')) pbox=pbox.parentElement;
+    var hit=(pbox&&pbox!==main)?pbox:pill;
+    hit.classList.add('ax-nl-pill');
+    hit.setAttribute('role','button');
+    hit.setAttribute('tabindex','0');
+
+    var busy=false;
+    function submit(){
+      var v=(email.value||'').trim();
+      if(!v||!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(v)){
+        say('Enter a valid work email address.',true); email.focus(); return;
+      }
+      var body='Please subscribe this address to the AeonX newsletter: '+v+
+               (role&&role.value?(' (role: '+role.value.trim()+')'):'');
+      var href='mailto:sales@aeonx.digital?subject='+encodeURIComponent('Newsletter subscription')+
+               '&body='+encodeURIComponent(body);
+      say('Thanks &mdash; we have your address. <a rel="noopener noreferrer" href="'+
+          href.replace(/"/g,'&quot;')+'">Email it to the team</a>');
+      email.value=''; if(role) role.value='';
+    }
+    /* document capture, ahead of the chrome CTA pass that owns this pill, and
+       matched by click POINT as well as target -- an invisible shell sits over it */
+    document.addEventListener('click',function(e){
+      var t=e.target;
+      var on=(t&&t.nodeType===1&&(hit.contains(t)||pill.contains(t)));
+      if(!on&&(e.clientX||e.clientY)){
+        var r=hit.getBoundingClientRect();
+        on=r.width>0&&e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom;
+      }
+      if(!on) return;
+      e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+      if(busy) return;
+      busy=true; setTimeout(function(){ busy=false; },150);
+      submit();
+    },true);
+    hit.addEventListener('keydown',function(e){
+      if(e.key==='Enter'||e.key===' '){ e.preventDefault(); submit(); } });
+    email.addEventListener('keydown',function(e){ if(e.key==='Enter'){ e.preventDefault(); submit(); } });
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){ setTimeout(init,120); });
+  else setTimeout(init,120);
+  addEventListener('load',function(){ setTimeout(init,400); });
+})();
+</script>
+
+<style id="ax-deadbtn-css">
+/* ---- BUTTONS WITH NOWHERE TO GO ----
+   Figma draws more CTAs than the site has pages for, and a pill that looks live and
+   does nothing is worse than one that is visibly unavailable: the reader spends a
+   click finding out. Anything the linkifiers could not resolve is greyed and taken
+   out of the tab order, so it reads as unavailable rather than broken.
+
+   Paint only, and only on the pill itself, so the label keeps whatever Figma gave
+   it and nothing shifts. */
+.ax-dead{filter:grayscale(1);opacity:.45;pointer-events:none!important;cursor:default!important;
+  box-shadow:none!important;transform:none!important}
+.ax-dead *{pointer-events:none!important;cursor:default!important}
+</style>
+<script>
+/* ---- DEAD CONTROLS ----
+   The rule the client asked for: no button may take a reader to "#", and a button
+   with no page behind it is greyed out and cannot be clicked.
+
+   Two ways a control ends up dead. An <a href="#"> is dead outright. A Figma pill is
+   dead when no script claimed it: the CTA linkifiers set data-ax-to when they resolve
+   a destination and skip the pill entirely when they cannot, so a pill wearing a
+   button skin with no destination is one the design drew and the site cannot honour.
+
+   The interesting half is what is NOT dead. Plenty of real controls navigate nowhere
+   by design -- form submits, carousel arrows, tabs, filters, the cookie bar, the
+   search trigger -- and greying those would break the page. They are recognised by
+   the markers their own scripts leave behind rather than by name, so a new control
+   is live the moment it is wired, without this file being told about it. */
+(function () {
+  /* Markers every wired control on the site already carries. */
+  var WIRED = '[data-ax-to],[data-axcta],[data-axms],[data-cta],[data-axpill],' +
+              '[data-ax-owned],[role="tab"],[role="tablist"],[type="submit"],' +
+              '[type="button"],[type="reset"],.ax-cf-in,.ax-ck__b,.ax-frp-btn,' +
+              '.ax-nav__burger,.ax-mnav__burger,#ax-search-btn,.ax-search,' +
+              '.ax-csf-link,.ax-carm,.ax-pstrip-tab,.ax-ht-tab,.ax-mm__si,.ax-annc';
+
+  function real(href) {
+    if (!href) return false;
+    href = href.trim();
+    return href !== '#' && href.slice(0, 1) !== '#' ? true : false;
+  }
+
+  /* A control is live if it can navigate, or if a script has claimed it, or if it
+     sits inside something that has -- a label inside a wired pill is not its own
+     dead button. */
+  function live(el) {
+    if (el.dataset && el.dataset.axTo) return true;
+    if (el.tagName === 'A' && real(el.getAttribute('href'))) return true;
+    if (el.closest(WIRED)) return true;
+    /* A form is a destination of its own: everything inside one is doing a job. */
+    if (el.closest('form')) return true;
+    return false;
+  }
+
+  /* A pointer cursor and a hover colour on something that cannot be clicked is the
+     same lie as a dead button, but the answer is different: these are headings and
+     body copy that a hover pass dressed as links (four footer column titles, the
+     footer tagline, the product names in the hero band). Greying a heading would be
+     absurd -- it is not a control -- so the affordance is simply taken away and the
+     text goes back to being text. */
+  var AFFORD = ['ax-fx-link', 'ax-hv-txt', 'ax-hv-arrow', 'ax-fx-pill', 'ax-fx-soc'];
+
+  function unafford(el) {
+    if (el.dataset.axFlat) return;
+    el.dataset.axFlat = '1';
+    AFFORD.forEach(function (c) { el.classList.remove(c); });
+    el.style.cursor = 'default';
+    el.removeAttribute('role');
+    el.removeAttribute('tabindex');
+  }
+
+  function kill(el) {
+    if (el.dataset.axDead) return;
+    el.dataset.axDead = '1';
+    el.classList.add('ax-dead');
+    el.setAttribute('aria-disabled', 'true');
+    el.removeAttribute('role');
+    el.removeAttribute('tabindex');
+    if (el.tagName === 'A') el.removeAttribute('href');   /* not a link any more */
+  }
+
+  function sweep() {
+    /* 1. Anchors pointing at nothing. The announcement bar is excluded above: it
+          carries the baked "#" until the API answers, and hides itself when there
+          is nothing to announce. */
+    [].forEach.call(document.querySelectorAll('a'), function (a) {
+      var h = a.getAttribute('href');
+      if (h === null || real(h)) return;
+      if (a.closest(WIRED)) return;
+      kill(a);
+    });
+
+    /* 2. Pills the linkifiers left unclaimed. The skin classes are _hover.html's own
+          classification of "this is a button", so this asks the same question the
+          rest of the site already answers rather than inventing a second rule. */
+    [].forEach.call(document.querySelectorAll('.ax-hv-fill,.ax-hv-out'), function (el) {
+      if (live(el)) return;
+      kill(el);
+    });
+
+    /* 3. Mega-menu entries with no page. The menu already draws these as a <span>
+          rather than an <a>, and already has a look for one -- Anthropic ships as
+          ax-mm2__ln--soon, greyed and click-through-proof. Seven more entries were
+          spans without that class, so they read as live links and did nothing:
+          Customer References, Research Reports, Annual Reports, Quarterly Results,
+          BSE Disclosures, BRSR, Investor Grievances. Give them the look the menu
+          already has rather than inventing a second one. */
+    [].forEach.call(document.querySelectorAll('.ax-mm2__ln,.ax-mm__ln'), function (el) {
+      if (el.tagName === 'A' && real(el.getAttribute('href'))) return;
+      if (el.dataset.axTo) return;
+      el.classList.add('ax-mm2__ln--soon');
+      el.setAttribute('aria-disabled', 'true');
+    });
+
+    /* 4. Text dressed as a link with nowhere to go. An anchor anywhere in or around
+          it counts: the footer's phone and email are real links inside a styled
+          wrapper, and the wrapper is not the dead thing. */
+    [].forEach.call(document.querySelectorAll('.' + AFFORD.join(',.')), function (el) {
+      if (live(el)) return;
+      if (el.querySelector('a[href]')) return;
+      if (el.getAttribute('role') === 'link' || el.getAttribute('role') === 'button') return;
+      if (el.closest('.ax-mm,.ax-mm2')) return;      /* handled as a menu entry above */
+      unafford(el);
+    });
+  }
+
+  /* The linkifiers run on load and again at 140/200/400ms, so this runs after the
+     last of them and once more, late, for anything injected by a tab switch. */
+  function boot() {
+    setTimeout(sweep, 700);
+    setTimeout(sweep, 1600);
+  }
+  if (document.readyState === 'complete') boot();
+  else addEventListener('load', boot);
+})();
+</script>
+
+<style id="ax-annc-css">
+/* Nothing to style: the bar already has its design. This block only exists so
+   _postbuild.py has a sentinel to test for. */
+</style>
+<script>
+/* ---- ANNOUNCEMENT BAR, EDITED FROM /manage/ ----
+   The strip above the nav is baked into all 91 pages, so changing its wording used
+   to mean a rebuild and a redeploy -- which is why it shipped carrying Figma's
+   placeholder ("Grep, Embeddings, or Both? ... June 30th") for months. It now reads
+   siteconfig.Announcement at runtime.
+
+   Same contract as the investor document browser: with no API reachable the page
+   keeps whatever is baked into it, so an outage degrades to slightly stale copy
+   rather than an empty orange band. */
+(function () {
+  var API_BASE = (window.AX_API_BASE ||
+    (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8000' : ''))
+    .replace(/\/+$/, '');
+  /* Empty string is the CORRECT base: the site and the API are served by one
+     CloudFront distribution, so a relative fetch is same-origin. Testing for
+     !API_BASE made every page skip the API on production entirely. */
+  if (!window.fetch) return;
+
+  /* Hiding the bar shortens the fixed header, and a page whose layout reserved a
+     strip for it is then left with an empty band under the nav.
+
+     Only some pages reserve it. The V2 homepage starts its content at 5.885vw,
+     which is the bar plus the nav, because Figma drew both above the fold. A
+     sub-page starts at 2.29vw and its hero art is meant to run up under the nav,
+     so it reserves nothing and must not move.
+
+     That is the discriminator: the page reserved the strip only if its topmost
+     element begins at or below the WHOLE header, bar included. Comparing against
+     the bar alone would catch the sub-pages too, since their 44px start happens
+     to equal the bar's height. With the reserve confirmed the page moves up by
+     the bar's height and nothing else. A negative margin is enough: everything
+     inside is absolutely positioned against .ax-page, so the whole page travels
+     together and the document gets shorter by the same amount.
+
+     Measured while the bar is still visible, and in vw, so a resize keeps it. */
+  var shifted = null;   /* the page we pulled up, so the shift can be undone */
+
+  function reclaim(bar) {
+    if (shifted) return;
+    var h = bar.getBoundingClientRect().height;
+    var header = bar.closest('header') || bar.parentElement;
+    var H = header ? header.getBoundingClientRect().height : 0;
+    if (!(h > 1) || !(H > h) || !window.innerWidth) return;
+    var page = document.querySelector('main.ax-page');
+    if (!page || page.closest('.ax-mob')) return;   /* mobile hides the chrome outright */
+    var top = Infinity;
+    [].forEach.call(page.children, function (el) {
+      var t = el.getBoundingClientRect().top;
+      if (t < top) top = t;
+    });
+    if (!(top >= H - 1)) return;                    /* nothing was reserved */
+    shifted = { page: page, was: page.style.marginTop };
+    page.style.marginTop = '-' + (h / window.innerWidth * 100).toFixed(4) + 'vw';
+  }
+
+  function unreclaim() {
+    if (!shifted) return;
+    shifted.page.style.marginTop = shifted.was;
+    shifted = null;
+  }
+
+  function apply(d) {
+    var bars = document.querySelectorAll('a.ax-annc, .ax-annc');
+    if (!bars.length) return;
+    [].forEach.call(bars, function (bar) {
+      var txt = bar.querySelector('.ax-annc__txt');
+      if (!d.active || !d.text) { reclaim(bar); bar.hidden = true; bar.style.display = 'none'; return; }
+      unreclaim();
+      bar.hidden = false;
+      bar.style.removeProperty('display');
+      if (txt) txt.textContent = d.text;
+      if (bar.tagName === 'A') {
+        if (d.url) {
+          bar.setAttribute('href', d.url);
+          bar.style.removeProperty('cursor');
+          /* off-site links open in a new tab, matching every other external CTA */
+          if (/^https?:/i.test(d.url) && d.url.indexOf(location.host) === -1) {
+            bar.setAttribute('target', '_blank');
+            bar.setAttribute('rel', 'noopener noreferrer');
+          } else {
+            bar.removeAttribute('target');
+            bar.removeAttribute('rel');
+          }
+        } else {
+          /* No destination: keep it as text rather than a link that goes nowhere.
+             href="#" would jump to the top of the page and looks broken. */
+          bar.removeAttribute('href');
+          bar.removeAttribute('target');
+          bar.style.cursor = 'default';
+        }
+      }
+    });
+  }
+
+  /* ---- No flash of the placeholder ----
+     The bar is baked into the HTML carrying Figma's webinar copy, and the truth
+     only arrives a round trip later. Every load therefore showed the placeholder
+     for a moment and then yanked it away, taking 44px of page with it.
+
+     So the last known answer is remembered and applied here, during parse, before
+     the first paint. With nothing remembered the bar starts hidden: there is no
+     announcement most of the time, and a bar arriving a moment late is far less
+     jarring than one that appears and vanishes. Whatever the API says then wins,
+     and is remembered for next time.
+
+     Storage can throw outright in a private window, so every touch is guarded. */
+  var KEY = 'ax-annc';
+  function remembered() {
+    try { return JSON.parse(localStorage.getItem(KEY)); } catch (e) { return null; }
+  }
+  function remember(d) {
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) {}
+  }
+
+  /* The bar ships with href="#" baked in from the design. Until the API says there
+     is somewhere to go, it is not a link: no page on the site may take a reader to
+     a hash. apply() puts a real href back the moment one arrives. */
+  [].forEach.call(document.querySelectorAll('a.ax-annc'), function (bar) {
+    var h = bar.getAttribute('href');
+    if (!h || h.charAt(0) === '#') {
+      bar.removeAttribute('href');
+      bar.style.cursor = 'default';
+    }
+  });
+
+  var last = remembered();
+  apply(last && last.active && last.text ? last : { active: false });
+
+  fetch(API_BASE + '/api/announcement/', { credentials: 'omit' })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (d) {
+      if (!d) return;
+      apply(d);
+      remember(d.active && d.text ? { active: true, text: d.text, url: d.url || '' }
+                                  : { active: false });
+    })
+    /* An unreachable API leaves the remembered state showing, which is the last
+       thing the site actually published. That beats the baked copy: the baked
+       copy is a placeholder from the design file and was never true. */
+    .catch(function () {});
+})();
+</script>
+
 <style id="ax-uifx-css">
 /* Chrome interactions + newsletter. _hover.html deliberately skips header/footer
    (chrome() excludes them), so nothing in the nav or footer ever gained a hover
@@ -6570,11 +7023,20 @@ document.addEventListener("DOMContentLoaded",function(){
     var seen=new Set();
     [].slice.call(document.querySelectorAll('.g-t')).forEach(function(l){
       if(l.closest('.ax-mob')||l.children.length||l.dataset.axCentred) return;
-      var t=txt(l); if(!t||t.length>34) return;
-      if(getComputedStyle(l).textAlign!=='center') return;   /* left-aligned by design */
+      var t=txt(l); if(!t) return;
+      var cs=getComputedStyle(l);
+      /* The 34-character cut is there so a sentence inside a tinted box is not
+         mistaken for a button label. A role badge breaks it honestly: "PROGRAM
+         MANAGER - FUNCTIONAL & PRE-SALES" is 40 characters and is still a single
+         nowrap line in a 30px chip. Length alone cannot tell those apart, so a
+         one-line label in a short pill is allowed up to 60. */
+      var oneLine = cs.whiteSpace === 'nowrap' || cs.whiteSpace === 'pre';
+      if(t.length > (oneLine ? 60 : 34)) return;
+      if(cs.textAlign!=='center') return;   /* left-aligned by design */
       var pill=pillOf(l); if(!pill) return;
       var ps=pill.getAttribute('style')||'';
       if(!/background-color|border/.test(ps)||!/border-radius/.test(ps)) return;
+      if(t.length>34 && pill.getBoundingClientRect().height > 2.5*(document.documentElement.clientWidth||1920)/100) return;
       if(seen.has(pill)) return; seen.add(pill);
       var pr=pill.getBoundingClientRect();
       var rng=document.createRange(); rng.selectNodeContents(l);
@@ -6720,459 +7182,6 @@ document.addEventListener("DOMContentLoaded",function(){
   });
   addEventListener('resize',function(){ clearTimeout(window.__axfxR);
     window.__axfxR=setTimeout(function(){ centerLabels(); spaceArrows(); },200); });
-})();
-</script>
-
-<style id="ax-nlform-css">
-/* ---- NEWSLETTER SIGNUP (/insights/newsletter/) ----
-   The designed form is three pictures: a box captioned "Your company name" under a
-   "Role*" label, a box showing jaideep.waghela@aeonx.digital -- a real person's
-   address used as filler -- and a Subscribe pill the CTA pass had linkified to
-   /contact-us/. Real fields, real validation, and a Subscribe that subscribes.
-   CLIENT OWES a newsletter endpoint; until then the address is confirmed in place
-   and offered to the team as a plain mailto link, exactly like the footer form. */
-.ax-nl-input{position:absolute;left:0;top:0;width:100%;height:100%;border:0;outline:none;
-  background:transparent;padding:0;font-family:'Nunito Sans',sans-serif;color:rgb(35,39,46)}
-.ax-nl-input::placeholder{color:rgb(134,149,170);opacity:1}
-.ax-nl-box{transition:border-color .18s ease}
-.ax-nl-box:focus-within{border-color:rgb(223,63,23)!important}
-.ax-nl-note{position:absolute;font-family:'Nunito Sans',sans-serif;font-weight:600;
-  font-size:0.7292vw;line-height:1.0417vw;color:rgb(21,128,61);opacity:0;
-  transition:opacity .25s ease;white-space:nowrap;pointer-events:none}
-.ax-nl-note.on{opacity:1;pointer-events:auto}
-.ax-nl-note.err{color:rgb(220,38,38)}
-.ax-nl-note a{color:rgb(223,63,23);text-decoration:underline}
-.ax-nl-pill{cursor:pointer}
-@media (max-width:1024px){.ax-nl-note{font-size:2.7907vw;line-height:3.4884vw}}
-@media (prefers-reduced-motion:reduce){.ax-nl-note,.ax-nl-box{transition:none}}
-</style>
-<script>
-(function(){
-  function txt(e){ return (e.textContent||'').replace(/\s+/g,' ').trim(); }
-  function num(el,p){ var v=el.style[p]; if(!v) return null;
-    var m=/^(-?[\d.]+)(vw|px)$/.exec(String(v).trim()); if(!m) return null;
-    return m[2]==='vw'?parseFloat(m[1]):parseFloat(m[1])*100/window.innerWidth; }
-
-  /* the box a label points at: the next painted sibling on the label's own row */
-  function boxFor(lab){
-    var n=lab.nextElementSibling;
-    for(var i=0;i<6&&n;i++,n=n.nextElementSibling){
-      if(!/g-b/.test(n.className||'')) continue;
-      var st=n.getAttribute('style')||'';
-      if(/background-color|border/.test(st)) return n;
-    }
-    return null;
-  }
-
-  function fieldify(lab, opts){
-    var box=boxFor(lab); if(!box) return null;
-    if(box.dataset.axNl) return box.querySelector('input');
-    var dummy=[].slice.call(box.querySelectorAll('.g-t')).filter(function(e){ return txt(e); })[0];
-    box.dataset.axNl='1';
-    box.classList.add('ax-nl-box');
-    var input=document.createElement('input');
-    input.type=opts.type||'text';
-    input.className='ax-nl-input';
-    input.placeholder=opts.placeholder;
-    input.setAttribute('aria-label',opts.label);
-    if(opts.required) input.required=true;
-    /* The input goes in the BOX, not inside the dummy text node: that node is only
-       as wide as its words (107px inside a 483px field), so an input parented to it
-       inherits a third of the field. The dummy is hidden and the input is inset to
-       fill the box, which is what the design draws. */
-    if(dummy){
-      var cs=getComputedStyle(dummy);
-      input.style.fontSize=cs.fontSize;
-      input.style.fontWeight=cs.fontWeight;
-      input.style.color=cs.color;
-      var dl=num(dummy,'left'), dt=num(dummy,'top');
-      dummy.style.display='none';
-      if(dl!==null) input.style.left=dl+'vw';
-      /* Fill the field box vertically. Sizing the input to the dummy's line box left a
-         16px-tall hit area inside a 50px-tall field, so most of a click on the field
-         landed on the card behind it. */
-      if(dt!==null){ input.style.top=dt+'vw'; input.style.height='calc(100% - '+(dt*2)+'vw)'; }
-      input.style.width=(dl!==null?('calc(100% - '+(dl*2)+'vw)'):'100%');
-    } else {
-      input.style.padding='0 0.6vw';
-    }
-    box.appendChild(input);
-    return input;
-  }
-
-  function init(){
-    var main=document.querySelector('main.ax-page');
-    if(!main||main.dataset.axNlForm) return;
-    var labels=[].slice.call(main.querySelectorAll('.g-t')).filter(function(e){
-      return e.getBoundingClientRect().width>0 && !e.closest('.ax-mob'); });
-    var emailLab=labels.filter(function(e){ return /^email id\*?$/i.test(txt(e)); })[0];
-    if(!emailLab) return;
-    main.dataset.axNlForm='1';
-    var roleLab=labels.filter(function(e){ return /^role\*?$/i.test(txt(e)); })[0];
-
-    var role=roleLab?fieldify(roleLab,{label:'Role',placeholder:'Your role'}):null;
-    var email=fieldify(emailLab,{label:'Email ID',placeholder:'you@company.com',type:'email',required:true});
-    if(!email) return;
-
-    /* the confirmation line sits under the field, in the field's own column */
-    var note=document.createElement('div');
-    note.className='ax-nl-note';
-    note.setAttribute('role','status');
-    note.setAttribute('aria-live','polite');
-    var ebox=email.closest('.ax-nl-box')||emailLab;
-    /* Figma draws the email field with its "Simple Text Input With Validation"
-       component stuck in the VERIFIED state, so an empty field shipped pale green.
-       Keep the design's colour, but make it mean what it says: neutral until the
-       address parses. */
-    var OK='rgb(220, 252, 231)';
-    if(getComputedStyle(ebox).backgroundColor===OK){
-      var paint=function(){ ebox.style.backgroundColor=
-        /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test((email.value||'').trim())?OK:'#fff'; };
-      email.addEventListener('input',paint);
-      email.addEventListener('change',paint);
-      paint();
-    }
-    var bl=num(ebox,'left'), bt=num(ebox,'top'), bh=num(ebox,'height');
-    if(bl!==null&&bt!==null) note.style.cssText='left:'+bl+'vw;top:'+(bt+(bh||2.2)+0.4)+'vw';
-    (ebox.parentElement||main).appendChild(note);
-    function say(html,bad){
-      note.innerHTML=html;
-      note.classList.toggle('err',!!bad);
-      note.classList.add('on');
-      clearTimeout(note.__t);
-      note.__t=setTimeout(function(){ note.classList.remove('on'); },9000);
-    }
-
-    var pill=labels.filter(function(e){ return /^subscribe$/i.test(txt(e)); })[0];
-    if(!pill) return;
-    var pbox=pill.parentElement;
-    while(pbox&&pbox!==main&&!/background-color/.test(pbox.getAttribute('style')||'')) pbox=pbox.parentElement;
-    var hit=(pbox&&pbox!==main)?pbox:pill;
-    hit.classList.add('ax-nl-pill');
-    hit.setAttribute('role','button');
-    hit.setAttribute('tabindex','0');
-
-    var busy=false;
-    function submit(){
-      var v=(email.value||'').trim();
-      if(!v||!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(v)){
-        say('Enter a valid work email address.',true); email.focus(); return;
-      }
-      var body='Please subscribe this address to the AeonX newsletter: '+v+
-               (role&&role.value?(' (role: '+role.value.trim()+')'):'');
-      var href='mailto:sales@aeonx.digital?subject='+encodeURIComponent('Newsletter subscription')+
-               '&body='+encodeURIComponent(body);
-      say('Thanks &mdash; we have your address. <a rel="noopener noreferrer" href="'+
-          href.replace(/"/g,'&quot;')+'">Email it to the team</a>');
-      email.value=''; if(role) role.value='';
-    }
-    /* document capture, ahead of the chrome CTA pass that owns this pill, and
-       matched by click POINT as well as target -- an invisible shell sits over it */
-    document.addEventListener('click',function(e){
-      var t=e.target;
-      var on=(t&&t.nodeType===1&&(hit.contains(t)||pill.contains(t)));
-      if(!on&&(e.clientX||e.clientY)){
-        var r=hit.getBoundingClientRect();
-        on=r.width>0&&e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom;
-      }
-      if(!on) return;
-      e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
-      if(busy) return;
-      busy=true; setTimeout(function(){ busy=false; },150);
-      submit();
-    },true);
-    hit.addEventListener('keydown',function(e){
-      if(e.key==='Enter'||e.key===' '){ e.preventDefault(); submit(); } });
-    email.addEventListener('keydown',function(e){ if(e.key==='Enter'){ e.preventDefault(); submit(); } });
-  }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){ setTimeout(init,120); });
-  else setTimeout(init,120);
-  addEventListener('load',function(){ setTimeout(init,400); });
-})();
-</script>
-
-<style id="ax-deadbtn-css">
-/* ---- BUTTONS WITH NOWHERE TO GO ----
-   Figma draws more CTAs than the site has pages for, and a pill that looks live and
-   does nothing is worse than one that is visibly unavailable: the reader spends a
-   click finding out. Anything the linkifiers could not resolve is greyed and taken
-   out of the tab order, so it reads as unavailable rather than broken.
-
-   Paint only, and only on the pill itself, so the label keeps whatever Figma gave
-   it and nothing shifts. */
-.ax-dead{filter:grayscale(1);opacity:.45;pointer-events:none!important;cursor:default!important;
-  box-shadow:none!important;transform:none!important}
-.ax-dead *{pointer-events:none!important;cursor:default!important}
-</style>
-<script>
-/* ---- DEAD CONTROLS ----
-   The rule the client asked for: no button may take a reader to "#", and a button
-   with no page behind it is greyed out and cannot be clicked.
-
-   Two ways a control ends up dead. An <a href="#"> is dead outright. A Figma pill is
-   dead when no script claimed it: the CTA linkifiers set data-ax-to when they resolve
-   a destination and skip the pill entirely when they cannot, so a pill wearing a
-   button skin with no destination is one the design drew and the site cannot honour.
-
-   The interesting half is what is NOT dead. Plenty of real controls navigate nowhere
-   by design -- form submits, carousel arrows, tabs, filters, the cookie bar, the
-   search trigger -- and greying those would break the page. They are recognised by
-   the markers their own scripts leave behind rather than by name, so a new control
-   is live the moment it is wired, without this file being told about it. */
-(function () {
-  /* Markers every wired control on the site already carries. */
-  var WIRED = '[data-ax-to],[data-axcta],[data-axms],[data-cta],[data-axpill],' +
-              '[data-ax-owned],[role="tab"],[role="tablist"],[type="submit"],' +
-              '[type="button"],[type="reset"],.ax-cf-in,.ax-ck__b,.ax-frp-btn,' +
-              '.ax-nav__burger,.ax-mnav__burger,#ax-search-btn,.ax-search,' +
-              '.ax-csf-link,.ax-carm,.ax-pstrip-tab,.ax-ht-tab,.ax-mm__si,.ax-annc';
-
-  function real(href) {
-    if (!href) return false;
-    href = href.trim();
-    return href !== '#' && href.slice(0, 1) !== '#' ? true : false;
-  }
-
-  /* A control is live if it can navigate, or if a script has claimed it, or if it
-     sits inside something that has -- a label inside a wired pill is not its own
-     dead button. */
-  function live(el) {
-    if (el.dataset && el.dataset.axTo) return true;
-    if (el.tagName === 'A' && real(el.getAttribute('href'))) return true;
-    if (el.closest(WIRED)) return true;
-    /* A form is a destination of its own: everything inside one is doing a job. */
-    if (el.closest('form')) return true;
-    return false;
-  }
-
-  /* A pointer cursor and a hover colour on something that cannot be clicked is the
-     same lie as a dead button, but the answer is different: these are headings and
-     body copy that a hover pass dressed as links (four footer column titles, the
-     footer tagline, the product names in the hero band). Greying a heading would be
-     absurd -- it is not a control -- so the affordance is simply taken away and the
-     text goes back to being text. */
-  var AFFORD = ['ax-fx-link', 'ax-hv-txt', 'ax-hv-arrow', 'ax-fx-pill', 'ax-fx-soc'];
-
-  function unafford(el) {
-    if (el.dataset.axFlat) return;
-    el.dataset.axFlat = '1';
-    AFFORD.forEach(function (c) { el.classList.remove(c); });
-    el.style.cursor = 'default';
-    el.removeAttribute('role');
-    el.removeAttribute('tabindex');
-  }
-
-  function kill(el) {
-    if (el.dataset.axDead) return;
-    el.dataset.axDead = '1';
-    el.classList.add('ax-dead');
-    el.setAttribute('aria-disabled', 'true');
-    el.removeAttribute('role');
-    el.removeAttribute('tabindex');
-    if (el.tagName === 'A') el.removeAttribute('href');   /* not a link any more */
-  }
-
-  function sweep() {
-    /* 1. Anchors pointing at nothing. The announcement bar is excluded above: it
-          carries the baked "#" until the API answers, and hides itself when there
-          is nothing to announce. */
-    [].forEach.call(document.querySelectorAll('a'), function (a) {
-      var h = a.getAttribute('href');
-      if (h === null || real(h)) return;
-      if (a.closest(WIRED)) return;
-      kill(a);
-    });
-
-    /* 2. Pills the linkifiers left unclaimed. The skin classes are _hover.html's own
-          classification of "this is a button", so this asks the same question the
-          rest of the site already answers rather than inventing a second rule. */
-    [].forEach.call(document.querySelectorAll('.ax-hv-fill,.ax-hv-out'), function (el) {
-      if (live(el)) return;
-      kill(el);
-    });
-
-    /* 3. Mega-menu entries with no page. The menu already draws these as a <span>
-          rather than an <a>, and already has a look for one -- Anthropic ships as
-          ax-mm2__ln--soon, greyed and click-through-proof. Seven more entries were
-          spans without that class, so they read as live links and did nothing:
-          Customer References, Research Reports, Annual Reports, Quarterly Results,
-          BSE Disclosures, BRSR, Investor Grievances. Give them the look the menu
-          already has rather than inventing a second one. */
-    [].forEach.call(document.querySelectorAll('.ax-mm2__ln,.ax-mm__ln'), function (el) {
-      if (el.tagName === 'A' && real(el.getAttribute('href'))) return;
-      if (el.dataset.axTo) return;
-      el.classList.add('ax-mm2__ln--soon');
-      el.setAttribute('aria-disabled', 'true');
-    });
-
-    /* 4. Text dressed as a link with nowhere to go. An anchor anywhere in or around
-          it counts: the footer's phone and email are real links inside a styled
-          wrapper, and the wrapper is not the dead thing. */
-    [].forEach.call(document.querySelectorAll('.' + AFFORD.join(',.')), function (el) {
-      if (live(el)) return;
-      if (el.querySelector('a[href]')) return;
-      if (el.getAttribute('role') === 'link' || el.getAttribute('role') === 'button') return;
-      if (el.closest('.ax-mm,.ax-mm2')) return;      /* handled as a menu entry above */
-      unafford(el);
-    });
-  }
-
-  /* The linkifiers run on load and again at 140/200/400ms, so this runs after the
-     last of them and once more, late, for anything injected by a tab switch. */
-  function boot() {
-    setTimeout(sweep, 700);
-    setTimeout(sweep, 1600);
-  }
-  if (document.readyState === 'complete') boot();
-  else addEventListener('load', boot);
-})();
-</script>
-
-<style id="ax-annc-css">
-/* Nothing to style: the bar already has its design. This block only exists so
-   _postbuild.py has a sentinel to test for. */
-</style>
-<script>
-/* ---- ANNOUNCEMENT BAR, EDITED FROM /manage/ ----
-   The strip above the nav is baked into all 91 pages, so changing its wording used
-   to mean a rebuild and a redeploy -- which is why it shipped carrying Figma's
-   placeholder ("Grep, Embeddings, or Both? ... June 30th") for months. It now reads
-   siteconfig.Announcement at runtime.
-
-   Same contract as the investor document browser: with no API reachable the page
-   keeps whatever is baked into it, so an outage degrades to slightly stale copy
-   rather than an empty orange band. */
-(function () {
-  var API_BASE = (window.AX_API_BASE ||
-    (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8000' : ''))
-    .replace(/\/+$/, '');
-  /* Empty string is the CORRECT base: the site and the API are served by one
-     CloudFront distribution, so a relative fetch is same-origin. Testing for
-     !API_BASE made every page skip the API on production entirely. */
-  if (!window.fetch) return;
-
-  /* Hiding the bar shortens the fixed header, and a page whose layout reserved a
-     strip for it is then left with an empty band under the nav.
-
-     Only some pages reserve it. The V2 homepage starts its content at 5.885vw,
-     which is the bar plus the nav, because Figma drew both above the fold. A
-     sub-page starts at 2.29vw and its hero art is meant to run up under the nav,
-     so it reserves nothing and must not move.
-
-     That is the discriminator: the page reserved the strip only if its topmost
-     element begins at or below the WHOLE header, bar included. Comparing against
-     the bar alone would catch the sub-pages too, since their 44px start happens
-     to equal the bar's height. With the reserve confirmed the page moves up by
-     the bar's height and nothing else. A negative margin is enough: everything
-     inside is absolutely positioned against .ax-page, so the whole page travels
-     together and the document gets shorter by the same amount.
-
-     Measured while the bar is still visible, and in vw, so a resize keeps it. */
-  var shifted = null;   /* the page we pulled up, so the shift can be undone */
-
-  function reclaim(bar) {
-    if (shifted) return;
-    var h = bar.getBoundingClientRect().height;
-    var header = bar.closest('header') || bar.parentElement;
-    var H = header ? header.getBoundingClientRect().height : 0;
-    if (!(h > 1) || !(H > h) || !window.innerWidth) return;
-    var page = document.querySelector('main.ax-page');
-    if (!page || page.closest('.ax-mob')) return;   /* mobile hides the chrome outright */
-    var top = Infinity;
-    [].forEach.call(page.children, function (el) {
-      var t = el.getBoundingClientRect().top;
-      if (t < top) top = t;
-    });
-    if (!(top >= H - 1)) return;                    /* nothing was reserved */
-    shifted = { page: page, was: page.style.marginTop };
-    page.style.marginTop = '-' + (h / window.innerWidth * 100).toFixed(4) + 'vw';
-  }
-
-  function unreclaim() {
-    if (!shifted) return;
-    shifted.page.style.marginTop = shifted.was;
-    shifted = null;
-  }
-
-  function apply(d) {
-    var bars = document.querySelectorAll('a.ax-annc, .ax-annc');
-    if (!bars.length) return;
-    [].forEach.call(bars, function (bar) {
-      var txt = bar.querySelector('.ax-annc__txt');
-      if (!d.active || !d.text) { reclaim(bar); bar.hidden = true; bar.style.display = 'none'; return; }
-      unreclaim();
-      bar.hidden = false;
-      bar.style.removeProperty('display');
-      if (txt) txt.textContent = d.text;
-      if (bar.tagName === 'A') {
-        if (d.url) {
-          bar.setAttribute('href', d.url);
-          bar.style.removeProperty('cursor');
-          /* off-site links open in a new tab, matching every other external CTA */
-          if (/^https?:/i.test(d.url) && d.url.indexOf(location.host) === -1) {
-            bar.setAttribute('target', '_blank');
-            bar.setAttribute('rel', 'noopener noreferrer');
-          } else {
-            bar.removeAttribute('target');
-            bar.removeAttribute('rel');
-          }
-        } else {
-          /* No destination: keep it as text rather than a link that goes nowhere.
-             href="#" would jump to the top of the page and looks broken. */
-          bar.removeAttribute('href');
-          bar.removeAttribute('target');
-          bar.style.cursor = 'default';
-        }
-      }
-    });
-  }
-
-  /* ---- No flash of the placeholder ----
-     The bar is baked into the HTML carrying Figma's webinar copy, and the truth
-     only arrives a round trip later. Every load therefore showed the placeholder
-     for a moment and then yanked it away, taking 44px of page with it.
-
-     So the last known answer is remembered and applied here, during parse, before
-     the first paint. With nothing remembered the bar starts hidden: there is no
-     announcement most of the time, and a bar arriving a moment late is far less
-     jarring than one that appears and vanishes. Whatever the API says then wins,
-     and is remembered for next time.
-
-     Storage can throw outright in a private window, so every touch is guarded. */
-  var KEY = 'ax-annc';
-  function remembered() {
-    try { return JSON.parse(localStorage.getItem(KEY)); } catch (e) { return null; }
-  }
-  function remember(d) {
-    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) {}
-  }
-
-  /* The bar ships with href="#" baked in from the design. Until the API says there
-     is somewhere to go, it is not a link: no page on the site may take a reader to
-     a hash. apply() puts a real href back the moment one arrives. */
-  [].forEach.call(document.querySelectorAll('a.ax-annc'), function (bar) {
-    var h = bar.getAttribute('href');
-    if (!h || h.charAt(0) === '#') {
-      bar.removeAttribute('href');
-      bar.style.cursor = 'default';
-    }
-  });
-
-  var last = remembered();
-  apply(last && last.active && last.text ? last : { active: false });
-
-  fetch(API_BASE + '/api/announcement/', { credentials: 'omit' })
-    .then(function (r) { return r.ok ? r.json() : null; })
-    .then(function (d) {
-      if (!d) return;
-      apply(d);
-      remember(d.active && d.text ? { active: true, text: d.text, url: d.url || '' }
-                                  : { active: false });
-    })
-    /* An unreachable API leaves the remembered state showing, which is the last
-       thing the site actually published. That beats the baked copy: the baked
-       copy is a placeholder from the design file and was never true. */
-    .catch(function () {});
 })();
 </script>
 

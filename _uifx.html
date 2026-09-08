@@ -680,11 +680,20 @@
     var seen=new Set();
     [].slice.call(document.querySelectorAll('.g-t')).forEach(function(l){
       if(l.closest('.ax-mob')||l.children.length||l.dataset.axCentred) return;
-      var t=txt(l); if(!t||t.length>34) return;
-      if(getComputedStyle(l).textAlign!=='center') return;   /* left-aligned by design */
+      var t=txt(l); if(!t) return;
+      var cs=getComputedStyle(l);
+      /* The 34-character cut is there so a sentence inside a tinted box is not
+         mistaken for a button label. A role badge breaks it honestly: "PROGRAM
+         MANAGER - FUNCTIONAL & PRE-SALES" is 40 characters and is still a single
+         nowrap line in a 30px chip. Length alone cannot tell those apart, so a
+         one-line label in a short pill is allowed up to 60. */
+      var oneLine = cs.whiteSpace === 'nowrap' || cs.whiteSpace === 'pre';
+      if(t.length > (oneLine ? 60 : 34)) return;
+      if(cs.textAlign!=='center') return;   /* left-aligned by design */
       var pill=pillOf(l); if(!pill) return;
       var ps=pill.getAttribute('style')||'';
       if(!/background-color|border/.test(ps)||!/border-radius/.test(ps)) return;
+      if(t.length>34 && pill.getBoundingClientRect().height > 2.5*(document.documentElement.clientWidth||1920)/100) return;
       if(seen.has(pill)) return; seen.add(pill);
       var pr=pill.getBoundingClientRect();
       var rng=document.createRange(); rng.selectNodeContents(l);
