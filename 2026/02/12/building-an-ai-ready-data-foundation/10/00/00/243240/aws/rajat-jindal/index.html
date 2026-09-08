@@ -6183,10 +6183,11 @@ document.addEventListener("DOMContentLoaded",function(){
 /* background-clip MUST be padding-box: these pills carry a 1px border, and a background
    defaults to border-box, so the wash paints UNDER and PAST the border out to the square
    border-box edge -- which showed as cream corners escaping the rounded orange outline. */
-/* ---- WHITE BUTTONS: POSITION-AWARE FILL ----
-   A white pill fills from the point the pointer crossed its edge, and drains back
-   toward wherever it leaves. Only white ones: a solid brand button has nothing to
-   fill with, so those keep the sweep below.
+/* ---- BUTTONS: POSITION-AWARE FILL ----
+   A button fills from the point the pointer crossed its edge, and drains back toward
+   wherever it leaves. White pills take a brand tint; solid brand pills go DARKER,
+   because a lighter wash on an orange button reads as the button fading out rather
+   than responding.
 
    The circle is a real child rather than a pseudo-element because its origin is a
    measurement, and a pseudo-element cannot be given one without writing a rule per
@@ -6195,18 +6196,22 @@ document.addEventListener("DOMContentLoaded",function(){
    and the label is the second, so paint order alone keeps the label on top -- no
    z-index, nothing to fight the inline styles the export writes.
 
-   Colour is the same 10% brand tint the sweep used; this changes how the fill
-   arrives, not what the button looks like once it has. */
-.ax-hv-out.ax-hv-pa-on{background-image:none}
-/* The nav's TALK TO US is the same white button but hand-built chrome, so it lays
-   its label out as a bare text node and clips nothing. Give it what the exported
-   pills already have. */
+   The pale cream "Explore <product>" pills are left on the sweep: they are a tint,
+   not a brand-solid button, and darkening a cream chip reads as a different colour
+   rather than a pressed state. */
+.ax-hv-out.ax-hv-pa-on,.ax-hv-fill.ax-hv-pa-on{background-image:none}
+/* The nav's two buttons are the same shapes but hand-built chrome, so they lay their
+   labels out as bare text nodes and clip nothing. Give them what the exported pills
+   already have. */
 .ax-hv-pa-on{position:relative;overflow:hidden}
 .ax-hv-pa-lbl{position:relative}
 .ax-hv-pa{position:absolute;left:0;top:0;width:0;height:0;border-radius:50%;
   background:rgba(223,63,23,.10);transform:translate(-50%,-50%);pointer-events:none;
   transition:width .42s cubic-bezier(.22,.61,.36,1),height .42s cubic-bezier(.22,.61,.36,1),
              left .42s cubic-bezier(.22,.61,.36,1),top .42s cubic-bezier(.22,.61,.36,1)}
+/* 16% black over #df3f17 lands on rgb(187,53,19) -- the same orange, a step down,
+   with the label's white still well clear of it. */
+.ax-hv-fill>.ax-hv-pa,.ax-nav__btn--primary>.ax-hv-pa{background:rgba(0,0,0,.16)}
 @media (prefers-reduced-motion:reduce){.ax-hv-pa{transition:none}}
 
 .ax-hv-fill,.ax-hv-out{background-repeat:no-repeat;background-position:left center;
@@ -6553,7 +6558,9 @@ document.addEventListener("DOMContentLoaded",function(){
     /* skinClass can carry a modifier ("ax-hv-fill ax-hv-fill--pale"), and
        classList.add() throws on a string containing a space -- split it. */
     g.skinClass.split(/\s+/).filter(Boolean).forEach(function(c){ g.skin.el.classList.add(c); });
-    if (g.skinClass.indexOf('ax-hv-out') >= 0) positionAware(g.skin.el);
+    if (g.skinClass.indexOf('ax-hv-out') >= 0 ||
+        (g.skinClass.indexOf('ax-hv-fill') >= 0 && g.skinClass.indexOf('--pale') < 0))
+      positionAware(g.skin.el);
     MAP.set(g.skin.el, g);
   }
   /* The fill grows from where the pointer crossed the edge to a circle big enough to
@@ -6984,14 +6991,15 @@ document.addEventListener("DOMContentLoaded",function(){
     });
   }
 
-  /* The nav button is chrome, which scan() deliberately skips, so it is named here.
-     It is the one white button on every page, which is exactly the case the client
-     asked for. */
-  function chromeWhites(){
-    [].forEach.call(document.querySelectorAll('.ax-nav__btn--talk'), positionAware);
+  /* Both nav buttons are chrome, which scan() deliberately skips, so they are named
+     here: the white TALK TO US and the solid REQUEST A PROPOSAL, the pair that
+     appears on every page. */
+  function chromeButtons(){
+    [].forEach.call(document.querySelectorAll('.ax-nav__btn--talk,.ax-nav__btn--primary'),
+                    positionAware);
   }
 
-  function boot(){ scan(); listen(); chromeWhites(); }
+  function boot(){ scan(); listen(); chromeButtons(); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
   /* the .ax-mob block and the chrome's own CTA pass can land after us */
