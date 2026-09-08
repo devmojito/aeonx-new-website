@@ -163,6 +163,24 @@
         for (var i = 0; i < N; i++) (byCol[cells[i].c] || (byCol[cells[i].c] = [])).push(i);
         var colours = Object.keys(byCol);
 
+        /* ---- The band also travels ----
+           A tile leaving the right edge comes back on the left, so the row runs
+           forever off one copy of the art. The wrap is only invisible because of
+           what the art is: both ends of the wave sit low, with their column tops
+           between 403 and 439, and neighbouring columns inside the mosaic already
+           step by as much as 24. The join is one more step of the same size, which
+           is why this needs no mirrored second copy and no crossfade.
+
+           The period is the viewBox width, and the columns are laid on a 5.77 grid
+           that divides into it, so a wrapped tile lands exactly on the lattice
+           rather than half a cell off it.
+
+           Held in art units and advanced per frame rather than computed from the
+           clock, so that changing scale on a resize changes the rate from that
+           point instead of jumping the whole band sideways. */
+        var scrollX = 0, lastT = 0;
+        var PXPS = 10;                  /* on-screen px per second: a drift, not a marquee */
+
         function drawAll() {
           ctx.clearRect(0, 0, VW, VH);
           for (var k = 0; k < colours.length; k++) {
@@ -171,7 +189,11 @@
             ctx.beginPath();
             for (var j = 0; j < idx.length; j++) {
               var i2 = idx[j], c2 = cells[i2];
-              ctx.rect(c2.x + dx[i2], c2.y + dy[i2], c2.w, c2.h);
+              var X = c2.x + dx[i2] + scrollX;
+              if (X >= VW) X -= VW;
+              ctx.rect(X, c2.y + dy[i2], c2.w, c2.h);
+              /* the tile straddling the seam is drawn at both ends of it */
+              if (X + c2.w > VW) ctx.rect(X - VW, c2.y + dy[i2], c2.w, c2.h);
             }
             ctx.fill();
           }
@@ -218,6 +240,11 @@
         var raf = null, clientX = 0, clientY = 0, haveP = false;
         function frame(now) {
           raf = null;
+          if (lastT && scale) {
+            scrollX += (now - lastT) * 0.001 * (PXPS / scale);
+            if (scrollX >= VW) scrollX -= VW * Math.floor(scrollX / VW);
+          }
+          lastT = now;
           hot = false;
           if (haveP) {
             /* One rect read per frame rather than per pointermove: the band moves
@@ -226,7 +253,11 @@
             if (r.width && clientX >= r.left && clientX <= r.right &&
                 clientY >= r.top && clientY <= r.bottom) {
               hot = true;
-              px = (clientX - r.left) / scale;
+              /* Back out the travel: the tile under the cursor is not the tile whose
+                 home is there any more, and pushing by home position would make the
+                 disturbance sit somewhere the pointer is not. */
+              px = (clientX - r.left) / scale - scrollX;
+              if (px < 0) px += VW;
               py = (clientY - r.top) / scale;
             }
           }
@@ -244,6 +275,9 @@
         }
         function start() {
           if (running || !onScreen || document.hidden) return;
+          /* Parking does not stop the clock, so the first frame back would carry the
+             whole gap and lurch the band forward. Start the delta again from here. */
+          lastT = 0;
           running = true; schedule();
         }
         function stop() {

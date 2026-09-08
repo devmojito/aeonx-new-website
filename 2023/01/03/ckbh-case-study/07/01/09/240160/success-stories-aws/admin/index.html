@@ -4534,313 +4534,6 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 
-<style id="ax-herowave-css">
-/* ---- Hero mosaic: cursor interaction ----
-   The band ships as one flat 479KB <img>, so nothing in it is addressable. It is
-   really 6286 small squares in three brand colours, and those coordinates are the
-   art itself -- read them out of the file and the same picture can be drawn to a
-   canvas, where the cursor can push individual tiles around. */
-.ax-wave{display:block;touch-action:pan-y}
-@media (prefers-reduced-motion:reduce){.ax-wave{pointer-events:none}}
-</style>
-<script>
-/* ---- HERO MOSAIC, CURSOR-REACTIVE ----
-
-   Figma draws the hero's wave as 6286 <path> squares, exported to one SVG and placed
-   as an <img>. That is correct and pixel-exact, but an image cannot react to anything.
-   This reads the squares back out of that same file -- so the picture is still Figma's,
-   not a reinterpretation -- redraws them on a canvas, and lets the pointer displace the
-   tiles it passes over. They spring back when it leaves.
-
-   Canvas rather than inline SVG on purpose: 6286 nodes is a heavy DOM, and moving even
-   a few hundred of them per frame through style writes drops frames. Filling 6286 rects
-   grouped by colour is a couple of milliseconds, and the loop only runs while something
-   is actually moving.
-
-   The file draws some squares twice, a colour over a colour, so a later path wins. The
-   parse keeps the LAST fill at each position, which is what the flat image shows. */
-(function () {
-  var SRC = /6944-35720\.svg/;
-
-  function parse(text) {
-    var re = /<path d="M([\d.-]+) ([\d.-]+)H([\d.-]+)V([\d.-]+)[^"]*"\s+fill="(#[0-9a-fA-F]{3,8})"/g;
-    var seen = {}, order = [], m;
-    while ((m = re.exec(text))) {
-      var x1 = parseFloat(m[1]), y1 = parseFloat(m[2]);
-      var x0 = parseFloat(m[3]), y2 = parseFloat(m[4]);
-      var w = x1 - x0, h = y2 - y1;
-      if (!(w > 0) || !(h > 0)) continue;
-      var key = Math.round(x0 * 2) + ',' + Math.round(y1 * 2);
-      var cell = seen[key];
-      if (!cell) { cell = seen[key] = { x: x0, y: y1, w: w, h: h }; order.push(cell); }
-      cell.c = m[5];      /* last fill at this position is the one that paints */
-    }
-    return order;
-  }
-
-  function mount(img) {
-    var box = img.getBoundingClientRect();
-    if (!box.width) return;
-
-    fetch(img.getAttribute('src'), { credentials: 'omit' })
-      .then(function (r) { return r.ok ? r.text() : null; })
-      .then(function (text) {
-        if (!text) return;
-        var vb = /viewBox="0 0 ([\d.]+) ([\d.]+)"/.exec(text);
-        var VW = vb ? parseFloat(vb[1]) : 1674, VH = vb ? parseFloat(vb[2]) : 512;
-        var cells = parse(text);
-        if (cells.length < 100) return;
-
-        var cv = document.createElement('canvas');
-        cv.className = (img.className || '').replace(/g-vec/, '').trim() + ' ax-wave';
-        cv.setAttribute('aria-hidden', 'true');
-        /* Same box, same stacking slot: the placement _gen.py computed is correct and
-           the ancestor's overflow:hidden still does Figma's crop. */
-        cv.setAttribute('style', img.getAttribute('style'));
-        img.parentNode.replaceChild(cv, img);
-
-        var ctx = cv.getContext('2d', { alpha: true });
-        var N = cells.length;
-        var dx = new Float32Array(N), dy = new Float32Array(N);
-
-        /* Per-tile constants, in the same ranges cotool bakes into its own dot data
-           (jm .35-1, jo/jp +-.5, jcx/jcy +-1.2). Ours are derived from the index
-           rather than stored, so they are stable across frames without shipping a
-           second data file. */
-        var jm = new Float32Array(N), jo = new Float32Array(N), jp = new Float32Array(N);
-        var jcx = new Float32Array(N), jcy = new Float32Array(N);
-        function rnd(i, salt) { var v = Math.sin((i + 1) * salt) * 43758.5453; return v - Math.floor(v); }
-        for (var i = 0; i < N; i++) {
-          jm[i]  = 0.35 + rnd(i, 12.9898) * 0.65;
-          jo[i]  = rnd(i, 78.233) - 0.5;
-          jp[i]  = rnd(i, 37.719) - 0.5;
-          jcx[i] = rnd(i, 94.673) * 2.4 - 1.2;
-          jcy[i] = rnd(i, 15.137) * 2.4 - 1.2;
-        }
-
-        /* Buckets over the home positions, so a move only touches the tiles it can
-           actually reach instead of all 6286. */
-        var GS = 32, grid = {};
-        function key(gx, gy) { return gx + ',' + gy; }
-        for (var i = 0; i < N; i++) {
-          var g = key((cells[i].x / GS) | 0, (cells[i].y / GS) | 0);
-          (grid[g] || (grid[g] = [])).push(i);
-        }
-        function eachIn(x0, y0, x1, y1, fn) {
-          var gx0 = Math.floor(x0 / GS), gx1 = Math.floor(x1 / GS);
-          var gy0 = Math.floor(y0 / GS), gy1 = Math.floor(y1 / GS);
-          for (var gx = gx0; gx <= gx1; gx++)
-            for (var gy = gy0; gy <= gy1; gy++) {
-              var bk = grid[key(gx, gy)];
-              if (bk) for (var k = 0; k < bk.length; k++) fn(bk[k]);
-            }
-        }
-
-        /* cotool's numbers are expressed against an 8px dot grid in a 1160x565 box.
-           Ours is a different pitch, so they are converted into grid units and back
-           rather than copied raw -- otherwise the disturbance covers a different
-           number of tiles and reads as a different effect. */
-        var lx = [];
-        for (var i = 0; i < N; i++) if (lx.indexOf(cells[i].x) < 0) lx.push(cells[i].x);
-        lx.sort(function (p, q) { return p - q; });
-        var pitch = Infinity;
-        for (var i = 1; i < lx.length; i++) { var d = lx[i] - lx[i - 1]; if (d > 0.01 && d < pitch) pitch = d; }
-        if (!isFinite(pitch)) pitch = 8;
-        var INFLUENCE = 10 * pitch;      /* cotool: 80 over an 8px grid */
-        var PUSH = 7.25 * pitch;         /* cotool: 58 */
-        var K = 8 / pitch;               /* keeps the ripple wavelengths grid-relative */
-
-        /* ---- Ambient swell ----
-           Two long, slow waves crossing the band in opposite directions, running
-           whether or not anything is pointing at it.
-
-           The wavelengths are deliberately long: about 40 tiles, so neighbours are
-           only 0.16 rad apart in phase and travel almost together. At 2.5 units of
-           amplitude that leaves under 0.4 units of movement BETWEEN neighbours,
-           inside the 0.72-unit gap the grid already has, so no tile ever laps into
-           its neighbour's cell and the mosaic still reads as Figma drew it. Short
-           wavelengths at the same amplitude would just look like static.
-
-           No per-tile jitter here on purpose. Jitter is what makes the cursor push
-           feel like scattering, and it is exactly what would stop this reading as
-           one surface moving. The two speeds are not a round ratio, so the pair
-           never comes back into phase and the loop has no visible period. */
-        var A1 = 1.60, A2 = 0.90;                    /* units; ~1.2px and ~0.7px on screen */
-        var W1 = 0.55, W2 = -0.38;                   /* rad/s, counter-travelling */
-        var sp1 = new Float32Array(N), cp1 = new Float32Array(N);
-        var sp2 = new Float32Array(N), cp2 = new Float32Array(N);
-        (function () {
-          var k1 = (2 * Math.PI) / (40 * pitch), k2 = (2 * Math.PI) / (52 * pitch);
-          for (var i = 0; i < N; i++) {
-            var c = cells[i];
-            var p1 = c.x * k1 + c.y * k1 * 0.45;
-            var p2 = -c.x * k2 + c.y * k2 * 0.80;
-            /* A tile's phase never changes, so sin/cos of it are folded in once
-               here. Expanding sin(wT+p) then leaves the per-frame loop with no trig
-               at all: four multiplies and two adds per tile. */
-            sp1[i] = Math.sin(p1); cp1[i] = Math.cos(p1);
-            sp2[i] = Math.sin(p2); cp2[i] = Math.cos(p2);
-          }
-        })();
-
-        var scale = 1, dpr = 1;
-        function size() {
-          var r = cv.getBoundingClientRect();
-          if (!r.width) return false;
-          dpr = Math.min(window.devicePixelRatio || 1, 2);
-          cv.width = Math.round(r.width * dpr);
-          cv.height = Math.round(r.height * dpr);
-          scale = r.width / VW;
-          ctx.setTransform(dpr * scale, 0, 0, dpr * scale, 0, 0);
-          return true;
-        }
-
-        var byCol = {};
-        for (var i = 0; i < N; i++) (byCol[cells[i].c] || (byCol[cells[i].c] = [])).push(i);
-        var colours = Object.keys(byCol);
-
-        function drawAll() {
-          ctx.clearRect(0, 0, VW, VH);
-          for (var k = 0; k < colours.length; k++) {
-            var col = colours[k], idx = byCol[col];
-            ctx.fillStyle = col;
-            ctx.beginPath();
-            for (var j = 0; j < idx.length; j++) {
-              var i2 = idx[j], c2 = cells[i2];
-              ctx.rect(c2.x + dx[i2], c2.y + dy[i2], c2.w, c2.h);
-            }
-            ctx.fill();
-          }
-        }
-
-        /* Displacement is a pure function of where the cursor is -- no velocity, no
-           spring. That is cotool's model and it is why the field snaps back the
-           instant the pointer leaves rather than wobbling home. An earlier version
-           here integrated a spring, which read as jelly instead of a disturbance. */
-        var px = 0, py = 0, hot = false;
-        function displace(T) {
-          /* The swell is the rest position now, so every tile is rewritten each
-             frame and there is no longer a list of touched indices to undo. */
-          var s1 = Math.sin(W1 * T), c1 = Math.cos(W1 * T);
-          var s2 = Math.sin(W2 * T), c2 = Math.cos(W2 * T);
-          for (var i = 0; i < N; i++) {
-            var a1s = sp1[i], a1c = cp1[i], a2s = sp2[i], a2c = cp2[i];
-            dx[i] = A1 * (s1 * a1c + c1 * a1s) + A2 * (s2 * a2c + c2 * a2s);
-            dy[i] = 0.62 * (A1 * (c1 * a1c - s1 * a1s) + A2 * (c2 * a2c - s2 * a2s));
-          }
-          if (hot) {
-            eachIn(px - INFLUENCE, py - INFLUENCE, px + INFLUENCE, py + INFLUENCE, function (i) {
-              var c = cells[i], X = c.x + c.w / 2, Y = c.y + c.h / 2;
-              var rx = X - px, ry = Y - py;
-              var dist = Math.sqrt(rx * rx + ry * ry);
-              if (dist >= INFLUENCE) return;
-              var t = 1 - dist / INFLUENCE;
-              var ox = jo[i] + 0.72 * jcx[i] +
-                       0.22 * Math.sin(0.016 * K * rx + 0.018 * K * X) +
-                       0.12 * Math.cos(0.012 * K * ry);
-              var oy = jp[i] + 0.72 * jcy[i] +
-                       0.22 * Math.cos(0.016 * K * ry + 0.018 * K * Y) +
-                       0.12 * Math.sin(0.012 * K * rx);
-              ox -= 0.2 * oy; oy += 0.2 * ox;                    /* swirl, not a radial shove */
-              var amp = t * t * t * (t * (6 * t - 15) + 10) * PUSH * (0.28 + 0.72 * jm[i]);
-              /* Added to the swell, not written over it, so a tile the cursor is
-                 pushing is still riding the wave underneath. */
-              dx[i] += ox * amp; dy[i] += oy * amp;
-            });
-          }
-          drawAll();
-        }
-
-        var raf = null, clientX = 0, clientY = 0, haveP = false;
-        function frame(now) {
-          raf = null;
-          hot = false;
-          if (haveP) {
-            /* One rect read per frame rather than per pointermove: the band moves
-               with the page, so the rect cannot be cached across a scroll. */
-            var r = cv.getBoundingClientRect();
-            if (r.width && clientX >= r.left && clientX <= r.right &&
-                clientY >= r.top && clientY <= r.bottom) {
-              hot = true;
-              px = (clientX - r.left) / scale;
-              py = (clientY - r.top) / scale;
-            }
-          }
-          displace(now * 0.001);
-          schedule();
-        }
-        /* The swell never settles, so the loop is now continuous rather than
-           demand-driven. It is gated instead: parked while the band is scrolled
-           out of view or the tab is in the background, which is where a hero
-           animation would otherwise quietly burn a laptop battery all day. */
-        var onScreen = true, running = false;
-        function schedule() {
-          if (raf !== null || !running) return;
-          raf = requestAnimationFrame(frame);
-        }
-        function start() {
-          if (running || !onScreen || document.hidden) return;
-          running = true; schedule();
-        }
-        function stop() {
-          running = false;
-          if (raf !== null) { cancelAnimationFrame(raf); raf = null; }
-        }
-        /* The pointer NEVER reaches this canvas. The band sits at the bottom of the
-           hero's stacking order and every point over it hit-tests to one of the
-           absolutely positioned boxes painted after it -- the card, the tile grid,
-           their backdrops. Listening on the canvas looked correct in a test that
-           dispatched events straight at it, which is exactly the check that cannot
-           fail: dispatchEvent skips hit-testing. Listen on the window and decide
-           membership from the canvas's own rect instead.
-
-           The canvas is also click-through, so putting it under the hero cannot
-           swallow a press meant for the tabs or the CTAs. */
-        cv.style.pointerEvents = 'none';
-        var REDUCED = matchMedia('(prefers-reduced-motion:reduce)');
-        if (!REDUCED.matches) {
-          addEventListener('pointermove', function (e) {
-            clientX = e.clientX; clientY = e.clientY; haveP = true; schedule();
-          }, { passive: true });
-          addEventListener('pointerleave', function () {
-            haveP = false; schedule();
-          }, { passive: true });
-          addEventListener('blur', function () { haveP = false; });
-        }
-
-        if (!size()) return;
-        displace(0);
-        addEventListener('resize', function () {
-          clearTimeout(cv.__t);
-          cv.__t = setTimeout(function () { if (size()) drawAll(); }, 150);
-        });
-
-        if (REDUCED.matches) return;   /* one still frame, as drawn above */
-
-        if (window.IntersectionObserver) {
-          new IntersectionObserver(function (es) {
-            onScreen = es[0].isIntersecting;
-            if (onScreen) start(); else stop();
-          }, { rootMargin: '80px' }).observe(cv);
-        }
-        document.addEventListener('visibilitychange', function () {
-          if (document.hidden) stop(); else start();
-        });
-        start();
-      })
-      .catch(function () {});
-  }
-
-  function run() {
-    [].forEach.call(document.querySelectorAll('img.g-vec'), function (img) {
-      if (SRC.test(img.getAttribute('src') || '')) mount(img);
-    });
-  }
-  if (document.readyState === 'complete') setTimeout(run, 0);
-  else addEventListener('load', function () { setTimeout(run, 0); });
-})();
-</script>
-
 <style id="ax-mobfx-css">
 /* sticky mobile header: the bar is one exported SVG, so it is translated rather
    than re-parented -- nothing else in the flat sheet moves */
@@ -6784,6 +6477,347 @@ document.addEventListener("DOMContentLoaded",function(){
   });
   addEventListener('resize',function(){ clearTimeout(window.__axfxR);
     window.__axfxR=setTimeout(function(){ centerLabels(); spaceArrows(); },200); });
+})();
+</script>
+
+<style id="ax-herowave-css">
+/* ---- Hero mosaic: cursor interaction ----
+   The band ships as one flat 479KB <img>, so nothing in it is addressable. It is
+   really 6286 small squares in three brand colours, and those coordinates are the
+   art itself -- read them out of the file and the same picture can be drawn to a
+   canvas, where the cursor can push individual tiles around. */
+.ax-wave{display:block;touch-action:pan-y}
+@media (prefers-reduced-motion:reduce){.ax-wave{pointer-events:none}}
+</style>
+<script>
+/* ---- HERO MOSAIC, CURSOR-REACTIVE ----
+
+   Figma draws the hero's wave as 6286 <path> squares, exported to one SVG and placed
+   as an <img>. That is correct and pixel-exact, but an image cannot react to anything.
+   This reads the squares back out of that same file -- so the picture is still Figma's,
+   not a reinterpretation -- redraws them on a canvas, and lets the pointer displace the
+   tiles it passes over. They spring back when it leaves.
+
+   Canvas rather than inline SVG on purpose: 6286 nodes is a heavy DOM, and moving even
+   a few hundred of them per frame through style writes drops frames. Filling 6286 rects
+   grouped by colour is a couple of milliseconds, and the loop only runs while something
+   is actually moving.
+
+   The file draws some squares twice, a colour over a colour, so a later path wins. The
+   parse keeps the LAST fill at each position, which is what the flat image shows. */
+(function () {
+  var SRC = /6944-35720\.svg/;
+
+  function parse(text) {
+    var re = /<path d="M([\d.-]+) ([\d.-]+)H([\d.-]+)V([\d.-]+)[^"]*"\s+fill="(#[0-9a-fA-F]{3,8})"/g;
+    var seen = {}, order = [], m;
+    while ((m = re.exec(text))) {
+      var x1 = parseFloat(m[1]), y1 = parseFloat(m[2]);
+      var x0 = parseFloat(m[3]), y2 = parseFloat(m[4]);
+      var w = x1 - x0, h = y2 - y1;
+      if (!(w > 0) || !(h > 0)) continue;
+      var key = Math.round(x0 * 2) + ',' + Math.round(y1 * 2);
+      var cell = seen[key];
+      if (!cell) { cell = seen[key] = { x: x0, y: y1, w: w, h: h }; order.push(cell); }
+      cell.c = m[5];      /* last fill at this position is the one that paints */
+    }
+    return order;
+  }
+
+  function mount(img) {
+    var box = img.getBoundingClientRect();
+    if (!box.width) return;
+
+    fetch(img.getAttribute('src'), { credentials: 'omit' })
+      .then(function (r) { return r.ok ? r.text() : null; })
+      .then(function (text) {
+        if (!text) return;
+        var vb = /viewBox="0 0 ([\d.]+) ([\d.]+)"/.exec(text);
+        var VW = vb ? parseFloat(vb[1]) : 1674, VH = vb ? parseFloat(vb[2]) : 512;
+        var cells = parse(text);
+        if (cells.length < 100) return;
+
+        var cv = document.createElement('canvas');
+        cv.className = (img.className || '').replace(/g-vec/, '').trim() + ' ax-wave';
+        cv.setAttribute('aria-hidden', 'true');
+        /* Same box, same stacking slot: the placement _gen.py computed is correct and
+           the ancestor's overflow:hidden still does Figma's crop. */
+        cv.setAttribute('style', img.getAttribute('style'));
+        img.parentNode.replaceChild(cv, img);
+
+        var ctx = cv.getContext('2d', { alpha: true });
+        var N = cells.length;
+        var dx = new Float32Array(N), dy = new Float32Array(N);
+
+        /* Per-tile constants, in the same ranges cotool bakes into its own dot data
+           (jm .35-1, jo/jp +-.5, jcx/jcy +-1.2). Ours are derived from the index
+           rather than stored, so they are stable across frames without shipping a
+           second data file. */
+        var jm = new Float32Array(N), jo = new Float32Array(N), jp = new Float32Array(N);
+        var jcx = new Float32Array(N), jcy = new Float32Array(N);
+        function rnd(i, salt) { var v = Math.sin((i + 1) * salt) * 43758.5453; return v - Math.floor(v); }
+        for (var i = 0; i < N; i++) {
+          jm[i]  = 0.35 + rnd(i, 12.9898) * 0.65;
+          jo[i]  = rnd(i, 78.233) - 0.5;
+          jp[i]  = rnd(i, 37.719) - 0.5;
+          jcx[i] = rnd(i, 94.673) * 2.4 - 1.2;
+          jcy[i] = rnd(i, 15.137) * 2.4 - 1.2;
+        }
+
+        /* Buckets over the home positions, so a move only touches the tiles it can
+           actually reach instead of all 6286. */
+        var GS = 32, grid = {};
+        function key(gx, gy) { return gx + ',' + gy; }
+        for (var i = 0; i < N; i++) {
+          var g = key((cells[i].x / GS) | 0, (cells[i].y / GS) | 0);
+          (grid[g] || (grid[g] = [])).push(i);
+        }
+        function eachIn(x0, y0, x1, y1, fn) {
+          var gx0 = Math.floor(x0 / GS), gx1 = Math.floor(x1 / GS);
+          var gy0 = Math.floor(y0 / GS), gy1 = Math.floor(y1 / GS);
+          for (var gx = gx0; gx <= gx1; gx++)
+            for (var gy = gy0; gy <= gy1; gy++) {
+              var bk = grid[key(gx, gy)];
+              if (bk) for (var k = 0; k < bk.length; k++) fn(bk[k]);
+            }
+        }
+
+        /* cotool's numbers are expressed against an 8px dot grid in a 1160x565 box.
+           Ours is a different pitch, so they are converted into grid units and back
+           rather than copied raw -- otherwise the disturbance covers a different
+           number of tiles and reads as a different effect. */
+        var lx = [];
+        for (var i = 0; i < N; i++) if (lx.indexOf(cells[i].x) < 0) lx.push(cells[i].x);
+        lx.sort(function (p, q) { return p - q; });
+        var pitch = Infinity;
+        for (var i = 1; i < lx.length; i++) { var d = lx[i] - lx[i - 1]; if (d > 0.01 && d < pitch) pitch = d; }
+        if (!isFinite(pitch)) pitch = 8;
+        var INFLUENCE = 10 * pitch;      /* cotool: 80 over an 8px grid */
+        var PUSH = 7.25 * pitch;         /* cotool: 58 */
+        var K = 8 / pitch;               /* keeps the ripple wavelengths grid-relative */
+
+        /* ---- Ambient swell ----
+           Two long, slow waves crossing the band in opposite directions, running
+           whether or not anything is pointing at it.
+
+           The wavelengths are deliberately long: about 40 tiles, so neighbours are
+           only 0.16 rad apart in phase and travel almost together. At 2.5 units of
+           amplitude that leaves under 0.4 units of movement BETWEEN neighbours,
+           inside the 0.72-unit gap the grid already has, so no tile ever laps into
+           its neighbour's cell and the mosaic still reads as Figma drew it. Short
+           wavelengths at the same amplitude would just look like static.
+
+           No per-tile jitter here on purpose. Jitter is what makes the cursor push
+           feel like scattering, and it is exactly what would stop this reading as
+           one surface moving. The two speeds are not a round ratio, so the pair
+           never comes back into phase and the loop has no visible period. */
+        var A1 = 1.60, A2 = 0.90;                    /* units; ~1.2px and ~0.7px on screen */
+        var W1 = 0.55, W2 = -0.38;                   /* rad/s, counter-travelling */
+        var sp1 = new Float32Array(N), cp1 = new Float32Array(N);
+        var sp2 = new Float32Array(N), cp2 = new Float32Array(N);
+        (function () {
+          var k1 = (2 * Math.PI) / (40 * pitch), k2 = (2 * Math.PI) / (52 * pitch);
+          for (var i = 0; i < N; i++) {
+            var c = cells[i];
+            var p1 = c.x * k1 + c.y * k1 * 0.45;
+            var p2 = -c.x * k2 + c.y * k2 * 0.80;
+            /* A tile's phase never changes, so sin/cos of it are folded in once
+               here. Expanding sin(wT+p) then leaves the per-frame loop with no trig
+               at all: four multiplies and two adds per tile. */
+            sp1[i] = Math.sin(p1); cp1[i] = Math.cos(p1);
+            sp2[i] = Math.sin(p2); cp2[i] = Math.cos(p2);
+          }
+        })();
+
+        var scale = 1, dpr = 1;
+        function size() {
+          var r = cv.getBoundingClientRect();
+          if (!r.width) return false;
+          dpr = Math.min(window.devicePixelRatio || 1, 2);
+          cv.width = Math.round(r.width * dpr);
+          cv.height = Math.round(r.height * dpr);
+          scale = r.width / VW;
+          ctx.setTransform(dpr * scale, 0, 0, dpr * scale, 0, 0);
+          return true;
+        }
+
+        var byCol = {};
+        for (var i = 0; i < N; i++) (byCol[cells[i].c] || (byCol[cells[i].c] = [])).push(i);
+        var colours = Object.keys(byCol);
+
+        /* ---- The band also travels ----
+           A tile leaving the right edge comes back on the left, so the row runs
+           forever off one copy of the art. The wrap is only invisible because of
+           what the art is: both ends of the wave sit low, with their column tops
+           between 403 and 439, and neighbouring columns inside the mosaic already
+           step by as much as 24. The join is one more step of the same size, which
+           is why this needs no mirrored second copy and no crossfade.
+
+           The period is the viewBox width, and the columns are laid on a 5.77 grid
+           that divides into it, so a wrapped tile lands exactly on the lattice
+           rather than half a cell off it.
+
+           Held in art units and advanced per frame rather than computed from the
+           clock, so that changing scale on a resize changes the rate from that
+           point instead of jumping the whole band sideways. */
+        var scrollX = 0, lastT = 0;
+        var PXPS = 10;                  /* on-screen px per second: a drift, not a marquee */
+
+        function drawAll() {
+          ctx.clearRect(0, 0, VW, VH);
+          for (var k = 0; k < colours.length; k++) {
+            var col = colours[k], idx = byCol[col];
+            ctx.fillStyle = col;
+            ctx.beginPath();
+            for (var j = 0; j < idx.length; j++) {
+              var i2 = idx[j], c2 = cells[i2];
+              var X = c2.x + dx[i2] + scrollX;
+              if (X >= VW) X -= VW;
+              ctx.rect(X, c2.y + dy[i2], c2.w, c2.h);
+              /* the tile straddling the seam is drawn at both ends of it */
+              if (X + c2.w > VW) ctx.rect(X - VW, c2.y + dy[i2], c2.w, c2.h);
+            }
+            ctx.fill();
+          }
+        }
+
+        /* Displacement is a pure function of where the cursor is -- no velocity, no
+           spring. That is cotool's model and it is why the field snaps back the
+           instant the pointer leaves rather than wobbling home. An earlier version
+           here integrated a spring, which read as jelly instead of a disturbance. */
+        var px = 0, py = 0, hot = false;
+        function displace(T) {
+          /* The swell is the rest position now, so every tile is rewritten each
+             frame and there is no longer a list of touched indices to undo. */
+          var s1 = Math.sin(W1 * T), c1 = Math.cos(W1 * T);
+          var s2 = Math.sin(W2 * T), c2 = Math.cos(W2 * T);
+          for (var i = 0; i < N; i++) {
+            var a1s = sp1[i], a1c = cp1[i], a2s = sp2[i], a2c = cp2[i];
+            dx[i] = A1 * (s1 * a1c + c1 * a1s) + A2 * (s2 * a2c + c2 * a2s);
+            dy[i] = 0.62 * (A1 * (c1 * a1c - s1 * a1s) + A2 * (c2 * a2c - s2 * a2s));
+          }
+          if (hot) {
+            eachIn(px - INFLUENCE, py - INFLUENCE, px + INFLUENCE, py + INFLUENCE, function (i) {
+              var c = cells[i], X = c.x + c.w / 2, Y = c.y + c.h / 2;
+              var rx = X - px, ry = Y - py;
+              var dist = Math.sqrt(rx * rx + ry * ry);
+              if (dist >= INFLUENCE) return;
+              var t = 1 - dist / INFLUENCE;
+              var ox = jo[i] + 0.72 * jcx[i] +
+                       0.22 * Math.sin(0.016 * K * rx + 0.018 * K * X) +
+                       0.12 * Math.cos(0.012 * K * ry);
+              var oy = jp[i] + 0.72 * jcy[i] +
+                       0.22 * Math.cos(0.016 * K * ry + 0.018 * K * Y) +
+                       0.12 * Math.sin(0.012 * K * rx);
+              ox -= 0.2 * oy; oy += 0.2 * ox;                    /* swirl, not a radial shove */
+              var amp = t * t * t * (t * (6 * t - 15) + 10) * PUSH * (0.28 + 0.72 * jm[i]);
+              /* Added to the swell, not written over it, so a tile the cursor is
+                 pushing is still riding the wave underneath. */
+              dx[i] += ox * amp; dy[i] += oy * amp;
+            });
+          }
+          drawAll();
+        }
+
+        var raf = null, clientX = 0, clientY = 0, haveP = false;
+        function frame(now) {
+          raf = null;
+          if (lastT && scale) {
+            scrollX += (now - lastT) * 0.001 * (PXPS / scale);
+            if (scrollX >= VW) scrollX -= VW * Math.floor(scrollX / VW);
+          }
+          lastT = now;
+          hot = false;
+          if (haveP) {
+            /* One rect read per frame rather than per pointermove: the band moves
+               with the page, so the rect cannot be cached across a scroll. */
+            var r = cv.getBoundingClientRect();
+            if (r.width && clientX >= r.left && clientX <= r.right &&
+                clientY >= r.top && clientY <= r.bottom) {
+              hot = true;
+              /* Back out the travel: the tile under the cursor is not the tile whose
+                 home is there any more, and pushing by home position would make the
+                 disturbance sit somewhere the pointer is not. */
+              px = (clientX - r.left) / scale - scrollX;
+              if (px < 0) px += VW;
+              py = (clientY - r.top) / scale;
+            }
+          }
+          displace(now * 0.001);
+          schedule();
+        }
+        /* The swell never settles, so the loop is now continuous rather than
+           demand-driven. It is gated instead: parked while the band is scrolled
+           out of view or the tab is in the background, which is where a hero
+           animation would otherwise quietly burn a laptop battery all day. */
+        var onScreen = true, running = false;
+        function schedule() {
+          if (raf !== null || !running) return;
+          raf = requestAnimationFrame(frame);
+        }
+        function start() {
+          if (running || !onScreen || document.hidden) return;
+          /* Parking does not stop the clock, so the first frame back would carry the
+             whole gap and lurch the band forward. Start the delta again from here. */
+          lastT = 0;
+          running = true; schedule();
+        }
+        function stop() {
+          running = false;
+          if (raf !== null) { cancelAnimationFrame(raf); raf = null; }
+        }
+        /* The pointer NEVER reaches this canvas. The band sits at the bottom of the
+           hero's stacking order and every point over it hit-tests to one of the
+           absolutely positioned boxes painted after it -- the card, the tile grid,
+           their backdrops. Listening on the canvas looked correct in a test that
+           dispatched events straight at it, which is exactly the check that cannot
+           fail: dispatchEvent skips hit-testing. Listen on the window and decide
+           membership from the canvas's own rect instead.
+
+           The canvas is also click-through, so putting it under the hero cannot
+           swallow a press meant for the tabs or the CTAs. */
+        cv.style.pointerEvents = 'none';
+        var REDUCED = matchMedia('(prefers-reduced-motion:reduce)');
+        if (!REDUCED.matches) {
+          addEventListener('pointermove', function (e) {
+            clientX = e.clientX; clientY = e.clientY; haveP = true; schedule();
+          }, { passive: true });
+          addEventListener('pointerleave', function () {
+            haveP = false; schedule();
+          }, { passive: true });
+          addEventListener('blur', function () { haveP = false; });
+        }
+
+        if (!size()) return;
+        displace(0);
+        addEventListener('resize', function () {
+          clearTimeout(cv.__t);
+          cv.__t = setTimeout(function () { if (size()) drawAll(); }, 150);
+        });
+
+        if (REDUCED.matches) return;   /* one still frame, as drawn above */
+
+        if (window.IntersectionObserver) {
+          new IntersectionObserver(function (es) {
+            onScreen = es[0].isIntersecting;
+            if (onScreen) start(); else stop();
+          }, { rootMargin: '80px' }).observe(cv);
+        }
+        document.addEventListener('visibilitychange', function () {
+          if (document.hidden) stop(); else start();
+        });
+        start();
+      })
+      .catch(function () {});
+  }
+
+  function run() {
+    [].forEach.call(document.querySelectorAll('img.g-vec'), function (img) {
+      if (SRC.test(img.getAttribute('src') || '')) mount(img);
+    });
+  }
+  if (document.readyState === 'complete') setTimeout(run, 0);
+  else addEventListener('load', function () { setTimeout(run, 0); });
 })();
 </script>
 
