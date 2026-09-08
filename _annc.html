@@ -38,7 +38,10 @@
      together and the document gets shorter by the same amount.
 
      Measured while the bar is still visible, and in vw, so a resize keeps it. */
+  var shifted = null;   /* the page we pulled up, so the shift can be undone */
+
   function reclaim(bar) {
+    if (shifted) return;
     var h = bar.getBoundingClientRect().height;
     var header = bar.closest('header') || bar.parentElement;
     var H = header ? header.getBoundingClientRect().height : 0;
@@ -51,7 +54,14 @@
       if (t < top) top = t;
     });
     if (!(top >= H - 1)) return;                    /* nothing was reserved */
+    shifted = { page: page, was: page.style.marginTop };
     page.style.marginTop = '-' + (h / window.innerWidth * 100).toFixed(4) + 'vw';
+  }
+
+  function unreclaim() {
+    if (!shifted) return;
+    shifted.page.style.marginTop = shifted.was;
+    shifted = null;
   }
 
   function apply(d) {
@@ -60,6 +70,7 @@
     [].forEach.call(bars, function (bar) {
       var txt = bar.querySelector('.ax-annc__txt');
       if (!d.active || !d.text) { reclaim(bar); bar.hidden = true; bar.style.display = 'none'; return; }
+      unreclaim();
       bar.hidden = false;
       bar.style.removeProperty('display');
       if (txt) txt.textContent = d.text;
@@ -86,9 +97,40 @@
     });
   }
 
+  /* ---- No flash of the placeholder ----
+     The bar is baked into the HTML carrying Figma's webinar copy, and the truth
+     only arrives a round trip later. Every load therefore showed the placeholder
+     for a moment and then yanked it away, taking 44px of page with it.
+
+     So the last known answer is remembered and applied here, during parse, before
+     the first paint. With nothing remembered the bar starts hidden: there is no
+     announcement most of the time, and a bar arriving a moment late is far less
+     jarring than one that appears and vanishes. Whatever the API says then wins,
+     and is remembered for next time.
+
+     Storage can throw outright in a private window, so every touch is guarded. */
+  var KEY = 'ax-annc';
+  function remembered() {
+    try { return JSON.parse(localStorage.getItem(KEY)); } catch (e) { return null; }
+  }
+  function remember(d) {
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) {}
+  }
+
+  var last = remembered();
+  apply(last && last.active && last.text ? last : { active: false });
+
   fetch(API_BASE + '/api/announcement/', { credentials: 'omit' })
     .then(function (r) { return r.ok ? r.json() : null; })
-    .then(function (d) { if (d) apply(d); })
-    .catch(function () { /* keep the baked copy */ });
+    .then(function (d) {
+      if (!d) return;
+      apply(d);
+      remember(d.active && d.text ? { active: true, text: d.text, url: d.url || '' }
+                                  : { active: false });
+    })
+    /* An unreachable API leaves the remembered state showing, which is the last
+       thing the site actually published. That beats the baked copy: the baked
+       copy is a placeholder from the design file and was never true. */
+    .catch(function () {});
 })();
 </script>

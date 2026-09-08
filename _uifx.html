@@ -742,8 +742,63 @@
     });
   }
 
+  /* ---------- 8. UNEVEN SEAMS IN A CARD ROW ----------
+     A row of cards drawn on a constant pitch should look identical between every
+     pair, and the "53 agents / L1-L5 / One click / Metered" row did not: three
+     cards are 349 wide on a 350 pitch, leaving a 1px seam beside the card's own
+     1px rule, and one is 350 and butts straight against its neighbour. Two of the
+     three dividers read 2px and the third reads 1px.
+
+     That 1px lives in the Figma file, so it survives any rebuild. Rather than
+     carry the node id, the rule is stated as a shape: cards sharing a top and a
+     height, on a constant pitch, are the same card repeated and should be the
+     same width. The odd one out is snapped to the width the others agree on,
+     which is a 1px change and never moves anything's left edge.
+
+     Guards: at least three of them, a pitch that really is constant, and no more
+     than 2px of disagreement -- so a row of deliberately different-width boxes,
+     or a genuine two-column layout, cannot be caught by this. */
+  function evenCardRow(){
+    var vw = (document.documentElement.clientWidth || innerWidth || 1920) / 100;
+    if (!vw) return;
+    var rows = {}, seq = 0;
+    [].forEach.call(document.querySelectorAll('.g-b'), function(el){
+      var l = num(el, 'left'), w = num(el, 'width');
+      var t = num(el, 'top'), h = num(el, 'height');
+      if (l === null || w === null || t === null || h === null) return;
+      var p = el.parentElement;
+      if (!p) return;
+      if (!p.__axRow) p.__axRow = ++seq;
+      var k = p.__axRow + '|' + t.toFixed(4) + '|' + h.toFixed(4);
+      (rows[k] = rows[k] || []).push({ el: el, l: l, w: w });
+    });
+    Object.keys(rows).forEach(function(k){
+      var g = rows[k].sort(function(a, b){ return a.l - b.l; });
+      if (g.length < 3) return;
+      var pitch = g[1].l - g[0].l;
+      if (!(pitch > 0)) return;
+      for (var i = 2; i < g.length; i++){
+        if (Math.abs((g[i].l - g[i-1].l) - pitch) > 0.01) return;   /* not a constant pitch */
+      }
+      var tally = {};
+      g.forEach(function(c){ var kk = c.w.toFixed(4); tally[kk] = (tally[kk] || 0) + 1; });
+      var keys = Object.keys(tally);
+      if (keys.length < 2) return;                                  /* already even */
+      keys.sort(function(a, b){ return tally[b] - tally[a]; });
+      var want = parseFloat(keys[0]);
+      if (tally[keys[0]] * 2 <= g.length) return;                   /* no clear majority */
+      var spread = Math.max.apply(null, g.map(function(c){ return Math.abs(c.w - want); }));
+      if (spread * vw > 2) return;                                  /* a real difference, not rounding */
+      g.forEach(function(c){
+        if (Math.abs(c.w - want) < 0.0001) return;
+        setvw(c.el, 'width', want);
+      });
+    });
+  }
+
   function init(){
     copyFix();
+    evenCardRow();
     hidePlaceholderCopy();
     applyTitleCase();
     bumpExplore();
