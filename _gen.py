@@ -871,6 +871,14 @@ def emit_rotated(n, ox, oy):
 
 SKIP_NODES = {
     '5232:15038', '5246:15149',  # baked navbar + announcement in Home hero (chrome provides these)
+    '6719:38058', '6719:38059',  # same pair on the V2 homepage: 'Component 42' is a second
+                    # navbar and 'Link' a second announcement strip, both duplicating what
+                    # _chrome.html already renders. They are named nothing like "Nav Bar",
+                    # so walk()'s depth<=1 name check never caught them. They sat exactly
+                    # under the fixed header and were invisible for as long as the two
+                    # happened to be the same height; a taller header, a wrapped
+                    # announcement line, or any zoom that breaks that coincidence slides
+                    # the baked pair into view and the page shows two of each.
     '5637:52052',  # Leadership/mobile: unfilled 4th executive slot ("[NEEDS INPUT: Name]",
                     # generic placeholder photo) -- shipping it added a phantom 4th carousel
                     # slide, throwing off the dot count for the 3 real executives

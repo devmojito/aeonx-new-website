@@ -6952,6 +6952,39 @@ document.addEventListener("DOMContentLoaded",function(){
         var PUSH = 7.25 * pitch;         /* cotool: 58 */
         var K = 8 / pitch;               /* keeps the ripple wavelengths grid-relative */
 
+        /* ---- Ambient swell ----
+           Two long, slow waves crossing the band in opposite directions, running
+           whether or not anything is pointing at it.
+
+           The wavelengths are deliberately long: about 40 tiles, so neighbours are
+           only 0.16 rad apart in phase and travel almost together. At 2.5 units of
+           amplitude that leaves under 0.4 units of movement BETWEEN neighbours,
+           inside the 0.72-unit gap the grid already has, so no tile ever laps into
+           its neighbour's cell and the mosaic still reads as Figma drew it. Short
+           wavelengths at the same amplitude would just look like static.
+
+           No per-tile jitter here on purpose. Jitter is what makes the cursor push
+           feel like scattering, and it is exactly what would stop this reading as
+           one surface moving. The two speeds are not a round ratio, so the pair
+           never comes back into phase and the loop has no visible period. */
+        var A1 = 1.60, A2 = 0.90;                    /* units; ~1.2px and ~0.7px on screen */
+        var W1 = 0.55, W2 = -0.38;                   /* rad/s, counter-travelling */
+        var sp1 = new Float32Array(N), cp1 = new Float32Array(N);
+        var sp2 = new Float32Array(N), cp2 = new Float32Array(N);
+        (function () {
+          var k1 = (2 * Math.PI) / (40 * pitch), k2 = (2 * Math.PI) / (52 * pitch);
+          for (var i = 0; i < N; i++) {
+            var c = cells[i];
+            var p1 = c.x * k1 + c.y * k1 * 0.45;
+            var p2 = -c.x * k2 + c.y * k2 * 0.80;
+            /* A tile's phase never changes, so sin/cos of it are folded in once
+               here. Expanding sin(wT+p) then leaves the per-frame loop with no trig
+               at all: four multiplies and two adds per tile. */
+            sp1[i] = Math.sin(p1); cp1[i] = Math.cos(p1);
+            sp2[i] = Math.sin(p2); cp2[i] = Math.cos(p2);
+          }
+        })();
+
         var scale = 1, dpr = 1;
         function size() {
           var r = cv.getBoundingClientRect();
@@ -6986,10 +7019,17 @@ document.addEventListener("DOMContentLoaded",function(){
            spring. That is cotool's model and it is why the field snaps back the
            instant the pointer leaves rather than wobbling home. An earlier version
            here integrated a spring, which read as jelly instead of a disturbance. */
-        var px = 0, py = 0, hot = false, moved = [];
-        function displace() {
-          for (var k = 0; k < moved.length; k++) { dx[moved[k]] = 0; dy[moved[k]] = 0; }
-          moved.length = 0;
+        var px = 0, py = 0, hot = false;
+        function displace(T) {
+          /* The swell is the rest position now, so every tile is rewritten each
+             frame and there is no longer a list of touched indices to undo. */
+          var s1 = Math.sin(W1 * T), c1 = Math.cos(W1 * T);
+          var s2 = Math.sin(W2 * T), c2 = Math.cos(W2 * T);
+          for (var i = 0; i < N; i++) {
+            var a1s = sp1[i], a1c = cp1[i], a2s = sp2[i], a2c = cp2[i];
+            dx[i] = A1 * (s1 * a1c + c1 * a1s) + A2 * (s2 * a2c + c2 * a2s);
+            dy[i] = 0.62 * (A1 * (c1 * a1c - s1 * a1s) + A2 * (c2 * a2c - s2 * a2s));
+          }
           if (hot) {
             eachIn(px - INFLUENCE, py - INFLUENCE, px + INFLUENCE, py + INFLUENCE, function (i) {
               var c = cells[i], X = c.x + c.w / 2, Y = c.y + c.h / 2;
@@ -7005,17 +7045,17 @@ document.addEventListener("DOMContentLoaded",function(){
                        0.12 * Math.sin(0.012 * K * rx);
               ox -= 0.2 * oy; oy += 0.2 * ox;                    /* swirl, not a radial shove */
               var amp = t * t * t * (t * (6 * t - 15) + 10) * PUSH * (0.28 + 0.72 * jm[i]);
-              dx[i] = ox * amp; dy[i] = oy * amp;
-              moved.push(i);
+              /* Added to the swell, not written over it, so a tile the cursor is
+                 pushing is still riding the wave underneath. */
+              dx[i] += ox * amp; dy[i] += oy * amp;
             });
           }
           drawAll();
         }
 
         var raf = null, clientX = 0, clientY = 0, haveP = false;
-        function frame() {
+        function frame(now) {
           raf = null;
-          var wasHot = hot;
           hot = false;
           if (haveP) {
             /* One rect read per frame rather than per pointermove: the band moves
@@ -7028,13 +7068,25 @@ document.addEventListener("DOMContentLoaded",function(){
               py = (clientY - r.top) / scale;
             }
           }
-          /* Nothing to repaint if the field is at rest and stays at rest. */
-          if (!hot && !wasHot) return;
-          displace();
+          displace(now * 0.001);
+          schedule();
         }
+        /* The swell never settles, so the loop is now continuous rather than
+           demand-driven. It is gated instead: parked while the band is scrolled
+           out of view or the tab is in the background, which is where a hero
+           animation would otherwise quietly burn a laptop battery all day. */
+        var onScreen = true, running = false;
         function schedule() {
-          if (raf !== null) return;
+          if (raf !== null || !running) return;
           raf = requestAnimationFrame(frame);
+        }
+        function start() {
+          if (running || !onScreen || document.hidden) return;
+          running = true; schedule();
+        }
+        function stop() {
+          running = false;
+          if (raf !== null) { cancelAnimationFrame(raf); raf = null; }
         }
         /* The pointer NEVER reaches this canvas. The band sits at the bottom of the
            hero's stacking order and every point over it hit-tests to one of the
@@ -7055,16 +7107,28 @@ document.addEventListener("DOMContentLoaded",function(){
           addEventListener('pointerleave', function () {
             haveP = false; schedule();
           }, { passive: true });
-          addEventListener('blur', function () { haveP = false; schedule(); });
-          addEventListener('scroll', function () { schedule(); }, { passive: true });
+          addEventListener('blur', function () { haveP = false; });
         }
 
         if (!size()) return;
-        drawAll();
+        displace(0);
         addEventListener('resize', function () {
           clearTimeout(cv.__t);
           cv.__t = setTimeout(function () { if (size()) drawAll(); }, 150);
         });
+
+        if (REDUCED.matches) return;   /* one still frame, as drawn above */
+
+        if (window.IntersectionObserver) {
+          new IntersectionObserver(function (es) {
+            onScreen = es[0].isIntersecting;
+            if (onScreen) start(); else stop();
+          }, { rootMargin: '80px' }).observe(cv);
+        }
+        document.addEventListener('visibilitychange', function () {
+          if (document.hidden) stop(); else start();
+        });
+        start();
       })
       .catch(function () {});
   }
