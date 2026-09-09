@@ -138,6 +138,13 @@ if __name__ == "__main__":
 # .ax-mob mobile layout injected by _mobile.py. Re-inject immediately so a rebuild
 # can never leave phones rendering the desktop layout scaled down.
 import subprocess, sys as _sys
+# The 53 legacy WordPress-URL posts and case studies are wrapped in the same chrome
+# via _gen.get_shell(), but they are not in PAGES, so a nav or menu edit used to
+# reach 90 pages and silently skip these -- they carried a stale menu for as long as
+# nobody thought to run _blog.py by hand. Rebuilt here, before the post-build passes,
+# so they pick up the fragments with everything else.
+print('\nrebuilding legacy post pages (_blog.py)...')
+subprocess.run([_sys.executable, '_blog.py'], check=False)
 print('\nre-injecting mobile layouts (_mobile.py)...')
 subprocess.run([_sys.executable, '_mobile.py'], check=False)
 print('applying post-build fixups (_postbuild.py)...')
