@@ -338,6 +338,35 @@
     input.addEventListener('keydown',function(e){ e.stopPropagation(); });
 
     render();
+
+    /* ---- DEEP LINKS FROM THE MEGA MENU ----
+       The menu lists Annual Reports, Quarterly Results and BSE Disclosures as if each
+       were its own page. They are not, and never were: the whole investor library is
+       one browser sliced by this rail. So the menu entries carry a hash naming a
+       category, and the page opens on it rather than dropping the reader at the top
+       of the section to hunt for the right tab.
+
+       Matched by label text, the same loose way docsFor() matches a rail item to its
+       category, so a category renamed in the admin still resolves. */
+    function fromHash(){
+      var h = norm(decodeURIComponent((location.hash || '').slice(1)));
+      if(!h) return;
+      if(!sec.getBoundingClientRect().height) return;   /* the hidden desktop/mobile twin */
+      for(var i=0;i<railTexts.length;i++){
+        var n=norm(railTexts[i].t);
+        if(!n||n==='all') continue;
+        if(n===h||n.indexOf(h)>-1||h.indexOf(n)>-1){
+          active=i; render();
+          var hdr=document.querySelector('header');
+          var off=(hdr?hdr.getBoundingClientRect().height:0)+16;
+          var y=sec.getBoundingClientRect().top+(window.pageYOffset||0)-off;
+          window.scrollTo({ top: Math.max(0,y), behavior: 'smooth' });
+          return;
+        }
+      }
+    }
+    fromHash();
+    addEventListener('hashchange', fromHash);
   }
 
   function init(){
