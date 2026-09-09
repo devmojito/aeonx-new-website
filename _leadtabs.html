@@ -40,6 +40,12 @@
      order is the variant's own left-to-right order, and each photo is the image fill
      on the card at that position. Priyank Pancholi appears twice in the design, in
      two different roles, and is left as the design has it. */
+  /* People the client has asked to take off the site. The page is regenerated from
+     the Figma dump, which still has them, so removing the card from the HTML would
+     last exactly until the next build. Dropped from the roster at runtime instead,
+     and the cards after them close the gap because render() assigns by index. */
+  var REMOVED = ['Samudraneel Thakur'];
+
   var A_HEAD = 'The people who run each line.';
   var B_HEAD = 'Who picks up the phone when you call.';
   var B_ROSTER = [
@@ -146,7 +152,7 @@
     var A_ROSTER = cards.map(function(c){
       var g = c.querySelectorAll('.g-t'), img = c.querySelector('[data-ref]');
       return [g[1] ? txt(g[1]) : '', g[0] ? txt(g[0]) : '', img ? img.getAttribute('data-ref') : ''];
-    });
+    }).filter(function(p){ return REMOVED.indexOf(p[0]) < 0; });
 
     var head = null;
     var hs = scope.querySelectorAll('.g-t');
@@ -246,6 +252,16 @@
       }
       if (focus) tabs[sel].focus();
     }
+    /* The page ships the unfiltered roster, so the first tab has to be rendered too
+       rather than only restored on a switch back. Repeated after load because
+       fitBadge measures, and on DOMContentLoaded the section may not be laid out --
+       skipped if the reader has already moved to the other tab. */
+    function applyA(){ if (cur === 0) render(A_ROSTER); }
+    if (A_ROSTER.length !== cards.length) {
+      applyA();
+      addEventListener('load', function(){ setTimeout(applyA, 350); });
+    }
+
     for (i = 0; i < 2; i++) (function(i){
       tabs[i].addEventListener('click', function(){ select(i); });
       tabs[i].addEventListener('keydown', function(e){
