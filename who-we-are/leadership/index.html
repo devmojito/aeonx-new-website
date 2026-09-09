@@ -7248,13 +7248,6 @@ document.addEventListener("DOMContentLoaded",function(){
 .ax-lt-tab>.g-t{transition:color .25s ease}
 .ax-lt-tab:focus-visible{outline:2px solid rgb(35,39,46);outline-offset:-3px}
 .ax-lt-tab[aria-selected="true"]:focus-visible{outline-color:rgb(255,255,255)}
-/* The roster is a horizontal scroller, and the tab strip and the headline sit
-   INSIDE it -- one Figma box holds the lot. Dragging the cards therefore dragged
-   the tabs and the heading off the left edge with them. They are pinned by the
-   opposite of the scroll instead of being re-parented, which would mean
-   recomputing absolute coordinates that Figma owns. */
-.ax-lt-pin{will-change:transform}
-
 /* The cards go out and come back rather than snapping. The transition has to live
    on the element the class is toggled on -- it used to be declared on one and
    applied to another, which is why the change was instant however long the
@@ -7371,18 +7364,27 @@ document.addEventListener("DOMContentLoaded",function(){
                e.querySelectorAll('.g-t').length >= 2;
       }).sort(function(a, b){ return (num(a,'left') || 0) - (num(b,'left') || 0); });
     }
-    /* Everything in the scroller that is NOT a card -- the tab strip, the headline,
-       the section's own backdrop -- is held still while the cards move. */
+    /* Figma put the tab strip and the headline INSIDE the box that scrolls, so
+       dragging the cards dragged those with them. They were first held still by
+       counter-translating them on every scroll event, which is a frame behind the
+       drag: the tabs visibly rocked back and forth while the row moved.
+
+       They are lifted out of the scroller instead. Everything here is absolutely
+       positioned against the page, so re-parenting is exact: add the scroller's own
+       offset to each one's coordinates and nothing has moved, except that scrolling
+       no longer reaches them at all. */
     var row = first && first.parentElement;
-    if (row){
-      var pins = [].filter.call(row.children, function(e){ return cards.indexOf(e) < 0; });
-      pins.forEach(function(e){ e.classList.add('ax-lt-pin'); });
-      var pin = function(){
-        var x = row.scrollLeft;
-        pins.forEach(function(e){ e.style.transform = x ? 'translateX(' + x + 'px)' : ''; });
-      };
-      row.addEventListener('scroll', pin, { passive: true });
-      pin();
+    if (row && row.parentElement){
+      var host = row.parentElement;
+      var RL = num(row, 'left') || 0, RT = num(row, 'top') || 0;
+      [].filter.call(row.children, function(e){ return cards.indexOf(e) < 0; })
+        .forEach(function(e){
+          setvw(e, 'left', (num(e, 'left') || 0) + RL);
+          setvw(e, 'top',  (num(e, 'top')  || 0) + RT);
+          e.style.transform = '';
+          e.classList.remove('ax-lt-pin');
+          host.appendChild(e);
+        });
     }
     cards.forEach(function(c){ c.classList.add('ax-lt-card'); });
 
