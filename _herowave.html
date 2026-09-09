@@ -110,6 +110,17 @@
         var pitch = Infinity;
         for (var i = 1; i < lx.length; i++) { var d = lx[i] - lx[i - 1]; if (d > 0.01 && d < pitch) pitch = d; }
         if (!isFinite(pitch)) pitch = 8;
+        /* ---- The lattice's own period ----
+           The band wraps onto itself, so the period is a property of the ART, not of
+           the viewBox: the columns run 0 to 1668.12 on a 5.772 pitch and the box is
+           1674 wide. Wrapping on the box put the seam three quarters of a cell off
+           the lattice. Take one more pitch past the last column instead, which is
+           where column zero belongs. */
+        var COLS = lx.length;
+        var avgPitch = COLS > 1 ? (lx[COLS - 1] - lx[0]) / (COLS - 1) : pitch;
+        var PER = lx[COLS - 1] + avgPitch - lx[0];
+        if (!(PER > 0)) PER = VW;
+
         var INFLUENCE = 10 * pitch;      /* cotool: 80 over an 8px grid */
         var PUSH = 7.25 * pitch;         /* cotool: 58 */
         var K = 8 / pitch;               /* keeps the ripple wavelengths grid-relative */
@@ -134,7 +145,19 @@
         var sp1 = new Float32Array(N), cp1 = new Float32Array(N);
         var sp2 = new Float32Array(N), cp2 = new Float32Array(N);
         (function () {
-          var k1 = (2 * Math.PI) / (40 * pitch), k2 = (2 * Math.PI) / (52 * pitch);
+          /* The swell moves tiles sideways as well as up, and the band is drawn
+             wrapped onto itself, so the two ends of the art sit against each other.
+             At 40 and 52 tiles neither wave fitted a whole number of times into the
+             290-column period, so the phase jumped at the seam: one side of the join
+             was being pushed left while the other went right, and the 0.73-unit gap
+             the grid has opened to several units and closed again as the two waves
+             beat. Snap each wavelength to the nearest one that divides the period
+             and the join carries the same phase as everywhere else. */
+          function fit(want) {
+            var n = Math.max(1, Math.round(PER / (want * pitch)));
+            return (2 * Math.PI * n) / PER;
+          }
+          var k1 = fit(40), k2 = fit(52);
           for (var i = 0; i < N; i++) {
             var c = cells[i];
             var p1 = c.x * k1 + c.y * k1 * 0.45;
@@ -190,10 +213,10 @@
             for (var j = 0; j < idx.length; j++) {
               var i2 = idx[j], c2 = cells[i2];
               var X = c2.x + dx[i2] + scrollX;
-              if (X >= VW) X -= VW;
+              if (X >= PER) X -= PER;
               ctx.rect(X, c2.y + dy[i2], c2.w, c2.h);
               /* the tile straddling the seam is drawn at both ends of it */
-              if (X + c2.w > VW) ctx.rect(X - VW, c2.y + dy[i2], c2.w, c2.h);
+              if (X + c2.w > PER) ctx.rect(X - PER, c2.y + dy[i2], c2.w, c2.h);
             }
             ctx.fill();
           }
@@ -242,7 +265,7 @@
           raf = null;
           if (lastT && scale) {
             scrollX += (now - lastT) * 0.001 * (PXPS / scale);
-            if (scrollX >= VW) scrollX -= VW * Math.floor(scrollX / VW);
+            if (scrollX >= PER) scrollX -= PER * Math.floor(scrollX / PER);
           }
           lastT = now;
           hot = false;
@@ -257,7 +280,7 @@
                  home is there any more, and pushing by home position would make the
                  disturbance sit somewhere the pointer is not. */
               px = (clientX - r.left) / scale - scrollX;
-              if (px < 0) px += VW;
+              if (px < 0) px += PER;
               py = (clientY - r.top) / scale;
             }
           }

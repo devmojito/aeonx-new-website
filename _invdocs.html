@@ -281,7 +281,17 @@
         host.appendChild(e);
       }
       if(footer) footer.textContent=list0.length+(list0.length===1?' document':' documents');
-      railTexts.forEach(function(r,i){ r.el.classList.toggle('is-on',i===active); });
+      railTexts.forEach(function(r,i){
+        var on=i===active;
+        r.el.classList.toggle('is-on',on);
+        /* The selected row's look is drawn into ONE slot in Figma and left there, so
+           the peach plate and the red rule stayed on the category the design happened
+           to have selected no matter what the reader clicked. Move the look to the
+           row that is actually active. Paint only: the slots keep their own geometry. */
+        if(!r.row||!SKIN) return;
+        r.row.style.backgroundColor=on?SKIN.on.bg:'';
+        r.row.style.borderLeftColor=on?SKIN.on.bc:SKIN.off.bc;
+      });
       host.scrollTop=0;
     }
 
@@ -302,6 +312,7 @@
         var a=b.w*b.h; if(a<rowA){ rowA=a; row=k; }
       });
       var hitEl=row||r.el;
+      r.row=row;                       /* the plate the selected look is painted on */
       hitEl.classList.add('ax-inv-cat');
       /* document capture: the chrome CTA pass owns these labels already */
       document.addEventListener('click',function(e){
@@ -322,6 +333,21 @@
       });
       if(badge) badge.el.textContent=String(docsFor(i).length);
     });
+
+    /* The two looks are read off the design's own slots rather than restated here,
+       so a colour change in Figma carries through without editing this file. */
+    var SKIN=null;
+    (function(){
+      var on=null, off=null;
+      railTexts.forEach(function(r){
+        if(!r.row) return;
+        var cs=getComputedStyle(r.row), bg=cs.backgroundColor;
+        var clear=!bg||bg==='transparent'||bg.replace(/\s/g,'')==='rgba(0,0,0,0)';
+        if(!clear){ if(!on) on={bg:bg,bc:cs.borderLeftColor}; }
+        else if(!off) off={bc:cs.borderLeftColor};
+      });
+      if(on&&off) SKIN={on:on,off:off};
+    })();
 
     /* the designed "Search" label becomes a real field */
     var input=document.createElement('input');
