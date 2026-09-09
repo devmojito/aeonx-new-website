@@ -1,4 +1,8 @@
 <style id="ax-uifx-css">
+/* The footer office line: each city is its own link, and has to keep reading as one
+   line of type rather than seven blue links. */
+.ax-fx-office{color:inherit;text-decoration:none;cursor:pointer}
+.ax-fx-office:hover,.ax-fx-office:focus-visible{text-decoration:underline}
 /* Chrome interactions + newsletter. _hover.html deliberately skips header/footer
    (chrome() excludes them), so nothing in the nav or footer ever gained a hover
    affordance -- Get Started, Subscribe, Read Us, the social icons and the nav
@@ -656,19 +660,31 @@
     });
   }
 
-  /* ---------- 5b. FOOTER ADDRESS -> MAP ----------
-     The office line was plain text next to a map pin. Point it at Maps for the HQ,
-     which is the address the footer's own phone and mail rows belong to. */
-  function footerMap(){
-    var foot=document.querySelector('section.ax-footer');
-    if(!foot) return;
-    [].slice.call(foot.querySelectorAll('.g-t')).forEach(function(e){
+  /* ---------- 5b. FOOTER OFFICE LINE ----------
+     The footer names seven cities on one line. The whole line used to be a single
+     link to Maps for the Mumbai head office, so clicking Kolkata or Dehradun opened
+     Mumbai. Each city now goes to its own office on the contact page, which carries
+     that office's address, phone and map, via the hash the switcher there reads.
+
+     Dubai is deliberately left as plain text: the contact page has six offices and
+     Dubai is not one of them, so there is nowhere to send anyone. */
+  var OFFICE={ 'Ahmedabad':'ahmedabad', 'Mumbai':'mumbai', 'Bhuj':'bhuj',
+               'Dehradun':'dehradun', 'Delhi NCR':'delhi', 'Kolkata':'kolkata' };
+  /* Longest first: "Delhi NCR" must not be matched as "Delhi". */
+  var OFFICE_RE=/Delhi NCR|Ahmedabad|Dehradun|Kolkata|Mumbai|Bhuj/g;
+
+  function footerOffices(){
+    [].slice.call(document.querySelectorAll('section.ax-footer .g-t')).forEach(function(e){
       if(e.dataset.axmap) return;
-      if(!/Ahmedabad|Mumbai|Bhuj/i.test(txt(e))) return;
+      var t=txt(e);
+      if(!/Ahmedabad/i.test(t)||!/Dehradun/i.test(t)) return;
+      /* The line is plain text and a <br>, nothing else, so rewriting the markup
+         cannot swallow an element. Guarded anyway. */
+      if(e.querySelector('a,img,svg')) return;
       e.dataset.axmap='1';
-      e.classList.add('ax-fx-link');
-      go(e,'https://www.google.com/maps/search/?api=1&query='+
-        encodeURIComponent('AeonX Digital, 278 Jeevan Udyog Building, DN Road, Fort, Mumbai 400001'),true);
+      e.innerHTML=e.innerHTML.replace(OFFICE_RE,function(m){
+        return '<a class="ax-fx-office" href="/contact-us/#'+OFFICE[m]+'">'+m+'</a>';
+      });
     });
   }
 
@@ -843,7 +859,7 @@
     armChrome();
     newsletter();
     productScroll();
-    footerMap();
+    footerOffices();
     alignExplore();
     centerLabels();
   }

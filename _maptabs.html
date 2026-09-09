@@ -284,6 +284,22 @@
     f.map.src = mapSrc(CITY[0].addr);
     paint(0); bring(0);
     row.setAttribute('data-axmt','1');
+
+    /* ---- DEEP LINK FROM THE FOOTER ----
+       The footer names the six cities, and each is now a link to its own office
+       rather than to the top of this page, so /contact-us/#kolkata opens on Kolkata.
+       Matched on the office heading, so a city renamed above renames the link too.
+       Nothing is scrolled: the switcher is the whole point of the page. */
+    function fromHash(){
+      var h = (location.hash || '').slice(1).toLowerCase().replace(/[^a-z]/g, '');
+      if (!h) return;
+      for (var i = 0; i < CITY.length; i++){
+        var n = CITY[i].head.toLowerCase().replace(/[^a-z]/g, '');
+        if (n === h || n.indexOf(h) === 0 || h.indexOf(n) === 0){ select(i, false); return; }
+      }
+    }
+    fromHash();
+    addEventListener('hashchange', fromHash);
   }
 
   function init(){

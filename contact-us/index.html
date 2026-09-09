@@ -523,7 +523,7 @@ html.ax-pre-off #ax-pre{opacity:0;transform:translateY(-2vw);pointer-events:none
 <div class="g-t" style="position:absolute;left:1.4583vw;top:0.7292vw;width:3.9583vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:0.7292vw;line-height:1.0417vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">Get Started</div>
 </div>
 <img class="g-vec" src="/assets/vec/I5323-14151;5290-9221.svg" data-vec="I5323:14151;5290:9221" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:14.5833vw;top:19.8185vw;width:0.8333vw;height:0.8333vw;opacity:0.6000000238418579;">
-<div class="g-t" style="position:absolute;left:15.7292vw;top:19.1935vw;width:16.1979vw;height:2.0833vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:pre-wrap;">Ahmedabad · Mumbai · Bhuj<br>· Dehradun · Delhi NCR · Kolkata · Dubai</div>
+<div class="g-t" style="position:absolute;left:15.7292vw;top:19.1935vw;width:16.1979vw;height:2.0833vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:left;white-space:pre-wrap;">Ahmedabad · Mumbai · Bhuj<br>Dehradun · Delhi NCR · Kolkata · Dubai</div>
 <img class="g-vec" src="/assets/vec/I5323-14151;5290-9227.svg" data-vec="I5323:14151;5290:9227" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:14.5833vw;top:21.7977vw;width:0.8333vw;height:0.8333vw;opacity:0.6000000238418579;">
 <div class="g-t" style="position:absolute;left:15.7292vw;top:21.6935vw;width:6.0938vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:center;white-space:nowrap;"><a href="tel:+919321987561">+91 93219 87561</a></div>
 <img class="g-vec" src="/assets/vec/I5323-14151;5290-9231.svg" data-vec="I5323:14151;5290:9231" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:14.5833vw;top:23.2560vw;width:0.8333vw;height:0.8333vw;opacity:0.6000000238418579;">
@@ -5566,872 +5566,817 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 
-<style id="ax-uifx-css">
-/* Chrome interactions + newsletter. _hover.html deliberately skips header/footer
-   (chrome() excludes them), so nothing in the nav or footer ever gained a hover
-   affordance -- Get Started, Subscribe, Read Us, the social icons and the nav
-   buttons all felt dead. These are paint-only states, same language as the tiles:
-   wash/lift for pills, brand colour for text links. */
-.ax-fx-pill{transition:background-color .22s ease,box-shadow .22s ease,transform .22s cubic-bezier(.22,.61,.36,1);cursor:pointer}
-.ax-fx-pill:hover{transform:translateY(-0.1042vw);box-shadow:0 0.2083vw 0.5729vw rgba(176,45,12,.28);filter:brightness(1.06)}
-.ax-fx-pill:focus-visible{outline:0.1042vw solid rgb(223,63,23);outline-offset:0.15vw}
-/* The contextual Explore pills label at 0.625vw while every other CTA on the page
-   sits at 0.7292vw, so they read as an afterthought inside a generous pill (36px of
-   ink in an 80px box). Match them to the rest. */
-.ax-fx-xl{font-size:0.7292vw!important;line-height:1.0417vw!important}
-@media (max-width:1024px){.ax-fx-xl{font-size:2.4419vw!important;line-height:3.4884vw!important}}
-.ax-fx-link{transition:color .18s ease;cursor:pointer}
-.ax-fx-link:hover{color:rgb(223,63,23)!important}
-.ax-fx-soc{transition:transform .2s ease,filter .2s ease}
-.ax-fx-soc:hover{transform:translateY(-0.1vw) scale(1.08);filter:brightness(.85)}
-/* real newsletter field, dropped into the designed box */
-.ax-fx-input{position:absolute;border:none;outline:none;background:transparent;
-  font-family:'Nunito Sans',sans-serif;padding:0;margin:0;width:88%!important}
-.ax-fx-input::placeholder{color:rgb(134,149,170)}
-.ax-fx-box{transition:border-color .18s ease}
-.ax-fx-box:focus-within{border-color:rgb(223,63,23)!important}
-/* Above the cookie bar. The note sits in the footer, the bar is fixed over the
-   bottom of the viewport, and the bar won: the confirmation appeared underneath
-   it, which is why clicking Subscribe looked like it did nothing at all. */
-.ax-fx-note{z-index:2147483000;position:absolute;font-family:'Nunito Sans',sans-serif;font-weight:600;
-  font-size:0.7292vw;line-height:1.0417vw;color:rgb(21,128,61);opacity:0;
-  transition:opacity .25s ease;pointer-events:none;white-space:nowrap}
-.ax-fx-note.on{opacity:1}
-.ax-fx-note.err{color:rgb(220,38,38)}
-.ax-fx-note-link{color:rgb(223,63,23);text-decoration:underline;pointer-events:auto}
-.ax-fx-note.on{pointer-events:auto}
+<style id="ax-herowave-css">
+/* ---- Hero mosaic: cursor interaction ----
+   The band ships as one flat 479KB <img>, so nothing in it is addressable. It is
+   really 6286 small squares in three brand colours, and those coordinates are the
+   art itself -- read them out of the file and the same picture can be drawn to a
+   canvas, where the cursor can push individual tiles around. */
+.ax-wave{display:block;touch-action:pan-y}
+@media (prefers-reduced-motion:reduce){.ax-wave{pointer-events:none}}
+</style>
+<script>
+/* ---- HERO MOSAIC, CURSOR-REACTIVE ----
+
+   Figma draws the hero's wave as 6286 <path> squares, exported to one SVG and placed
+   as an <img>. That is correct and pixel-exact, but an image cannot react to anything.
+   This reads the squares back out of that same file -- so the picture is still Figma's,
+   not a reinterpretation -- redraws them on a canvas, and lets the pointer displace the
+   tiles it passes over. They spring back when it leaves.
+
+   Canvas rather than inline SVG on purpose: 6286 nodes is a heavy DOM, and moving even
+   a few hundred of them per frame through style writes drops frames. Filling 6286 rects
+   grouped by colour is a couple of milliseconds, and the loop only runs while something
+   is actually moving.
+
+   The file draws some squares twice, a colour over a colour, so a later path wins. The
+   parse keeps the LAST fill at each position, which is what the flat image shows. */
+(function () {
+  var SRC = /6944-35720\.svg/;
+
+  function parse(text) {
+    var re = /<path d="M([\d.-]+) ([\d.-]+)H([\d.-]+)V([\d.-]+)[^"]*"\s+fill="(#[0-9a-fA-F]{3,8})"/g;
+    var seen = {}, order = [], m;
+    while ((m = re.exec(text))) {
+      var x1 = parseFloat(m[1]), y1 = parseFloat(m[2]);
+      var x0 = parseFloat(m[3]), y2 = parseFloat(m[4]);
+      var w = x1 - x0, h = y2 - y1;
+      if (!(w > 0) || !(h > 0)) continue;
+      var key = Math.round(x0 * 2) + ',' + Math.round(y1 * 2);
+      var cell = seen[key];
+      if (!cell) { cell = seen[key] = { x: x0, y: y1, w: w, h: h }; order.push(cell); }
+      cell.c = m[5];      /* last fill at this position is the one that paints */
+    }
+    return order;
+  }
+
+  function mount(img) {
+    var box = img.getBoundingClientRect();
+    if (!box.width) return;
+
+    fetch(img.getAttribute('src'), { credentials: 'omit' })
+      .then(function (r) { return r.ok ? r.text() : null; })
+      .then(function (text) {
+        if (!text) return;
+        var vb = /viewBox="0 0 ([\d.]+) ([\d.]+)"/.exec(text);
+        var VW = vb ? parseFloat(vb[1]) : 1674, VH = vb ? parseFloat(vb[2]) : 512;
+        var cells = parse(text);
+        if (cells.length < 100) return;
+
+        var cv = document.createElement('canvas');
+        cv.className = (img.className || '').replace(/g-vec/, '').trim() + ' ax-wave';
+        cv.setAttribute('aria-hidden', 'true');
+        /* Same box, same stacking slot: the placement _gen.py computed is correct and
+           the ancestor's overflow:hidden still does Figma's crop. */
+        cv.setAttribute('style', img.getAttribute('style'));
+        img.parentNode.replaceChild(cv, img);
+
+        var ctx = cv.getContext('2d', { alpha: true });
+        var N = cells.length;
+        var dx = new Float32Array(N), dy = new Float32Array(N);
+
+        /* Per-tile constants, in the same ranges cotool bakes into its own dot data
+           (jm .35-1, jo/jp +-.5, jcx/jcy +-1.2). Ours are derived from the index
+           rather than stored, so they are stable across frames without shipping a
+           second data file. */
+        var jm = new Float32Array(N), jo = new Float32Array(N), jp = new Float32Array(N);
+        var jcx = new Float32Array(N), jcy = new Float32Array(N);
+        function rnd(i, salt) { var v = Math.sin((i + 1) * salt) * 43758.5453; return v - Math.floor(v); }
+        for (var i = 0; i < N; i++) {
+          jm[i]  = 0.35 + rnd(i, 12.9898) * 0.65;
+          jo[i]  = rnd(i, 78.233) - 0.5;
+          jp[i]  = rnd(i, 37.719) - 0.5;
+          jcx[i] = rnd(i, 94.673) * 2.4 - 1.2;
+          jcy[i] = rnd(i, 15.137) * 2.4 - 1.2;
+        }
+
+        /* Buckets over the home positions, so a move only touches the tiles it can
+           actually reach instead of all 6286. */
+        var GS = 32, grid = {};
+        function key(gx, gy) { return gx + ',' + gy; }
+        for (var i = 0; i < N; i++) {
+          var g = key((cells[i].x / GS) | 0, (cells[i].y / GS) | 0);
+          (grid[g] || (grid[g] = [])).push(i);
+        }
+        function eachIn(x0, y0, x1, y1, fn) {
+          var gx0 = Math.floor(x0 / GS), gx1 = Math.floor(x1 / GS);
+          var gy0 = Math.floor(y0 / GS), gy1 = Math.floor(y1 / GS);
+          for (var gx = gx0; gx <= gx1; gx++)
+            for (var gy = gy0; gy <= gy1; gy++) {
+              var bk = grid[key(gx, gy)];
+              if (bk) for (var k = 0; k < bk.length; k++) fn(bk[k]);
+            }
+        }
+
+        /* cotool's numbers are expressed against an 8px dot grid in a 1160x565 box.
+           Ours is a different pitch, so they are converted into grid units and back
+           rather than copied raw -- otherwise the disturbance covers a different
+           number of tiles and reads as a different effect. */
+        var lx = [];
+        for (var i = 0; i < N; i++) if (lx.indexOf(cells[i].x) < 0) lx.push(cells[i].x);
+        lx.sort(function (p, q) { return p - q; });
+        var pitch = Infinity;
+        for (var i = 1; i < lx.length; i++) { var d = lx[i] - lx[i - 1]; if (d > 0.01 && d < pitch) pitch = d; }
+        if (!isFinite(pitch)) pitch = 8;
+        /* ---- The lattice's own period ----
+           The band wraps onto itself, so the period is a property of the ART, not of
+           the viewBox: the columns run 0 to 1668.12 on a 5.772 pitch and the box is
+           1674 wide. Wrapping on the box put the seam three quarters of a cell off
+           the lattice. Take one more pitch past the last column instead, which is
+           where column zero belongs. */
+        var COLS = lx.length;
+        var avgPitch = COLS > 1 ? (lx[COLS - 1] - lx[0]) / (COLS - 1) : pitch;
+        var PER = lx[COLS - 1] + avgPitch - lx[0];
+        if (!(PER > 0)) PER = VW;
+
+        var INFLUENCE = 10 * pitch;      /* cotool: 80 over an 8px grid */
+        var PUSH = 7.25 * pitch;         /* cotool: 58 */
+        var K = 8 / pitch;               /* keeps the ripple wavelengths grid-relative */
+
+        /* ---- Ambient swell ----
+           Two long, slow waves crossing the band in opposite directions, running
+           whether or not anything is pointing at it.
+
+           The wavelengths are deliberately long: about 40 tiles, so neighbours are
+           only 0.16 rad apart in phase and travel almost together. At 2.5 units of
+           amplitude that leaves under 0.4 units of movement BETWEEN neighbours,
+           inside the 0.72-unit gap the grid already has, so no tile ever laps into
+           its neighbour's cell and the mosaic still reads as Figma drew it. Short
+           wavelengths at the same amplitude would just look like static.
+
+           No per-tile jitter here on purpose. Jitter is what makes the cursor push
+           feel like scattering, and it is exactly what would stop this reading as
+           one surface moving. The two speeds are not a round ratio, so the pair
+           never comes back into phase and the loop has no visible period. */
+        var A1 = 1.60, A2 = 0.90;                    /* units; ~1.2px and ~0.7px on screen */
+        var W1 = 0.55, W2 = -0.38;                   /* rad/s, counter-travelling */
+        var sp1 = new Float32Array(N), cp1 = new Float32Array(N);
+        var sp2 = new Float32Array(N), cp2 = new Float32Array(N);
+        (function () {
+          /* The swell moves tiles sideways as well as up, and the band is drawn
+             wrapped onto itself, so the two ends of the art sit against each other.
+             At 40 and 52 tiles neither wave fitted a whole number of times into the
+             290-column period, so the phase jumped at the seam: one side of the join
+             was being pushed left while the other went right, and the 0.73-unit gap
+             the grid has opened to several units and closed again as the two waves
+             beat. Snap each wavelength to the nearest one that divides the period
+             and the join carries the same phase as everywhere else. */
+          function fit(want) {
+            var n = Math.max(1, Math.round(PER / (want * pitch)));
+            return (2 * Math.PI * n) / PER;
+          }
+          var k1 = fit(40), k2 = fit(52);
+          for (var i = 0; i < N; i++) {
+            var c = cells[i];
+            var p1 = c.x * k1 + c.y * k1 * 0.45;
+            var p2 = -c.x * k2 + c.y * k2 * 0.80;
+            /* A tile's phase never changes, so sin/cos of it are folded in once
+               here. Expanding sin(wT+p) then leaves the per-frame loop with no trig
+               at all: four multiplies and two adds per tile. */
+            sp1[i] = Math.sin(p1); cp1[i] = Math.cos(p1);
+            sp2[i] = Math.sin(p2); cp2[i] = Math.cos(p2);
+          }
+        })();
+
+        var scale = 1, dpr = 1;
+        function size() {
+          var r = cv.getBoundingClientRect();
+          if (!r.width) return false;
+          dpr = Math.min(window.devicePixelRatio || 1, 2);
+          cv.width = Math.round(r.width * dpr);
+          cv.height = Math.round(r.height * dpr);
+          scale = r.width / VW;
+          ctx.setTransform(dpr * scale, 0, 0, dpr * scale, 0, 0);
+          return true;
+        }
+
+        var byCol = {};
+        for (var i = 0; i < N; i++) (byCol[cells[i].c] || (byCol[cells[i].c] = [])).push(i);
+        var colours = Object.keys(byCol);
+
+        /* ---- The band also travels ----
+           A tile leaving the right edge comes back on the left, so the row runs
+           forever off one copy of the art. The wrap is only invisible because of
+           what the art is: both ends of the wave sit low, with their column tops
+           between 403 and 439, and neighbouring columns inside the mosaic already
+           step by as much as 24. The join is one more step of the same size, which
+           is why this needs no mirrored second copy and no crossfade.
+
+           The period is the viewBox width, and the columns are laid on a 5.77 grid
+           that divides into it, so a wrapped tile lands exactly on the lattice
+           rather than half a cell off it.
+
+           Held in art units and advanced per frame rather than computed from the
+           clock, so that changing scale on a resize changes the rate from that
+           point instead of jumping the whole band sideways. */
+        var scrollX = 0, lastT = 0;
+        var PXPS = 10;                  /* on-screen px per second: a drift, not a marquee */
+
+        function drawAll() {
+          ctx.clearRect(0, 0, VW, VH);
+          for (var k = 0; k < colours.length; k++) {
+            var col = colours[k], idx = byCol[col];
+            ctx.fillStyle = col;
+            ctx.beginPath();
+            for (var j = 0; j < idx.length; j++) {
+              var i2 = idx[j], c2 = cells[i2];
+              var X = c2.x + dx[i2] + scrollX;
+              if (X >= PER) X -= PER;
+              ctx.rect(X, c2.y + dy[i2], c2.w, c2.h);
+              /* the tile straddling the seam is drawn at both ends of it */
+              if (X + c2.w > PER) ctx.rect(X - PER, c2.y + dy[i2], c2.w, c2.h);
+            }
+            ctx.fill();
+          }
+        }
+
+        /* Displacement is a pure function of where the cursor is -- no velocity, no
+           spring. That is cotool's model and it is why the field snaps back the
+           instant the pointer leaves rather than wobbling home. An earlier version
+           here integrated a spring, which read as jelly instead of a disturbance. */
+        var px = 0, py = 0, hot = false;
+        function displace(T) {
+          /* The swell is the rest position now, so every tile is rewritten each
+             frame and there is no longer a list of touched indices to undo. */
+          var s1 = Math.sin(W1 * T), c1 = Math.cos(W1 * T);
+          var s2 = Math.sin(W2 * T), c2 = Math.cos(W2 * T);
+          for (var i = 0; i < N; i++) {
+            var a1s = sp1[i], a1c = cp1[i], a2s = sp2[i], a2c = cp2[i];
+            dx[i] = A1 * (s1 * a1c + c1 * a1s) + A2 * (s2 * a2c + c2 * a2s);
+            dy[i] = 0.62 * (A1 * (c1 * a1c - s1 * a1s) + A2 * (c2 * a2c - s2 * a2s));
+          }
+          if (hot) {
+            eachIn(px - INFLUENCE, py - INFLUENCE, px + INFLUENCE, py + INFLUENCE, function (i) {
+              var c = cells[i], X = c.x + c.w / 2, Y = c.y + c.h / 2;
+              var rx = X - px, ry = Y - py;
+              var dist = Math.sqrt(rx * rx + ry * ry);
+              if (dist >= INFLUENCE) return;
+              var t = 1 - dist / INFLUENCE;
+              var ox = jo[i] + 0.72 * jcx[i] +
+                       0.22 * Math.sin(0.016 * K * rx + 0.018 * K * X) +
+                       0.12 * Math.cos(0.012 * K * ry);
+              var oy = jp[i] + 0.72 * jcy[i] +
+                       0.22 * Math.cos(0.016 * K * ry + 0.018 * K * Y) +
+                       0.12 * Math.sin(0.012 * K * rx);
+              ox -= 0.2 * oy; oy += 0.2 * ox;                    /* swirl, not a radial shove */
+              var amp = t * t * t * (t * (6 * t - 15) + 10) * PUSH * (0.28 + 0.72 * jm[i]);
+              /* Added to the swell, not written over it, so a tile the cursor is
+                 pushing is still riding the wave underneath. */
+              dx[i] += ox * amp; dy[i] += oy * amp;
+            });
+          }
+          drawAll();
+        }
+
+        var raf = null, clientX = 0, clientY = 0, haveP = false;
+        function frame(now) {
+          raf = null;
+          if (lastT && scale) {
+            scrollX += (now - lastT) * 0.001 * (PXPS / scale);
+            if (scrollX >= PER) scrollX -= PER * Math.floor(scrollX / PER);
+          }
+          lastT = now;
+          hot = false;
+          if (haveP) {
+            /* One rect read per frame rather than per pointermove: the band moves
+               with the page, so the rect cannot be cached across a scroll. */
+            var r = cv.getBoundingClientRect();
+            if (r.width && clientX >= r.left && clientX <= r.right &&
+                clientY >= r.top && clientY <= r.bottom) {
+              hot = true;
+              /* Back out the travel: the tile under the cursor is not the tile whose
+                 home is there any more, and pushing by home position would make the
+                 disturbance sit somewhere the pointer is not. */
+              px = (clientX - r.left) / scale - scrollX;
+              if (px < 0) px += PER;
+              py = (clientY - r.top) / scale;
+            }
+          }
+          displace(now * 0.001);
+          schedule();
+        }
+        /* The swell never settles, so the loop is now continuous rather than
+           demand-driven. It is gated instead: parked while the band is scrolled
+           out of view or the tab is in the background, which is where a hero
+           animation would otherwise quietly burn a laptop battery all day. */
+        var onScreen = true, running = false;
+        function schedule() {
+          if (raf !== null || !running) return;
+          raf = requestAnimationFrame(frame);
+        }
+        function start() {
+          if (running || !onScreen || document.hidden) return;
+          /* Parking does not stop the clock, so the first frame back would carry the
+             whole gap and lurch the band forward. Start the delta again from here. */
+          lastT = 0;
+          running = true; schedule();
+        }
+        function stop() {
+          running = false;
+          if (raf !== null) { cancelAnimationFrame(raf); raf = null; }
+        }
+        /* The pointer NEVER reaches this canvas. The band sits at the bottom of the
+           hero's stacking order and every point over it hit-tests to one of the
+           absolutely positioned boxes painted after it -- the card, the tile grid,
+           their backdrops. Listening on the canvas looked correct in a test that
+           dispatched events straight at it, which is exactly the check that cannot
+           fail: dispatchEvent skips hit-testing. Listen on the window and decide
+           membership from the canvas's own rect instead.
+
+           The canvas is also click-through, so putting it under the hero cannot
+           swallow a press meant for the tabs or the CTAs. */
+        cv.style.pointerEvents = 'none';
+        var REDUCED = matchMedia('(prefers-reduced-motion:reduce)');
+        if (!REDUCED.matches) {
+          addEventListener('pointermove', function (e) {
+            clientX = e.clientX; clientY = e.clientY; haveP = true; schedule();
+          }, { passive: true });
+          addEventListener('pointerleave', function () {
+            haveP = false; schedule();
+          }, { passive: true });
+          addEventListener('blur', function () { haveP = false; });
+        }
+
+        if (!size()) return;
+        displace(0);
+        addEventListener('resize', function () {
+          clearTimeout(cv.__t);
+          cv.__t = setTimeout(function () { if (size()) drawAll(); }, 150);
+        });
+
+        if (REDUCED.matches) return;   /* one still frame, as drawn above */
+
+        if (window.IntersectionObserver) {
+          new IntersectionObserver(function (es) {
+            onScreen = es[0].isIntersecting;
+            if (onScreen) start(); else stop();
+          }, { rootMargin: '80px' }).observe(cv);
+        }
+        document.addEventListener('visibilitychange', function () {
+          if (document.hidden) stop(); else start();
+        });
+        start();
+      })
+      .catch(function () {});
+  }
+
+  function run() {
+    [].forEach.call(document.querySelectorAll('img.g-vec'), function (img) {
+      if (SRC.test(img.getAttribute('src') || '')) mount(img);
+    });
+  }
+  if (document.readyState === 'complete') setTimeout(run, 0);
+  else addEventListener('load', function () { setTimeout(run, 0); });
+})();
+</script>
+
+<style id="ax-prodtabs-css">
+/* 300ms / EASE_OUT again: every `Tab` node in both Container (Products) sets carries
+   transitionDuration 300 and transitionEasing EASE_OUT. */
+.ax-pt-tab{cursor:pointer}
+.ax-pt-tab:focus-visible{outline:2px solid #df3f17;outline-offset:2px}
+.ax-pt-box{transition:border-color .3s cubic-bezier(0,0,.58,1)}
+.ax-pt-lbl{transition:color .3s cubic-bezier(0,0,.58,1)}
+/* The panels are twelve unrelated product screenshots, so a cross-dissolve is the
+   honest read of the variant swap: there is nothing to tween between them. */
+.ax-pt-panel{transition:opacity .15s linear}
+/* Five products have no screenshot yet, so Figma composes their panel instead: the
+   shared illustrated backdrop, the product's lockup, and a Coming Soon button. Only
+   the backdrop is an image fill, which is why swapping the fill alone left all five
+   showing the same empty room. These two sit on top of it. */
+.ax-pt-art{position:absolute;pointer-events:none;user-select:none}
+.ax-pt-cta{position:absolute;display:flex;align-items:center;justify-content:center;
+  border-radius:0.8333vw;background-color:rgb(223,63,23);color:rgb(255,255,255);
+  font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:0.8333vw;
+  letter-spacing:0;white-space:nowrap;cursor:default}
 @media (prefers-reduced-motion:reduce){
-  .ax-fx-pill,.ax-fx-link,.ax-fx-soc,.ax-fx-note{transition:none}
-  .ax-fx-pill:hover,.ax-fx-soc:hover{transform:none}
+  .ax-pt-box,.ax-pt-lbl,.ax-pt-panel{transition:none}
 }
 </style>
 <script>
-/* ---- CHROME INTERACTIONS, NEWSLETTER, TITLE CASE ---- */
-(function(){
-  function txt(e){ return (e.textContent||'').replace(/\s+/g,' ').trim(); }
-  function num(el,k){
-    var m=(el.getAttribute('style')||'').match(new RegExp(k+':\\s*(-?[0-9.]+)vw'));
-    return m?parseFloat(m[1]):null;
+/* ---- PRODUCT TABS (the twelve-product strip) ----
+
+   Same problem as the hero tabs. In Figma this section is an INSTANCE of a
+   COMPONENT_SET with twelve variants and the tab click is a prototype variant swap
+   that the export cannot carry, so only the SupplierX variant survived and eleven of
+   the twelve tabs were inert.
+
+     desktop  set 6795:23870   instance 6795:23913
+     mobile   set 6893:27393   instance 6893:27539
+
+   What actually differs between the twelve variants is ONE thing: the screenshot
+   filling the tab panel. The heading, the strip and the panel frame are identical. So
+   this swaps the panel's background image and moves the active border, rather than
+   shipping twelve copies of the section.
+
+   The tables are generated, not hand-typed. `size` is the image rectangle's width and
+   height, and `sizing` is _gen.image_sizing_css() for that fill, so each crop matches
+   what a static export of that variant would have produced. Regenerate by walking the
+   component set and reading the first IMAGE fill under 'Tab Panel:margin'. Position is
+   deliberately absent: see apply().
+
+   Five products have no screenshot yet -- Setu Move, QuiC, Jarvis, Data Setu.ai and
+   Setu Edge -- and Figma composes their panel instead: one shared illustrated
+   backdrop, the product's own lockup, and a Coming Soon button. Only the backdrop is
+   an image fill, so swapping the fill alone left all five showing the same empty
+   room. Those three get `art`, `artBox` and `cta`, and the lockups are exported from
+   the design as SVG. Mobile bakes the same composition into one image per variant and
+   needs none of this; its only gap is Setu Edge, which still borrows Jarvis's. */
+(function () {
+  var SPEC = {
+    desktop: {
+      /* Desktop moves the border AND the label weight; mobile moves only the border,
+         because Figma's own mobile variants leave tab 0's label bold in every state. */
+      weights: true,
+      panes: [
+      { label: 'SupplierX',     ref: '59aaccb6d152a67424f6bd4fbf46df577bdd9ff5',
+        size: [71.6146, 46.8229],
+        sizing: 'background-size:71.6146vw 47.6095vw;background-position:-0.0000vw 0.0289vw;background-repeat:no-repeat;' },
+      { label: 'OrderX',        ref: '7f4ebb15712b6e8306e590a80755af65f4e5b1e8',
+        size: [71.5833, 52.6933],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'Xpense',        ref: '055a6847a0cb6e745984e1a704db491809493a01',
+        size: [71.6146, 40.3125],
+        sizing: 'background-size:71.9220vw 96.9014vw;background-position:-0.1419vw -0.0000vw;background-repeat:no-repeat;' },
+      { label: 'ManufeX',       ref: '94d8ee820081df4a95384f2b45e4c0892d857aa0',
+        size: [71.6146, 50.9375],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'LogytstiX',     ref: '2714267af9e02b4b2ebcea0c1790f496f03e7899',
+        size: [71.6146, 47.6562],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'CRM 360',       ref: 'a18023954288f9a1fc4834dd71f70970453a9ea3',
+        size: [71.6146, 34.6875],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'Setu Move',     ref: '5fd0e3417a71ad9ce0ea61b32d9cd17bdce414ca',
+        size: [71.5833, 29.9566],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;',
+        art: '/assets/vec/6890-7191.svg', artBox: [22.8750, 9.7500, 25.8333, 6.5625],
+        cta: [30.3229, 17.1979, 10.7812, 2.9167] },
+      { label: 'QuiC',          ref: '5fd0e3417a71ad9ce0ea61b32d9cd17bdce414ca',
+        size: [71.5833, 29.9566],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;',
+        art: '/assets/vec/6890-7433.svg', artBox: [27.4583, 9.7500, 16.6667, 6.5625],
+        cta: [30.3229, 17.1979, 10.7812, 2.9167] },
+      { label: 'Jarvis',        ref: '5fd0e3417a71ad9ce0ea61b32d9cd17bdce414ca',
+        size: [71.5833, 29.9566],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;',
+        art: '/assets/vec/6970-27176.svg', artBox: [32.4583, 9.7500, 6.5625, 6.5625],
+        cta: [30.3750, 17.1979, 10.7812, 2.9167] },
+      { label: 'AeonxIQ',       ref: 'e35ee9e51c72f197dcd30547c51270218a80b07b',
+        size: [71.5833, 34.3578],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'Data Setu.ai',  ref: '5fd0e3417a71ad9ce0ea61b32d9cd17bdce414ca',
+        size: [71.5833, 29.9566],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;',
+        art: '/assets/vec/6890-7467.svg', artBox: [22.3020, 9.7500, 26.9792, 6.5625],
+        cta: [30.3229, 17.1979, 10.7812, 2.9167] },
+      { label: 'Setu Edge',     ref: '5fd0e3417a71ad9ce0ea61b32d9cd17bdce414ca',
+        size: [71.5833, 29.9566],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;',
+        art: '/assets/vec/6962-7666.svg', artBox: [32.5104, 9.2812, 6.5625, 6.5625],
+        cta: [30.3750, 17.2500, 10.7812, 2.9167] }
+      ]
+    },
+    mobile: {
+      weights: false,
+      panes: [
+      { label: 'SupplierX',     ref: '59aaccb6d152a67424f6bd4fbf46df577bdd9ff5',
+        size: [92.5581, 60.4651],
+        sizing: 'background-size:92.5581vw 61.4809vw;background-position:-0.0000vw 0.0373vw;background-repeat:no-repeat;' },
+      { label: 'OrderX',        ref: '7f4ebb15712b6e8306e590a80755af65f4e5b1e8',
+        size: [92.5581, 68.1395],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'Xpense',        ref: '055a6847a0cb6e745984e1a704db491809493a01',
+        size: [92.5581, 52.093],
+        sizing: 'background-size:92.9555vw 125.2189vw;background-position:-0.1834vw -0.0000vw;background-repeat:no-repeat;' },
+      { label: 'ManufeX',       ref: '94d8ee820081df4a95384f2b45e4c0892d857aa0',
+        size: [92.5581, 65.814],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'LogytstiX',     ref: '2714267af9e02b4b2ebcea0c1790f496f03e7899',
+        size: [92.5581, 61.6279],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'CRM 360',       ref: 'a18023954288f9a1fc4834dd71f70970453a9ea3',
+        size: [92.5581, 44.8837],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'Setu Move',     ref: 'ee4434788170addd06348da234f893d00dafa364',
+        size: [92.5581, 60.4651],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'QuiC',          ref: '0ccfb371b06ba329344ddc992cf1ae382c8e04a1',
+        size: [92.5581, 60.4651],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'Jarvis',        ref: '1747adadc621799435cb0199e2362493ede4a712',
+        size: [92.5581, 60.4651],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'AeonxIQ',       ref: 'e35ee9e51c72f197dcd30547c51270218a80b07b',
+        size: [92.5581, 44.425],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'Data Setu.ai',  ref: '52e0c2a51736b95c964d9fed3772f646f8c94219',
+        size: [92.5581, 60.4651],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'Setu Edge',     ref: '1747adadc621799435cb0199e2362493ede4a712',
+        size: [92.5581, 60.4651],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' }
+      ]
+    }
+  };
+
+  var ACTIVE_BORDER = 'rgb(223, 63, 23)', IDLE_BORDER = 'rgb(213, 218, 226)';
+  var ACTIVE_TEXT = 'rgb(35, 39, 46)', IDLE_TEXT = 'rgb(82, 96, 119)';
+
+  function txt(e) { return (e.textContent || '').replace(/\s+/g, ' ').trim(); }
+  function norm(s) { return s.replace(/[^a-z0-9]/gi, '').toLowerCase(); }
+
+  /* Identified by contents, because _gen.py names every one of these layers
+     "Container". _uifx.html title-cases the labels ("QuiC" -> "Quic"), which is why
+     the comparison is on the normalised form. */
+  function findStrips() {
+    var out = [];
+    ['desktop', 'mobile'].forEach(function (key) {
+      var spec = SPEC[key];
+      var want = spec.panes.map(function (p) { return norm(p.label); });
+      [].forEach.call(document.querySelectorAll('.g-b.g-clip'), function (el) {
+        var mob = !!el.closest('.ax-mob');
+        if (mob !== (key === 'mobile')) return;
+        var labels = [].filter.call(el.children, function (c) { return c.classList.contains('g-t'); });
+        if (labels.length !== want.length) return;
+        if (!want.every(function (w, i) { return norm(txt(labels[i])) === w; })) return;
+        out.push({ strip: el, spec: spec, labels: labels });
+      });
+    });
+    return out;
   }
-  function setvw(el,k,v){
-    var s=el.getAttribute('style')||'';
-    el.setAttribute('style', s.replace(new RegExp(k+':\\s*-?[0-9.]+vw'), k+':'+v.toFixed(4)+'vw'));
-  }
-  function pillOf(label){
-    /* Figma exports the coloured rect and its label as SIBLINGS, so closest() walks
-       past the pill onto the whole section -- find the smallest box that contains
-       the label's own rect instead. */
-    var lr=label.getBoundingClientRect();
-    if(!lr.width) return null;
-    var best=null,ba=Infinity;
-    var scope=label.closest('section,header,main')||document;
-    scope.querySelectorAll('.g-b').forEach(function(b){
-      if(b.contains(label)&&b!==label.parentElement) return;
-      var br=b.getBoundingClientRect();
-      if(!br.width) return;
-      if(br.width*br.height>lr.width*lr.height*14) return;
-      if(lr.left>=br.left-4&&lr.right<=br.right+4&&lr.top>=br.top-6&&lr.bottom<=br.bottom+6){
-        var a=br.width*br.height; if(a<ba){ba=a;best=b;}
+
+  function wire(w) {
+    var strip = w.strip, spec = w.spec, labels = w.labels;
+    var boxes = [].filter.call(strip.children, function (c) {
+      return c.classList.contains('g-b') && !c.classList.contains('g-clip');
+    });
+    if (boxes.length !== labels.length) return;
+
+    /* The panel is the image the first variant shipped with. Looking it up by that ref
+       rather than by position means a section reshuffle cannot silently retarget it. */
+    var scope = strip.closest('.ax-mob') || document;
+    /* The attribute value is quoted by JSON.stringify rather than by literal quote
+       characters in the source. _gen.py's export report and _imgfetch.py both scan the
+       whole page for the raster-fill attribute pattern, and a selector written the
+       obvious way is picked up as if it were a real image reference. */
+    var panel = scope.querySelector('.g-img[data-ref=' + JSON.stringify(spec.panes[0].ref) + ']');
+    if (!panel) return;
+
+    var current = 0, token = 0;
+
+    function apply(i) {
+      var p = spec.panes[i];
+      panel.setAttribute('data-ref', p.ref);
+      /* Size only. The panel's left/top are NOT set here, and must not be: every one
+         of the twelve variants shares a single box origin, so there was never anything
+         to switch, and the value is relative to the Figma node that clips the panel
+         rather than to the element's DOM offset parent. On desktop those happen to be
+         the same node and writing it looked harmless; on mobile they are not, and it
+         threw the panel to the top of the page, where it sat behind the fixed navbar
+         and peeked out above and below it. The generator already places this element
+         correctly for every variant. */
+      panel.style.width = p.size[0] + 'vw';
+      panel.style.height = p.size[1] + 'vw';
+      /* The export writes background sizing as a shorthand-free set of longhands; drop
+         the old ones wholesale rather than trying to override each. */
+      panel.style.cssText = panel.style.cssText.replace(
+        /background-size:[^;]*;?|background-position:[^;]*;?|background-repeat:[^;]*;?/g, '');
+      panel.style.backgroundImage = 'url(/assets/gen/' + p.ref + '.png)';
+      panel.style.cssText += ';' + p.sizing;
+      dressPanel(p);
+    }
+
+    /* The lockup and the button are made once and moved, rather than rebuilt per
+       switch: a fresh <img> per click re-decodes the SVG and flickers. Coordinates
+       come straight out of Figma, relative to the panel image's own rectangle, in
+       the same 1920-based vw the rest of the page is laid out in. */
+    var art = null, cta = null;
+    function place(el, box) {
+      el.style.left = box[0] + 'vw'; el.style.top = box[1] + 'vw';
+      el.style.width = box[2] + 'vw'; el.style.height = box[3] + 'vw';
+    }
+    function dressPanel(p) {
+      if (!p.art) {
+        if (art) art.hidden = true;
+        if (cta) cta.hidden = true;
+        return;
       }
+      if (!art) {
+        art = document.createElement('img');
+        art.className = 'ax-pt-art';
+        art.setAttribute('alt', '');
+        art.setAttribute('aria-hidden', 'true');
+        panel.appendChild(art);
+      }
+      if (!cta) {
+        cta = document.createElement('div');
+        cta.className = 'ax-pt-cta';
+        /* Not a control: it announces that there is nothing to click yet. Marked as
+           owned so the dead-button sweep leaves it the colour Figma gave it. */
+        cta.setAttribute('data-ax-owned', '1');
+        panel.appendChild(cta);
+      }
+      if (art.getAttribute('src') !== p.art) art.setAttribute('src', p.art);
+      cta.textContent = 'Coming Soon';
+      place(art, p.artBox);
+      place(cta, p.cta);
+      art.hidden = false; cta.hidden = false;
+    }
+
+    function select(i, animate) {
+      if (animate && i === current) return;
+      current = i;
+      var mine = ++token;
+
+      boxes.forEach(function (b, n) { b.style.borderColor = n === i ? ACTIVE_BORDER : IDLE_BORDER; });
+      labels.forEach(function (l, n) {
+        l.setAttribute('aria-selected', n === i ? 'true' : 'false');
+        l.tabIndex = n === i ? 0 : -1;
+        if (!spec.weights) return;
+        l.style.color = n === i ? ACTIVE_TEXT : IDLE_TEXT;
+        l.style.fontWeight = n === i ? '600' : '400';
+      });
+
+      if (!animate) { apply(i); return; }
+
+      /* Hold the fade open until the screenshot has actually decoded: these are 1-2MB
+         PNGs, and swapping on a fixed timer showed an empty panel on a cold cache. */
+      var ready = false, faded = false;
+      var img = new Image();
+      var swap = function () {
+        if (!ready || !faded || token !== mine) return;
+        apply(i);
+        panel.style.opacity = '1';
+      };
+      img.onload = img.onerror = function () { ready = true; swap(); };
+      img.src = '/assets/gen/' + spec.panes[i].ref + '.png';
+
+      panel.style.opacity = '0';
+      setTimeout(function () { faded = true; swap(); }, 150);
+    }
+
+    strip.setAttribute('role', 'tablist');
+
+    /* One capture listener on the strip rather than one per tab. _uifx.html's CTA pass
+       binds its own click handler to whichever labels it decides are links -- here it
+       claimed SupplierX, OrderX, Xpense and ManufeX -- and it is injected first, so a
+       per-label listener of ours is registered second and never sees the event. Capture
+       runs outermost-in, so a listener on their shared ancestor beats all of them.
+
+       This is why those four tabs did nothing. It went unnoticed because the obvious
+       test walks the tabs in order, and clicking tab 0 while tab 0 is already selected
+       is indistinguishable from a tab that works. */
+    strip.addEventListener('click', function (e) {
+      var t = e.target, idx = -1;
+      while (t && t !== strip && idx < 0) {
+        idx = labels.indexOf(t);
+        if (idx < 0) idx = boxes.indexOf(t);
+        t = t.parentElement;
+      }
+      if (idx < 0) return;
+      e.preventDefault();
+      e.stopPropagation();
+      select(idx, true);
+      labels[idx].focus();
+    }, true);
+
+    labels.forEach(function (l, i) {
+      l.classList.add('ax-pt-tab', 'ax-pt-lbl');
+      l.setAttribute('role', 'tab');
+      boxes[i].classList.add('ax-pt-box', 'ax-pt-tab');
+      /* Undo the CTA pass's own treatment so these read as tabs, not links. */
+      l.classList.remove('ax-fx-link');
+      boxes[i].classList.remove('ax-fx-link');
+      if (boxes[i].getAttribute('role') === 'link') boxes[i].removeAttribute('role');
+      if (l.getAttribute('href') === '#') l.removeAttribute('href');
+      var go = function (e) { e.preventDefault(); select(i, true); l.focus(); };
+      l.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') return go(e);
+        var d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+        if (!d) return;
+        e.preventDefault();
+        var n = (i + d + labels.length) % labels.length;
+        select(n, true);
+        labels[n].focus();
+        if (labels[n].scrollIntoView) labels[n].scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      });
+    });
+
+    unclip(strip, boxes);
+    alignRow(strip, boxes, labels);
+
+    /* The icons sit between the boxes and the labels in the flat export and would
+       otherwise swallow the click. */
+    [].forEach.call(strip.querySelectorAll('.g-vec, .g-img'), function (v) {
+      if (v !== panel) v.style.pointerEvents = 'none';
+    });
+
+    select(0, false);
+    setTimeout(function () { panel.classList.add('ax-pt-panel'); }, 0);
+  }
+
+  /* Figma's own strip clips two of its tabs, and the export reproduces it faithfully.
+     The QuiC tab is 5.6px taller than the row because its logo carries a strapline,
+     and the Setu Edge tab's right edge lands exactly on the strip's, so overflow:hidden
+     eats one border off each. The strip paints nothing itself -- no background, no
+     border of its own -- so adjusting its clip box is invisible, and nothing sits to
+     its right. */
+  function unclip(strip, boxes) {
+    var W = parseFloat(strip.style.width), H = parseFloat(strip.style.height);
+    if (isNaN(W) || isNaN(H)) return;
+
+    var maxRight = 0;
+    boxes.forEach(function (b) {
+      maxRight = Math.max(maxRight, parseFloat(b.style.left) + parseFloat(b.style.width));
+    });
+    /* Only when the row actually fits. The mobile strip is a horizontal scroller whose
+       tabs are meant to run well past its edge; widening that would defeat it. */
+    if (maxRight > W + 0.5) return;
+
+    /* A hair over, so the last tab's border is not lost to sub-pixel rounding at the
+       clip boundary. box-sizing draws it inside the tab, so it fits arithmetically and
+       only rounding takes it. */
+    strip.style.width = (W + 0.05).toFixed(4) + 'vw';
+
+    boxes.forEach(function (b) {
+      var h = parseFloat(b.style.height);
+      if (isNaN(h) || h <= H + 1e-6) return;
+      /* Bring the tall tab back to the row height rather than growing the strip: the
+         panel sits flush under the strip, so a taller strip would drop that border on
+         top of it. Figma grew the box symmetrically, so its icon and label sit half the
+         difference low and read as misaligned against the other eleven -- lift them by
+         the same half so the whole row lines up. */
+      var shift = (h - H) / 2;
+      var l = parseFloat(b.style.left), w = parseFloat(b.style.width);
+      [].forEach.call(strip.children, function (c) {
+        if (c === b) return;
+        var cl = parseFloat(c.style.left);
+        if (isNaN(cl) || cl < l - 0.01 || cl > l + w + 0.01) return;
+        var ct = parseFloat(c.style.top);
+        if (!isNaN(ct)) c.style.top = (ct - shift).toFixed(4) + 'vw';
+      });
+      b.style.height = H.toFixed(4) + 'vw';
+    });
+  }
+
+  /* The most common value in a list, used to decide what "the row" is rather than
+     trusting tab 0: whichever metric ten or eleven of the twelve tabs share is the
+     row, and the odd ones out are the slips. */
+  function modal(vals) {
+    var n = {}, best = null;
+    vals.forEach(function (v) {
+      if (v == null) return;
+      n[v] = (n[v] || 0) + 1;
+      if (best === null || n[v] > n[best]) best = v;
     });
     return best;
   }
-  function go(el,url,blank){
-    el.setAttribute('role','link');
-    el.dataset.axTo=url;
-    if(!el.hasAttribute('tabindex')) el.setAttribute('tabindex','0');
-    var nav=function(){ blank?window.open(url,'_blank','noopener'):(location.href=url); };
-    el.addEventListener('click',nav);
-    el.addEventListener('keydown',function(e){
-      if(e.key==='Enter'||e.key===' '){ e.preventDefault(); nav(); }
-    });
-  }
 
-  /* ---------- 0. COPY DEFECTS CARRIED IN FROM FIGMA ----------
-     Two unambiguous misspellings ship in the design and would go out at launch:
-     "Send RPF Request" (RFP) and "Ahmadabad" (the footer and the rest of the site
-     spell it Ahmedabad). Corrected at runtime rather than in the generated markup,
-     because these pages are rebuilt from the Figma dump and a file edit would be
-     wiped. Anything needing real content -- the truncated "Gujara." address line and
-     the stock "John Doe" testimonial headshot -- is left alone for the client. */
-  var COPY_FIX=[[/\bSend RPF Request\b/g,'Send RFP Request'],[/\bAhmadabad\b/g,'Ahmedabad'],
-                [/\bSaas\b/g,'SaaS'],
-                /* Figma ships this line cut off mid-word on 26 nodes across the
-                   industries pages: "...at Level 4 autonom". */
-                [/at Level 4 autonom(?!y)/g,'at Level 4 autonomy.'],
-                /* Figma spells it "COSTUMER IN THIS VERTICAL" on all six
-                   industries pages. The rest of the site says Customer. */
-                [/\bCOSTUMER\b/g,'CUSTOMER'],[/\bCostumer\b/g,'Customer'],
-                /* The trinity band's first card is authored "01/SAP" on all ten of
-                   its instances while its own siblings are "02 / CLOUD" and
-                   "03 / AI" -- one card visibly set tighter than the other two. */
-                [/\b01\/SAP\b/g,'01 / SAP'],
-                /* Figma spells the product names three ways ("Logystix" in the footer,
-                   "LogystiX" on the cards). One casing per brand, sitewide. */
-                [/\bLogystix\b/g,'LogystiX'],[/\bManuFex\b/g,'ManufeX'],[/\bManufex\b/g,'ManufeX'],
-                [/\bSupplierx\b/g,'SupplierX'],[/\bOrderx\b/g,'OrderX'],[/\bAeonx\b/g,'AeonX']];
-  function copyFix(){
-    [].slice.call(document.querySelectorAll('.g-t,section.ax-footer a,.ax-mm2__ln,.ax-nav__link')).forEach(function(e){
-      if(e.children.length) return;
-      var t=e.textContent, o=t;
-      COPY_FIX.forEach(function(f){ t=t.replace(f[0],f[1]); });
-      if(t!==o) e.textContent=t;
-    });
-  }
+  /* Setu Edge is drawn to different metrics than the other eleven: its icon box is
+     28px where theirs are 36, and because the box is shorter its label sits 4px above
+     the row. The icon is centred correctly, so only its size is wrong; the label is
+     genuinely out of line, and that is what reads as a misaligned cell. */
+  function alignRow(strip, boxes, labels) {
+    var lt = modal(labels.map(function (l) { return l.style.top; }));
+    if (lt) labels.forEach(function (l) { if (l.style.top !== lt) l.style.top = lt; });
 
-  /* ---------- 0b. LATIN PLACEHOLDER ----------
-     The three job openings on /who-we-are/career/ ship their descriptions as
-     "Lorem ipsum dolor sit amet..." on both breakpoints. The roles, locations and
-     Apply buttons are real, so a candidate reads real titles against Latin filler.
-     Real copy is the client's to write, and inventing job descriptions for a real
-     company's openings is not ours to do, so the placeholder is hidden instead:
-     the listing keeps its title, location and Apply button and simply carries no
-     description until AeonX supplies one.
-     Hidden at runtime for the same reason as the copy fixes above -- these pages
-     are regenerated from the Figma dump, which still contains the Latin. */
-  var LATIN=/\blorem ipsum dolor sit amet\b/i;
-  function hidePlaceholderCopy(){
-    [].slice.call(document.querySelectorAll('.g-t')).forEach(function(e){
-      if(e.children.length) return;
-      if(!LATIN.test(e.textContent)) return;
-      e.textContent='';
-      e.style.display='none';
-    });
-  }
-
-  /* ---------- 1. TITLE CASE ON CTA LABELS ----------
-     Client asked for Title Case on EVERY button. The first version matched an
-     allow-list of known labels, so anything the list did not name -- "Download the
-     brochure" was the one that got reported -- shipped in sentence case. A label is
-     now Title Cased when the ELEMENT IS A BUTTON, decided from the markup rather
-     than from its wording: it carries a control role (data-cta / data-axpill /
-     role=link|button, or it is a chrome button class), or it sits inside a pill --
-     a box with a background colour and a corner radius that is not much bigger than
-     the label itself. Headings, card titles and body copy fail that test. */
-  var ACR={aws:'AWS',sap:'SAP',ams:'AMS',ai:'AI',ml:'ML',cms:'CMS',erp:'ERP',gcp:'GCP',
-           ecs:'ECS',waf:'WAF',axiom:'AXIOM',api:'API',saas:'SaaS',rise:'RISE',grow:'GROW',
-           bse:'BSE',noc:'NOC',sre:'SRE',hana:'HANA',btp:'BTP',iot:'IoT',rfp:'RFP',rpf:'RPF',
-           ecc:'ECC',fmcg:'FMCG',ap:'AP',
-           iepf:'IEPF',pdf:'PDF',hr:'HR',it:'IT',ceo:'CEO',cio:'CIO',cfo:'CFO',esg:'ESG',
-           brsr:'BRSR',agm:'AGM',faq:'FAQ',us:'Us',iq:'IQ',fy:'FY',soc:'SOC',iso:'ISO',
-           gdpr:'GDPR',sla:'SLA',
-           /* product names carry internal capitals -- Title Case must not flatten
-              them to "Supplierx" */
-           aeonx:'AeonX',supplierx:'SupplierX',orderx:'OrderX',xpense:'Xpense',
-           logystix:'LogystiX',manufex:'ManufeX',aeonxiq:'AeonX.IQ',axiomai:'AXIOM AI'};
-  /* Title case leaves short function words lowercase -- capitalising every word is
-     Start Case, and it changed the meaning of SAP's own product names: "RISE with
-     SAP" and "GROW with SAP" came out "RISE With SAP" / "GROW With SAP" on 34 and 33
-     pages. It also pushed every CTA away from the Figma copy ("Read the story" ->
-     "Read The Story"). A leading word is always capitalised. */
-  var MINOR=/^(a|an|the|and|but|or|nor|for|of|to|in|on|at|by|as|per|via|with|from|into|over|up)$/;
-  function titleCase(s){
-    /* Hyphenated compounds are ONE word: "SAP-on-AWS" must not become
-       "SAP-On-AWS". Capitalise the first part, keep the rest as written unless it
-       is a known acronym. */
-    var first=true;
-    return s.split(/(\s+)/).map(function(word){
-      if(/^\s+$/.test(word)||!word) return word;
-      var wasFirst=first; first=false;
-      if(!wasFirst && MINOR.test(word.toLowerCase()) && !ACR[word.toLowerCase()]) return word.toLowerCase();
-      if(word.indexOf('-')>-1){
-        return word.split('-').map(function(part,i){
-          var low=part.toLowerCase();
-          if(ACR[low]) return ACR[low];
-          if(i===0) return low.charAt(0).toUpperCase()+low.slice(1);
-          return part;                       /* keep the author's casing */
-        }).join('-');
-      }
-      /* A possessive "'s" is part of the word it follows, not a new word --
-         splitting on the apostrophe capitalised it on its own: "Partner's Hub"
-         came out "Partner'S Hub". */
-      return word.toLowerCase().replace(/[a-z0-9]+/g, function(w, i, full){
-        if(w==='s' && /['’]/.test(full.charAt(i-1))) return w;
-        return ACR[w] || (w.charAt(0).toUpperCase()+w.slice(1));
+    /* One icon element per tab, found by horizontal containment. Some mobile tabs nest
+       their art deeper than the strip's own children, so those resolve to nothing and
+       are left alone rather than guessed at. */
+    var icons = boxes.map(function (b) {
+      var l = parseFloat(b.style.left), w = parseFloat(b.style.width);
+      var hits = [].filter.call(strip.children, function (c) {
+        if (c === b || c.classList.contains('g-t') || c.classList.contains('ax-pt-box')) return false;
+        var cl = parseFloat(c.style.left);
+        return !isNaN(cl) && cl >= l - 0.01 && cl <= l + w + 0.01;
       });
-    }).join('');
-  }
-  /* a pill: painted box, rounded, and sized like a button around this label */
-  function inPill(l){
-    var lr=l.getBoundingClientRect();
-    if(!lr.width||lr.height>60) return false;
-    var p=l.parentElement, hops=0;
-    while(p&&hops<3){
-      var st=p.getAttribute&&p.getAttribute('style')||'';
-      if(/background-color|background:/.test(st)&&/border-radius/.test(st)){
-        var pr=p.getBoundingClientRect();
-        if(pr.width&&pr.width*pr.height<=lr.width*lr.height*14) return true;
-      }
-      p=p.parentElement; hops++;
-    }
-    /* Figma also exports the pill as a SIBLING rect behind the label */
-    var pill=pillOf(l);
-    if(pill){
-      var ps=pill.getAttribute('style')||'';
-      if(/background-color/.test(ps)&&/border-radius/.test(ps)) return true;
-    }
-    return false;
-  }
-  function isControl(e){
-    if(e.dataset&&(e.dataset.cta||e.dataset.axcta||e.dataset.axpill)) return true;
-    var role=e.getAttribute('role')||(e.parentElement&&e.parentElement.getAttribute('role'));
-    if(role==='link'||role==='button'||role==='tab') return true;
-    if(e.closest('a[href]')) return true;
-    if(/ax-nav__btn|ax-mm2__feat-btn|ax-mm2__api-btn|ax-fx-pill/.test(e.className||'')) return true;
-    return false;
-  }
-  /* Labels that must keep their exact casing: legal names, addresses, taglines that
-     merely happen to sit inside a painted box. Anything longer than a button label
-     is skipped anyway. */
-  var KEEP=/@|\bhttps?:|^\+?\d|·|©/;
-  /* The leadership department tabs ship as PRACTICE & PROGRAMME / SALES & GROWTH --
-     segmented-control labels, not sentence-case buttons, same register as the FY
-     chips and the AWS competency tabs elsewhere on the site. Only the ACTIVE tab is
-     exported with a fill (inPill() reads background-color), so this pass Title Cased
-     it while its unfilled sibling stayed authored-caps -- one tab visibly mismatched
-     the other. Worse, _leadtabs.html identifies both tabs by matching this EXACT
-     uppercase text; once mutated, its setup() no longer recognised them and neither
-     tab responded to a click. Keep both as authored so identification and casing
-     both stay correct.
+      return hits.length === 1 ? hits[0] : null;
+    });
 
-     The homepage mobile hero's SERVICES / PRODUCT toggle is the same shape and broke
-     the same way: Figma exports a fill on the ACTIVE tab only, so inPill() saw
-     PRODUCT and not SERVICES, and the pair rendered "Product | SERVICES". Both are
-     authored caps in Figma; both stay caps. */
-  var KEEP_LIT=['PRACTICE & PROGRAMME','SALES & GROWTH','PRODUCT','SERVICES'];
-  function applyTitleCase(root){
-    (root||document).querySelectorAll('.g-t,.ax-mm2__feat-btn,.ax-mm2__api-btn').forEach(function(e){
-      if(e.children.length) return;                     /* leave rich labels alone */
-      /* The two nav buttons ship uppercase in the markup and the client wants them
-         kept that way -- TALK TO US / REQUEST A PROPOSAL. Title Case is for the CTAs
-         in the page body, not for the fixed chrome. */
-      if(e.closest('header')||e.closest('.ax-nav')||e.closest('.ax-mnav')) return;
-      if(e.closest('section.ax-footer')&&!isControl(e)) return;
-      var t=txt(e);
-      if(!t||t.length>34||KEEP.test(t)||KEEP_LIT.indexOf(t)!==-1) return;
-      /* A label the design sets in ALL CAPS is a design decision, not a sentence
-         waiting to be cased. The nav buttons were already exempted by hand for this
-         reason; the same is true of every other caps label, and title-casing them was
-         actively wrong -- it flattened acronyms the ACR map does not list ("FMCG &
-         Distribution" -> "Fmcg & Distribution" on 33 pages, "AP" -> "Ap") and rewrote
-         the leadership cards' JOB TITLES ("CHIEF FINANCIAL OFFICER" -> "Chief
-         Financial Officer", "VICE PRESIDENT", "HEAD OF OPERATIONS"), which are not
-         buttons at all and only qualified because they sit in a painted card.
-         The client's ask was Title Case on sentence-case CTAs -- "Download the
-         brochure", "Read the story" -- and those are untouched by this. */
-      if(t===t.toUpperCase()&&/[A-Z]{2}/.test(t)) return;
-      /* A clickable CARD is not a button: its title is set at heading size. Compare
-         in vw, not px -- the mobile block is authored against a 430px design, so its
-         16px button label computes to ~54px when the desktop viewport is 1440 and a
-         px threshold silently skipped every mobile button. */
-      var fsvw=(parseFloat(getComputedStyle(e).fontSize)||0)*100/(window.innerWidth||1920);
-      if(fsvw > (e.closest('.ax-mob')?5.0:1.05)) return;
-      if(!isControl(e)&&!inPill(e)) return;
-      var tc=titleCase(t);
-      if(tc!==t) e.textContent=tc;
+    /* Height, not width: the QuiC logo is legitimately wider than the rest because it
+       carries a strapline, and it already matches the row's height. */
+    var ih = modal(icons.map(function (i) { return i && i.style.height; }));
+    if (!ih) return;
+    icons.forEach(function (ic) {
+      if (!ic || ic.style.height === ih) return;
+      var h = parseFloat(ic.style.height), w = parseFloat(ic.style.width);
+      var t = parseFloat(ic.style.top), l = parseFloat(ic.style.left);
+      var nh = parseFloat(ih);
+      if (isNaN(h) || isNaN(w) || isNaN(t) || isNaN(l) || !h) return;
+      var nw = w * (nh / h);
+      /* Grow about the centre it already sits on, so the row's optical line holds. */
+      ic.style.height = nh.toFixed(4) + 'vw';
+      ic.style.width = nw.toFixed(4) + 'vw';
+      ic.style.top = (t - (nh - h) / 2).toFixed(4) + 'vw';
+      ic.style.left = (l - (nw - w) / 2).toFixed(4) + 'vw';
     });
   }
 
-  /* ---------- 1c. TRAILING ARROW OVERLAPPING ITS LABEL ----------
-     Figma sizes a button's text box to the string as IT measures it, then parks the
-     trailing arrow at a fixed offset. Browser metrics for Nunito Sans run a little
-     wider, so a long label fills its box and runs under the arrow -- "All Case
-     Studies" overlapped by 8px. Rather than nudge that one button, re-centre the
-     pair as a GROUP (ink + gap + arrow) inside the pill whenever they actually
-     collide, which is what the design draws and is stable at any width. */
-  /* ---- TRAILING GLYPH SITTING ON TOP OF ITS LABEL ----
-     Figma sizes a label box to ITS OWN text metrics and parks the trailing chevron
-     at a fixed offset after that box. Nunito Sans renders a little wider here, so a
-     label overruns its box and the glyph lands on the last letters -- the insights
-     case-study cards showed "Read the story" with the chevron 12px INSIDE the ink.
-     spaceArrows() cannot do this job: it only walks .ax-hv-arrow, and it re-centres
-     the pair inside the surrounding box, which for a card CTA resolves to the whole
-     card. This nudges the GLYPH only, only when it actually overlaps, and only far
-     enough to restore the gap the design gave it after the box. Idempotent: once
-     moved the glyph already clears the ink, so a second run is a no-op. */
-  function clearTrailingGlyphs(){
-    var glyphs=[].slice.call(document.querySelectorAll('main.ax-page img.g-vec'))
-      .filter(function(g){
-        if(g.closest('.ax-mob')) return false;
-        var r=g.getBoundingClientRect();
-        return r.width && r.width<=60 && r.height<=60;
-      }).map(function(g){ return {el:g, r:g.getBoundingClientRect()}; });
-    if(!glyphs.length) return;
-    [].slice.call(document.querySelectorAll('main.ax-page .g-t')).forEach(function(l){
-      if(l.closest('.ax-mob')||l.children.length) return;
-      var s=txt(l); if(!s||s.length>40) return;
-      var lr=l.getBoundingClientRect(); if(!lr.width) return;
-      var rng=document.createRange(); rng.selectNodeContents(l);
-      var ink=rng.getBoundingClientRect(); if(!ink.width) return;
-      var mid=lr.top+lr.height/2;
-      var g=glyphs.filter(function(o){
-        return Math.abs((o.r.top+o.r.height/2)-mid)<Math.max(12,lr.height*0.8) &&
-               o.r.left>=lr.left && o.r.left<lr.right+70;
-      }).sort(function(a,b){ return a.r.left-b.r.left; })[0];
-      if(!g) return;
-      var el=g.el, st=el.getAttribute('style')||'';
-      var m=st.match(/left:\s*(-?[\d.]+)vw/); if(!m) return;
-      /* the gap the design drew AFTER the box, captured once */
-      if(el.dataset.axGap===undefined)
-        el.dataset.axGap=String(Math.max(2, g.r.left-lr.right));
-      var want=ink.right+parseFloat(el.dataset.axGap);
-      var d=want-g.r.left;
-      if(d<=0.5) return;                       /* label fits its box: leave alone */
-      var vwpx=(document.documentElement.clientWidth||1920)/100;
-      el.setAttribute('style', st.replace(/left:\s*-?[\d.]+vw/,
-        'left:'+(parseFloat(m[1])+d/vwpx).toFixed(4)+'vw'));
-    });
-  }
+  function init() { findStrips().forEach(wire); }
 
-  function spaceArrows(){
-    [].slice.call(document.querySelectorAll('.ax-hv-arrow')).forEach(function(a){
-      var ar=a.getBoundingClientRect();
-      if(!ar.width) return;
-      var pill=null,best=Infinity;
-      [].slice.call(document.querySelectorAll('.g-b')).forEach(function(b){
-        var r=b.getBoundingClientRect();
-        if(!r.width||r.width>600) return;
-        if(ar.left<r.left-4||ar.right>r.right+4||ar.top<r.top-6||ar.bottom>r.bottom+6) return;
-        var area=r.width*r.height; if(area<best){ best=area; pill=b; }
-      });
-      if(!pill) return;
-      var pr=pill.getBoundingClientRect();
-      var lbl=[].slice.call(document.querySelectorAll('.g-t')).filter(function(t){
-        /* A tab is not a CTA. The hero's Products/AI Agents/Services labels sit in a
-           painted strip that looks exactly like a pill, so this pass used to centre
-           them against a phantom arrow and shift "AI Agents" 3px off the position
-           Figma exported. _herotabs.html claims them at parse time, before this runs. */
-        if(t.classList.contains('ax-ht-tab')) return false;
-        var r=t.getBoundingClientRect();
-        return r.width&&r.left>=pr.left-4&&r.right<=pr.right+4&&
-               r.top>=pr.top-6&&r.bottom<=pr.bottom+6&&txt(t);
-      })[0];
-      if(!lbl) return;
-      var rng=document.createRange(); rng.selectNodeContents(lbl);
-      var ink=rng.getBoundingClientRect();
-      if(!ink.width) return;
-      if(Math.min(ink.right,ar.right)-Math.max(ink.left,ar.left)<=0) return;   /* no collision */
-
-      var vwpx=(document.documentElement.clientWidth||1920)/100;
-      var gap=Math.max(6,ar.width*0.35);
-      var group=ink.width+gap+ar.width;
-      var lLeft=num(lbl,'left'), aLeft=num(a,'left');
-      if(lLeft===null||aLeft===null) return;
-      /* Centre the pair only inside a real PILL -- a painted box that hugs its
-         label. The smallest box around a card's "Read the story" is the CARD, and
-         centring in that pushed the label off the title it is supposed to line up
-         with (12px on the first card, 40px by the third). There the job is only to
-         stop the chevron overlapping the words: leave the label where the design
-         put it and move the arrow. */
-      var pcs=getComputedStyle(pill);
-      var painted=(pcs.backgroundColor&&pcs.backgroundColor!=='rgba(0, 0, 0, 0)')||
-                  pcs.borderTopWidth!=='0px';
-      if(!(painted&&pr.width<=group+80)){
-        setvw(a,'left', aLeft+((ink.right+gap)-ar.left)/vwpx);
-        return;
-      }
-      /* never let the group grow past the pill: fall back to just clearing the text */
-      var start=(group<=pr.width-10) ? pr.left+(pr.width-group)/2 : pr.left+5;
-      setvw(lbl,'left', lLeft+(start-ink.left)/vwpx);
-      setvw(a,   'left', aLeft+((start+ink.width+gap)-ar.left)/vwpx);
-    });
-  }
-
-  /* ---------- 2. NAV + FOOTER AFFORDANCES ---------- */
-  function armChrome(){
-    document.querySelectorAll('.ax-nav__btn').forEach(function(b){ b.classList.add('ax-fx-pill'); });
-    document.querySelectorAll('.ax-nav__soc').forEach(function(a){ a.classList.add('ax-fx-soc'); });
-    document.querySelectorAll('.ax-mm2__api-btn,.ax-mm2__feat-btn,.ax-mm2__ln').forEach(function(a){
-      a.classList.add('ax-fx-link');
-    });
-    var foot=document.querySelector('section.ax-footer');
-    if(!foot) return;
-    foot.querySelectorAll('a[href]').forEach(function(a){ a.classList.add('ax-fx-link'); });
-
-    /* Get Started -- a filled pill in the footer, previously inert */
-    [].slice.call(foot.querySelectorAll('.g-t')).forEach(function(l){
-      var t=txt(l);
-      if(!/^get started$/i.test(t)) return;
-      var pill=pillOf(l)||l;
-      pill.classList.add('ax-fx-pill');
-      l.style.pointerEvents='none';
-      if(!pill.dataset.axfx){ pill.dataset.axfx='1'; go(pill,'/contact-us/'); }
-    });
-
-    /* Follow Us: LinkedIn resolves to the real company page (taken from the live
-       site, not guessed). Twitter has no account linked anywhere on aeonx.digital,
-       so it gets the hover affordance but no destination rather than a made-up one. */
-    /* Verified accounts. X and YouTube are not linked anywhere on aeonx.digital,
-       so they were tracked down separately and confirmed against the company's own
-       posts before being wired. "Twitter" is kept as a key because the footer copy
-       still says Twitter while the nav has moved to the X mark. */
-    var SOC={ 'linkedin':'https://www.linkedin.com/company/aeonx-digital/',
-              'facebook':'https://www.facebook.com/aeonx.digital',
-              'instagram':'https://www.instagram.com/aeonx.digital/',
-              'twitter':'https://x.com/AeonXDigital',
-              'x':'https://x.com/AeonXDigital',
-              'youtube':'https://www.youtube.com/channel/UCiB9FZmN6-uiK-Y3cHO_bTA' };
-    [].slice.call(foot.querySelectorAll('.g-t')).forEach(function(l){
-      var k=txt(l).toLowerCase();
-      var url=SOC[k];
-      if(!url||l.dataset.axfx) { l.classList.add('ax-fx-link'); return; }
-      /* Real <a>, not a JS role=link: these should open in a new tab, offer a
-         context menu, copy the address, and be readable by anything that walks
-         links. The anchor inherits the designed element's own inline geometry so
-         the pixel-locked layout is unchanged. */
-      var a=document.createElement('a');
-      a.href=url; a.target='_blank'; a.rel='noopener noreferrer';
-      a.className=(l.className||'')+' ax-fx-link';
-      a.setAttribute('style',(l.getAttribute('style')||'')+';text-decoration:none;color:inherit;display:block');
-      a.textContent=txt(l);
-      a.dataset.axfx='1';
-      l.parentNode.replaceChild(a,l);
-    });
-  }
-
-  /* ---------- 3. NEWSLETTER ----------
-     The designed field is a dummy "Work email" text div inside a bordered box, and
-     Subscribe was being linkified to /contact-us/ by the generic CTA pass. Replace
-     the dummy with a real <input>, stop the navigation, validate, and confirm in
-     place. No backend exists on a static site, so the address is handed to the
-     team's mailbox and the user is told plainly that they are subscribed. */
-  /* Same resolution the announcement bar and the contact form use: an explicit
-     override, localhost during local dev, or empty -- which is correct on
-     production, where one CloudFront distribution serves both the site and the
-     API, so a relative path is same-origin. */
-  var API_BASE=(window.AX_API_BASE||
-    (/^(localhost|127\.0\.0\.1)$/.test(location.hostname)?'http://localhost:8000':''))
-    .replace(/\/+$/,'');
-
-  function newsletter(){
-    var foot=document.querySelector('section.ax-footer');
-    if(!foot||foot.dataset.axNews) return;
-    var dummy=[].slice.call(foot.querySelectorAll('.g-t')).filter(function(e){
-      return /^work email$/i.test(txt(e)); })[0];
-    var subLabel=[].slice.call(foot.querySelectorAll('.g-t')).filter(function(e){
-      return /^subscribe$/i.test(txt(e)); })[0];
-    if(!dummy||!subLabel) return;
-    foot.dataset.axNews='1';
-
-    var box=dummy.parentElement;
-    box.classList.add('ax-fx-box');
-    var input=document.createElement('input');
-    input.type='email'; input.className='ax-fx-input'; input.placeholder='Work email';
-    input.setAttribute('aria-label','Work email');
-    input.setAttribute('style',(dummy.getAttribute('style')||'').replace(/color:[^;]+;?/,''));
-    dummy.parentNode.replaceChild(input,dummy);
-
-    /* Resolve the painted pill by walking UP from the label to the nearest ancestor
-       that Figma painted (background-color + border-radius). pillOf() measures rects,
-       and on the first pass the footer is still at opacity 0 with zero-size rects, so
-       it returned null and this fell back to the LABEL -- which is why clicking the
-       button's body (everything except the glyphs) still reached the chrome's
-       navigate handler and went to /contact-us/. Markup does not depend on layout. */
-    function paintedPill(el){
-      var n=el.parentElement, hops=0;
-      while(n&&hops<4){
-        var st=n.getAttribute('style')||'';
-        if(/background-color/.test(st)&&/border-radius/.test(st)) return n;
-        n=n.parentElement; hops++;
-      }
-      return pillOf(el)||el;
-    }
-    var pill=paintedPill(subLabel);
-    pill.classList.add('ax-fx-pill');
-    subLabel.style.pointerEvents='none';
-    /* Figma sizes the Subscribe label box to the text and pins it at the pill's
-       left edge, so the label sat 0px from the left and 41px from the right. Two
-       measure-and-nudge passes (this one and the generic centreLabels) fought each
-       other over it, so stop measuring: when the label is a CHILD of its pill, make
-       it span the pill and let text-align do the centring. Nothing to race. */
-    /* Do not depend on pillOf() here: on the first pass the footer may not have
-       been laid out yet, it measures 0 and returns null. The label's own parent is
-       the painted pill in this markup, so test that directly. */
-    (function centreInPill(){
-      var host=subLabel.parentElement;
-      if(!host) return;
-      var hs=host.getAttribute('style')||'';
-      if(!/background-color/.test(hs)||!/border-radius/.test(hs)) return;
-      subLabel.style.left='0';
-      subLabel.style.width='100%';
-      subLabel.style.textAlign='center';
-      subLabel.dataset.axCentred='1';
-    })();
-
-    var note=document.createElement('div');
-    note.className='ax-fx-note';
-    note.setAttribute('role','status');
-    note.setAttribute('aria-live','polite');
-    var bl=num(box,'left'), bt=num(box,'top'), bh=num(box,'height');
-    if(bl!==null){ note.style.cssText='left:'+bl+'vw;top:'+(bt+bh+0.35)+'vw'; }
-    box.parentNode.appendChild(note);
-
-    function say(msg,bad){
-      note.textContent=msg;
-      note.classList.toggle('err',!!bad);
-      note.classList.add('on');
-      clearTimeout(note.__t);
-      note.__t=setTimeout(function(){ note.classList.remove('on'); },6000);
-    }
-    function submit(e){
-      /* stopImmediatePropagation, not stopPropagation: the chrome CTA pass has its
-         own click handler on THIS SAME element, and stopPropagation only blocks
-         ancestors -- same-element listeners still ran, so Subscribe kept navigating
-         to /contact-us/. */
-      if(e){ e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); }
-      var v=(input.value||'').trim();
-      if(!v||!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(v)){
-        say('Enter a valid work email address.',true); input.focus(); return;
-      }
-      say('Subscribing\u2026');
-      input.value='';
-      /* The address is POSTed and stored. This used to say "we have your address"
-         and hold it nowhere, which is worse than a dead button: the reader believes
-         they subscribed. It now goes to /api/newsletter/, the same origin the
-         contact form and the announcement bar use, and lands in a row the team can
-         see at /manage/.
-
-         Still no programmatic mailto on any path. A mailto is a navigation attempt,
-         and a browser with no mail handler registered unloads the page -- that is
-         what kept being reported as "Subscribe redirects to the contact page". If
-         the API cannot be reached the address is offered as a link the reader may
-         choose to click, and nothing takes them anywhere on its own. */
-      var mailHref='mailto:sales@aeonx.digital'
-        +'?subject='+encodeURIComponent('Newsletter subscription')
-        +'&body='+encodeURIComponent('Please subscribe this address to the AeonX newsletter: '+v);
-      function offerMail(){
-        note.classList.add('err');
-        note.innerHTML='';
-        note.appendChild(document.createTextNode('Could not reach us just now. '));
-        var a=document.createElement('a');
-        a.href=mailHref; a.textContent='Email it to the team';
-        a.className='ax-fx-note-link';
-        a.setAttribute('rel','noopener noreferrer');
-        note.appendChild(a);
-      }
-      if(!window.fetch){ offerMail(); return; }
-      fetch(API_BASE+'/api/newsletter/', {
-        method:'POST', credentials:'omit',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({ email:v, source_page:location.pathname })
-      }).then(function(r){
-        if(!r.ok) throw new Error(r.status);
-        say('Thanks \u2014 you are on the list.');
-      }).catch(offerMail);
-    }
-    /* DOCUMENT-capture interception, not a same-element listener: at the target
-       phase listeners run in REGISTRATION order regardless of the capture flag,
-       and the chrome CTA pass registered its navigate handler on this pill first
-       -- so a same-element stopImmediatePropagation fires too late and Subscribe
-       still navigated to /contact-us/. Capture at document level always runs
-       before any target-phase listener, structurally.
-       The data-cta marker is KEPT: it is what the CTA-unblock peeler keys on
-       (without it the invisible g-clip shell above this pill swallows real
-       clicks), and the chrome linkifier treats it as its already-done guard.
-       Because that shell may still be on top before the peeler runs, the trap
-       matches by CLICK POINT against the pill's rect, not by event target. */
-    function within(e){
-      var live=paintedPill(subLabel);          /* re-resolved every click */
-      var t=e.target;
-      if(t&&t.nodeType===1&&(live.contains(t)||pill.contains(t)||subLabel.contains(t))) return true;
-      if(!e.clientX&&!e.clientY) return false;   /* keyboard-synth clicks carry 0,0 */
-      var boxes=[live,pill];
-      for(var i=0;i<boxes.length;i++){
-        var r=boxes[i].getBoundingClientRect();
-        if(r.width&&e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom) return true;
-      }
-      return false;
-    }
-    var busy=false;
-    document.addEventListener('click',function(e){
-      if(!within(e)) return;
-      /* Swallow the event FIRST, every single time. The de-bounce used to return
-         before this, so a second click inside 150ms (a double-click, or an impatient
-         second tap) was left for the chrome's navigate handler -- which is the last
-         way Subscribe could still reach /contact-us/. Stop the event unconditionally
-         and let only the SUBMIT be de-bounced. */
-      e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
-      if(busy) return;
-      busy=true; setTimeout(function(){busy=false;},150);
-      submit(null); },true);
-    pill.setAttribute('role','button');
-    pill.setAttribute('tabindex','0');
-    document.addEventListener('keydown',function(e){
-      if((e.key==='Enter'||e.key===' ')&&e.target&&e.target.nodeType===1&&
-         (pill.contains(e.target)||subLabel.contains(e.target))) submit(e); },true);
-    input.addEventListener('keydown',function(e){ if(e.key==='Enter') submit(e); });
-
-    /* ---------- 4. NEWSLETTER COLUMN ALIGNMENT ----------
-       Requested: the heading sits in the same column as "Follow Us", which is also
-       the "Services" column above it and is where Figma already puts it. An earlier
-       request aligned it to "About Us" instead, one column further left, and this
-       pass was what dragged it there; the target is now the right-hand column, so on
-       an untouched Figma pull the measured delta is zero and nothing moves.
-       Measured against the real column rather than hardcoded, so it survives a
-       re-pull that renumbers ids and shifts values. */
-    var head=[].slice.call(foot.querySelectorAll('.g-t')).filter(function(e){
-      return /^get the latest from aeonx/i.test(txt(e)); })[0];
-    var col=[].slice.call(foot.querySelectorAll('.g-t')).filter(function(e){
-      return /^follow us$/i.test(txt(e)); })[0];
-    if(head&&col){
-      var hl=num(head,'left'), cl=num(col,'left');
-      if(hl!==null&&cl!==null){
-        var d=hl-cl;
-        if(Math.abs(d)>0.01){
-          setvw(head,'left',cl);
-          [box,pill,note].forEach(function(el){
-            var l=num(el,'left');
-            if(l!==null) setvw(el,'left',l-d);
-            else if(el===note){ note.style.left=(cl)+'vw'; }
-          });
-        }
-      }
-    }
-  }
-
-  /* ---------- 5. HOMEPAGE PRODUCT NAMES SCROLL IN PAGE ----------
-     Requested: SupplierX / OrderX / Xpense etc. on the homepage should move the
-     reader to that product's section rather than leaving for /products/axiom/. */
-  function productScroll(){
-    /* homepage only. Matched on the page's own title as well as the path, so it
-       still resolves when the page is served under a different filename (headless
-       verification writes a temp copy, and the check must exercise the real code). */
-    var home = location.pathname==='/' || location.pathname==='/index.html' ||
-               /enterprise stack/i.test(document.title||'');
-    if(!home) return;
-    var NAMES=['supplierx','orderx','xpense','logystix','manufex','aeonxiq'];
-    [].slice.call(document.querySelectorAll('main.ax-page .g-t')).forEach(function(e){
-      if(e.closest('.ax-mob')||e.closest('section.ax-footer')) return;
-      if(NAMES.indexOf(txt(e).toLowerCase())<0) return;
-      if(e.dataset.axscroll) return;
-      e.dataset.axscroll='1';
-      e.classList.add('ax-fx-link');
-      /* Each product name appears once in the homepage products showcase. Clicking
-         it used to leave for /products/axiom/; the client wants it to move the
-         reader to that product inside the page instead. Capture phase, because the
-         chrome CTA pass has already attached its own navigating handler. */
-      var card=e.closest('.g-b')||e;
-      e.addEventListener('click',function(ev){
-        ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation();
-        (card||e).scrollIntoView({behavior:'smooth',block:'center'});
-      },true);
-      e.addEventListener('keydown',function(ev){
-        if(ev.key==='Enter'||ev.key===' '){
-          ev.preventDefault(); ev.stopImmediatePropagation();
-          (card||e).scrollIntoView({behavior:'smooth',block:'center'});
-        }
-      },true);
-    });
-  }
-
-  /* ---------- 5b. FOOTER ADDRESS -> MAP ----------
-     The office line was plain text next to a map pin. Point it at Maps for the HQ,
-     which is the address the footer's own phone and mail rows belong to. */
-  function footerMap(){
-    var foot=document.querySelector('section.ax-footer');
-    if(!foot) return;
-    [].slice.call(foot.querySelectorAll('.g-t')).forEach(function(e){
-      if(e.dataset.axmap) return;
-      if(!/Ahmedabad|Mumbai|Bhuj/i.test(txt(e))) return;
-      e.dataset.axmap='1';
-      e.classList.add('ax-fx-link');
-      go(e,'https://www.google.com/maps/search/?api=1&query='+
-        encodeURIComponent('AeonX Digital, 278 Jeevan Udyog Building, DN Road, Fort, Mumbai 400001'),true);
-    });
-  }
-
-  /* ---------- 6. EXPLORE PILL ROW ALIGNMENT ----------
-     Requested: the key-services EXPLORE buttons are not aligned. Figma leaves row 2
-     split across two tops 0.05vw apart (one pixel). Snap each row to its most
-     common top -- paint-level only, and only ever moves a pill by that hairline. */
-  function alignExplore(){
-    var pills=[].slice.call(document.querySelectorAll('main.ax-page .g-t')).filter(function(e){
-      return /^explore$/i.test(txt(e))&&!e.closest('.ax-mob');
-    }).map(function(l){ return pillOf(l); }).filter(Boolean);
-    var rows={};
-    pills.forEach(function(p){
-      var t=num(p,'top'); if(t===null) return;
-      var k=Math.round(t);
-      (rows[k]=rows[k]||[]).push({el:p,t:t});
-    });
-    Object.keys(rows).forEach(function(k){
-      var g=rows[k]; if(g.length<2) return;
-      var counts={};
-      g.forEach(function(x){ counts[x.t]=(counts[x.t]||0)+1; });
-      var win=Object.keys(counts).sort(function(a,b){ return counts[b]-counts[a]; })[0];
-      g.forEach(function(x){ if(x.t!==parseFloat(win)) setvw(x.el,'top',parseFloat(win)); });
-    });
-  }
-
-  /* ---------- 7. EVEN PADDING INSIDE BUTTON PILLS ----------
-     Figma sizes a label box independently of its pill, so a centred label can sit
-     off-centre inside the pill (the footer Subscribe was the visible case). Measure
-     the label's INK with a Range -- the element box is wider than the glyphs and
-     hides the error -- and nudge the label so left and right gaps match. Only the
-     label moves; the pill is untouched, so nothing can reflow. */
-  function centerLabels(){
-    var seen=new Set();
-    [].slice.call(document.querySelectorAll('.g-t')).forEach(function(l){
-      if(l.closest('.ax-mob')||l.children.length||l.dataset.axCentred) return;
-      var t=txt(l); if(!t) return;
-      var cs=getComputedStyle(l);
-      /* The 34-character cut is there so a sentence inside a tinted box is not
-         mistaken for a button label. A role badge breaks it honestly: "PROGRAM
-         MANAGER - FUNCTIONAL & PRE-SALES" is 40 characters and is still a single
-         nowrap line in a 30px chip. Length alone cannot tell those apart, so a
-         one-line label in a short pill is allowed up to 60. */
-      var oneLine = cs.whiteSpace === 'nowrap' || cs.whiteSpace === 'pre';
-      if(t.length > (oneLine ? 60 : 34)) return;
-      if(cs.textAlign!=='center') return;   /* left-aligned by design */
-      var pill=pillOf(l); if(!pill) return;
-      var ps=pill.getAttribute('style')||'';
-      if(!/background-color|border/.test(ps)||!/border-radius/.test(ps)) return;
-      if(t.length>34 && pill.getBoundingClientRect().height > 2.5*(document.documentElement.clientWidth||1920)/100) return;
-      if(seen.has(pill)) return; seen.add(pill);
-      var pr=pill.getBoundingClientRect();
-      var rng=document.createRange(); rng.selectNodeContents(l);
-      var ir=rng.getBoundingClientRect();
-      if(!ir.width||!pr.width) return;
-      var d=(ir.left-pr.left)-(pr.right-ir.right);
-      if(Math.abs(d)<2) return;
-      var cur=num(l,'left'); if(cur===null) return;
-      var vwpx=(document.documentElement.clientWidth||1920)/100;
-      setvw(l,'left',cur-(d/2)/vwpx);
-    });
-  }
-
-  /* ---------- 1b. EXPLORE PILLS READ TOO SMALL ---------- */
-  function bumpExplore(){
-    [].slice.call(document.querySelectorAll('.g-t')).forEach(function(e){
-      if(e.children.length) return;
-      /* Desktop only. The mobile block is authored at 430 and Figma sets these labels
-         at 12px/20px (2.7907vw/4.6512vw) inside a 40px pill; .ax-fx-xl overrode that
-         with 2.4419vw/3.4884vw, so the type came out small AND the shorter line box
-         no longer filled the inset the pill was drawn for -- the uneven top/bottom
-         padding on every Explore button. */
-      if(e.closest('.ax-mob')) return;
-      if(!/^explore(\s|$)/i.test(txt(e))) return;
-      var host=e.parentElement;
-      var hs=host?(host.getAttribute('style')||''):'';
-      /* only the pill-shaped ones; bare "Explore >" text links keep their size */
-      if(!/background-color/.test(hs)||!/border-radius/.test(hs)) return;
-      e.classList.add('ax-fx-xl');
-    });
-  }
-
-  /* ---------- 1d. LABEL SITTING OFF-CENTRE IN ITS PILL ----------
-     Figma positions some labels left inside a wider pill (the Explore <product>
-     pills measured 13px left / 34px right), which reads as broken padding. Centre
-     the label's INK in the pill -- ink, not the label box, because the box is sized
-     to Figma's own text metrics and the browser sets type slightly wider. Pills
-     that carry a trailing arrow are handled by spaceArrows() as a group. */
-  function balanceLabels(){
-    [].slice.call(document.querySelectorAll('.g-b[data-cta],.g-b[data-axpill]')).forEach(function(pill){
-      if(pill.closest('.ax-mob')) return;
-      var pr=pill.getBoundingClientRect(); if(!pr.width) return;
-      var lab=pill.querySelector('.g-t'); if(!lab||!txt(lab)) return;
-      /* an arrow inside the pill means the pair is positioned as a group */
-      var hasArrow=[].slice.call(document.querySelectorAll('.ax-hv-arrow')).some(function(a){
-        var q=a.getBoundingClientRect();
-        return q.width&&q.left>=pr.left-4&&q.right<=pr.right+4&&q.top>=pr.top-6&&q.bottom<=pr.bottom+6; });
-      if(hasArrow) return;
-      var rng=document.createRange(); rng.selectNodeContents(lab);
-      var ink=rng.getBoundingClientRect(); if(!ink.width) return;
-      var d=(ink.left-pr.left)-(pr.right-ink.right);
-      if(Math.abs(d)<3) return;
-      var cur=num(lab,'left'); if(cur===null) return;
-      var vwpx=(document.documentElement.clientWidth||1920)/100;
-      setvw(lab,'left',cur-(d/2)/vwpx);
-    });
-  }
-
-  /* ---------- 8. UNEVEN SEAMS IN A CARD ROW ----------
-     A row of cards drawn on a constant pitch should look identical between every
-     pair, and the "53 agents / L1-L5 / One click / Metered" row did not: three
-     cards are 349 wide on a 350 pitch, leaving a 1px seam beside the card's own
-     1px rule, and one is 350 and butts straight against its neighbour. Two of the
-     three dividers read 2px and the third reads 1px.
-
-     That 1px lives in the Figma file, so it survives any rebuild. Rather than
-     carry the node id, the rule is stated as a shape: cards sharing a top and a
-     height, on a constant pitch, are the same card repeated and should be the
-     same width. The odd one out is snapped to the width the others agree on,
-     which is a 1px change and never moves anything's left edge.
-
-     Guards: at least three of them, a pitch that really is constant, and no more
-     than 2px of disagreement -- so a row of deliberately different-width boxes,
-     or a genuine two-column layout, cannot be caught by this. */
-  function evenCardRow(){
-    var vw = (document.documentElement.clientWidth || innerWidth || 1920) / 100;
-    if (!vw) return;
-    var rows = {}, seq = 0;
-    [].forEach.call(document.querySelectorAll('.g-b'), function(el){
-      var l = num(el, 'left'), w = num(el, 'width');
-      var t = num(el, 'top'), h = num(el, 'height');
-      if (l === null || w === null || t === null || h === null) return;
-      var p = el.parentElement;
-      if (!p) return;
-      if (!p.__axRow) p.__axRow = ++seq;
-      var k = p.__axRow + '|' + t.toFixed(4) + '|' + h.toFixed(4);
-      (rows[k] = rows[k] || []).push({ el: el, l: l, w: w });
-    });
-    Object.keys(rows).forEach(function(k){
-      var g = rows[k].sort(function(a, b){ return a.l - b.l; });
-      if (g.length < 3) return;
-      var pitch = g[1].l - g[0].l;
-      if (!(pitch > 0)) return;
-      for (var i = 2; i < g.length; i++){
-        if (Math.abs((g[i].l - g[i-1].l) - pitch) > 0.01) return;   /* not a constant pitch */
-      }
-      var tally = {};
-      g.forEach(function(c){ var kk = c.w.toFixed(4); tally[kk] = (tally[kk] || 0) + 1; });
-      var keys = Object.keys(tally);
-      if (keys.length < 2) return;                                  /* already even */
-      keys.sort(function(a, b){ return tally[b] - tally[a]; });
-      var want = parseFloat(keys[0]);
-      if (tally[keys[0]] * 2 <= g.length) return;                   /* no clear majority */
-      var spread = Math.max.apply(null, g.map(function(c){ return Math.abs(c.w - want); }));
-      if (spread * vw > 2) return;                                  /* a real difference, not rounding */
-      g.forEach(function(c){
-        if (Math.abs(c.w - want) < 0.0001) return;
-        setvw(c.el, 'width', want);
-      });
-    });
-  }
-
-  function init(){
-    copyFix();
-    evenCardRow();
-    hidePlaceholderCopy();
-    applyTitleCase();
-    bumpExplore();
-    spaceArrows();
-    balanceLabels();
-    clearTrailingGlyphs();
-    armChrome();
-    newsletter();
-    productScroll();
-    footerMap();
-    alignExplore();
-    centerLabels();
-  }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init);
-  else init();
-  /* after the chrome CTA pass and .ax-mob injection have settled */
-  addEventListener('load',function(){
-    setTimeout(init,200);
-    /* _hover.html creates the trailing arrows on load+140ms, so the arrow pass has
-       to run after that or it finds nothing to measure. It is idempotent -- it only
-       acts on a pair that actually overlaps -- so running it twice is free. */
-    setTimeout(function(){ spaceArrows(); balanceLabels(); clearTrailingGlyphs(); },400);
-    setTimeout(function(){ spaceArrows(); balanceLabels(); clearTrailingGlyphs(); },1000);
-    /* one late pass purely to re-centre: the newsletter column shift and the CTA
-       linkifier's own pill auto-fit both move boxes after the first measurement,
-       so the settled layout is the only one worth measuring. */
-    setTimeout(centerLabels,700);
-  });
-  addEventListener('resize',function(){ clearTimeout(window.__axfxR);
-    window.__axfxR=setTimeout(function(){ centerLabels(); spaceArrows(); },200); });
+  if (document.readyState === 'complete') setTimeout(init, 0);
+  else window.addEventListener('load', function () { setTimeout(init, 0); });
 })();
 </script>
 
@@ -6721,6 +6666,22 @@ document.addEventListener("DOMContentLoaded",function(){
     f.map.src = mapSrc(CITY[0].addr);
     paint(0); bring(0);
     row.setAttribute('data-axmt','1');
+
+    /* ---- DEEP LINK FROM THE FOOTER ----
+       The footer names the six cities, and each is now a link to its own office
+       rather than to the top of this page, so /contact-us/#kolkata opens on Kolkata.
+       Matched on the office heading, so a city renamed above renames the link too.
+       Nothing is scrolled: the switcher is the whole point of the page. */
+    function fromHash(){
+      var h = (location.hash || '').slice(1).toLowerCase().replace(/[^a-z]/g, '');
+      if (!h) return;
+      for (var i = 0; i < CITY.length; i++){
+        var n = CITY[i].head.toLowerCase().replace(/[^a-z]/g, '');
+        if (n === h || n.indexOf(h) === 0 || h.indexOf(n) === 0){ select(i, false); return; }
+      }
+    }
+    fromHash();
+    addEventListener('hashchange', fromHash);
   }
 
   function init(){
@@ -7582,817 +7543,888 @@ select.ax-cf-code{left:0!important;top:0!important;height:100%!important;cursor:
 })();
 </script>
 
-<style id="ax-herowave-css">
-/* ---- Hero mosaic: cursor interaction ----
-   The band ships as one flat 479KB <img>, so nothing in it is addressable. It is
-   really 6286 small squares in three brand colours, and those coordinates are the
-   art itself -- read them out of the file and the same picture can be drawn to a
-   canvas, where the cursor can push individual tiles around. */
-.ax-wave{display:block;touch-action:pan-y}
-@media (prefers-reduced-motion:reduce){.ax-wave{pointer-events:none}}
-</style>
-<script>
-/* ---- HERO MOSAIC, CURSOR-REACTIVE ----
-
-   Figma draws the hero's wave as 6286 <path> squares, exported to one SVG and placed
-   as an <img>. That is correct and pixel-exact, but an image cannot react to anything.
-   This reads the squares back out of that same file -- so the picture is still Figma's,
-   not a reinterpretation -- redraws them on a canvas, and lets the pointer displace the
-   tiles it passes over. They spring back when it leaves.
-
-   Canvas rather than inline SVG on purpose: 6286 nodes is a heavy DOM, and moving even
-   a few hundred of them per frame through style writes drops frames. Filling 6286 rects
-   grouped by colour is a couple of milliseconds, and the loop only runs while something
-   is actually moving.
-
-   The file draws some squares twice, a colour over a colour, so a later path wins. The
-   parse keeps the LAST fill at each position, which is what the flat image shows. */
-(function () {
-  var SRC = /6944-35720\.svg/;
-
-  function parse(text) {
-    var re = /<path d="M([\d.-]+) ([\d.-]+)H([\d.-]+)V([\d.-]+)[^"]*"\s+fill="(#[0-9a-fA-F]{3,8})"/g;
-    var seen = {}, order = [], m;
-    while ((m = re.exec(text))) {
-      var x1 = parseFloat(m[1]), y1 = parseFloat(m[2]);
-      var x0 = parseFloat(m[3]), y2 = parseFloat(m[4]);
-      var w = x1 - x0, h = y2 - y1;
-      if (!(w > 0) || !(h > 0)) continue;
-      var key = Math.round(x0 * 2) + ',' + Math.round(y1 * 2);
-      var cell = seen[key];
-      if (!cell) { cell = seen[key] = { x: x0, y: y1, w: w, h: h }; order.push(cell); }
-      cell.c = m[5];      /* last fill at this position is the one that paints */
-    }
-    return order;
-  }
-
-  function mount(img) {
-    var box = img.getBoundingClientRect();
-    if (!box.width) return;
-
-    fetch(img.getAttribute('src'), { credentials: 'omit' })
-      .then(function (r) { return r.ok ? r.text() : null; })
-      .then(function (text) {
-        if (!text) return;
-        var vb = /viewBox="0 0 ([\d.]+) ([\d.]+)"/.exec(text);
-        var VW = vb ? parseFloat(vb[1]) : 1674, VH = vb ? parseFloat(vb[2]) : 512;
-        var cells = parse(text);
-        if (cells.length < 100) return;
-
-        var cv = document.createElement('canvas');
-        cv.className = (img.className || '').replace(/g-vec/, '').trim() + ' ax-wave';
-        cv.setAttribute('aria-hidden', 'true');
-        /* Same box, same stacking slot: the placement _gen.py computed is correct and
-           the ancestor's overflow:hidden still does Figma's crop. */
-        cv.setAttribute('style', img.getAttribute('style'));
-        img.parentNode.replaceChild(cv, img);
-
-        var ctx = cv.getContext('2d', { alpha: true });
-        var N = cells.length;
-        var dx = new Float32Array(N), dy = new Float32Array(N);
-
-        /* Per-tile constants, in the same ranges cotool bakes into its own dot data
-           (jm .35-1, jo/jp +-.5, jcx/jcy +-1.2). Ours are derived from the index
-           rather than stored, so they are stable across frames without shipping a
-           second data file. */
-        var jm = new Float32Array(N), jo = new Float32Array(N), jp = new Float32Array(N);
-        var jcx = new Float32Array(N), jcy = new Float32Array(N);
-        function rnd(i, salt) { var v = Math.sin((i + 1) * salt) * 43758.5453; return v - Math.floor(v); }
-        for (var i = 0; i < N; i++) {
-          jm[i]  = 0.35 + rnd(i, 12.9898) * 0.65;
-          jo[i]  = rnd(i, 78.233) - 0.5;
-          jp[i]  = rnd(i, 37.719) - 0.5;
-          jcx[i] = rnd(i, 94.673) * 2.4 - 1.2;
-          jcy[i] = rnd(i, 15.137) * 2.4 - 1.2;
-        }
-
-        /* Buckets over the home positions, so a move only touches the tiles it can
-           actually reach instead of all 6286. */
-        var GS = 32, grid = {};
-        function key(gx, gy) { return gx + ',' + gy; }
-        for (var i = 0; i < N; i++) {
-          var g = key((cells[i].x / GS) | 0, (cells[i].y / GS) | 0);
-          (grid[g] || (grid[g] = [])).push(i);
-        }
-        function eachIn(x0, y0, x1, y1, fn) {
-          var gx0 = Math.floor(x0 / GS), gx1 = Math.floor(x1 / GS);
-          var gy0 = Math.floor(y0 / GS), gy1 = Math.floor(y1 / GS);
-          for (var gx = gx0; gx <= gx1; gx++)
-            for (var gy = gy0; gy <= gy1; gy++) {
-              var bk = grid[key(gx, gy)];
-              if (bk) for (var k = 0; k < bk.length; k++) fn(bk[k]);
-            }
-        }
-
-        /* cotool's numbers are expressed against an 8px dot grid in a 1160x565 box.
-           Ours is a different pitch, so they are converted into grid units and back
-           rather than copied raw -- otherwise the disturbance covers a different
-           number of tiles and reads as a different effect. */
-        var lx = [];
-        for (var i = 0; i < N; i++) if (lx.indexOf(cells[i].x) < 0) lx.push(cells[i].x);
-        lx.sort(function (p, q) { return p - q; });
-        var pitch = Infinity;
-        for (var i = 1; i < lx.length; i++) { var d = lx[i] - lx[i - 1]; if (d > 0.01 && d < pitch) pitch = d; }
-        if (!isFinite(pitch)) pitch = 8;
-        /* ---- The lattice's own period ----
-           The band wraps onto itself, so the period is a property of the ART, not of
-           the viewBox: the columns run 0 to 1668.12 on a 5.772 pitch and the box is
-           1674 wide. Wrapping on the box put the seam three quarters of a cell off
-           the lattice. Take one more pitch past the last column instead, which is
-           where column zero belongs. */
-        var COLS = lx.length;
-        var avgPitch = COLS > 1 ? (lx[COLS - 1] - lx[0]) / (COLS - 1) : pitch;
-        var PER = lx[COLS - 1] + avgPitch - lx[0];
-        if (!(PER > 0)) PER = VW;
-
-        var INFLUENCE = 10 * pitch;      /* cotool: 80 over an 8px grid */
-        var PUSH = 7.25 * pitch;         /* cotool: 58 */
-        var K = 8 / pitch;               /* keeps the ripple wavelengths grid-relative */
-
-        /* ---- Ambient swell ----
-           Two long, slow waves crossing the band in opposite directions, running
-           whether or not anything is pointing at it.
-
-           The wavelengths are deliberately long: about 40 tiles, so neighbours are
-           only 0.16 rad apart in phase and travel almost together. At 2.5 units of
-           amplitude that leaves under 0.4 units of movement BETWEEN neighbours,
-           inside the 0.72-unit gap the grid already has, so no tile ever laps into
-           its neighbour's cell and the mosaic still reads as Figma drew it. Short
-           wavelengths at the same amplitude would just look like static.
-
-           No per-tile jitter here on purpose. Jitter is what makes the cursor push
-           feel like scattering, and it is exactly what would stop this reading as
-           one surface moving. The two speeds are not a round ratio, so the pair
-           never comes back into phase and the loop has no visible period. */
-        var A1 = 1.60, A2 = 0.90;                    /* units; ~1.2px and ~0.7px on screen */
-        var W1 = 0.55, W2 = -0.38;                   /* rad/s, counter-travelling */
-        var sp1 = new Float32Array(N), cp1 = new Float32Array(N);
-        var sp2 = new Float32Array(N), cp2 = new Float32Array(N);
-        (function () {
-          /* The swell moves tiles sideways as well as up, and the band is drawn
-             wrapped onto itself, so the two ends of the art sit against each other.
-             At 40 and 52 tiles neither wave fitted a whole number of times into the
-             290-column period, so the phase jumped at the seam: one side of the join
-             was being pushed left while the other went right, and the 0.73-unit gap
-             the grid has opened to several units and closed again as the two waves
-             beat. Snap each wavelength to the nearest one that divides the period
-             and the join carries the same phase as everywhere else. */
-          function fit(want) {
-            var n = Math.max(1, Math.round(PER / (want * pitch)));
-            return (2 * Math.PI * n) / PER;
-          }
-          var k1 = fit(40), k2 = fit(52);
-          for (var i = 0; i < N; i++) {
-            var c = cells[i];
-            var p1 = c.x * k1 + c.y * k1 * 0.45;
-            var p2 = -c.x * k2 + c.y * k2 * 0.80;
-            /* A tile's phase never changes, so sin/cos of it are folded in once
-               here. Expanding sin(wT+p) then leaves the per-frame loop with no trig
-               at all: four multiplies and two adds per tile. */
-            sp1[i] = Math.sin(p1); cp1[i] = Math.cos(p1);
-            sp2[i] = Math.sin(p2); cp2[i] = Math.cos(p2);
-          }
-        })();
-
-        var scale = 1, dpr = 1;
-        function size() {
-          var r = cv.getBoundingClientRect();
-          if (!r.width) return false;
-          dpr = Math.min(window.devicePixelRatio || 1, 2);
-          cv.width = Math.round(r.width * dpr);
-          cv.height = Math.round(r.height * dpr);
-          scale = r.width / VW;
-          ctx.setTransform(dpr * scale, 0, 0, dpr * scale, 0, 0);
-          return true;
-        }
-
-        var byCol = {};
-        for (var i = 0; i < N; i++) (byCol[cells[i].c] || (byCol[cells[i].c] = [])).push(i);
-        var colours = Object.keys(byCol);
-
-        /* ---- The band also travels ----
-           A tile leaving the right edge comes back on the left, so the row runs
-           forever off one copy of the art. The wrap is only invisible because of
-           what the art is: both ends of the wave sit low, with their column tops
-           between 403 and 439, and neighbouring columns inside the mosaic already
-           step by as much as 24. The join is one more step of the same size, which
-           is why this needs no mirrored second copy and no crossfade.
-
-           The period is the viewBox width, and the columns are laid on a 5.77 grid
-           that divides into it, so a wrapped tile lands exactly on the lattice
-           rather than half a cell off it.
-
-           Held in art units and advanced per frame rather than computed from the
-           clock, so that changing scale on a resize changes the rate from that
-           point instead of jumping the whole band sideways. */
-        var scrollX = 0, lastT = 0;
-        var PXPS = 10;                  /* on-screen px per second: a drift, not a marquee */
-
-        function drawAll() {
-          ctx.clearRect(0, 0, VW, VH);
-          for (var k = 0; k < colours.length; k++) {
-            var col = colours[k], idx = byCol[col];
-            ctx.fillStyle = col;
-            ctx.beginPath();
-            for (var j = 0; j < idx.length; j++) {
-              var i2 = idx[j], c2 = cells[i2];
-              var X = c2.x + dx[i2] + scrollX;
-              if (X >= PER) X -= PER;
-              ctx.rect(X, c2.y + dy[i2], c2.w, c2.h);
-              /* the tile straddling the seam is drawn at both ends of it */
-              if (X + c2.w > PER) ctx.rect(X - PER, c2.y + dy[i2], c2.w, c2.h);
-            }
-            ctx.fill();
-          }
-        }
-
-        /* Displacement is a pure function of where the cursor is -- no velocity, no
-           spring. That is cotool's model and it is why the field snaps back the
-           instant the pointer leaves rather than wobbling home. An earlier version
-           here integrated a spring, which read as jelly instead of a disturbance. */
-        var px = 0, py = 0, hot = false;
-        function displace(T) {
-          /* The swell is the rest position now, so every tile is rewritten each
-             frame and there is no longer a list of touched indices to undo. */
-          var s1 = Math.sin(W1 * T), c1 = Math.cos(W1 * T);
-          var s2 = Math.sin(W2 * T), c2 = Math.cos(W2 * T);
-          for (var i = 0; i < N; i++) {
-            var a1s = sp1[i], a1c = cp1[i], a2s = sp2[i], a2c = cp2[i];
-            dx[i] = A1 * (s1 * a1c + c1 * a1s) + A2 * (s2 * a2c + c2 * a2s);
-            dy[i] = 0.62 * (A1 * (c1 * a1c - s1 * a1s) + A2 * (c2 * a2c - s2 * a2s));
-          }
-          if (hot) {
-            eachIn(px - INFLUENCE, py - INFLUENCE, px + INFLUENCE, py + INFLUENCE, function (i) {
-              var c = cells[i], X = c.x + c.w / 2, Y = c.y + c.h / 2;
-              var rx = X - px, ry = Y - py;
-              var dist = Math.sqrt(rx * rx + ry * ry);
-              if (dist >= INFLUENCE) return;
-              var t = 1 - dist / INFLUENCE;
-              var ox = jo[i] + 0.72 * jcx[i] +
-                       0.22 * Math.sin(0.016 * K * rx + 0.018 * K * X) +
-                       0.12 * Math.cos(0.012 * K * ry);
-              var oy = jp[i] + 0.72 * jcy[i] +
-                       0.22 * Math.cos(0.016 * K * ry + 0.018 * K * Y) +
-                       0.12 * Math.sin(0.012 * K * rx);
-              ox -= 0.2 * oy; oy += 0.2 * ox;                    /* swirl, not a radial shove */
-              var amp = t * t * t * (t * (6 * t - 15) + 10) * PUSH * (0.28 + 0.72 * jm[i]);
-              /* Added to the swell, not written over it, so a tile the cursor is
-                 pushing is still riding the wave underneath. */
-              dx[i] += ox * amp; dy[i] += oy * amp;
-            });
-          }
-          drawAll();
-        }
-
-        var raf = null, clientX = 0, clientY = 0, haveP = false;
-        function frame(now) {
-          raf = null;
-          if (lastT && scale) {
-            scrollX += (now - lastT) * 0.001 * (PXPS / scale);
-            if (scrollX >= PER) scrollX -= PER * Math.floor(scrollX / PER);
-          }
-          lastT = now;
-          hot = false;
-          if (haveP) {
-            /* One rect read per frame rather than per pointermove: the band moves
-               with the page, so the rect cannot be cached across a scroll. */
-            var r = cv.getBoundingClientRect();
-            if (r.width && clientX >= r.left && clientX <= r.right &&
-                clientY >= r.top && clientY <= r.bottom) {
-              hot = true;
-              /* Back out the travel: the tile under the cursor is not the tile whose
-                 home is there any more, and pushing by home position would make the
-                 disturbance sit somewhere the pointer is not. */
-              px = (clientX - r.left) / scale - scrollX;
-              if (px < 0) px += PER;
-              py = (clientY - r.top) / scale;
-            }
-          }
-          displace(now * 0.001);
-          schedule();
-        }
-        /* The swell never settles, so the loop is now continuous rather than
-           demand-driven. It is gated instead: parked while the band is scrolled
-           out of view or the tab is in the background, which is where a hero
-           animation would otherwise quietly burn a laptop battery all day. */
-        var onScreen = true, running = false;
-        function schedule() {
-          if (raf !== null || !running) return;
-          raf = requestAnimationFrame(frame);
-        }
-        function start() {
-          if (running || !onScreen || document.hidden) return;
-          /* Parking does not stop the clock, so the first frame back would carry the
-             whole gap and lurch the band forward. Start the delta again from here. */
-          lastT = 0;
-          running = true; schedule();
-        }
-        function stop() {
-          running = false;
-          if (raf !== null) { cancelAnimationFrame(raf); raf = null; }
-        }
-        /* The pointer NEVER reaches this canvas. The band sits at the bottom of the
-           hero's stacking order and every point over it hit-tests to one of the
-           absolutely positioned boxes painted after it -- the card, the tile grid,
-           their backdrops. Listening on the canvas looked correct in a test that
-           dispatched events straight at it, which is exactly the check that cannot
-           fail: dispatchEvent skips hit-testing. Listen on the window and decide
-           membership from the canvas's own rect instead.
-
-           The canvas is also click-through, so putting it under the hero cannot
-           swallow a press meant for the tabs or the CTAs. */
-        cv.style.pointerEvents = 'none';
-        var REDUCED = matchMedia('(prefers-reduced-motion:reduce)');
-        if (!REDUCED.matches) {
-          addEventListener('pointermove', function (e) {
-            clientX = e.clientX; clientY = e.clientY; haveP = true; schedule();
-          }, { passive: true });
-          addEventListener('pointerleave', function () {
-            haveP = false; schedule();
-          }, { passive: true });
-          addEventListener('blur', function () { haveP = false; });
-        }
-
-        if (!size()) return;
-        displace(0);
-        addEventListener('resize', function () {
-          clearTimeout(cv.__t);
-          cv.__t = setTimeout(function () { if (size()) drawAll(); }, 150);
-        });
-
-        if (REDUCED.matches) return;   /* one still frame, as drawn above */
-
-        if (window.IntersectionObserver) {
-          new IntersectionObserver(function (es) {
-            onScreen = es[0].isIntersecting;
-            if (onScreen) start(); else stop();
-          }, { rootMargin: '80px' }).observe(cv);
-        }
-        document.addEventListener('visibilitychange', function () {
-          if (document.hidden) stop(); else start();
-        });
-        start();
-      })
-      .catch(function () {});
-  }
-
-  function run() {
-    [].forEach.call(document.querySelectorAll('img.g-vec'), function (img) {
-      if (SRC.test(img.getAttribute('src') || '')) mount(img);
-    });
-  }
-  if (document.readyState === 'complete') setTimeout(run, 0);
-  else addEventListener('load', function () { setTimeout(run, 0); });
-})();
-</script>
-
-<style id="ax-prodtabs-css">
-/* 300ms / EASE_OUT again: every `Tab` node in both Container (Products) sets carries
-   transitionDuration 300 and transitionEasing EASE_OUT. */
-.ax-pt-tab{cursor:pointer}
-.ax-pt-tab:focus-visible{outline:2px solid #df3f17;outline-offset:2px}
-.ax-pt-box{transition:border-color .3s cubic-bezier(0,0,.58,1)}
-.ax-pt-lbl{transition:color .3s cubic-bezier(0,0,.58,1)}
-/* The panels are twelve unrelated product screenshots, so a cross-dissolve is the
-   honest read of the variant swap: there is nothing to tween between them. */
-.ax-pt-panel{transition:opacity .15s linear}
-/* Five products have no screenshot yet, so Figma composes their panel instead: the
-   shared illustrated backdrop, the product's lockup, and a Coming Soon button. Only
-   the backdrop is an image fill, which is why swapping the fill alone left all five
-   showing the same empty room. These two sit on top of it. */
-.ax-pt-art{position:absolute;pointer-events:none;user-select:none}
-.ax-pt-cta{position:absolute;display:flex;align-items:center;justify-content:center;
-  border-radius:0.8333vw;background-color:rgb(223,63,23);color:rgb(255,255,255);
-  font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:0.8333vw;
-  letter-spacing:0;white-space:nowrap;cursor:default}
+<style id="ax-uifx-css">
+/* The footer office line: each city is its own link, and has to keep reading as one
+   line of type rather than seven blue links. */
+.ax-fx-office{color:inherit;text-decoration:none;cursor:pointer}
+.ax-fx-office:hover,.ax-fx-office:focus-visible{text-decoration:underline}
+/* Chrome interactions + newsletter. _hover.html deliberately skips header/footer
+   (chrome() excludes them), so nothing in the nav or footer ever gained a hover
+   affordance -- Get Started, Subscribe, Read Us, the social icons and the nav
+   buttons all felt dead. These are paint-only states, same language as the tiles:
+   wash/lift for pills, brand colour for text links. */
+.ax-fx-pill{transition:background-color .22s ease,box-shadow .22s ease,transform .22s cubic-bezier(.22,.61,.36,1);cursor:pointer}
+.ax-fx-pill:hover{transform:translateY(-0.1042vw);box-shadow:0 0.2083vw 0.5729vw rgba(176,45,12,.28);filter:brightness(1.06)}
+.ax-fx-pill:focus-visible{outline:0.1042vw solid rgb(223,63,23);outline-offset:0.15vw}
+/* The contextual Explore pills label at 0.625vw while every other CTA on the page
+   sits at 0.7292vw, so they read as an afterthought inside a generous pill (36px of
+   ink in an 80px box). Match them to the rest. */
+.ax-fx-xl{font-size:0.7292vw!important;line-height:1.0417vw!important}
+@media (max-width:1024px){.ax-fx-xl{font-size:2.4419vw!important;line-height:3.4884vw!important}}
+.ax-fx-link{transition:color .18s ease;cursor:pointer}
+.ax-fx-link:hover{color:rgb(223,63,23)!important}
+.ax-fx-soc{transition:transform .2s ease,filter .2s ease}
+.ax-fx-soc:hover{transform:translateY(-0.1vw) scale(1.08);filter:brightness(.85)}
+/* real newsletter field, dropped into the designed box */
+.ax-fx-input{position:absolute;border:none;outline:none;background:transparent;
+  font-family:'Nunito Sans',sans-serif;padding:0;margin:0;width:88%!important}
+.ax-fx-input::placeholder{color:rgb(134,149,170)}
+.ax-fx-box{transition:border-color .18s ease}
+.ax-fx-box:focus-within{border-color:rgb(223,63,23)!important}
+/* Above the cookie bar. The note sits in the footer, the bar is fixed over the
+   bottom of the viewport, and the bar won: the confirmation appeared underneath
+   it, which is why clicking Subscribe looked like it did nothing at all. */
+.ax-fx-note{z-index:2147483000;position:absolute;font-family:'Nunito Sans',sans-serif;font-weight:600;
+  font-size:0.7292vw;line-height:1.0417vw;color:rgb(21,128,61);opacity:0;
+  transition:opacity .25s ease;pointer-events:none;white-space:nowrap}
+.ax-fx-note.on{opacity:1}
+.ax-fx-note.err{color:rgb(220,38,38)}
+.ax-fx-note-link{color:rgb(223,63,23);text-decoration:underline;pointer-events:auto}
+.ax-fx-note.on{pointer-events:auto}
 @media (prefers-reduced-motion:reduce){
-  .ax-pt-box,.ax-pt-lbl,.ax-pt-panel{transition:none}
+  .ax-fx-pill,.ax-fx-link,.ax-fx-soc,.ax-fx-note{transition:none}
+  .ax-fx-pill:hover,.ax-fx-soc:hover{transform:none}
 }
 </style>
 <script>
-/* ---- PRODUCT TABS (the twelve-product strip) ----
-
-   Same problem as the hero tabs. In Figma this section is an INSTANCE of a
-   COMPONENT_SET with twelve variants and the tab click is a prototype variant swap
-   that the export cannot carry, so only the SupplierX variant survived and eleven of
-   the twelve tabs were inert.
-
-     desktop  set 6795:23870   instance 6795:23913
-     mobile   set 6893:27393   instance 6893:27539
-
-   What actually differs between the twelve variants is ONE thing: the screenshot
-   filling the tab panel. The heading, the strip and the panel frame are identical. So
-   this swaps the panel's background image and moves the active border, rather than
-   shipping twelve copies of the section.
-
-   The tables are generated, not hand-typed. `size` is the image rectangle's width and
-   height, and `sizing` is _gen.image_sizing_css() for that fill, so each crop matches
-   what a static export of that variant would have produced. Regenerate by walking the
-   component set and reading the first IMAGE fill under 'Tab Panel:margin'. Position is
-   deliberately absent: see apply().
-
-   Five products have no screenshot yet -- Setu Move, QuiC, Jarvis, Data Setu.ai and
-   Setu Edge -- and Figma composes their panel instead: one shared illustrated
-   backdrop, the product's own lockup, and a Coming Soon button. Only the backdrop is
-   an image fill, so swapping the fill alone left all five showing the same empty
-   room. Those three get `art`, `artBox` and `cta`, and the lockups are exported from
-   the design as SVG. Mobile bakes the same composition into one image per variant and
-   needs none of this; its only gap is Setu Edge, which still borrows Jarvis's. */
-(function () {
-  var SPEC = {
-    desktop: {
-      /* Desktop moves the border AND the label weight; mobile moves only the border,
-         because Figma's own mobile variants leave tab 0's label bold in every state. */
-      weights: true,
-      panes: [
-      { label: 'SupplierX',     ref: '59aaccb6d152a67424f6bd4fbf46df577bdd9ff5',
-        size: [71.6146, 46.8229],
-        sizing: 'background-size:71.6146vw 47.6095vw;background-position:-0.0000vw 0.0289vw;background-repeat:no-repeat;' },
-      { label: 'OrderX',        ref: '7f4ebb15712b6e8306e590a80755af65f4e5b1e8',
-        size: [71.5833, 52.6933],
-        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
-      { label: 'Xpense',        ref: '055a6847a0cb6e745984e1a704db491809493a01',
-        size: [71.6146, 40.3125],
-        sizing: 'background-size:71.9220vw 96.9014vw;background-position:-0.1419vw -0.0000vw;background-repeat:no-repeat;' },
-      { label: 'ManufeX',       ref: '94d8ee820081df4a95384f2b45e4c0892d857aa0',
-        size: [71.6146, 50.9375],
-        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
-      { label: 'LogytstiX',     ref: '2714267af9e02b4b2ebcea0c1790f496f03e7899',
-        size: [71.6146, 47.6562],
-        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
-      { label: 'CRM 360',       ref: 'a18023954288f9a1fc4834dd71f70970453a9ea3',
-        size: [71.6146, 34.6875],
-        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
-      { label: 'Setu Move',     ref: '5fd0e3417a71ad9ce0ea61b32d9cd17bdce414ca',
-        size: [71.5833, 29.9566],
-        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;',
-        art: '/assets/vec/6890-7191.svg', artBox: [22.8750, 9.7500, 25.8333, 6.5625],
-        cta: [30.3229, 17.1979, 10.7812, 2.9167] },
-      { label: 'QuiC',          ref: '5fd0e3417a71ad9ce0ea61b32d9cd17bdce414ca',
-        size: [71.5833, 29.9566],
-        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;',
-        art: '/assets/vec/6890-7433.svg', artBox: [27.4583, 9.7500, 16.6667, 6.5625],
-        cta: [30.3229, 17.1979, 10.7812, 2.9167] },
-      { label: 'Jarvis',        ref: '5fd0e3417a71ad9ce0ea61b32d9cd17bdce414ca',
-        size: [71.5833, 29.9566],
-        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;',
-        art: '/assets/vec/6970-27176.svg', artBox: [32.4583, 9.7500, 6.5625, 6.5625],
-        cta: [30.3750, 17.1979, 10.7812, 2.9167] },
-      { label: 'AeonxIQ',       ref: 'e35ee9e51c72f197dcd30547c51270218a80b07b',
-        size: [71.5833, 34.3578],
-        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
-      { label: 'Data Setu.ai',  ref: '5fd0e3417a71ad9ce0ea61b32d9cd17bdce414ca',
-        size: [71.5833, 29.9566],
-        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;',
-        art: '/assets/vec/6890-7467.svg', artBox: [22.3020, 9.7500, 26.9792, 6.5625],
-        cta: [30.3229, 17.1979, 10.7812, 2.9167] },
-      { label: 'Setu Edge',     ref: '5fd0e3417a71ad9ce0ea61b32d9cd17bdce414ca',
-        size: [71.5833, 29.9566],
-        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;',
-        art: '/assets/vec/6962-7666.svg', artBox: [32.5104, 9.2812, 6.5625, 6.5625],
-        cta: [30.3750, 17.2500, 10.7812, 2.9167] }
-      ]
-    },
-    mobile: {
-      weights: false,
-      panes: [
-      { label: 'SupplierX',     ref: '59aaccb6d152a67424f6bd4fbf46df577bdd9ff5',
-        size: [92.5581, 60.4651],
-        sizing: 'background-size:92.5581vw 61.4809vw;background-position:-0.0000vw 0.0373vw;background-repeat:no-repeat;' },
-      { label: 'OrderX',        ref: '7f4ebb15712b6e8306e590a80755af65f4e5b1e8',
-        size: [92.5581, 68.1395],
-        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
-      { label: 'Xpense',        ref: '055a6847a0cb6e745984e1a704db491809493a01',
-        size: [92.5581, 52.093],
-        sizing: 'background-size:92.9555vw 125.2189vw;background-position:-0.1834vw -0.0000vw;background-repeat:no-repeat;' },
-      { label: 'ManufeX',       ref: '94d8ee820081df4a95384f2b45e4c0892d857aa0',
-        size: [92.5581, 65.814],
-        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
-      { label: 'LogytstiX',     ref: '2714267af9e02b4b2ebcea0c1790f496f03e7899',
-        size: [92.5581, 61.6279],
-        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
-      { label: 'CRM 360',       ref: 'a18023954288f9a1fc4834dd71f70970453a9ea3',
-        size: [92.5581, 44.8837],
-        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
-      { label: 'Setu Move',     ref: 'ee4434788170addd06348da234f893d00dafa364',
-        size: [92.5581, 60.4651],
-        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
-      { label: 'QuiC',          ref: '0ccfb371b06ba329344ddc992cf1ae382c8e04a1',
-        size: [92.5581, 60.4651],
-        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
-      { label: 'Jarvis',        ref: '1747adadc621799435cb0199e2362493ede4a712',
-        size: [92.5581, 60.4651],
-        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
-      { label: 'AeonxIQ',       ref: 'e35ee9e51c72f197dcd30547c51270218a80b07b',
-        size: [92.5581, 44.425],
-        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
-      { label: 'Data Setu.ai',  ref: '52e0c2a51736b95c964d9fed3772f646f8c94219',
-        size: [92.5581, 60.4651],
-        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
-      { label: 'Setu Edge',     ref: '1747adadc621799435cb0199e2362493ede4a712',
-        size: [92.5581, 60.4651],
-        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' }
-      ]
-    }
-  };
-
-  var ACTIVE_BORDER = 'rgb(223, 63, 23)', IDLE_BORDER = 'rgb(213, 218, 226)';
-  var ACTIVE_TEXT = 'rgb(35, 39, 46)', IDLE_TEXT = 'rgb(82, 96, 119)';
-
-  function txt(e) { return (e.textContent || '').replace(/\s+/g, ' ').trim(); }
-  function norm(s) { return s.replace(/[^a-z0-9]/gi, '').toLowerCase(); }
-
-  /* Identified by contents, because _gen.py names every one of these layers
-     "Container". _uifx.html title-cases the labels ("QuiC" -> "Quic"), which is why
-     the comparison is on the normalised form. */
-  function findStrips() {
-    var out = [];
-    ['desktop', 'mobile'].forEach(function (key) {
-      var spec = SPEC[key];
-      var want = spec.panes.map(function (p) { return norm(p.label); });
-      [].forEach.call(document.querySelectorAll('.g-b.g-clip'), function (el) {
-        var mob = !!el.closest('.ax-mob');
-        if (mob !== (key === 'mobile')) return;
-        var labels = [].filter.call(el.children, function (c) { return c.classList.contains('g-t'); });
-        if (labels.length !== want.length) return;
-        if (!want.every(function (w, i) { return norm(txt(labels[i])) === w; })) return;
-        out.push({ strip: el, spec: spec, labels: labels });
-      });
-    });
-    return out;
+/* ---- CHROME INTERACTIONS, NEWSLETTER, TITLE CASE ---- */
+(function(){
+  function txt(e){ return (e.textContent||'').replace(/\s+/g,' ').trim(); }
+  function num(el,k){
+    var m=(el.getAttribute('style')||'').match(new RegExp(k+':\\s*(-?[0-9.]+)vw'));
+    return m?parseFloat(m[1]):null;
   }
-
-  function wire(w) {
-    var strip = w.strip, spec = w.spec, labels = w.labels;
-    var boxes = [].filter.call(strip.children, function (c) {
-      return c.classList.contains('g-b') && !c.classList.contains('g-clip');
-    });
-    if (boxes.length !== labels.length) return;
-
-    /* The panel is the image the first variant shipped with. Looking it up by that ref
-       rather than by position means a section reshuffle cannot silently retarget it. */
-    var scope = strip.closest('.ax-mob') || document;
-    /* The attribute value is quoted by JSON.stringify rather than by literal quote
-       characters in the source. _gen.py's export report and _imgfetch.py both scan the
-       whole page for the raster-fill attribute pattern, and a selector written the
-       obvious way is picked up as if it were a real image reference. */
-    var panel = scope.querySelector('.g-img[data-ref=' + JSON.stringify(spec.panes[0].ref) + ']');
-    if (!panel) return;
-
-    var current = 0, token = 0;
-
-    function apply(i) {
-      var p = spec.panes[i];
-      panel.setAttribute('data-ref', p.ref);
-      /* Size only. The panel's left/top are NOT set here, and must not be: every one
-         of the twelve variants shares a single box origin, so there was never anything
-         to switch, and the value is relative to the Figma node that clips the panel
-         rather than to the element's DOM offset parent. On desktop those happen to be
-         the same node and writing it looked harmless; on mobile they are not, and it
-         threw the panel to the top of the page, where it sat behind the fixed navbar
-         and peeked out above and below it. The generator already places this element
-         correctly for every variant. */
-      panel.style.width = p.size[0] + 'vw';
-      panel.style.height = p.size[1] + 'vw';
-      /* The export writes background sizing as a shorthand-free set of longhands; drop
-         the old ones wholesale rather than trying to override each. */
-      panel.style.cssText = panel.style.cssText.replace(
-        /background-size:[^;]*;?|background-position:[^;]*;?|background-repeat:[^;]*;?/g, '');
-      panel.style.backgroundImage = 'url(/assets/gen/' + p.ref + '.png)';
-      panel.style.cssText += ';' + p.sizing;
-      dressPanel(p);
-    }
-
-    /* The lockup and the button are made once and moved, rather than rebuilt per
-       switch: a fresh <img> per click re-decodes the SVG and flickers. Coordinates
-       come straight out of Figma, relative to the panel image's own rectangle, in
-       the same 1920-based vw the rest of the page is laid out in. */
-    var art = null, cta = null;
-    function place(el, box) {
-      el.style.left = box[0] + 'vw'; el.style.top = box[1] + 'vw';
-      el.style.width = box[2] + 'vw'; el.style.height = box[3] + 'vw';
-    }
-    function dressPanel(p) {
-      if (!p.art) {
-        if (art) art.hidden = true;
-        if (cta) cta.hidden = true;
-        return;
-      }
-      if (!art) {
-        art = document.createElement('img');
-        art.className = 'ax-pt-art';
-        art.setAttribute('alt', '');
-        art.setAttribute('aria-hidden', 'true');
-        panel.appendChild(art);
-      }
-      if (!cta) {
-        cta = document.createElement('div');
-        cta.className = 'ax-pt-cta';
-        /* Not a control: it announces that there is nothing to click yet. Marked as
-           owned so the dead-button sweep leaves it the colour Figma gave it. */
-        cta.setAttribute('data-ax-owned', '1');
-        panel.appendChild(cta);
-      }
-      if (art.getAttribute('src') !== p.art) art.setAttribute('src', p.art);
-      cta.textContent = 'Coming Soon';
-      place(art, p.artBox);
-      place(cta, p.cta);
-      art.hidden = false; cta.hidden = false;
-    }
-
-    function select(i, animate) {
-      if (animate && i === current) return;
-      current = i;
-      var mine = ++token;
-
-      boxes.forEach(function (b, n) { b.style.borderColor = n === i ? ACTIVE_BORDER : IDLE_BORDER; });
-      labels.forEach(function (l, n) {
-        l.setAttribute('aria-selected', n === i ? 'true' : 'false');
-        l.tabIndex = n === i ? 0 : -1;
-        if (!spec.weights) return;
-        l.style.color = n === i ? ACTIVE_TEXT : IDLE_TEXT;
-        l.style.fontWeight = n === i ? '600' : '400';
-      });
-
-      if (!animate) { apply(i); return; }
-
-      /* Hold the fade open until the screenshot has actually decoded: these are 1-2MB
-         PNGs, and swapping on a fixed timer showed an empty panel on a cold cache. */
-      var ready = false, faded = false;
-      var img = new Image();
-      var swap = function () {
-        if (!ready || !faded || token !== mine) return;
-        apply(i);
-        panel.style.opacity = '1';
-      };
-      img.onload = img.onerror = function () { ready = true; swap(); };
-      img.src = '/assets/gen/' + spec.panes[i].ref + '.png';
-
-      panel.style.opacity = '0';
-      setTimeout(function () { faded = true; swap(); }, 150);
-    }
-
-    strip.setAttribute('role', 'tablist');
-
-    /* One capture listener on the strip rather than one per tab. _uifx.html's CTA pass
-       binds its own click handler to whichever labels it decides are links -- here it
-       claimed SupplierX, OrderX, Xpense and ManufeX -- and it is injected first, so a
-       per-label listener of ours is registered second and never sees the event. Capture
-       runs outermost-in, so a listener on their shared ancestor beats all of them.
-
-       This is why those four tabs did nothing. It went unnoticed because the obvious
-       test walks the tabs in order, and clicking tab 0 while tab 0 is already selected
-       is indistinguishable from a tab that works. */
-    strip.addEventListener('click', function (e) {
-      var t = e.target, idx = -1;
-      while (t && t !== strip && idx < 0) {
-        idx = labels.indexOf(t);
-        if (idx < 0) idx = boxes.indexOf(t);
-        t = t.parentElement;
-      }
-      if (idx < 0) return;
-      e.preventDefault();
-      e.stopPropagation();
-      select(idx, true);
-      labels[idx].focus();
-    }, true);
-
-    labels.forEach(function (l, i) {
-      l.classList.add('ax-pt-tab', 'ax-pt-lbl');
-      l.setAttribute('role', 'tab');
-      boxes[i].classList.add('ax-pt-box', 'ax-pt-tab');
-      /* Undo the CTA pass's own treatment so these read as tabs, not links. */
-      l.classList.remove('ax-fx-link');
-      boxes[i].classList.remove('ax-fx-link');
-      if (boxes[i].getAttribute('role') === 'link') boxes[i].removeAttribute('role');
-      if (l.getAttribute('href') === '#') l.removeAttribute('href');
-      var go = function (e) { e.preventDefault(); select(i, true); l.focus(); };
-      l.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter' || e.key === ' ') return go(e);
-        var d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
-        if (!d) return;
-        e.preventDefault();
-        var n = (i + d + labels.length) % labels.length;
-        select(n, true);
-        labels[n].focus();
-        if (labels[n].scrollIntoView) labels[n].scrollIntoView({ block: 'nearest', inline: 'nearest' });
-      });
-    });
-
-    unclip(strip, boxes);
-    alignRow(strip, boxes, labels);
-
-    /* The icons sit between the boxes and the labels in the flat export and would
-       otherwise swallow the click. */
-    [].forEach.call(strip.querySelectorAll('.g-vec, .g-img'), function (v) {
-      if (v !== panel) v.style.pointerEvents = 'none';
-    });
-
-    select(0, false);
-    setTimeout(function () { panel.classList.add('ax-pt-panel'); }, 0);
+  function setvw(el,k,v){
+    var s=el.getAttribute('style')||'';
+    el.setAttribute('style', s.replace(new RegExp(k+':\\s*-?[0-9.]+vw'), k+':'+v.toFixed(4)+'vw'));
   }
-
-  /* Figma's own strip clips two of its tabs, and the export reproduces it faithfully.
-     The QuiC tab is 5.6px taller than the row because its logo carries a strapline,
-     and the Setu Edge tab's right edge lands exactly on the strip's, so overflow:hidden
-     eats one border off each. The strip paints nothing itself -- no background, no
-     border of its own -- so adjusting its clip box is invisible, and nothing sits to
-     its right. */
-  function unclip(strip, boxes) {
-    var W = parseFloat(strip.style.width), H = parseFloat(strip.style.height);
-    if (isNaN(W) || isNaN(H)) return;
-
-    var maxRight = 0;
-    boxes.forEach(function (b) {
-      maxRight = Math.max(maxRight, parseFloat(b.style.left) + parseFloat(b.style.width));
-    });
-    /* Only when the row actually fits. The mobile strip is a horizontal scroller whose
-       tabs are meant to run well past its edge; widening that would defeat it. */
-    if (maxRight > W + 0.5) return;
-
-    /* A hair over, so the last tab's border is not lost to sub-pixel rounding at the
-       clip boundary. box-sizing draws it inside the tab, so it fits arithmetically and
-       only rounding takes it. */
-    strip.style.width = (W + 0.05).toFixed(4) + 'vw';
-
-    boxes.forEach(function (b) {
-      var h = parseFloat(b.style.height);
-      if (isNaN(h) || h <= H + 1e-6) return;
-      /* Bring the tall tab back to the row height rather than growing the strip: the
-         panel sits flush under the strip, so a taller strip would drop that border on
-         top of it. Figma grew the box symmetrically, so its icon and label sit half the
-         difference low and read as misaligned against the other eleven -- lift them by
-         the same half so the whole row lines up. */
-      var shift = (h - H) / 2;
-      var l = parseFloat(b.style.left), w = parseFloat(b.style.width);
-      [].forEach.call(strip.children, function (c) {
-        if (c === b) return;
-        var cl = parseFloat(c.style.left);
-        if (isNaN(cl) || cl < l - 0.01 || cl > l + w + 0.01) return;
-        var ct = parseFloat(c.style.top);
-        if (!isNaN(ct)) c.style.top = (ct - shift).toFixed(4) + 'vw';
-      });
-      b.style.height = H.toFixed(4) + 'vw';
-    });
-  }
-
-  /* The most common value in a list, used to decide what "the row" is rather than
-     trusting tab 0: whichever metric ten or eleven of the twelve tabs share is the
-     row, and the odd ones out are the slips. */
-  function modal(vals) {
-    var n = {}, best = null;
-    vals.forEach(function (v) {
-      if (v == null) return;
-      n[v] = (n[v] || 0) + 1;
-      if (best === null || n[v] > n[best]) best = v;
+  function pillOf(label){
+    /* Figma exports the coloured rect and its label as SIBLINGS, so closest() walks
+       past the pill onto the whole section -- find the smallest box that contains
+       the label's own rect instead. */
+    var lr=label.getBoundingClientRect();
+    if(!lr.width) return null;
+    var best=null,ba=Infinity;
+    var scope=label.closest('section,header,main')||document;
+    scope.querySelectorAll('.g-b').forEach(function(b){
+      if(b.contains(label)&&b!==label.parentElement) return;
+      var br=b.getBoundingClientRect();
+      if(!br.width) return;
+      if(br.width*br.height>lr.width*lr.height*14) return;
+      if(lr.left>=br.left-4&&lr.right<=br.right+4&&lr.top>=br.top-6&&lr.bottom<=br.bottom+6){
+        var a=br.width*br.height; if(a<ba){ba=a;best=b;}
+      }
     });
     return best;
   }
-
-  /* Setu Edge is drawn to different metrics than the other eleven: its icon box is
-     28px where theirs are 36, and because the box is shorter its label sits 4px above
-     the row. The icon is centred correctly, so only its size is wrong; the label is
-     genuinely out of line, and that is what reads as a misaligned cell. */
-  function alignRow(strip, boxes, labels) {
-    var lt = modal(labels.map(function (l) { return l.style.top; }));
-    if (lt) labels.forEach(function (l) { if (l.style.top !== lt) l.style.top = lt; });
-
-    /* One icon element per tab, found by horizontal containment. Some mobile tabs nest
-       their art deeper than the strip's own children, so those resolve to nothing and
-       are left alone rather than guessed at. */
-    var icons = boxes.map(function (b) {
-      var l = parseFloat(b.style.left), w = parseFloat(b.style.width);
-      var hits = [].filter.call(strip.children, function (c) {
-        if (c === b || c.classList.contains('g-t') || c.classList.contains('ax-pt-box')) return false;
-        var cl = parseFloat(c.style.left);
-        return !isNaN(cl) && cl >= l - 0.01 && cl <= l + w + 0.01;
-      });
-      return hits.length === 1 ? hits[0] : null;
-    });
-
-    /* Height, not width: the QuiC logo is legitimately wider than the rest because it
-       carries a strapline, and it already matches the row's height. */
-    var ih = modal(icons.map(function (i) { return i && i.style.height; }));
-    if (!ih) return;
-    icons.forEach(function (ic) {
-      if (!ic || ic.style.height === ih) return;
-      var h = parseFloat(ic.style.height), w = parseFloat(ic.style.width);
-      var t = parseFloat(ic.style.top), l = parseFloat(ic.style.left);
-      var nh = parseFloat(ih);
-      if (isNaN(h) || isNaN(w) || isNaN(t) || isNaN(l) || !h) return;
-      var nw = w * (nh / h);
-      /* Grow about the centre it already sits on, so the row's optical line holds. */
-      ic.style.height = nh.toFixed(4) + 'vw';
-      ic.style.width = nw.toFixed(4) + 'vw';
-      ic.style.top = (t - (nh - h) / 2).toFixed(4) + 'vw';
-      ic.style.left = (l - (nw - w) / 2).toFixed(4) + 'vw';
+  function go(el,url,blank){
+    el.setAttribute('role','link');
+    el.dataset.axTo=url;
+    if(!el.hasAttribute('tabindex')) el.setAttribute('tabindex','0');
+    var nav=function(){ blank?window.open(url,'_blank','noopener'):(location.href=url); };
+    el.addEventListener('click',nav);
+    el.addEventListener('keydown',function(e){
+      if(e.key==='Enter'||e.key===' '){ e.preventDefault(); nav(); }
     });
   }
 
-  function init() { findStrips().forEach(wire); }
+  /* ---------- 0. COPY DEFECTS CARRIED IN FROM FIGMA ----------
+     Two unambiguous misspellings ship in the design and would go out at launch:
+     "Send RPF Request" (RFP) and "Ahmadabad" (the footer and the rest of the site
+     spell it Ahmedabad). Corrected at runtime rather than in the generated markup,
+     because these pages are rebuilt from the Figma dump and a file edit would be
+     wiped. Anything needing real content -- the truncated "Gujara." address line and
+     the stock "John Doe" testimonial headshot -- is left alone for the client. */
+  var COPY_FIX=[[/\bSend RPF Request\b/g,'Send RFP Request'],[/\bAhmadabad\b/g,'Ahmedabad'],
+                [/\bSaas\b/g,'SaaS'],
+                /* Figma ships this line cut off mid-word on 26 nodes across the
+                   industries pages: "...at Level 4 autonom". */
+                [/at Level 4 autonom(?!y)/g,'at Level 4 autonomy.'],
+                /* Figma spells it "COSTUMER IN THIS VERTICAL" on all six
+                   industries pages. The rest of the site says Customer. */
+                [/\bCOSTUMER\b/g,'CUSTOMER'],[/\bCostumer\b/g,'Customer'],
+                /* The trinity band's first card is authored "01/SAP" on all ten of
+                   its instances while its own siblings are "02 / CLOUD" and
+                   "03 / AI" -- one card visibly set tighter than the other two. */
+                [/\b01\/SAP\b/g,'01 / SAP'],
+                /* Figma spells the product names three ways ("Logystix" in the footer,
+                   "LogystiX" on the cards). One casing per brand, sitewide. */
+                [/\bLogystix\b/g,'LogystiX'],[/\bManuFex\b/g,'ManufeX'],[/\bManufex\b/g,'ManufeX'],
+                [/\bSupplierx\b/g,'SupplierX'],[/\bOrderx\b/g,'OrderX'],[/\bAeonx\b/g,'AeonX']];
+  function copyFix(){
+    [].slice.call(document.querySelectorAll('.g-t,section.ax-footer a,.ax-mm2__ln,.ax-nav__link')).forEach(function(e){
+      if(e.children.length) return;
+      var t=e.textContent, o=t;
+      COPY_FIX.forEach(function(f){ t=t.replace(f[0],f[1]); });
+      if(t!==o) e.textContent=t;
+    });
+  }
 
-  if (document.readyState === 'complete') setTimeout(init, 0);
-  else window.addEventListener('load', function () { setTimeout(init, 0); });
+  /* ---------- 0b. LATIN PLACEHOLDER ----------
+     The three job openings on /who-we-are/career/ ship their descriptions as
+     "Lorem ipsum dolor sit amet..." on both breakpoints. The roles, locations and
+     Apply buttons are real, so a candidate reads real titles against Latin filler.
+     Real copy is the client's to write, and inventing job descriptions for a real
+     company's openings is not ours to do, so the placeholder is hidden instead:
+     the listing keeps its title, location and Apply button and simply carries no
+     description until AeonX supplies one.
+     Hidden at runtime for the same reason as the copy fixes above -- these pages
+     are regenerated from the Figma dump, which still contains the Latin. */
+  var LATIN=/\blorem ipsum dolor sit amet\b/i;
+  function hidePlaceholderCopy(){
+    [].slice.call(document.querySelectorAll('.g-t')).forEach(function(e){
+      if(e.children.length) return;
+      if(!LATIN.test(e.textContent)) return;
+      e.textContent='';
+      e.style.display='none';
+    });
+  }
+
+  /* ---------- 1. TITLE CASE ON CTA LABELS ----------
+     Client asked for Title Case on EVERY button. The first version matched an
+     allow-list of known labels, so anything the list did not name -- "Download the
+     brochure" was the one that got reported -- shipped in sentence case. A label is
+     now Title Cased when the ELEMENT IS A BUTTON, decided from the markup rather
+     than from its wording: it carries a control role (data-cta / data-axpill /
+     role=link|button, or it is a chrome button class), or it sits inside a pill --
+     a box with a background colour and a corner radius that is not much bigger than
+     the label itself. Headings, card titles and body copy fail that test. */
+  var ACR={aws:'AWS',sap:'SAP',ams:'AMS',ai:'AI',ml:'ML',cms:'CMS',erp:'ERP',gcp:'GCP',
+           ecs:'ECS',waf:'WAF',axiom:'AXIOM',api:'API',saas:'SaaS',rise:'RISE',grow:'GROW',
+           bse:'BSE',noc:'NOC',sre:'SRE',hana:'HANA',btp:'BTP',iot:'IoT',rfp:'RFP',rpf:'RPF',
+           ecc:'ECC',fmcg:'FMCG',ap:'AP',
+           iepf:'IEPF',pdf:'PDF',hr:'HR',it:'IT',ceo:'CEO',cio:'CIO',cfo:'CFO',esg:'ESG',
+           brsr:'BRSR',agm:'AGM',faq:'FAQ',us:'Us',iq:'IQ',fy:'FY',soc:'SOC',iso:'ISO',
+           gdpr:'GDPR',sla:'SLA',
+           /* product names carry internal capitals -- Title Case must not flatten
+              them to "Supplierx" */
+           aeonx:'AeonX',supplierx:'SupplierX',orderx:'OrderX',xpense:'Xpense',
+           logystix:'LogystiX',manufex:'ManufeX',aeonxiq:'AeonX.IQ',axiomai:'AXIOM AI'};
+  /* Title case leaves short function words lowercase -- capitalising every word is
+     Start Case, and it changed the meaning of SAP's own product names: "RISE with
+     SAP" and "GROW with SAP" came out "RISE With SAP" / "GROW With SAP" on 34 and 33
+     pages. It also pushed every CTA away from the Figma copy ("Read the story" ->
+     "Read The Story"). A leading word is always capitalised. */
+  var MINOR=/^(a|an|the|and|but|or|nor|for|of|to|in|on|at|by|as|per|via|with|from|into|over|up)$/;
+  function titleCase(s){
+    /* Hyphenated compounds are ONE word: "SAP-on-AWS" must not become
+       "SAP-On-AWS". Capitalise the first part, keep the rest as written unless it
+       is a known acronym. */
+    var first=true;
+    return s.split(/(\s+)/).map(function(word){
+      if(/^\s+$/.test(word)||!word) return word;
+      var wasFirst=first; first=false;
+      if(!wasFirst && MINOR.test(word.toLowerCase()) && !ACR[word.toLowerCase()]) return word.toLowerCase();
+      if(word.indexOf('-')>-1){
+        return word.split('-').map(function(part,i){
+          var low=part.toLowerCase();
+          if(ACR[low]) return ACR[low];
+          if(i===0) return low.charAt(0).toUpperCase()+low.slice(1);
+          return part;                       /* keep the author's casing */
+        }).join('-');
+      }
+      /* A possessive "'s" is part of the word it follows, not a new word --
+         splitting on the apostrophe capitalised it on its own: "Partner's Hub"
+         came out "Partner'S Hub". */
+      return word.toLowerCase().replace(/[a-z0-9]+/g, function(w, i, full){
+        if(w==='s' && /['’]/.test(full.charAt(i-1))) return w;
+        return ACR[w] || (w.charAt(0).toUpperCase()+w.slice(1));
+      });
+    }).join('');
+  }
+  /* a pill: painted box, rounded, and sized like a button around this label */
+  function inPill(l){
+    var lr=l.getBoundingClientRect();
+    if(!lr.width||lr.height>60) return false;
+    var p=l.parentElement, hops=0;
+    while(p&&hops<3){
+      var st=p.getAttribute&&p.getAttribute('style')||'';
+      if(/background-color|background:/.test(st)&&/border-radius/.test(st)){
+        var pr=p.getBoundingClientRect();
+        if(pr.width&&pr.width*pr.height<=lr.width*lr.height*14) return true;
+      }
+      p=p.parentElement; hops++;
+    }
+    /* Figma also exports the pill as a SIBLING rect behind the label */
+    var pill=pillOf(l);
+    if(pill){
+      var ps=pill.getAttribute('style')||'';
+      if(/background-color/.test(ps)&&/border-radius/.test(ps)) return true;
+    }
+    return false;
+  }
+  function isControl(e){
+    if(e.dataset&&(e.dataset.cta||e.dataset.axcta||e.dataset.axpill)) return true;
+    var role=e.getAttribute('role')||(e.parentElement&&e.parentElement.getAttribute('role'));
+    if(role==='link'||role==='button'||role==='tab') return true;
+    if(e.closest('a[href]')) return true;
+    if(/ax-nav__btn|ax-mm2__feat-btn|ax-mm2__api-btn|ax-fx-pill/.test(e.className||'')) return true;
+    return false;
+  }
+  /* Labels that must keep their exact casing: legal names, addresses, taglines that
+     merely happen to sit inside a painted box. Anything longer than a button label
+     is skipped anyway. */
+  var KEEP=/@|\bhttps?:|^\+?\d|·|©/;
+  /* The leadership department tabs ship as PRACTICE & PROGRAMME / SALES & GROWTH --
+     segmented-control labels, not sentence-case buttons, same register as the FY
+     chips and the AWS competency tabs elsewhere on the site. Only the ACTIVE tab is
+     exported with a fill (inPill() reads background-color), so this pass Title Cased
+     it while its unfilled sibling stayed authored-caps -- one tab visibly mismatched
+     the other. Worse, _leadtabs.html identifies both tabs by matching this EXACT
+     uppercase text; once mutated, its setup() no longer recognised them and neither
+     tab responded to a click. Keep both as authored so identification and casing
+     both stay correct.
+
+     The homepage mobile hero's SERVICES / PRODUCT toggle is the same shape and broke
+     the same way: Figma exports a fill on the ACTIVE tab only, so inPill() saw
+     PRODUCT and not SERVICES, and the pair rendered "Product | SERVICES". Both are
+     authored caps in Figma; both stay caps. */
+  var KEEP_LIT=['PRACTICE & PROGRAMME','SALES & GROWTH','PRODUCT','SERVICES'];
+  function applyTitleCase(root){
+    (root||document).querySelectorAll('.g-t,.ax-mm2__feat-btn,.ax-mm2__api-btn').forEach(function(e){
+      if(e.children.length) return;                     /* leave rich labels alone */
+      /* The two nav buttons ship uppercase in the markup and the client wants them
+         kept that way -- TALK TO US / REQUEST A PROPOSAL. Title Case is for the CTAs
+         in the page body, not for the fixed chrome. */
+      if(e.closest('header')||e.closest('.ax-nav')||e.closest('.ax-mnav')) return;
+      if(e.closest('section.ax-footer')&&!isControl(e)) return;
+      var t=txt(e);
+      if(!t||t.length>34||KEEP.test(t)||KEEP_LIT.indexOf(t)!==-1) return;
+      /* A label the design sets in ALL CAPS is a design decision, not a sentence
+         waiting to be cased. The nav buttons were already exempted by hand for this
+         reason; the same is true of every other caps label, and title-casing them was
+         actively wrong -- it flattened acronyms the ACR map does not list ("FMCG &
+         Distribution" -> "Fmcg & Distribution" on 33 pages, "AP" -> "Ap") and rewrote
+         the leadership cards' JOB TITLES ("CHIEF FINANCIAL OFFICER" -> "Chief
+         Financial Officer", "VICE PRESIDENT", "HEAD OF OPERATIONS"), which are not
+         buttons at all and only qualified because they sit in a painted card.
+         The client's ask was Title Case on sentence-case CTAs -- "Download the
+         brochure", "Read the story" -- and those are untouched by this. */
+      if(t===t.toUpperCase()&&/[A-Z]{2}/.test(t)) return;
+      /* A clickable CARD is not a button: its title is set at heading size. Compare
+         in vw, not px -- the mobile block is authored against a 430px design, so its
+         16px button label computes to ~54px when the desktop viewport is 1440 and a
+         px threshold silently skipped every mobile button. */
+      var fsvw=(parseFloat(getComputedStyle(e).fontSize)||0)*100/(window.innerWidth||1920);
+      if(fsvw > (e.closest('.ax-mob')?5.0:1.05)) return;
+      if(!isControl(e)&&!inPill(e)) return;
+      var tc=titleCase(t);
+      if(tc!==t) e.textContent=tc;
+    });
+  }
+
+  /* ---------- 1c. TRAILING ARROW OVERLAPPING ITS LABEL ----------
+     Figma sizes a button's text box to the string as IT measures it, then parks the
+     trailing arrow at a fixed offset. Browser metrics for Nunito Sans run a little
+     wider, so a long label fills its box and runs under the arrow -- "All Case
+     Studies" overlapped by 8px. Rather than nudge that one button, re-centre the
+     pair as a GROUP (ink + gap + arrow) inside the pill whenever they actually
+     collide, which is what the design draws and is stable at any width. */
+  /* ---- TRAILING GLYPH SITTING ON TOP OF ITS LABEL ----
+     Figma sizes a label box to ITS OWN text metrics and parks the trailing chevron
+     at a fixed offset after that box. Nunito Sans renders a little wider here, so a
+     label overruns its box and the glyph lands on the last letters -- the insights
+     case-study cards showed "Read the story" with the chevron 12px INSIDE the ink.
+     spaceArrows() cannot do this job: it only walks .ax-hv-arrow, and it re-centres
+     the pair inside the surrounding box, which for a card CTA resolves to the whole
+     card. This nudges the GLYPH only, only when it actually overlaps, and only far
+     enough to restore the gap the design gave it after the box. Idempotent: once
+     moved the glyph already clears the ink, so a second run is a no-op. */
+  function clearTrailingGlyphs(){
+    var glyphs=[].slice.call(document.querySelectorAll('main.ax-page img.g-vec'))
+      .filter(function(g){
+        if(g.closest('.ax-mob')) return false;
+        var r=g.getBoundingClientRect();
+        return r.width && r.width<=60 && r.height<=60;
+      }).map(function(g){ return {el:g, r:g.getBoundingClientRect()}; });
+    if(!glyphs.length) return;
+    [].slice.call(document.querySelectorAll('main.ax-page .g-t')).forEach(function(l){
+      if(l.closest('.ax-mob')||l.children.length) return;
+      var s=txt(l); if(!s||s.length>40) return;
+      var lr=l.getBoundingClientRect(); if(!lr.width) return;
+      var rng=document.createRange(); rng.selectNodeContents(l);
+      var ink=rng.getBoundingClientRect(); if(!ink.width) return;
+      var mid=lr.top+lr.height/2;
+      var g=glyphs.filter(function(o){
+        return Math.abs((o.r.top+o.r.height/2)-mid)<Math.max(12,lr.height*0.8) &&
+               o.r.left>=lr.left && o.r.left<lr.right+70;
+      }).sort(function(a,b){ return a.r.left-b.r.left; })[0];
+      if(!g) return;
+      var el=g.el, st=el.getAttribute('style')||'';
+      var m=st.match(/left:\s*(-?[\d.]+)vw/); if(!m) return;
+      /* the gap the design drew AFTER the box, captured once */
+      if(el.dataset.axGap===undefined)
+        el.dataset.axGap=String(Math.max(2, g.r.left-lr.right));
+      var want=ink.right+parseFloat(el.dataset.axGap);
+      var d=want-g.r.left;
+      if(d<=0.5) return;                       /* label fits its box: leave alone */
+      var vwpx=(document.documentElement.clientWidth||1920)/100;
+      el.setAttribute('style', st.replace(/left:\s*-?[\d.]+vw/,
+        'left:'+(parseFloat(m[1])+d/vwpx).toFixed(4)+'vw'));
+    });
+  }
+
+  function spaceArrows(){
+    [].slice.call(document.querySelectorAll('.ax-hv-arrow')).forEach(function(a){
+      var ar=a.getBoundingClientRect();
+      if(!ar.width) return;
+      var pill=null,best=Infinity;
+      [].slice.call(document.querySelectorAll('.g-b')).forEach(function(b){
+        var r=b.getBoundingClientRect();
+        if(!r.width||r.width>600) return;
+        if(ar.left<r.left-4||ar.right>r.right+4||ar.top<r.top-6||ar.bottom>r.bottom+6) return;
+        var area=r.width*r.height; if(area<best){ best=area; pill=b; }
+      });
+      if(!pill) return;
+      var pr=pill.getBoundingClientRect();
+      var lbl=[].slice.call(document.querySelectorAll('.g-t')).filter(function(t){
+        /* A tab is not a CTA. The hero's Products/AI Agents/Services labels sit in a
+           painted strip that looks exactly like a pill, so this pass used to centre
+           them against a phantom arrow and shift "AI Agents" 3px off the position
+           Figma exported. _herotabs.html claims them at parse time, before this runs. */
+        if(t.classList.contains('ax-ht-tab')) return false;
+        var r=t.getBoundingClientRect();
+        return r.width&&r.left>=pr.left-4&&r.right<=pr.right+4&&
+               r.top>=pr.top-6&&r.bottom<=pr.bottom+6&&txt(t);
+      })[0];
+      if(!lbl) return;
+      var rng=document.createRange(); rng.selectNodeContents(lbl);
+      var ink=rng.getBoundingClientRect();
+      if(!ink.width) return;
+      if(Math.min(ink.right,ar.right)-Math.max(ink.left,ar.left)<=0) return;   /* no collision */
+
+      var vwpx=(document.documentElement.clientWidth||1920)/100;
+      var gap=Math.max(6,ar.width*0.35);
+      var group=ink.width+gap+ar.width;
+      var lLeft=num(lbl,'left'), aLeft=num(a,'left');
+      if(lLeft===null||aLeft===null) return;
+      /* Centre the pair only inside a real PILL -- a painted box that hugs its
+         label. The smallest box around a card's "Read the story" is the CARD, and
+         centring in that pushed the label off the title it is supposed to line up
+         with (12px on the first card, 40px by the third). There the job is only to
+         stop the chevron overlapping the words: leave the label where the design
+         put it and move the arrow. */
+      var pcs=getComputedStyle(pill);
+      var painted=(pcs.backgroundColor&&pcs.backgroundColor!=='rgba(0, 0, 0, 0)')||
+                  pcs.borderTopWidth!=='0px';
+      if(!(painted&&pr.width<=group+80)){
+        setvw(a,'left', aLeft+((ink.right+gap)-ar.left)/vwpx);
+        return;
+      }
+      /* never let the group grow past the pill: fall back to just clearing the text */
+      var start=(group<=pr.width-10) ? pr.left+(pr.width-group)/2 : pr.left+5;
+      setvw(lbl,'left', lLeft+(start-ink.left)/vwpx);
+      setvw(a,   'left', aLeft+((start+ink.width+gap)-ar.left)/vwpx);
+    });
+  }
+
+  /* ---------- 2. NAV + FOOTER AFFORDANCES ---------- */
+  function armChrome(){
+    document.querySelectorAll('.ax-nav__btn').forEach(function(b){ b.classList.add('ax-fx-pill'); });
+    document.querySelectorAll('.ax-nav__soc').forEach(function(a){ a.classList.add('ax-fx-soc'); });
+    document.querySelectorAll('.ax-mm2__api-btn,.ax-mm2__feat-btn,.ax-mm2__ln').forEach(function(a){
+      a.classList.add('ax-fx-link');
+    });
+    var foot=document.querySelector('section.ax-footer');
+    if(!foot) return;
+    foot.querySelectorAll('a[href]').forEach(function(a){ a.classList.add('ax-fx-link'); });
+
+    /* Get Started -- a filled pill in the footer, previously inert */
+    [].slice.call(foot.querySelectorAll('.g-t')).forEach(function(l){
+      var t=txt(l);
+      if(!/^get started$/i.test(t)) return;
+      var pill=pillOf(l)||l;
+      pill.classList.add('ax-fx-pill');
+      l.style.pointerEvents='none';
+      if(!pill.dataset.axfx){ pill.dataset.axfx='1'; go(pill,'/contact-us/'); }
+    });
+
+    /* Follow Us: LinkedIn resolves to the real company page (taken from the live
+       site, not guessed). Twitter has no account linked anywhere on aeonx.digital,
+       so it gets the hover affordance but no destination rather than a made-up one. */
+    /* Verified accounts. X and YouTube are not linked anywhere on aeonx.digital,
+       so they were tracked down separately and confirmed against the company's own
+       posts before being wired. "Twitter" is kept as a key because the footer copy
+       still says Twitter while the nav has moved to the X mark. */
+    var SOC={ 'linkedin':'https://www.linkedin.com/company/aeonx-digital/',
+              'facebook':'https://www.facebook.com/aeonx.digital',
+              'instagram':'https://www.instagram.com/aeonx.digital/',
+              'twitter':'https://x.com/AeonXDigital',
+              'x':'https://x.com/AeonXDigital',
+              'youtube':'https://www.youtube.com/channel/UCiB9FZmN6-uiK-Y3cHO_bTA' };
+    [].slice.call(foot.querySelectorAll('.g-t')).forEach(function(l){
+      var k=txt(l).toLowerCase();
+      var url=SOC[k];
+      if(!url||l.dataset.axfx) { l.classList.add('ax-fx-link'); return; }
+      /* Real <a>, not a JS role=link: these should open in a new tab, offer a
+         context menu, copy the address, and be readable by anything that walks
+         links. The anchor inherits the designed element's own inline geometry so
+         the pixel-locked layout is unchanged. */
+      var a=document.createElement('a');
+      a.href=url; a.target='_blank'; a.rel='noopener noreferrer';
+      a.className=(l.className||'')+' ax-fx-link';
+      a.setAttribute('style',(l.getAttribute('style')||'')+';text-decoration:none;color:inherit;display:block');
+      a.textContent=txt(l);
+      a.dataset.axfx='1';
+      l.parentNode.replaceChild(a,l);
+    });
+  }
+
+  /* ---------- 3. NEWSLETTER ----------
+     The designed field is a dummy "Work email" text div inside a bordered box, and
+     Subscribe was being linkified to /contact-us/ by the generic CTA pass. Replace
+     the dummy with a real <input>, stop the navigation, validate, and confirm in
+     place. No backend exists on a static site, so the address is handed to the
+     team's mailbox and the user is told plainly that they are subscribed. */
+  /* Same resolution the announcement bar and the contact form use: an explicit
+     override, localhost during local dev, or empty -- which is correct on
+     production, where one CloudFront distribution serves both the site and the
+     API, so a relative path is same-origin. */
+  var API_BASE=(window.AX_API_BASE||
+    (/^(localhost|127\.0\.0\.1)$/.test(location.hostname)?'http://localhost:8000':''))
+    .replace(/\/+$/,'');
+
+  function newsletter(){
+    var foot=document.querySelector('section.ax-footer');
+    if(!foot||foot.dataset.axNews) return;
+    var dummy=[].slice.call(foot.querySelectorAll('.g-t')).filter(function(e){
+      return /^work email$/i.test(txt(e)); })[0];
+    var subLabel=[].slice.call(foot.querySelectorAll('.g-t')).filter(function(e){
+      return /^subscribe$/i.test(txt(e)); })[0];
+    if(!dummy||!subLabel) return;
+    foot.dataset.axNews='1';
+
+    var box=dummy.parentElement;
+    box.classList.add('ax-fx-box');
+    var input=document.createElement('input');
+    input.type='email'; input.className='ax-fx-input'; input.placeholder='Work email';
+    input.setAttribute('aria-label','Work email');
+    input.setAttribute('style',(dummy.getAttribute('style')||'').replace(/color:[^;]+;?/,''));
+    dummy.parentNode.replaceChild(input,dummy);
+
+    /* Resolve the painted pill by walking UP from the label to the nearest ancestor
+       that Figma painted (background-color + border-radius). pillOf() measures rects,
+       and on the first pass the footer is still at opacity 0 with zero-size rects, so
+       it returned null and this fell back to the LABEL -- which is why clicking the
+       button's body (everything except the glyphs) still reached the chrome's
+       navigate handler and went to /contact-us/. Markup does not depend on layout. */
+    function paintedPill(el){
+      var n=el.parentElement, hops=0;
+      while(n&&hops<4){
+        var st=n.getAttribute('style')||'';
+        if(/background-color/.test(st)&&/border-radius/.test(st)) return n;
+        n=n.parentElement; hops++;
+      }
+      return pillOf(el)||el;
+    }
+    var pill=paintedPill(subLabel);
+    pill.classList.add('ax-fx-pill');
+    subLabel.style.pointerEvents='none';
+    /* Figma sizes the Subscribe label box to the text and pins it at the pill's
+       left edge, so the label sat 0px from the left and 41px from the right. Two
+       measure-and-nudge passes (this one and the generic centreLabels) fought each
+       other over it, so stop measuring: when the label is a CHILD of its pill, make
+       it span the pill and let text-align do the centring. Nothing to race. */
+    /* Do not depend on pillOf() here: on the first pass the footer may not have
+       been laid out yet, it measures 0 and returns null. The label's own parent is
+       the painted pill in this markup, so test that directly. */
+    (function centreInPill(){
+      var host=subLabel.parentElement;
+      if(!host) return;
+      var hs=host.getAttribute('style')||'';
+      if(!/background-color/.test(hs)||!/border-radius/.test(hs)) return;
+      subLabel.style.left='0';
+      subLabel.style.width='100%';
+      subLabel.style.textAlign='center';
+      subLabel.dataset.axCentred='1';
+    })();
+
+    var note=document.createElement('div');
+    note.className='ax-fx-note';
+    note.setAttribute('role','status');
+    note.setAttribute('aria-live','polite');
+    var bl=num(box,'left'), bt=num(box,'top'), bh=num(box,'height');
+    if(bl!==null){ note.style.cssText='left:'+bl+'vw;top:'+(bt+bh+0.35)+'vw'; }
+    box.parentNode.appendChild(note);
+
+    function say(msg,bad){
+      note.textContent=msg;
+      note.classList.toggle('err',!!bad);
+      note.classList.add('on');
+      clearTimeout(note.__t);
+      note.__t=setTimeout(function(){ note.classList.remove('on'); },6000);
+    }
+    function submit(e){
+      /* stopImmediatePropagation, not stopPropagation: the chrome CTA pass has its
+         own click handler on THIS SAME element, and stopPropagation only blocks
+         ancestors -- same-element listeners still ran, so Subscribe kept navigating
+         to /contact-us/. */
+      if(e){ e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); }
+      var v=(input.value||'').trim();
+      if(!v||!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(v)){
+        say('Enter a valid work email address.',true); input.focus(); return;
+      }
+      say('Subscribing\u2026');
+      input.value='';
+      /* The address is POSTed and stored. This used to say "we have your address"
+         and hold it nowhere, which is worse than a dead button: the reader believes
+         they subscribed. It now goes to /api/newsletter/, the same origin the
+         contact form and the announcement bar use, and lands in a row the team can
+         see at /manage/.
+
+         Still no programmatic mailto on any path. A mailto is a navigation attempt,
+         and a browser with no mail handler registered unloads the page -- that is
+         what kept being reported as "Subscribe redirects to the contact page". If
+         the API cannot be reached the address is offered as a link the reader may
+         choose to click, and nothing takes them anywhere on its own. */
+      var mailHref='mailto:sales@aeonx.digital'
+        +'?subject='+encodeURIComponent('Newsletter subscription')
+        +'&body='+encodeURIComponent('Please subscribe this address to the AeonX newsletter: '+v);
+      function offerMail(){
+        note.classList.add('err');
+        note.innerHTML='';
+        note.appendChild(document.createTextNode('Could not reach us just now. '));
+        var a=document.createElement('a');
+        a.href=mailHref; a.textContent='Email it to the team';
+        a.className='ax-fx-note-link';
+        a.setAttribute('rel','noopener noreferrer');
+        note.appendChild(a);
+      }
+      if(!window.fetch){ offerMail(); return; }
+      fetch(API_BASE+'/api/newsletter/', {
+        method:'POST', credentials:'omit',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({ email:v, source_page:location.pathname })
+      }).then(function(r){
+        if(!r.ok) throw new Error(r.status);
+        say('Thanks \u2014 you are on the list.');
+      }).catch(offerMail);
+    }
+    /* DOCUMENT-capture interception, not a same-element listener: at the target
+       phase listeners run in REGISTRATION order regardless of the capture flag,
+       and the chrome CTA pass registered its navigate handler on this pill first
+       -- so a same-element stopImmediatePropagation fires too late and Subscribe
+       still navigated to /contact-us/. Capture at document level always runs
+       before any target-phase listener, structurally.
+       The data-cta marker is KEPT: it is what the CTA-unblock peeler keys on
+       (without it the invisible g-clip shell above this pill swallows real
+       clicks), and the chrome linkifier treats it as its already-done guard.
+       Because that shell may still be on top before the peeler runs, the trap
+       matches by CLICK POINT against the pill's rect, not by event target. */
+    function within(e){
+      var live=paintedPill(subLabel);          /* re-resolved every click */
+      var t=e.target;
+      if(t&&t.nodeType===1&&(live.contains(t)||pill.contains(t)||subLabel.contains(t))) return true;
+      if(!e.clientX&&!e.clientY) return false;   /* keyboard-synth clicks carry 0,0 */
+      var boxes=[live,pill];
+      for(var i=0;i<boxes.length;i++){
+        var r=boxes[i].getBoundingClientRect();
+        if(r.width&&e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom) return true;
+      }
+      return false;
+    }
+    var busy=false;
+    document.addEventListener('click',function(e){
+      if(!within(e)) return;
+      /* Swallow the event FIRST, every single time. The de-bounce used to return
+         before this, so a second click inside 150ms (a double-click, or an impatient
+         second tap) was left for the chrome's navigate handler -- which is the last
+         way Subscribe could still reach /contact-us/. Stop the event unconditionally
+         and let only the SUBMIT be de-bounced. */
+      e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+      if(busy) return;
+      busy=true; setTimeout(function(){busy=false;},150);
+      submit(null); },true);
+    pill.setAttribute('role','button');
+    pill.setAttribute('tabindex','0');
+    document.addEventListener('keydown',function(e){
+      if((e.key==='Enter'||e.key===' ')&&e.target&&e.target.nodeType===1&&
+         (pill.contains(e.target)||subLabel.contains(e.target))) submit(e); },true);
+    input.addEventListener('keydown',function(e){ if(e.key==='Enter') submit(e); });
+
+    /* ---------- 4. NEWSLETTER COLUMN ALIGNMENT ----------
+       Requested: the heading sits in the same column as "Follow Us", which is also
+       the "Services" column above it and is where Figma already puts it. An earlier
+       request aligned it to "About Us" instead, one column further left, and this
+       pass was what dragged it there; the target is now the right-hand column, so on
+       an untouched Figma pull the measured delta is zero and nothing moves.
+       Measured against the real column rather than hardcoded, so it survives a
+       re-pull that renumbers ids and shifts values. */
+    var head=[].slice.call(foot.querySelectorAll('.g-t')).filter(function(e){
+      return /^get the latest from aeonx/i.test(txt(e)); })[0];
+    var col=[].slice.call(foot.querySelectorAll('.g-t')).filter(function(e){
+      return /^follow us$/i.test(txt(e)); })[0];
+    if(head&&col){
+      var hl=num(head,'left'), cl=num(col,'left');
+      if(hl!==null&&cl!==null){
+        var d=hl-cl;
+        if(Math.abs(d)>0.01){
+          setvw(head,'left',cl);
+          [box,pill,note].forEach(function(el){
+            var l=num(el,'left');
+            if(l!==null) setvw(el,'left',l-d);
+            else if(el===note){ note.style.left=(cl)+'vw'; }
+          });
+        }
+      }
+    }
+  }
+
+  /* ---------- 5. HOMEPAGE PRODUCT NAMES SCROLL IN PAGE ----------
+     Requested: SupplierX / OrderX / Xpense etc. on the homepage should move the
+     reader to that product's section rather than leaving for /products/axiom/. */
+  function productScroll(){
+    /* homepage only. Matched on the page's own title as well as the path, so it
+       still resolves when the page is served under a different filename (headless
+       verification writes a temp copy, and the check must exercise the real code). */
+    var home = location.pathname==='/' || location.pathname==='/index.html' ||
+               /enterprise stack/i.test(document.title||'');
+    if(!home) return;
+    var NAMES=['supplierx','orderx','xpense','logystix','manufex','aeonxiq'];
+    [].slice.call(document.querySelectorAll('main.ax-page .g-t')).forEach(function(e){
+      if(e.closest('.ax-mob')||e.closest('section.ax-footer')) return;
+      if(NAMES.indexOf(txt(e).toLowerCase())<0) return;
+      if(e.dataset.axscroll) return;
+      e.dataset.axscroll='1';
+      e.classList.add('ax-fx-link');
+      /* Each product name appears once in the homepage products showcase. Clicking
+         it used to leave for /products/axiom/; the client wants it to move the
+         reader to that product inside the page instead. Capture phase, because the
+         chrome CTA pass has already attached its own navigating handler. */
+      var card=e.closest('.g-b')||e;
+      e.addEventListener('click',function(ev){
+        ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation();
+        (card||e).scrollIntoView({behavior:'smooth',block:'center'});
+      },true);
+      e.addEventListener('keydown',function(ev){
+        if(ev.key==='Enter'||ev.key===' '){
+          ev.preventDefault(); ev.stopImmediatePropagation();
+          (card||e).scrollIntoView({behavior:'smooth',block:'center'});
+        }
+      },true);
+    });
+  }
+
+  /* ---------- 5b. FOOTER OFFICE LINE ----------
+     The footer names seven cities on one line. The whole line used to be a single
+     link to Maps for the Mumbai head office, so clicking Kolkata or Dehradun opened
+     Mumbai. Each city now goes to its own office on the contact page, which carries
+     that office's address, phone and map, via the hash the switcher there reads.
+
+     Dubai is deliberately left as plain text: the contact page has six offices and
+     Dubai is not one of them, so there is nowhere to send anyone. */
+  var OFFICE={ 'Ahmedabad':'ahmedabad', 'Mumbai':'mumbai', 'Bhuj':'bhuj',
+               'Dehradun':'dehradun', 'Delhi NCR':'delhi', 'Kolkata':'kolkata' };
+  /* Longest first: "Delhi NCR" must not be matched as "Delhi". */
+  var OFFICE_RE=/Delhi NCR|Ahmedabad|Dehradun|Kolkata|Mumbai|Bhuj/g;
+
+  function footerOffices(){
+    [].slice.call(document.querySelectorAll('section.ax-footer .g-t')).forEach(function(e){
+      if(e.dataset.axmap) return;
+      var t=txt(e);
+      if(!/Ahmedabad/i.test(t)||!/Dehradun/i.test(t)) return;
+      /* The line is plain text and a <br>, nothing else, so rewriting the markup
+         cannot swallow an element. Guarded anyway. */
+      if(e.querySelector('a,img,svg')) return;
+      e.dataset.axmap='1';
+      e.innerHTML=e.innerHTML.replace(OFFICE_RE,function(m){
+        return '<a class="ax-fx-office" href="/contact-us/#'+OFFICE[m]+'">'+m+'</a>';
+      });
+    });
+  }
+
+  /* ---------- 6. EXPLORE PILL ROW ALIGNMENT ----------
+     Requested: the key-services EXPLORE buttons are not aligned. Figma leaves row 2
+     split across two tops 0.05vw apart (one pixel). Snap each row to its most
+     common top -- paint-level only, and only ever moves a pill by that hairline. */
+  function alignExplore(){
+    var pills=[].slice.call(document.querySelectorAll('main.ax-page .g-t')).filter(function(e){
+      return /^explore$/i.test(txt(e))&&!e.closest('.ax-mob');
+    }).map(function(l){ return pillOf(l); }).filter(Boolean);
+    var rows={};
+    pills.forEach(function(p){
+      var t=num(p,'top'); if(t===null) return;
+      var k=Math.round(t);
+      (rows[k]=rows[k]||[]).push({el:p,t:t});
+    });
+    Object.keys(rows).forEach(function(k){
+      var g=rows[k]; if(g.length<2) return;
+      var counts={};
+      g.forEach(function(x){ counts[x.t]=(counts[x.t]||0)+1; });
+      var win=Object.keys(counts).sort(function(a,b){ return counts[b]-counts[a]; })[0];
+      g.forEach(function(x){ if(x.t!==parseFloat(win)) setvw(x.el,'top',parseFloat(win)); });
+    });
+  }
+
+  /* ---------- 7. EVEN PADDING INSIDE BUTTON PILLS ----------
+     Figma sizes a label box independently of its pill, so a centred label can sit
+     off-centre inside the pill (the footer Subscribe was the visible case). Measure
+     the label's INK with a Range -- the element box is wider than the glyphs and
+     hides the error -- and nudge the label so left and right gaps match. Only the
+     label moves; the pill is untouched, so nothing can reflow. */
+  function centerLabels(){
+    var seen=new Set();
+    [].slice.call(document.querySelectorAll('.g-t')).forEach(function(l){
+      if(l.closest('.ax-mob')||l.children.length||l.dataset.axCentred) return;
+      var t=txt(l); if(!t) return;
+      var cs=getComputedStyle(l);
+      /* The 34-character cut is there so a sentence inside a tinted box is not
+         mistaken for a button label. A role badge breaks it honestly: "PROGRAM
+         MANAGER - FUNCTIONAL & PRE-SALES" is 40 characters and is still a single
+         nowrap line in a 30px chip. Length alone cannot tell those apart, so a
+         one-line label in a short pill is allowed up to 60. */
+      var oneLine = cs.whiteSpace === 'nowrap' || cs.whiteSpace === 'pre';
+      if(t.length > (oneLine ? 60 : 34)) return;
+      if(cs.textAlign!=='center') return;   /* left-aligned by design */
+      var pill=pillOf(l); if(!pill) return;
+      var ps=pill.getAttribute('style')||'';
+      if(!/background-color|border/.test(ps)||!/border-radius/.test(ps)) return;
+      if(t.length>34 && pill.getBoundingClientRect().height > 2.5*(document.documentElement.clientWidth||1920)/100) return;
+      if(seen.has(pill)) return; seen.add(pill);
+      var pr=pill.getBoundingClientRect();
+      var rng=document.createRange(); rng.selectNodeContents(l);
+      var ir=rng.getBoundingClientRect();
+      if(!ir.width||!pr.width) return;
+      var d=(ir.left-pr.left)-(pr.right-ir.right);
+      if(Math.abs(d)<2) return;
+      var cur=num(l,'left'); if(cur===null) return;
+      var vwpx=(document.documentElement.clientWidth||1920)/100;
+      setvw(l,'left',cur-(d/2)/vwpx);
+    });
+  }
+
+  /* ---------- 1b. EXPLORE PILLS READ TOO SMALL ---------- */
+  function bumpExplore(){
+    [].slice.call(document.querySelectorAll('.g-t')).forEach(function(e){
+      if(e.children.length) return;
+      /* Desktop only. The mobile block is authored at 430 and Figma sets these labels
+         at 12px/20px (2.7907vw/4.6512vw) inside a 40px pill; .ax-fx-xl overrode that
+         with 2.4419vw/3.4884vw, so the type came out small AND the shorter line box
+         no longer filled the inset the pill was drawn for -- the uneven top/bottom
+         padding on every Explore button. */
+      if(e.closest('.ax-mob')) return;
+      if(!/^explore(\s|$)/i.test(txt(e))) return;
+      var host=e.parentElement;
+      var hs=host?(host.getAttribute('style')||''):'';
+      /* only the pill-shaped ones; bare "Explore >" text links keep their size */
+      if(!/background-color/.test(hs)||!/border-radius/.test(hs)) return;
+      e.classList.add('ax-fx-xl');
+    });
+  }
+
+  /* ---------- 1d. LABEL SITTING OFF-CENTRE IN ITS PILL ----------
+     Figma positions some labels left inside a wider pill (the Explore <product>
+     pills measured 13px left / 34px right), which reads as broken padding. Centre
+     the label's INK in the pill -- ink, not the label box, because the box is sized
+     to Figma's own text metrics and the browser sets type slightly wider. Pills
+     that carry a trailing arrow are handled by spaceArrows() as a group. */
+  function balanceLabels(){
+    [].slice.call(document.querySelectorAll('.g-b[data-cta],.g-b[data-axpill]')).forEach(function(pill){
+      if(pill.closest('.ax-mob')) return;
+      var pr=pill.getBoundingClientRect(); if(!pr.width) return;
+      var lab=pill.querySelector('.g-t'); if(!lab||!txt(lab)) return;
+      /* an arrow inside the pill means the pair is positioned as a group */
+      var hasArrow=[].slice.call(document.querySelectorAll('.ax-hv-arrow')).some(function(a){
+        var q=a.getBoundingClientRect();
+        return q.width&&q.left>=pr.left-4&&q.right<=pr.right+4&&q.top>=pr.top-6&&q.bottom<=pr.bottom+6; });
+      if(hasArrow) return;
+      var rng=document.createRange(); rng.selectNodeContents(lab);
+      var ink=rng.getBoundingClientRect(); if(!ink.width) return;
+      var d=(ink.left-pr.left)-(pr.right-ink.right);
+      if(Math.abs(d)<3) return;
+      var cur=num(lab,'left'); if(cur===null) return;
+      var vwpx=(document.documentElement.clientWidth||1920)/100;
+      setvw(lab,'left',cur-(d/2)/vwpx);
+    });
+  }
+
+  /* ---------- 8. UNEVEN SEAMS IN A CARD ROW ----------
+     A row of cards drawn on a constant pitch should look identical between every
+     pair, and the "53 agents / L1-L5 / One click / Metered" row did not: three
+     cards are 349 wide on a 350 pitch, leaving a 1px seam beside the card's own
+     1px rule, and one is 350 and butts straight against its neighbour. Two of the
+     three dividers read 2px and the third reads 1px.
+
+     That 1px lives in the Figma file, so it survives any rebuild. Rather than
+     carry the node id, the rule is stated as a shape: cards sharing a top and a
+     height, on a constant pitch, are the same card repeated and should be the
+     same width. The odd one out is snapped to the width the others agree on,
+     which is a 1px change and never moves anything's left edge.
+
+     Guards: at least three of them, a pitch that really is constant, and no more
+     than 2px of disagreement -- so a row of deliberately different-width boxes,
+     or a genuine two-column layout, cannot be caught by this. */
+  function evenCardRow(){
+    var vw = (document.documentElement.clientWidth || innerWidth || 1920) / 100;
+    if (!vw) return;
+    var rows = {}, seq = 0;
+    [].forEach.call(document.querySelectorAll('.g-b'), function(el){
+      var l = num(el, 'left'), w = num(el, 'width');
+      var t = num(el, 'top'), h = num(el, 'height');
+      if (l === null || w === null || t === null || h === null) return;
+      var p = el.parentElement;
+      if (!p) return;
+      if (!p.__axRow) p.__axRow = ++seq;
+      var k = p.__axRow + '|' + t.toFixed(4) + '|' + h.toFixed(4);
+      (rows[k] = rows[k] || []).push({ el: el, l: l, w: w });
+    });
+    Object.keys(rows).forEach(function(k){
+      var g = rows[k].sort(function(a, b){ return a.l - b.l; });
+      if (g.length < 3) return;
+      var pitch = g[1].l - g[0].l;
+      if (!(pitch > 0)) return;
+      for (var i = 2; i < g.length; i++){
+        if (Math.abs((g[i].l - g[i-1].l) - pitch) > 0.01) return;   /* not a constant pitch */
+      }
+      var tally = {};
+      g.forEach(function(c){ var kk = c.w.toFixed(4); tally[kk] = (tally[kk] || 0) + 1; });
+      var keys = Object.keys(tally);
+      if (keys.length < 2) return;                                  /* already even */
+      keys.sort(function(a, b){ return tally[b] - tally[a]; });
+      var want = parseFloat(keys[0]);
+      if (tally[keys[0]] * 2 <= g.length) return;                   /* no clear majority */
+      var spread = Math.max.apply(null, g.map(function(c){ return Math.abs(c.w - want); }));
+      if (spread * vw > 2) return;                                  /* a real difference, not rounding */
+      g.forEach(function(c){
+        if (Math.abs(c.w - want) < 0.0001) return;
+        setvw(c.el, 'width', want);
+      });
+    });
+  }
+
+  function init(){
+    copyFix();
+    evenCardRow();
+    hidePlaceholderCopy();
+    applyTitleCase();
+    bumpExplore();
+    spaceArrows();
+    balanceLabels();
+    clearTrailingGlyphs();
+    armChrome();
+    newsletter();
+    productScroll();
+    footerOffices();
+    alignExplore();
+    centerLabels();
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init);
+  else init();
+  /* after the chrome CTA pass and .ax-mob injection have settled */
+  addEventListener('load',function(){
+    setTimeout(init,200);
+    /* _hover.html creates the trailing arrows on load+140ms, so the arrow pass has
+       to run after that or it finds nothing to measure. It is idempotent -- it only
+       acts on a pair that actually overlaps -- so running it twice is free. */
+    setTimeout(function(){ spaceArrows(); balanceLabels(); clearTrailingGlyphs(); },400);
+    setTimeout(function(){ spaceArrows(); balanceLabels(); clearTrailingGlyphs(); },1000);
+    /* one late pass purely to re-centre: the newsletter column shift and the CTA
+       linkifier's own pill auto-fit both move boxes after the first measurement,
+       so the settled layout is the only one worth measuring. */
+    setTimeout(centerLabels,700);
+  });
+  addEventListener('resize',function(){ clearTimeout(window.__axfxR);
+    window.__axfxR=setTimeout(function(){ centerLabels(); spaceArrows(); },200); });
 })();
 </script>
 
