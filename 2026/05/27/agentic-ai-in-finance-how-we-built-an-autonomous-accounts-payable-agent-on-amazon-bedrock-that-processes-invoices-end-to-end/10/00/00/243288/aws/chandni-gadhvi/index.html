@@ -7601,18 +7601,19 @@ document.addEventListener("DOMContentLoaded",function(){
      they are repeated here rather than read from it because that switcher only
      exists on /contact-us/ and this footer is on all 151 pages.
 
-     Dubai is deliberately left as plain text: there is no Dubai address anywhere on
-     the site, so there is nowhere to point it. */
+     Dubai is the odd one out: it has no panel on the contact page, so its address
+     comes from the company's own Google Business Profile. */
   var OFFICE={
     'Ahmedabad':'AeonX Digital, Shyamal Unicus, B-1103, Shyamal Cross Road, Satellite, Ahmedabad, Gujarat 380015',
     'Mumbai':'AeonX Digital, 278 Jeevan Udyog Building, DN Road, Fort, Mumbai 400001',
     'Bhuj':'AeonX Digital, C-203/206 JV Business Park 1, Opposite Smrutivan Memorial, Bhuj 370001',
     'Dehradun':'AeonX Digital, K K Tower, Above HDFC Bank, Doiwala, Dehradun 248140, Uttarakhand',
     'Delhi NCR':'AeonX Digital, Plot No. A41, Iconic Corenthum, 12th Floor, Sector 62, Noida, Uttar Pradesh 201301',
-    'Kolkata':'AeonX Digital, Unit 7WS8A, 7th Floor, Mani Casadona, Action Area II-F, Rajarhat Newtown, Kolkata 700156'
+    'Kolkata':'AeonX Digital, Unit 7WS8A, 7th Floor, Mani Casadona, Action Area II-F, Rajarhat Newtown, Kolkata 700156',
+    'Dubai':"AeonX Digital, GD4 Level 13, Zaa'beel Second, DIFC, Dubai, United Arab Emirates"
   };
   /* Longest first: "Delhi NCR" must not be matched as "Delhi". */
-  var OFFICE_RE=/Delhi NCR|Ahmedabad|Dehradun|Kolkata|Mumbai|Bhuj/g;
+  var OFFICE_RE=/Delhi NCR|Ahmedabad|Dehradun|Kolkata|Mumbai|Dubai|Bhuj/g;
 
   function footerOffices(){
     [].slice.call(document.querySelectorAll('section.ax-footer .g-t')).forEach(function(e){
