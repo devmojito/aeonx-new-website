@@ -7090,13 +7090,22 @@ document.addEventListener("DOMContentLoaded",function(){
   /* ---------- 5b. FOOTER OFFICE LINE ----------
      The footer names seven cities on one line. The whole line used to be a single
      link to Maps for the Mumbai head office, so clicking Kolkata or Dehradun opened
-     Mumbai. Each city now goes to its own office on the contact page, which carries
-     that office's address, phone and map, via the hash the switcher there reads.
+     Mumbai. Each city now opens Maps at its own office.
 
-     Dubai is deliberately left as plain text: the contact page has six offices and
-     Dubai is not one of them, so there is nowhere to send anyone. */
-  var OFFICE={ 'Ahmedabad':'ahmedabad', 'Mumbai':'mumbai', 'Bhuj':'bhuj',
-               'Dehradun':'dehradun', 'Delhi NCR':'delhi', 'Kolkata':'kolkata' };
+     The addresses are the same six the contact page's office switcher carries, and
+     they are repeated here rather than read from it because that switcher only
+     exists on /contact-us/ and this footer is on all 151 pages.
+
+     Dubai is deliberately left as plain text: there is no Dubai address anywhere on
+     the site, so there is nowhere to point it. */
+  var OFFICE={
+    'Ahmedabad':'AeonX Digital, Shyamal Unicus, B-1103, Shyamal Cross Road, Satellite, Ahmedabad, Gujarat 380015',
+    'Mumbai':'AeonX Digital, 278 Jeevan Udyog Building, DN Road, Fort, Mumbai 400001',
+    'Bhuj':'AeonX Digital, C-203/206 JV Business Park 1, Opposite Smrutivan Memorial, Bhuj 370001',
+    'Dehradun':'AeonX Digital, K K Tower, Above HDFC Bank, Doiwala, Dehradun 248140, Uttarakhand',
+    'Delhi NCR':'AeonX Digital, Plot No. A41, Iconic Corenthum, 12th Floor, Sector 62, Noida, Uttar Pradesh 201301',
+    'Kolkata':'AeonX Digital, Unit 7WS8A, 7th Floor, Mani Casadona, Action Area II-F, Rajarhat Newtown, Kolkata 700156'
+  };
   /* Longest first: "Delhi NCR" must not be matched as "Delhi". */
   var OFFICE_RE=/Delhi NCR|Ahmedabad|Dehradun|Kolkata|Mumbai|Bhuj/g;
 
@@ -7110,7 +7119,9 @@ document.addEventListener("DOMContentLoaded",function(){
       if(e.querySelector('a,img,svg')) return;
       e.dataset.axmap='1';
       e.innerHTML=e.innerHTML.replace(OFFICE_RE,function(m){
-        return '<a class="ax-fx-office" href="/contact-us/#'+OFFICE[m]+'">'+m+'</a>';
+        return '<a class="ax-fx-office" target="_blank" rel="noopener noreferrer"' +
+               ' href="https://www.google.com/maps/search/?api=1&amp;query=' +
+               encodeURIComponent(OFFICE[m]) + '">' + m + '</a>';
       });
     });
   }

@@ -293,12 +293,26 @@
     function fromHash(){
       var h = (location.hash || '').slice(1).toLowerCase().replace(/[^a-z]/g, '');
       if (!h) return;
+      if (!row.getBoundingClientRect().height) return;   /* the hidden desktop/mobile twin */
       for (var i = 0; i < CITY.length; i++){
         var n = CITY[i].head.toLowerCase().replace(/[^a-z]/g, '');
-        if (n === h || n.indexOf(h) === 0 || h.indexOf(n) === 0){ select(i, false); return; }
+        if (n === h || n.indexOf(h) === 0 || h.indexOf(n) === 0){
+          select(i, false);
+          /* Selecting the office is only half of it: the switcher is most of the way
+             down the page, so without this the reader lands on the hero and has to
+             go looking for the panel that just changed. Clear of the fixed header. */
+          var hdr = document.querySelector('header');
+          var off = (hdr ? hdr.getBoundingClientRect().height : 0) + 16;
+          var y = row.getBoundingClientRect().top + (window.pageYOffset || 0) - off;
+          window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+          return;
+        }
       }
     }
+    /* The page is still settling when this first runs -- the .ax-mob block and the
+       announcement bar both move things -- so the position is taken again on load. */
     fromHash();
+    addEventListener('load', function () { setTimeout(fromHash, 300); });
     addEventListener('hashchange', fromHash);
   }
 
