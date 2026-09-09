@@ -2134,396 +2134,6 @@ document.addEventListener('DOMContentLoaded',function(){
     rgba(246,247,249,0) 78%)}
 </style>
 
-<style id="ax-prodtabs-css">
-/* 300ms / EASE_OUT again: every `Tab` node in both Container (Products) sets carries
-   transitionDuration 300 and transitionEasing EASE_OUT. */
-.ax-pt-tab{cursor:pointer}
-.ax-pt-tab:focus-visible{outline:2px solid #df3f17;outline-offset:2px}
-.ax-pt-box{transition:border-color .3s cubic-bezier(0,0,.58,1)}
-.ax-pt-lbl{transition:color .3s cubic-bezier(0,0,.58,1)}
-/* The panels are twelve unrelated product screenshots, so a cross-dissolve is the
-   honest read of the variant swap: there is nothing to tween between them. */
-.ax-pt-panel{transition:opacity .15s linear}
-@media (prefers-reduced-motion:reduce){
-  .ax-pt-box,.ax-pt-lbl,.ax-pt-panel{transition:none}
-}
-</style>
-<script>
-/* ---- PRODUCT TABS (the twelve-product strip) ----
-
-   Same problem as the hero tabs. In Figma this section is an INSTANCE of a
-   COMPONENT_SET with twelve variants and the tab click is a prototype variant swap
-   that the export cannot carry, so only the SupplierX variant survived and eleven of
-   the twelve tabs were inert.
-
-     desktop  set 6795:23870   instance 6795:23913
-     mobile   set 6893:27393   instance 6893:27539
-
-   What actually differs between the twelve variants is ONE thing: the screenshot
-   filling the tab panel. The heading, the strip and the panel frame are identical. So
-   this swaps the panel's background image and moves the active border, rather than
-   shipping twelve copies of the section.
-
-   The tables are generated, not hand-typed. `size` is the image rectangle's width and
-   height, and `sizing` is _gen.image_sizing_css() for that fill, so each crop matches
-   what a static export of that variant would have produced. Regenerate by walking the
-   component set and reading the first IMAGE fill under 'Tab Panel:margin'. Position is
-   deliberately absent: see apply().
-
-   Desktop currently reuses ONE placeholder screenshot for Setu Move, QuiC, Jarvis,
-   Data Setu.ai and Setu Edge; mobile has real shots for all but Setu Edge. That is a
-   gap in the design, not a bug here: those tabs work, they just repeat an image until
-   the real ones are drawn. */
-(function () {
-  var SPEC = {
-    desktop: {
-      /* Desktop moves the border AND the label weight; mobile moves only the border,
-         because Figma's own mobile variants leave tab 0's label bold in every state. */
-      weights: true,
-      panes: [
-      { label: 'SupplierX',     ref: '59aaccb6d152a67424f6bd4fbf46df577bdd9ff5',
-        size: [71.6146, 46.8229],
-        sizing: 'background-size:71.6146vw 47.6095vw;background-position:-0.0000vw 0.0289vw;background-repeat:no-repeat;' },
-      { label: 'OrderX',        ref: '7f4ebb15712b6e8306e590a80755af65f4e5b1e8',
-        size: [71.5833, 52.6933],
-        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
-      { label: 'Xpense',        ref: '055a6847a0cb6e745984e1a704db491809493a01',
-        size: [71.6146, 40.3125],
-        sizing: 'background-size:71.9220vw 96.9014vw;background-position:-0.1419vw -0.0000vw;background-repeat:no-repeat;' },
-      { label: 'ManufeX',       ref: '94d8ee820081df4a95384f2b45e4c0892d857aa0',
-        size: [71.6146, 50.9375],
-        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
-      { label: 'LogytstiX',     ref: '2714267af9e02b4b2ebcea0c1790f496f03e7899',
-        size: [71.6146, 47.6562],
-        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
-      { label: 'CRM 360',       ref: 'a18023954288f9a1fc4834dd71f70970453a9ea3',
-        size: [71.6146, 34.6875],
-        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
-      { label: 'Setu Move',     ref: '5fd0e3417a71ad9ce0ea61b32d9cd17bdce414ca',
-        size: [71.5833, 29.9566],
-        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
-      { label: 'QuiC',          ref: '5fd0e3417a71ad9ce0ea61b32d9cd17bdce414ca',
-        size: [71.5833, 29.9566],
-        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
-      { label: 'Jarvis',        ref: '5fd0e3417a71ad9ce0ea61b32d9cd17bdce414ca',
-        size: [71.5833, 29.9566],
-        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
-      { label: 'AeonxIQ',       ref: 'e35ee9e51c72f197dcd30547c51270218a80b07b',
-        size: [71.5833, 34.3578],
-        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
-      { label: 'Data Setu.ai',  ref: '5fd0e3417a71ad9ce0ea61b32d9cd17bdce414ca',
-        size: [71.5833, 29.9566],
-        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
-      { label: 'Setu Edge',     ref: '5fd0e3417a71ad9ce0ea61b32d9cd17bdce414ca',
-        size: [71.5833, 29.9566],
-        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' }
-      ]
-    },
-    mobile: {
-      weights: false,
-      panes: [
-      { label: 'SupplierX',     ref: '59aaccb6d152a67424f6bd4fbf46df577bdd9ff5',
-        size: [92.5581, 60.4651],
-        sizing: 'background-size:92.5581vw 61.4809vw;background-position:-0.0000vw 0.0373vw;background-repeat:no-repeat;' },
-      { label: 'OrderX',        ref: '7f4ebb15712b6e8306e590a80755af65f4e5b1e8',
-        size: [92.5581, 68.1395],
-        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
-      { label: 'Xpense',        ref: '055a6847a0cb6e745984e1a704db491809493a01',
-        size: [92.5581, 52.093],
-        sizing: 'background-size:92.9555vw 125.2189vw;background-position:-0.1834vw -0.0000vw;background-repeat:no-repeat;' },
-      { label: 'ManufeX',       ref: '94d8ee820081df4a95384f2b45e4c0892d857aa0',
-        size: [92.5581, 65.814],
-        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
-      { label: 'LogytstiX',     ref: '2714267af9e02b4b2ebcea0c1790f496f03e7899',
-        size: [92.5581, 61.6279],
-        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
-      { label: 'CRM 360',       ref: 'a18023954288f9a1fc4834dd71f70970453a9ea3',
-        size: [92.5581, 44.8837],
-        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
-      { label: 'Setu Move',     ref: 'ee4434788170addd06348da234f893d00dafa364',
-        size: [92.5581, 60.4651],
-        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
-      { label: 'QuiC',          ref: '0ccfb371b06ba329344ddc992cf1ae382c8e04a1',
-        size: [92.5581, 60.4651],
-        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
-      { label: 'Jarvis',        ref: '1747adadc621799435cb0199e2362493ede4a712',
-        size: [92.5581, 60.4651],
-        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
-      { label: 'AeonxIQ',       ref: 'e35ee9e51c72f197dcd30547c51270218a80b07b',
-        size: [92.5581, 44.425],
-        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
-      { label: 'Data Setu.ai',  ref: '52e0c2a51736b95c964d9fed3772f646f8c94219',
-        size: [92.5581, 60.4651],
-        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
-      { label: 'Setu Edge',     ref: '1747adadc621799435cb0199e2362493ede4a712',
-        size: [92.5581, 60.4651],
-        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' }
-      ]
-    }
-  };
-
-  var ACTIVE_BORDER = 'rgb(223, 63, 23)', IDLE_BORDER = 'rgb(213, 218, 226)';
-  var ACTIVE_TEXT = 'rgb(35, 39, 46)', IDLE_TEXT = 'rgb(82, 96, 119)';
-
-  function txt(e) { return (e.textContent || '').replace(/\s+/g, ' ').trim(); }
-  function norm(s) { return s.replace(/[^a-z0-9]/gi, '').toLowerCase(); }
-
-  /* Identified by contents, because _gen.py names every one of these layers
-     "Container". _uifx.html title-cases the labels ("QuiC" -> "Quic"), which is why
-     the comparison is on the normalised form. */
-  function findStrips() {
-    var out = [];
-    ['desktop', 'mobile'].forEach(function (key) {
-      var spec = SPEC[key];
-      var want = spec.panes.map(function (p) { return norm(p.label); });
-      [].forEach.call(document.querySelectorAll('.g-b.g-clip'), function (el) {
-        var mob = !!el.closest('.ax-mob');
-        if (mob !== (key === 'mobile')) return;
-        var labels = [].filter.call(el.children, function (c) { return c.classList.contains('g-t'); });
-        if (labels.length !== want.length) return;
-        if (!want.every(function (w, i) { return norm(txt(labels[i])) === w; })) return;
-        out.push({ strip: el, spec: spec, labels: labels });
-      });
-    });
-    return out;
-  }
-
-  function wire(w) {
-    var strip = w.strip, spec = w.spec, labels = w.labels;
-    var boxes = [].filter.call(strip.children, function (c) {
-      return c.classList.contains('g-b') && !c.classList.contains('g-clip');
-    });
-    if (boxes.length !== labels.length) return;
-
-    /* The panel is the image the first variant shipped with. Looking it up by that ref
-       rather than by position means a section reshuffle cannot silently retarget it. */
-    var scope = strip.closest('.ax-mob') || document;
-    /* The attribute value is quoted by JSON.stringify rather than by literal quote
-       characters in the source. _gen.py's export report and _imgfetch.py both scan the
-       whole page for the raster-fill attribute pattern, and a selector written the
-       obvious way is picked up as if it were a real image reference. */
-    var panel = scope.querySelector('.g-img[data-ref=' + JSON.stringify(spec.panes[0].ref) + ']');
-    if (!panel) return;
-
-    var current = 0, token = 0;
-
-    function apply(i) {
-      var p = spec.panes[i];
-      panel.setAttribute('data-ref', p.ref);
-      /* Size only. The panel's left/top are NOT set here, and must not be: every one
-         of the twelve variants shares a single box origin, so there was never anything
-         to switch, and the value is relative to the Figma node that clips the panel
-         rather than to the element's DOM offset parent. On desktop those happen to be
-         the same node and writing it looked harmless; on mobile they are not, and it
-         threw the panel to the top of the page, where it sat behind the fixed navbar
-         and peeked out above and below it. The generator already places this element
-         correctly for every variant. */
-      panel.style.width = p.size[0] + 'vw';
-      panel.style.height = p.size[1] + 'vw';
-      /* The export writes background sizing as a shorthand-free set of longhands; drop
-         the old ones wholesale rather than trying to override each. */
-      panel.style.cssText = panel.style.cssText.replace(
-        /background-size:[^;]*;?|background-position:[^;]*;?|background-repeat:[^;]*;?/g, '');
-      panel.style.backgroundImage = 'url(/assets/gen/' + p.ref + '.png)';
-      panel.style.cssText += ';' + p.sizing;
-    }
-
-    function select(i, animate) {
-      if (animate && i === current) return;
-      current = i;
-      var mine = ++token;
-
-      boxes.forEach(function (b, n) { b.style.borderColor = n === i ? ACTIVE_BORDER : IDLE_BORDER; });
-      labels.forEach(function (l, n) {
-        l.setAttribute('aria-selected', n === i ? 'true' : 'false');
-        l.tabIndex = n === i ? 0 : -1;
-        if (!spec.weights) return;
-        l.style.color = n === i ? ACTIVE_TEXT : IDLE_TEXT;
-        l.style.fontWeight = n === i ? '600' : '400';
-      });
-
-      if (!animate) { apply(i); return; }
-
-      /* Hold the fade open until the screenshot has actually decoded: these are 1-2MB
-         PNGs, and swapping on a fixed timer showed an empty panel on a cold cache. */
-      var ready = false, faded = false;
-      var img = new Image();
-      var swap = function () {
-        if (!ready || !faded || token !== mine) return;
-        apply(i);
-        panel.style.opacity = '1';
-      };
-      img.onload = img.onerror = function () { ready = true; swap(); };
-      img.src = '/assets/gen/' + spec.panes[i].ref + '.png';
-
-      panel.style.opacity = '0';
-      setTimeout(function () { faded = true; swap(); }, 150);
-    }
-
-    strip.setAttribute('role', 'tablist');
-
-    /* One capture listener on the strip rather than one per tab. _uifx.html's CTA pass
-       binds its own click handler to whichever labels it decides are links -- here it
-       claimed SupplierX, OrderX, Xpense and ManufeX -- and it is injected first, so a
-       per-label listener of ours is registered second and never sees the event. Capture
-       runs outermost-in, so a listener on their shared ancestor beats all of them.
-
-       This is why those four tabs did nothing. It went unnoticed because the obvious
-       test walks the tabs in order, and clicking tab 0 while tab 0 is already selected
-       is indistinguishable from a tab that works. */
-    strip.addEventListener('click', function (e) {
-      var t = e.target, idx = -1;
-      while (t && t !== strip && idx < 0) {
-        idx = labels.indexOf(t);
-        if (idx < 0) idx = boxes.indexOf(t);
-        t = t.parentElement;
-      }
-      if (idx < 0) return;
-      e.preventDefault();
-      e.stopPropagation();
-      select(idx, true);
-      labels[idx].focus();
-    }, true);
-
-    labels.forEach(function (l, i) {
-      l.classList.add('ax-pt-tab', 'ax-pt-lbl');
-      l.setAttribute('role', 'tab');
-      boxes[i].classList.add('ax-pt-box', 'ax-pt-tab');
-      /* Undo the CTA pass's own treatment so these read as tabs, not links. */
-      l.classList.remove('ax-fx-link');
-      boxes[i].classList.remove('ax-fx-link');
-      if (boxes[i].getAttribute('role') === 'link') boxes[i].removeAttribute('role');
-      if (l.getAttribute('href') === '#') l.removeAttribute('href');
-      var go = function (e) { e.preventDefault(); select(i, true); l.focus(); };
-      l.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter' || e.key === ' ') return go(e);
-        var d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
-        if (!d) return;
-        e.preventDefault();
-        var n = (i + d + labels.length) % labels.length;
-        select(n, true);
-        labels[n].focus();
-        if (labels[n].scrollIntoView) labels[n].scrollIntoView({ block: 'nearest', inline: 'nearest' });
-      });
-    });
-
-    unclip(strip, boxes);
-    alignRow(strip, boxes, labels);
-
-    /* The icons sit between the boxes and the labels in the flat export and would
-       otherwise swallow the click. */
-    [].forEach.call(strip.querySelectorAll('.g-vec, .g-img'), function (v) {
-      if (v !== panel) v.style.pointerEvents = 'none';
-    });
-
-    select(0, false);
-    setTimeout(function () { panel.classList.add('ax-pt-panel'); }, 0);
-  }
-
-  /* Figma's own strip clips two of its tabs, and the export reproduces it faithfully.
-     The QuiC tab is 5.6px taller than the row because its logo carries a strapline,
-     and the Setu Edge tab's right edge lands exactly on the strip's, so overflow:hidden
-     eats one border off each. The strip paints nothing itself -- no background, no
-     border of its own -- so adjusting its clip box is invisible, and nothing sits to
-     its right. */
-  function unclip(strip, boxes) {
-    var W = parseFloat(strip.style.width), H = parseFloat(strip.style.height);
-    if (isNaN(W) || isNaN(H)) return;
-
-    var maxRight = 0;
-    boxes.forEach(function (b) {
-      maxRight = Math.max(maxRight, parseFloat(b.style.left) + parseFloat(b.style.width));
-    });
-    /* Only when the row actually fits. The mobile strip is a horizontal scroller whose
-       tabs are meant to run well past its edge; widening that would defeat it. */
-    if (maxRight > W + 0.5) return;
-
-    /* A hair over, so the last tab's border is not lost to sub-pixel rounding at the
-       clip boundary. box-sizing draws it inside the tab, so it fits arithmetically and
-       only rounding takes it. */
-    strip.style.width = (W + 0.05).toFixed(4) + 'vw';
-
-    boxes.forEach(function (b) {
-      var h = parseFloat(b.style.height);
-      if (isNaN(h) || h <= H + 1e-6) return;
-      /* Bring the tall tab back to the row height rather than growing the strip: the
-         panel sits flush under the strip, so a taller strip would drop that border on
-         top of it. Figma grew the box symmetrically, so its icon and label sit half the
-         difference low and read as misaligned against the other eleven -- lift them by
-         the same half so the whole row lines up. */
-      var shift = (h - H) / 2;
-      var l = parseFloat(b.style.left), w = parseFloat(b.style.width);
-      [].forEach.call(strip.children, function (c) {
-        if (c === b) return;
-        var cl = parseFloat(c.style.left);
-        if (isNaN(cl) || cl < l - 0.01 || cl > l + w + 0.01) return;
-        var ct = parseFloat(c.style.top);
-        if (!isNaN(ct)) c.style.top = (ct - shift).toFixed(4) + 'vw';
-      });
-      b.style.height = H.toFixed(4) + 'vw';
-    });
-  }
-
-  /* The most common value in a list, used to decide what "the row" is rather than
-     trusting tab 0: whichever metric ten or eleven of the twelve tabs share is the
-     row, and the odd ones out are the slips. */
-  function modal(vals) {
-    var n = {}, best = null;
-    vals.forEach(function (v) {
-      if (v == null) return;
-      n[v] = (n[v] || 0) + 1;
-      if (best === null || n[v] > n[best]) best = v;
-    });
-    return best;
-  }
-
-  /* Setu Edge is drawn to different metrics than the other eleven: its icon box is
-     28px where theirs are 36, and because the box is shorter its label sits 4px above
-     the row. The icon is centred correctly, so only its size is wrong; the label is
-     genuinely out of line, and that is what reads as a misaligned cell. */
-  function alignRow(strip, boxes, labels) {
-    var lt = modal(labels.map(function (l) { return l.style.top; }));
-    if (lt) labels.forEach(function (l) { if (l.style.top !== lt) l.style.top = lt; });
-
-    /* One icon element per tab, found by horizontal containment. Some mobile tabs nest
-       their art deeper than the strip's own children, so those resolve to nothing and
-       are left alone rather than guessed at. */
-    var icons = boxes.map(function (b) {
-      var l = parseFloat(b.style.left), w = parseFloat(b.style.width);
-      var hits = [].filter.call(strip.children, function (c) {
-        if (c === b || c.classList.contains('g-t') || c.classList.contains('ax-pt-box')) return false;
-        var cl = parseFloat(c.style.left);
-        return !isNaN(cl) && cl >= l - 0.01 && cl <= l + w + 0.01;
-      });
-      return hits.length === 1 ? hits[0] : null;
-    });
-
-    /* Height, not width: the QuiC logo is legitimately wider than the rest because it
-       carries a strapline, and it already matches the row's height. */
-    var ih = modal(icons.map(function (i) { return i && i.style.height; }));
-    if (!ih) return;
-    icons.forEach(function (ic) {
-      if (!ic || ic.style.height === ih) return;
-      var h = parseFloat(ic.style.height), w = parseFloat(ic.style.width);
-      var t = parseFloat(ic.style.top), l = parseFloat(ic.style.left);
-      var nh = parseFloat(ih);
-      if (isNaN(h) || isNaN(w) || isNaN(t) || isNaN(l) || !h) return;
-      var nw = w * (nh / h);
-      /* Grow about the centre it already sits on, so the row's optical line holds. */
-      ic.style.height = nh.toFixed(4) + 'vw';
-      ic.style.width = nw.toFixed(4) + 'vw';
-      ic.style.top = (t - (nh - h) / 2).toFixed(4) + 'vw';
-      ic.style.left = (l - (nw - w) / 2).toFixed(4) + 'vw';
-    });
-  }
-
-  function init() { findStrips().forEach(wire); }
-
-  if (document.readyState === 'complete') setTimeout(init, 0);
-  else window.addEventListener('load', function () { setTimeout(init, 0); });
-})();
-</script>
-
 <style id="ax-testicards-css">
 .ax-tc2-q{transition:none}
 </style>
@@ -7089,6 +6699,456 @@ document.addEventListener("DOMContentLoaded",function(){
   }
   if (document.readyState === 'complete') setTimeout(run, 0);
   else addEventListener('load', function () { setTimeout(run, 0); });
+})();
+</script>
+
+<style id="ax-prodtabs-css">
+/* 300ms / EASE_OUT again: every `Tab` node in both Container (Products) sets carries
+   transitionDuration 300 and transitionEasing EASE_OUT. */
+.ax-pt-tab{cursor:pointer}
+.ax-pt-tab:focus-visible{outline:2px solid #df3f17;outline-offset:2px}
+.ax-pt-box{transition:border-color .3s cubic-bezier(0,0,.58,1)}
+.ax-pt-lbl{transition:color .3s cubic-bezier(0,0,.58,1)}
+/* The panels are twelve unrelated product screenshots, so a cross-dissolve is the
+   honest read of the variant swap: there is nothing to tween between them. */
+.ax-pt-panel{transition:opacity .15s linear}
+/* Five products have no screenshot yet, so Figma composes their panel instead: the
+   shared illustrated backdrop, the product's lockup, and a Coming Soon button. Only
+   the backdrop is an image fill, which is why swapping the fill alone left all five
+   showing the same empty room. These two sit on top of it. */
+.ax-pt-art{position:absolute;pointer-events:none;user-select:none}
+.ax-pt-cta{position:absolute;display:flex;align-items:center;justify-content:center;
+  border-radius:0.8333vw;background-color:rgb(223,63,23);color:rgb(255,255,255);
+  font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:0.8333vw;
+  letter-spacing:0;white-space:nowrap;cursor:default}
+@media (prefers-reduced-motion:reduce){
+  .ax-pt-box,.ax-pt-lbl,.ax-pt-panel{transition:none}
+}
+</style>
+<script>
+/* ---- PRODUCT TABS (the twelve-product strip) ----
+
+   Same problem as the hero tabs. In Figma this section is an INSTANCE of a
+   COMPONENT_SET with twelve variants and the tab click is a prototype variant swap
+   that the export cannot carry, so only the SupplierX variant survived and eleven of
+   the twelve tabs were inert.
+
+     desktop  set 6795:23870   instance 6795:23913
+     mobile   set 6893:27393   instance 6893:27539
+
+   What actually differs between the twelve variants is ONE thing: the screenshot
+   filling the tab panel. The heading, the strip and the panel frame are identical. So
+   this swaps the panel's background image and moves the active border, rather than
+   shipping twelve copies of the section.
+
+   The tables are generated, not hand-typed. `size` is the image rectangle's width and
+   height, and `sizing` is _gen.image_sizing_css() for that fill, so each crop matches
+   what a static export of that variant would have produced. Regenerate by walking the
+   component set and reading the first IMAGE fill under 'Tab Panel:margin'. Position is
+   deliberately absent: see apply().
+
+   Five products have no screenshot yet -- Setu Move, QuiC, Jarvis, Data Setu.ai and
+   Setu Edge -- and Figma composes their panel instead: one shared illustrated
+   backdrop, the product's own lockup, and a Coming Soon button. Only the backdrop is
+   an image fill, so swapping the fill alone left all five showing the same empty
+   room. Those three get `art`, `artBox` and `cta`, and the lockups are exported from
+   the design as SVG. Mobile bakes the same composition into one image per variant and
+   needs none of this; its only gap is Setu Edge, which still borrows Jarvis's. */
+(function () {
+  var SPEC = {
+    desktop: {
+      /* Desktop moves the border AND the label weight; mobile moves only the border,
+         because Figma's own mobile variants leave tab 0's label bold in every state. */
+      weights: true,
+      panes: [
+      { label: 'SupplierX',     ref: '59aaccb6d152a67424f6bd4fbf46df577bdd9ff5',
+        size: [71.6146, 46.8229],
+        sizing: 'background-size:71.6146vw 47.6095vw;background-position:-0.0000vw 0.0289vw;background-repeat:no-repeat;' },
+      { label: 'OrderX',        ref: '7f4ebb15712b6e8306e590a80755af65f4e5b1e8',
+        size: [71.5833, 52.6933],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'Xpense',        ref: '055a6847a0cb6e745984e1a704db491809493a01',
+        size: [71.6146, 40.3125],
+        sizing: 'background-size:71.9220vw 96.9014vw;background-position:-0.1419vw -0.0000vw;background-repeat:no-repeat;' },
+      { label: 'ManufeX',       ref: '94d8ee820081df4a95384f2b45e4c0892d857aa0',
+        size: [71.6146, 50.9375],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'LogytstiX',     ref: '2714267af9e02b4b2ebcea0c1790f496f03e7899',
+        size: [71.6146, 47.6562],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'CRM 360',       ref: 'a18023954288f9a1fc4834dd71f70970453a9ea3',
+        size: [71.6146, 34.6875],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'Setu Move',     ref: '5fd0e3417a71ad9ce0ea61b32d9cd17bdce414ca',
+        size: [71.5833, 29.9566],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;',
+        art: '/assets/vec/6890-7191.svg', artBox: [22.8750, 9.7500, 25.8333, 6.5625],
+        cta: [30.3229, 17.1979, 10.7812, 2.9167] },
+      { label: 'QuiC',          ref: '5fd0e3417a71ad9ce0ea61b32d9cd17bdce414ca',
+        size: [71.5833, 29.9566],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;',
+        art: '/assets/vec/6890-7433.svg', artBox: [27.4583, 9.7500, 16.6667, 6.5625],
+        cta: [30.3229, 17.1979, 10.7812, 2.9167] },
+      { label: 'Jarvis',        ref: '5fd0e3417a71ad9ce0ea61b32d9cd17bdce414ca',
+        size: [71.5833, 29.9566],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;',
+        art: '/assets/vec/6970-27176.svg', artBox: [32.4583, 9.7500, 6.5625, 6.5625],
+        cta: [30.3750, 17.1979, 10.7812, 2.9167] },
+      { label: 'AeonxIQ',       ref: 'e35ee9e51c72f197dcd30547c51270218a80b07b',
+        size: [71.5833, 34.3578],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'Data Setu.ai',  ref: '5fd0e3417a71ad9ce0ea61b32d9cd17bdce414ca',
+        size: [71.5833, 29.9566],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;',
+        art: '/assets/vec/6890-7467.svg', artBox: [22.3020, 9.7500, 26.9792, 6.5625],
+        cta: [30.3229, 17.1979, 10.7812, 2.9167] },
+      { label: 'Setu Edge',     ref: '5fd0e3417a71ad9ce0ea61b32d9cd17bdce414ca',
+        size: [71.5833, 29.9566],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;',
+        art: '/assets/vec/6962-7666.svg', artBox: [32.5104, 9.2812, 6.5625, 6.5625],
+        cta: [30.3750, 17.2500, 10.7812, 2.9167] }
+      ]
+    },
+    mobile: {
+      weights: false,
+      panes: [
+      { label: 'SupplierX',     ref: '59aaccb6d152a67424f6bd4fbf46df577bdd9ff5',
+        size: [92.5581, 60.4651],
+        sizing: 'background-size:92.5581vw 61.4809vw;background-position:-0.0000vw 0.0373vw;background-repeat:no-repeat;' },
+      { label: 'OrderX',        ref: '7f4ebb15712b6e8306e590a80755af65f4e5b1e8',
+        size: [92.5581, 68.1395],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'Xpense',        ref: '055a6847a0cb6e745984e1a704db491809493a01',
+        size: [92.5581, 52.093],
+        sizing: 'background-size:92.9555vw 125.2189vw;background-position:-0.1834vw -0.0000vw;background-repeat:no-repeat;' },
+      { label: 'ManufeX',       ref: '94d8ee820081df4a95384f2b45e4c0892d857aa0',
+        size: [92.5581, 65.814],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'LogytstiX',     ref: '2714267af9e02b4b2ebcea0c1790f496f03e7899',
+        size: [92.5581, 61.6279],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'CRM 360',       ref: 'a18023954288f9a1fc4834dd71f70970453a9ea3',
+        size: [92.5581, 44.8837],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'Setu Move',     ref: 'ee4434788170addd06348da234f893d00dafa364',
+        size: [92.5581, 60.4651],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'QuiC',          ref: '0ccfb371b06ba329344ddc992cf1ae382c8e04a1',
+        size: [92.5581, 60.4651],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'Jarvis',        ref: '1747adadc621799435cb0199e2362493ede4a712',
+        size: [92.5581, 60.4651],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'AeonxIQ',       ref: 'e35ee9e51c72f197dcd30547c51270218a80b07b',
+        size: [92.5581, 44.425],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'Data Setu.ai',  ref: '52e0c2a51736b95c964d9fed3772f646f8c94219',
+        size: [92.5581, 60.4651],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+      { label: 'Setu Edge',     ref: '1747adadc621799435cb0199e2362493ede4a712',
+        size: [92.5581, 60.4651],
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' }
+      ]
+    }
+  };
+
+  var ACTIVE_BORDER = 'rgb(223, 63, 23)', IDLE_BORDER = 'rgb(213, 218, 226)';
+  var ACTIVE_TEXT = 'rgb(35, 39, 46)', IDLE_TEXT = 'rgb(82, 96, 119)';
+
+  function txt(e) { return (e.textContent || '').replace(/\s+/g, ' ').trim(); }
+  function norm(s) { return s.replace(/[^a-z0-9]/gi, '').toLowerCase(); }
+
+  /* Identified by contents, because _gen.py names every one of these layers
+     "Container". _uifx.html title-cases the labels ("QuiC" -> "Quic"), which is why
+     the comparison is on the normalised form. */
+  function findStrips() {
+    var out = [];
+    ['desktop', 'mobile'].forEach(function (key) {
+      var spec = SPEC[key];
+      var want = spec.panes.map(function (p) { return norm(p.label); });
+      [].forEach.call(document.querySelectorAll('.g-b.g-clip'), function (el) {
+        var mob = !!el.closest('.ax-mob');
+        if (mob !== (key === 'mobile')) return;
+        var labels = [].filter.call(el.children, function (c) { return c.classList.contains('g-t'); });
+        if (labels.length !== want.length) return;
+        if (!want.every(function (w, i) { return norm(txt(labels[i])) === w; })) return;
+        out.push({ strip: el, spec: spec, labels: labels });
+      });
+    });
+    return out;
+  }
+
+  function wire(w) {
+    var strip = w.strip, spec = w.spec, labels = w.labels;
+    var boxes = [].filter.call(strip.children, function (c) {
+      return c.classList.contains('g-b') && !c.classList.contains('g-clip');
+    });
+    if (boxes.length !== labels.length) return;
+
+    /* The panel is the image the first variant shipped with. Looking it up by that ref
+       rather than by position means a section reshuffle cannot silently retarget it. */
+    var scope = strip.closest('.ax-mob') || document;
+    /* The attribute value is quoted by JSON.stringify rather than by literal quote
+       characters in the source. _gen.py's export report and _imgfetch.py both scan the
+       whole page for the raster-fill attribute pattern, and a selector written the
+       obvious way is picked up as if it were a real image reference. */
+    var panel = scope.querySelector('.g-img[data-ref=' + JSON.stringify(spec.panes[0].ref) + ']');
+    if (!panel) return;
+
+    var current = 0, token = 0;
+
+    function apply(i) {
+      var p = spec.panes[i];
+      panel.setAttribute('data-ref', p.ref);
+      /* Size only. The panel's left/top are NOT set here, and must not be: every one
+         of the twelve variants shares a single box origin, so there was never anything
+         to switch, and the value is relative to the Figma node that clips the panel
+         rather than to the element's DOM offset parent. On desktop those happen to be
+         the same node and writing it looked harmless; on mobile they are not, and it
+         threw the panel to the top of the page, where it sat behind the fixed navbar
+         and peeked out above and below it. The generator already places this element
+         correctly for every variant. */
+      panel.style.width = p.size[0] + 'vw';
+      panel.style.height = p.size[1] + 'vw';
+      /* The export writes background sizing as a shorthand-free set of longhands; drop
+         the old ones wholesale rather than trying to override each. */
+      panel.style.cssText = panel.style.cssText.replace(
+        /background-size:[^;]*;?|background-position:[^;]*;?|background-repeat:[^;]*;?/g, '');
+      panel.style.backgroundImage = 'url(/assets/gen/' + p.ref + '.png)';
+      panel.style.cssText += ';' + p.sizing;
+      dressPanel(p);
+    }
+
+    /* The lockup and the button are made once and moved, rather than rebuilt per
+       switch: a fresh <img> per click re-decodes the SVG and flickers. Coordinates
+       come straight out of Figma, relative to the panel image's own rectangle, in
+       the same 1920-based vw the rest of the page is laid out in. */
+    var art = null, cta = null;
+    function place(el, box) {
+      el.style.left = box[0] + 'vw'; el.style.top = box[1] + 'vw';
+      el.style.width = box[2] + 'vw'; el.style.height = box[3] + 'vw';
+    }
+    function dressPanel(p) {
+      if (!p.art) {
+        if (art) art.hidden = true;
+        if (cta) cta.hidden = true;
+        return;
+      }
+      if (!art) {
+        art = document.createElement('img');
+        art.className = 'ax-pt-art';
+        art.setAttribute('alt', '');
+        art.setAttribute('aria-hidden', 'true');
+        panel.appendChild(art);
+      }
+      if (!cta) {
+        cta = document.createElement('div');
+        cta.className = 'ax-pt-cta';
+        /* Not a control: it announces that there is nothing to click yet. Marked as
+           owned so the dead-button sweep leaves it the colour Figma gave it. */
+        cta.setAttribute('data-ax-owned', '1');
+        panel.appendChild(cta);
+      }
+      if (art.getAttribute('src') !== p.art) art.setAttribute('src', p.art);
+      cta.textContent = 'Coming Soon';
+      place(art, p.artBox);
+      place(cta, p.cta);
+      art.hidden = false; cta.hidden = false;
+    }
+
+    function select(i, animate) {
+      if (animate && i === current) return;
+      current = i;
+      var mine = ++token;
+
+      boxes.forEach(function (b, n) { b.style.borderColor = n === i ? ACTIVE_BORDER : IDLE_BORDER; });
+      labels.forEach(function (l, n) {
+        l.setAttribute('aria-selected', n === i ? 'true' : 'false');
+        l.tabIndex = n === i ? 0 : -1;
+        if (!spec.weights) return;
+        l.style.color = n === i ? ACTIVE_TEXT : IDLE_TEXT;
+        l.style.fontWeight = n === i ? '600' : '400';
+      });
+
+      if (!animate) { apply(i); return; }
+
+      /* Hold the fade open until the screenshot has actually decoded: these are 1-2MB
+         PNGs, and swapping on a fixed timer showed an empty panel on a cold cache. */
+      var ready = false, faded = false;
+      var img = new Image();
+      var swap = function () {
+        if (!ready || !faded || token !== mine) return;
+        apply(i);
+        panel.style.opacity = '1';
+      };
+      img.onload = img.onerror = function () { ready = true; swap(); };
+      img.src = '/assets/gen/' + spec.panes[i].ref + '.png';
+
+      panel.style.opacity = '0';
+      setTimeout(function () { faded = true; swap(); }, 150);
+    }
+
+    strip.setAttribute('role', 'tablist');
+
+    /* One capture listener on the strip rather than one per tab. _uifx.html's CTA pass
+       binds its own click handler to whichever labels it decides are links -- here it
+       claimed SupplierX, OrderX, Xpense and ManufeX -- and it is injected first, so a
+       per-label listener of ours is registered second and never sees the event. Capture
+       runs outermost-in, so a listener on their shared ancestor beats all of them.
+
+       This is why those four tabs did nothing. It went unnoticed because the obvious
+       test walks the tabs in order, and clicking tab 0 while tab 0 is already selected
+       is indistinguishable from a tab that works. */
+    strip.addEventListener('click', function (e) {
+      var t = e.target, idx = -1;
+      while (t && t !== strip && idx < 0) {
+        idx = labels.indexOf(t);
+        if (idx < 0) idx = boxes.indexOf(t);
+        t = t.parentElement;
+      }
+      if (idx < 0) return;
+      e.preventDefault();
+      e.stopPropagation();
+      select(idx, true);
+      labels[idx].focus();
+    }, true);
+
+    labels.forEach(function (l, i) {
+      l.classList.add('ax-pt-tab', 'ax-pt-lbl');
+      l.setAttribute('role', 'tab');
+      boxes[i].classList.add('ax-pt-box', 'ax-pt-tab');
+      /* Undo the CTA pass's own treatment so these read as tabs, not links. */
+      l.classList.remove('ax-fx-link');
+      boxes[i].classList.remove('ax-fx-link');
+      if (boxes[i].getAttribute('role') === 'link') boxes[i].removeAttribute('role');
+      if (l.getAttribute('href') === '#') l.removeAttribute('href');
+      var go = function (e) { e.preventDefault(); select(i, true); l.focus(); };
+      l.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') return go(e);
+        var d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+        if (!d) return;
+        e.preventDefault();
+        var n = (i + d + labels.length) % labels.length;
+        select(n, true);
+        labels[n].focus();
+        if (labels[n].scrollIntoView) labels[n].scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      });
+    });
+
+    unclip(strip, boxes);
+    alignRow(strip, boxes, labels);
+
+    /* The icons sit between the boxes and the labels in the flat export and would
+       otherwise swallow the click. */
+    [].forEach.call(strip.querySelectorAll('.g-vec, .g-img'), function (v) {
+      if (v !== panel) v.style.pointerEvents = 'none';
+    });
+
+    select(0, false);
+    setTimeout(function () { panel.classList.add('ax-pt-panel'); }, 0);
+  }
+
+  /* Figma's own strip clips two of its tabs, and the export reproduces it faithfully.
+     The QuiC tab is 5.6px taller than the row because its logo carries a strapline,
+     and the Setu Edge tab's right edge lands exactly on the strip's, so overflow:hidden
+     eats one border off each. The strip paints nothing itself -- no background, no
+     border of its own -- so adjusting its clip box is invisible, and nothing sits to
+     its right. */
+  function unclip(strip, boxes) {
+    var W = parseFloat(strip.style.width), H = parseFloat(strip.style.height);
+    if (isNaN(W) || isNaN(H)) return;
+
+    var maxRight = 0;
+    boxes.forEach(function (b) {
+      maxRight = Math.max(maxRight, parseFloat(b.style.left) + parseFloat(b.style.width));
+    });
+    /* Only when the row actually fits. The mobile strip is a horizontal scroller whose
+       tabs are meant to run well past its edge; widening that would defeat it. */
+    if (maxRight > W + 0.5) return;
+
+    /* A hair over, so the last tab's border is not lost to sub-pixel rounding at the
+       clip boundary. box-sizing draws it inside the tab, so it fits arithmetically and
+       only rounding takes it. */
+    strip.style.width = (W + 0.05).toFixed(4) + 'vw';
+
+    boxes.forEach(function (b) {
+      var h = parseFloat(b.style.height);
+      if (isNaN(h) || h <= H + 1e-6) return;
+      /* Bring the tall tab back to the row height rather than growing the strip: the
+         panel sits flush under the strip, so a taller strip would drop that border on
+         top of it. Figma grew the box symmetrically, so its icon and label sit half the
+         difference low and read as misaligned against the other eleven -- lift them by
+         the same half so the whole row lines up. */
+      var shift = (h - H) / 2;
+      var l = parseFloat(b.style.left), w = parseFloat(b.style.width);
+      [].forEach.call(strip.children, function (c) {
+        if (c === b) return;
+        var cl = parseFloat(c.style.left);
+        if (isNaN(cl) || cl < l - 0.01 || cl > l + w + 0.01) return;
+        var ct = parseFloat(c.style.top);
+        if (!isNaN(ct)) c.style.top = (ct - shift).toFixed(4) + 'vw';
+      });
+      b.style.height = H.toFixed(4) + 'vw';
+    });
+  }
+
+  /* The most common value in a list, used to decide what "the row" is rather than
+     trusting tab 0: whichever metric ten or eleven of the twelve tabs share is the
+     row, and the odd ones out are the slips. */
+  function modal(vals) {
+    var n = {}, best = null;
+    vals.forEach(function (v) {
+      if (v == null) return;
+      n[v] = (n[v] || 0) + 1;
+      if (best === null || n[v] > n[best]) best = v;
+    });
+    return best;
+  }
+
+  /* Setu Edge is drawn to different metrics than the other eleven: its icon box is
+     28px where theirs are 36, and because the box is shorter its label sits 4px above
+     the row. The icon is centred correctly, so only its size is wrong; the label is
+     genuinely out of line, and that is what reads as a misaligned cell. */
+  function alignRow(strip, boxes, labels) {
+    var lt = modal(labels.map(function (l) { return l.style.top; }));
+    if (lt) labels.forEach(function (l) { if (l.style.top !== lt) l.style.top = lt; });
+
+    /* One icon element per tab, found by horizontal containment. Some mobile tabs nest
+       their art deeper than the strip's own children, so those resolve to nothing and
+       are left alone rather than guessed at. */
+    var icons = boxes.map(function (b) {
+      var l = parseFloat(b.style.left), w = parseFloat(b.style.width);
+      var hits = [].filter.call(strip.children, function (c) {
+        if (c === b || c.classList.contains('g-t') || c.classList.contains('ax-pt-box')) return false;
+        var cl = parseFloat(c.style.left);
+        return !isNaN(cl) && cl >= l - 0.01 && cl <= l + w + 0.01;
+      });
+      return hits.length === 1 ? hits[0] : null;
+    });
+
+    /* Height, not width: the QuiC logo is legitimately wider than the rest because it
+       carries a strapline, and it already matches the row's height. */
+    var ih = modal(icons.map(function (i) { return i && i.style.height; }));
+    if (!ih) return;
+    icons.forEach(function (ic) {
+      if (!ic || ic.style.height === ih) return;
+      var h = parseFloat(ic.style.height), w = parseFloat(ic.style.width);
+      var t = parseFloat(ic.style.top), l = parseFloat(ic.style.left);
+      var nh = parseFloat(ih);
+      if (isNaN(h) || isNaN(w) || isNaN(t) || isNaN(l) || !h) return;
+      var nw = w * (nh / h);
+      /* Grow about the centre it already sits on, so the row's optical line holds. */
+      ic.style.height = nh.toFixed(4) + 'vw';
+      ic.style.width = nw.toFixed(4) + 'vw';
+      ic.style.top = (t - (nh - h) / 2).toFixed(4) + 'vw';
+      ic.style.left = (l - (nw - w) / 2).toFixed(4) + 'vw';
+    });
+  }
+
+  function init() { findStrips().forEach(wire); }
+
+  if (document.readyState === 'complete') setTimeout(init, 0);
+  else window.addEventListener('load', function () { setTimeout(init, 0); });
 })();
 </script>
 

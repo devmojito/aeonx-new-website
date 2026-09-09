@@ -8,6 +8,15 @@
 /* The panels are twelve unrelated product screenshots, so a cross-dissolve is the
    honest read of the variant swap: there is nothing to tween between them. */
 .ax-pt-panel{transition:opacity .15s linear}
+/* Five products have no screenshot yet, so Figma composes their panel instead: the
+   shared illustrated backdrop, the product's lockup, and a Coming Soon button. Only
+   the backdrop is an image fill, which is why swapping the fill alone left all five
+   showing the same empty room. These two sit on top of it. */
+.ax-pt-art{position:absolute;pointer-events:none;user-select:none}
+.ax-pt-cta{position:absolute;display:flex;align-items:center;justify-content:center;
+  border-radius:0.8333vw;background-color:rgb(223,63,23);color:rgb(255,255,255);
+  font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:0.8333vw;
+  letter-spacing:0;white-space:nowrap;cursor:default}
 @media (prefers-reduced-motion:reduce){
   .ax-pt-box,.ax-pt-lbl,.ax-pt-panel{transition:none}
 }
@@ -34,10 +43,13 @@
    component set and reading the first IMAGE fill under 'Tab Panel:margin'. Position is
    deliberately absent: see apply().
 
-   Desktop currently reuses ONE placeholder screenshot for Setu Move, QuiC, Jarvis,
-   Data Setu.ai and Setu Edge; mobile has real shots for all but Setu Edge. That is a
-   gap in the design, not a bug here: those tabs work, they just repeat an image until
-   the real ones are drawn. */
+   Five products have no screenshot yet -- Setu Move, QuiC, Jarvis, Data Setu.ai and
+   Setu Edge -- and Figma composes their panel instead: one shared illustrated
+   backdrop, the product's own lockup, and a Coming Soon button. Only the backdrop is
+   an image fill, so swapping the fill alone left all five showing the same empty
+   room. Those three get `art`, `artBox` and `cta`, and the lockups are exported from
+   the design as SVG. Mobile bakes the same composition into one image per variant and
+   needs none of this; its only gap is Setu Edge, which still borrows Jarvis's. */
 (function () {
   var SPEC = {
     desktop: {
@@ -65,22 +77,32 @@
         sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
       { label: 'Setu Move',     ref: '5fd0e3417a71ad9ce0ea61b32d9cd17bdce414ca',
         size: [71.5833, 29.9566],
-        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;',
+        art: '/assets/vec/6890-7191.svg', artBox: [22.8750, 9.7500, 25.8333, 6.5625],
+        cta: [30.3229, 17.1979, 10.7812, 2.9167] },
       { label: 'QuiC',          ref: '5fd0e3417a71ad9ce0ea61b32d9cd17bdce414ca',
         size: [71.5833, 29.9566],
-        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;',
+        art: '/assets/vec/6890-7433.svg', artBox: [27.4583, 9.7500, 16.6667, 6.5625],
+        cta: [30.3229, 17.1979, 10.7812, 2.9167] },
       { label: 'Jarvis',        ref: '5fd0e3417a71ad9ce0ea61b32d9cd17bdce414ca',
         size: [71.5833, 29.9566],
-        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;',
+        art: '/assets/vec/6970-27176.svg', artBox: [32.4583, 9.7500, 6.5625, 6.5625],
+        cta: [30.3750, 17.1979, 10.7812, 2.9167] },
       { label: 'AeonxIQ',       ref: 'e35ee9e51c72f197dcd30547c51270218a80b07b',
         size: [71.5833, 34.3578],
         sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
       { label: 'Data Setu.ai',  ref: '5fd0e3417a71ad9ce0ea61b32d9cd17bdce414ca',
         size: [71.5833, 29.9566],
-        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' },
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;',
+        art: '/assets/vec/6890-7467.svg', artBox: [22.3020, 9.7500, 26.9792, 6.5625],
+        cta: [30.3229, 17.1979, 10.7812, 2.9167] },
       { label: 'Setu Edge',     ref: '5fd0e3417a71ad9ce0ea61b32d9cd17bdce414ca',
         size: [71.5833, 29.9566],
-        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;' }
+        sizing: 'background-size:cover;background-position:center;background-repeat:no-repeat;',
+        art: '/assets/vec/6962-7666.svg', artBox: [32.5104, 9.2812, 6.5625, 6.5625],
+        cta: [30.3750, 17.2500, 10.7812, 2.9167] }
       ]
     },
     mobile: {
@@ -190,6 +212,44 @@
         /background-size:[^;]*;?|background-position:[^;]*;?|background-repeat:[^;]*;?/g, '');
       panel.style.backgroundImage = 'url(/assets/gen/' + p.ref + '.png)';
       panel.style.cssText += ';' + p.sizing;
+      dressPanel(p);
+    }
+
+    /* The lockup and the button are made once and moved, rather than rebuilt per
+       switch: a fresh <img> per click re-decodes the SVG and flickers. Coordinates
+       come straight out of Figma, relative to the panel image's own rectangle, in
+       the same 1920-based vw the rest of the page is laid out in. */
+    var art = null, cta = null;
+    function place(el, box) {
+      el.style.left = box[0] + 'vw'; el.style.top = box[1] + 'vw';
+      el.style.width = box[2] + 'vw'; el.style.height = box[3] + 'vw';
+    }
+    function dressPanel(p) {
+      if (!p.art) {
+        if (art) art.hidden = true;
+        if (cta) cta.hidden = true;
+        return;
+      }
+      if (!art) {
+        art = document.createElement('img');
+        art.className = 'ax-pt-art';
+        art.setAttribute('alt', '');
+        art.setAttribute('aria-hidden', 'true');
+        panel.appendChild(art);
+      }
+      if (!cta) {
+        cta = document.createElement('div');
+        cta.className = 'ax-pt-cta';
+        /* Not a control: it announces that there is nothing to click yet. Marked as
+           owned so the dead-button sweep leaves it the colour Figma gave it. */
+        cta.setAttribute('data-ax-owned', '1');
+        panel.appendChild(cta);
+      }
+      if (art.getAttribute('src') !== p.art) art.setAttribute('src', p.art);
+      cta.textContent = 'Coming Soon';
+      place(art, p.artBox);
+      place(cta, p.cta);
+      art.hidden = false; cta.hidden = false;
     }
 
     function select(i, animate) {
