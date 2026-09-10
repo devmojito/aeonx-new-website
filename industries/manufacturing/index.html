@@ -7545,9 +7545,21 @@ img.g-vec[src*="6138-26173"]{animation:ax-gear-ccw 104s linear infinite}
    Geometry comes from inline vw styles, never getBoundingClientRect: the cards sit
    inside a scroll-reveal wrapper that starts them translated, and a rect would read
    the animated position rather than the designed one. */
-.ax-cardex{transition:width .3s cubic-bezier(.22,.61,.36,1)}
-.ax-cardex-m{transition:transform .3s cubic-bezier(.22,.61,.36,1)}
-.ax-cardex-d{transition:opacity .22s ease}
+/* ---- HOW IT MOVES ----
+   The old sequence was: blank the copy, wait, then move everything and snap the copy
+   back on. Three separate jolts, and the copy arrived while the card was still
+   travelling, so the text appeared to slide sideways under its own card.
+
+   One easing for everything that moves, and the copy is choreographed against it:
+   it leaves quickly and without ceremony, and it comes back late, once the width has
+   most of the way settled, with a short lift rather than a hard cut. The fill is
+   given its own gentler curve so the peach washes in instead of flicking. */
+.ax-cardex{transition:width .42s cubic-bezier(.22,1,.36,1),
+                      background-color .34s cubic-bezier(.22,1,.36,1)}
+.ax-cardex-m{transition:transform .42s cubic-bezier(.22,1,.36,1)}
+.ax-cardex-d{transition:opacity .2s ease .15s,transform .32s cubic-bezier(.22,1,.36,1) .15s}
+.ax-cardex-d.ax-cardex-out{opacity:0;transform:translateY(0.45vw);
+  transition:opacity .1s ease,transform .1s ease}
 /* ---- THE COPY HAS TO PAINT ABOVE THE CARDS ----
    Figma exports this row flat: the four plates and the text are siblings, and the
    copy is authored inside the card the design drew open, so it sits at DOM position
@@ -7662,11 +7674,30 @@ img.g-vec[src*="6138-26173"]{animation:ax-gear-ccw 104s linear infinite}
        the top -- visible in the row as one title out of line with the other three.
        Both heights are read off the design and the title travels to whichever one
        matches its card's current state. */
-    var titleOpenT=open.title.t;
-    var titleRestT=(function(){
-      for(var i=0;i<cards.length;i++) if(cards[i]!==open) return cards[i].title.t;
-      return titleOpenT;
+    /* ---- ONE TYPE SIZE ----
+       Figma sets the open card's title larger than the three collapsed ones, so the
+       row read as one heading beside three captions, and the size jumped as cards
+       opened and closed. Every title takes the open card's type. It fits: at that
+       size the longest of them needs 8.2vw of the 9.86vw a collapsed card gives it.
+       Copied off the design's own open title rather than restated here. */
+    var TYPE=(function(){
+      var cs=getComputedStyle(open.title.el);
+      return {size:cs.fontSize,weight:cs.fontWeight,lh:cs.lineHeight};
     })();
+    var titleH=open.title.h;
+    cards.forEach(function(c){
+      if(c===open) return;
+      c.title.el.style.fontSize=TYPE.size;
+      c.title.el.style.fontWeight=TYPE.weight;
+      c.title.el.style.lineHeight=TYPE.lh;
+      c.title.el.style.height=titleH+'vw';
+    });
+
+    var titleOpenT=open.title.t;
+    /* Re-centred rather than read off a collapsed title: those were measured for the
+       smaller type and are now half a line high, so the old number would sit them
+       low in the card. */
+    var titleRestT=open.plate.t+(open.plate.h-titleH)/2;
 
     var OPEN_BG=getComputedStyle(open.plate.el).backgroundColor;
     var REST_BG=(function(){
@@ -7677,6 +7708,16 @@ img.g-vec[src*="6138-26173"]{animation:ax-gear-ccw 104s linear infinite}
       }
       return 'rgb(255,255,255)';
     })();
+
+    /* The generic tile-hover engine had claimed the card the design drew open, and
+       only that one, so hovering the SAP angle drew a ring the other three never
+       got. This row has its own hover behaviour; the engine's opt-out marker keeps
+       it off, and the classes it already applied come back off. */
+    cards.forEach(function(c){
+      c.plate.el.dataset.axOwned='1';
+      ['ax-hv-tileskin','ax-hv-on','ax-hv-flat','ax-hv-m','ax-hv-tile','ax-hv-btn']
+        .forEach(function(k){ c.plate.el.classList.remove(k); });
+    });
 
     cards.forEach(function(c){
       c.plate.el.classList.add('ax-cardex');
@@ -7721,7 +7762,6 @@ img.g-vec[src*="6138-26173"]{animation:ax-gear-ccw 104s linear infinite}
           desc.el.style.top=(c.plate.t+descOffT-descPad.t)+'vw';
           desc.el.style.width=descW+'vw';
           desc.el.style.transform=dx?('translateX('+dx.toFixed(4)+'vw)'):'';
-          desc.el.style.opacity='1';
         }
         x+=w+GAP;
       });
@@ -7731,9 +7771,19 @@ img.g-vec[src*="6138-26173"]{animation:ax-gear-ccw 104s linear infinite}
     function show(c){
       if(!c||c===current) return;
       clearTimeout(pending);
-      desc.el.style.opacity='0';
+      desc.el.classList.add('ax-cardex-out');
       current=c;
-      pending=setTimeout(function(){ layout(c); },120);
+      pending=setTimeout(function(){
+        layout(c);
+        /* Two frames: the browser has to paint the copy in its new place, still
+           hidden, before the class comes off, or it transitions from the old
+           position and reads as the text sliding across the row. */
+        requestAnimationFrame(function(){
+          requestAnimationFrame(function(){
+            if(current===c) desc.el.classList.remove('ax-cardex-out');
+          });
+        });
+      },110);
     }
 
     /* ---- ONE HANDLER ON THE ROW, NOT ONE PER PIECE ----
