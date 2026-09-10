@@ -17,6 +17,29 @@ select.ax-cf-in{cursor:pointer;appearance:none;-webkit-appearance:none}
    are part of its hit area (they are drawn as siblings ON TOP of it and are made
    pointer-transparent in JS), and the label keeps its designed x via padding. */
 select.ax-cf-code{left:0!important;top:0!important;height:100%!important;cursor:pointer}
+/* ---- COUNTRY CODE PICKER ----
+   A native <select> hands its popup to the browser, which draws all fifty rows down
+   the page. The <select> stays -- it is what the form submits and what any other
+   pass reads -- but it is taken out of sight and driven by a list of our own, so the
+   list can be a sensible height and scroll inside itself.
+   The popup is fixed-position and lives on <body>: the field sits inside two clipped
+   Figma boxes, and anything positioned within them is cut off at their edge. */
+.ax-cc-native{opacity:0;pointer-events:none}
+.ax-cc-btn{display:flex;align-items:center;cursor:pointer;white-space:nowrap;
+  left:0!important;top:0!important;height:100%!important;background:transparent}
+.ax-cc-pop{position:fixed;z-index:2147483001;max-height:13.5vw;overflow-y:auto;overflow-x:hidden;
+  background:#fff;border:1px solid rgb(213,218,226);border-radius:0.42vw;
+  box-shadow:0 0.6vw 1.6vw rgba(35,39,46,.16);padding:0.2vw 0;
+  font-family:'Nunito Sans',sans-serif;color:rgb(35,39,46)}
+.ax-cc-pop::-webkit-scrollbar{width:6px}
+.ax-cc-pop::-webkit-scrollbar-thumb{background:rgba(35,39,46,.22);border-radius:3px}
+.ax-cc-opt{padding:0.28vw 0.7vw;cursor:pointer;white-space:nowrap}
+.ax-cc-opt:hover,.ax-cc-opt.is-at{background:rgb(253,231,215)}
+.ax-cc-opt[aria-selected="true"]{color:rgb(223,63,23);font-weight:700}
+@media (max-width:1024px){
+  .ax-cc-pop{max-height:46vw;border-radius:1.6vw}
+  .ax-cc-opt{padding:1.1vw 2.4vw}
+}
 .ax-cf-msg{position:absolute;font-family:'Nunito Sans',sans-serif;font-weight:500;
   color:rgb(2,51,89);transition:opacity .2s ease}
 </style>
@@ -373,6 +396,122 @@ select.ax-cf-code{left:0!important;top:0!important;height:100%!important;cursor:
     check();
   }
 
+  /* The list of fifty is right -- a sales form should not make someone from Oman
+     hunt -- but the browser draws all fifty at once. Same <select>, same value, same
+     name; only the popup is ours, so it can be a few rows tall and scroll. */
+  function codePicker(box, sel){
+    if (sel.dataset.axCc) return;
+    sel.dataset.axCc = '1';
+    sel.classList.add('ax-cc-native');
+    sel.setAttribute('tabindex', '-1');
+    sel.setAttribute('aria-hidden', 'true');
+
+    var btn = document.createElement('div');
+    btn.className = 'ax-cf-in ax-cc-btn';
+    btn.setAttribute('style', sel.getAttribute('style') || '');
+    btn.classList.remove('ax-cc-native');
+    btn.setAttribute('role', 'combobox');
+    btn.setAttribute('aria-expanded', 'false');
+    btn.setAttribute('aria-label', 'Country code');
+    btn.tabIndex = 0;
+    sel.parentNode.insertBefore(btn, sel);
+
+    var pop = document.createElement('div');
+    pop.className = 'ax-cc-pop';
+    pop.setAttribute('role', 'listbox');
+    pop.hidden = true;
+    document.body.appendChild(pop);
+
+    var opts = [];
+    [].slice.call(sel.options).forEach(function(o, i){
+      var d = document.createElement('div');
+      d.className = 'ax-cc-opt';
+      d.setAttribute('role', 'option');
+      d.textContent = o.textContent;
+      d.dataset.i = i;
+      pop.appendChild(d);
+      opts.push(d);
+    });
+
+    var at = sel.selectedIndex < 0 ? 0 : sel.selectedIndex;
+    function paint(){
+      btn.textContent = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].textContent : '';
+      opts.forEach(function(d, i){
+        d.setAttribute('aria-selected', i === sel.selectedIndex ? 'true' : 'false');
+        d.classList.toggle('is-at', i === at);
+      });
+    }
+    function place(){
+      var r = btn.getBoundingClientRect();
+      pop.style.left = Math.round(r.left) + 'px';
+      pop.style.minWidth = Math.round(r.width) + 'px';
+      /* below by default, above when there is not room for it there */
+      var below = window.innerHeight - r.bottom;
+      pop.style.top = ''; pop.style.bottom = '';
+      if (below < pop.offsetHeight + 8 && r.top > below){
+        pop.style.bottom = Math.round(window.innerHeight - r.top + 4) + 'px';
+      } else {
+        pop.style.top = Math.round(r.bottom + 4) + 'px';
+      }
+    }
+    var open = false;
+    function show(){
+      if (open) return;
+      open = true; pop.hidden = false;
+      btn.setAttribute('aria-expanded', 'true');
+      at = sel.selectedIndex < 0 ? 0 : sel.selectedIndex;
+      paint(); place();
+      if (opts[at]) opts[at].scrollIntoView({ block: 'nearest' });
+    }
+    function hide(){
+      if (!open) return;
+      open = false; pop.hidden = true;
+      btn.setAttribute('aria-expanded', 'false');
+    }
+    function pick(i){
+      if (i < 0 || i >= sel.options.length) return;
+      sel.selectedIndex = i;
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
+      paint(); hide(); btn.focus();
+    }
+
+    btn.addEventListener('click', function(e){ e.preventDefault(); open ? hide() : show(); });
+    btn.addEventListener('keydown', function(e){
+      var k = e.key;
+      if (k === 'Enter' || k === ' ' || k === 'ArrowDown' || k === 'ArrowUp'){
+        e.preventDefault();
+        if (!open){ show(); return; }
+        if (k === 'Enter' || k === ' '){ pick(at); return; }
+        at = Math.min(opts.length - 1, Math.max(0, at + (k === 'ArrowDown' ? 1 : -1)));
+        paint();
+        if (opts[at]) opts[at].scrollIntoView({ block: 'nearest' });
+      } else if (k === 'Escape'){ hide(); }
+      else if (/^[a-z0-9+]$/i.test(k)){
+        /* type-ahead, the one thing people miss when a native select is replaced */
+        var q = k.toLowerCase();
+        for (var n = 1; n <= opts.length; n++){
+          var j = (at + n) % opts.length;
+          if (opts[j].textContent.toLowerCase().indexOf(q) === 0){ at = j; paint();
+            opts[j].scrollIntoView({ block: 'nearest' }); break; }
+        }
+      }
+    });
+    pop.addEventListener('click', function(e){
+      var d = e.target.closest('.ax-cc-opt');
+      if (d) pick(parseInt(d.dataset.i, 10));
+    });
+    document.addEventListener('click', function(e){
+      if (!open) return;
+      if (e.target === btn || btn.contains(e.target) || pop.contains(e.target)) return;
+      hide();
+    }, true);
+    /* Follow the field rather than closing: a smooth scroll still in flight when the
+       field is clicked would otherwise shut the list the moment it opened. */
+    addEventListener('scroll', function(){ if (open) place(); }, true);
+    addEventListener('resize', function(){ if (open) place(); });
+    paint();
+  }
+
   function wirePanel(scope, kind){
     /* the marker must be set on the FINAL <form>, not the div: divToForm() discards
        the original element outright, so anything set on it before the swap is lost
@@ -418,6 +557,7 @@ select.ax-cf-code{left:0!important;top:0!important;height:100%!important;cursor:
         code.style.left = icons[0].style.left;
         icons[0].style.display = 'none';
       }
+      codePicker(codeBox, code);
     }
 
     if (kind === 'A'){
