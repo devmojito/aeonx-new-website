@@ -7262,7 +7262,14 @@ document.addEventListener("DOMContentLoaded",function(){
 /* The selected category's own look -- darker ink, heavier weight -- is Figma's, read
    off the design and applied by render(). It is not restated here: an !important
    colour in this file used to fight the design and win on some rows and not others. */
-.ax-inv-chip{cursor:pointer}
+/* The year chips. Their three colours are set inline from the design's own selected
+   and idle chips, so the hover has to out-rank an inline value; it only ever applies
+   to a chip that is not the selected one. The label sits ON the plate rather than
+   inside it, so it passes the pointer through and the whole chip lights as one. */
+.ax-inv-chip{cursor:pointer;transition:background-color .18s ease,border-color .18s ease,color .18s ease}
+.ax-inv-chip-l{pointer-events:none}
+.ax-inv-chip:not(.is-on):hover{border-color:rgb(196,203,214)!important;background-color:rgb(250,251,252)!important}
+@media (prefers-reduced-motion:reduce){.ax-inv-chip{transition:none}}
 .ax-inv-input{position:absolute;left:0;top:0;width:100%;height:100%;border:0;outline:none;
   background:transparent;padding:0;font-family:'Nunito Sans',sans-serif;color:rgb(35,39,46)}
 .ax-inv-empty{position:absolute;font-family:'Nunito Sans',sans-serif;color:rgb(134,149,170)}
@@ -7771,9 +7778,15 @@ document.addEventListener("DOMContentLoaded",function(){
 
     var CHIP=null;
     if(chips.length>=2){
-      var onC=getComputedStyle(chips[0].label).color, onB=getComputedStyle(chips[0].plate).borderColor;
-      var offC=getComputedStyle(chips[1].label).color, offB=getComputedStyle(chips[1].plate).borderColor;
-      CHIP={on:{fg:onC,bd:onB},off:{fg:offC,bd:offB},
+      /* Figma draws chip one selected and the rest idle, so the whole selected look
+         lives on "All": peach ground, red rule, red label. Only the rule and the
+         label were being moved, so All kept its peach ground whatever was picked and
+         the chip actually selected never got one. All three travel together. */
+      var on0=getComputedStyle(chips[0].plate), off0=getComputedStyle(chips[1].plate);
+      var onC=getComputedStyle(chips[0].label).color, onB=on0.borderColor;
+      var offC=getComputedStyle(chips[1].label).color, offB=off0.borderColor;
+      CHIP={on:{fg:onC,bd:onB,bg:on0.backgroundColor},
+            off:{fg:offC,bd:offB,bg:clearBg(off0.backgroundColor)?'transparent':off0.backgroundColor},
             gap:chips.length>2?(chips[2].pb.l-(chips[1].pb.l+chips[1].pb.w)):0.24,
             pad:(chips[1].pb.w-chips[1].lb.w)/2, left:chips[0].pb.l,
             /* set on every chip each rebuild rather than left to what a clone
@@ -7824,12 +7837,20 @@ document.addEventListener("DOMContentLoaded",function(){
         setv(c.label,'left',x+CHIP.pad); setv(c.label,'width',ink); setv(c.label,'top',CHIP.lt);
         c.plate.style.transform='none'; c.label.style.transform='none';
         var on=want[i]===year;
-        c.label.style.color=(on?CHIP.on:CHIP.off).fg;
-        c.plate.style.borderColor=(on?CHIP.on:CHIP.off).bd;
+        var look=on?CHIP.on:CHIP.off;
+        c.label.style.color=look.fg;
+        c.plate.style.borderColor=look.bd;
+        c.plate.style.backgroundColor=look.bg;
         c.plate.classList.add('ax-inv-chip');
-        c.label.classList.add('ax-inv-chip');
+        c.label.classList.add('ax-inv-chip','ax-inv-chip-l');
+        c.plate.classList.toggle('is-on',on);
+        /* The plate is the control, not the label: the label passes the pointer
+           through, so it must not claim to be a button of its own. */
         c.plate.setAttribute('role','button');
-        c.label.setAttribute('role','button');
+        c.plate.setAttribute('tabindex','0');
+        c.plate.setAttribute('aria-pressed',on?'true':'false');
+        c.plate.setAttribute('aria-label','Filter by '+text);
+        c.label.removeAttribute('role');
         if(!c.wired){
           c.wired=1;
           var hit=function(e){
@@ -7840,7 +7861,9 @@ document.addEventListener("DOMContentLoaded",function(){
             buildChips(); render();
           };
           c.plate.addEventListener('click',hit,true);
-          c.label.addEventListener('click',hit,true);
+          c.plate.addEventListener('keydown',function(e){
+            if(e.key==='Enter'||e.key===' '){ hit(e); }
+          });
         }
         x+=w+CHIP.gap;
       });
