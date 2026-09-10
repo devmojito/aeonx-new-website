@@ -52,6 +52,9 @@ def main():
         'What we do/Alliances/SAP': 'alliances/sap-gold-partner',
         'What we do/Alliances/Partners Hub/Sap on AWS': 'alliances/partners-hub/sap-on-aws',
         'What we do/Alliances/Partners Hub/Sap on AWS/CKHB': None,  # sub-section, skip
+        # The Anthropic page's desktop frame is on the Light V2 canvas, not the one
+        # build_route_map() reads, so its mobile frame has no desktop name to match.
+        'What we do/Alliances/Anthropic': 'alliances/anthropic',
         'Investor/Financial Highlights': 'investor-relations',
         'Investor/Shareholding pattern.': 'investor-relations/shareholding-pattern',
     }

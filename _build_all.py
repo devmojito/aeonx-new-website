@@ -138,6 +138,24 @@ if __name__ == "__main__":
 # .ax-mob mobile layout injected by _mobile.py. Re-inject immediately so a rebuild
 # can never leave phones rendering the desktop layout scaled down.
 import subprocess, sys as _sys
+# Pages drawn on the Light V2 canvas rather than the one PAGES reads. They go
+# through _genv2.py, so they cannot live in PAGES, but they still have to rebuild
+# with everything else or a chrome change would skip them the way it skipped the
+# legacy posts. The homepage is deliberately NOT here: it needs its own mobile
+# frame and hero variant passes, which the block below already runs by hand.
+V2_PAGES = [
+    ('7038:43639', 'alliances/anthropic/index.html', 'Anthropic Alliance \u2014 AeonX Digital'),
+    ('7052:23906', 'products/crm-360/index.html',    'CRM 360 \u2014 AeonX Digital'),
+]
+print('\nbuilding Light V2 sub-pages (_genv2.py)...')
+for _nid, _out, _title in V2_PAGES:
+    _r = subprocess.run([_sys.executable, '_genv2.py', _nid, _out, _title],
+                        capture_output=True, text=True)
+    _need = [l for l in _r.stdout.splitlines() if 'NEED' in l]
+    print('  %-40s %s' % (_out, 'OK' if not _need else '%d assets NEED fetching' % len(_need)))
+    for _l in _need[:5]:
+        print('     ', _l)
+
 # The 53 legacy WordPress-URL posts and case studies are wrapped in the same chrome
 # via _gen.get_shell(), but they are not in PAGES, so a nav or menu edit used to
 # reach 90 pages and silently skip these -- they carried a stale menu for as long as
