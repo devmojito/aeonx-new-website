@@ -36,8 +36,11 @@
   /* People the client has asked to take off the site. The page is regenerated from
      the Figma dump, which still has them, so removing the card from the HTML would
      last exactly until the next build. Dropped from the roster at runtime instead,
-     and the cards after them close the gap because render() assigns by index. */
-  var REMOVED = ['Samudraneel Thakur'];
+     and the cards after them close the gap because render() assigns by index.
+
+     Applied to BOTH rosters: the first is read off the page, the second is carried
+     in this file, and someone who has left has left either way. */
+  var REMOVED = ['Samudraneel Thakur', 'Milan Hota'];
 
   var A_HEAD = 'The people who run each line.';
   var B_HEAD = 'Who picks up the phone when you call.';
@@ -50,7 +53,7 @@
     ['Vicky Gandhi',     'SENIOR PROJECT MANAGER · SAP',         'ac7bcb165778feecb0d1a21fe79a91389827c744'],
     ['Pranav Patil',     'SENIOR PROJECT MANAGER · SAP',         'a88270096d9cfca494c81d95acfe8264a8ea30e0'],
     ['Priyank Pancholi', 'REGION HEAD',                              '64db4ccb89556617da6da44ace85e1060d8f70d0']
-  ];
+  ].filter(function(p){ return REMOVED.indexOf(p[0]) < 0; });
 
   function txt(e){ return (e.textContent || '').replace(/\s+/g,' ').trim(); }
   function num(el, k){
