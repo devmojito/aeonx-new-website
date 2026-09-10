@@ -17,7 +17,10 @@
 .ax-inv-row:hover{background-color:rgba(223,63,23,.05)}
 .ax-inv-cat{cursor:pointer;transition:color .18s ease}
 .ax-inv-cat:hover{color:rgb(223,63,23)}
-.ax-inv-cat.is-on{color:rgb(223,63,23)!important;font-weight:700}
+/* The selected category's own look -- darker ink, heavier weight -- is Figma's, read
+   off the design and applied by render(). It is not restated here: an !important
+   colour in this file used to fight the design and win on some rows and not others. */
+.ax-inv-chip{cursor:pointer}
 .ax-inv-input{position:absolute;left:0;top:0;width:100%;height:100%;border:0;outline:none;
   background:transparent;padding:0;font-family:'Nunito Sans',sans-serif;color:rgb(35,39,46)}
 .ax-inv-empty{position:absolute;font-family:'Nunito Sans',sans-serif;color:rgb(134,149,170)}
@@ -29,6 +32,7 @@
 
   function txt(e){ return (e.textContent||'').replace(/\s+/g,' ').trim(); }
   function norm(s){ return s.toLowerCase().replace(/[^a-z0-9]+/g,' ').trim(); }
+  function clearBg(bg){ return !bg||bg==='transparent'||bg.replace(/\s/g,'')==='rgba(0,0,0,0)'; }
   function num(el,p){ var v=el.style[p]; if(!v) return null;
     var m=/^(-?[\d.]+)(vw|px)$/.exec(String(v).trim()); if(!m) return null;
     return m[2]==='vw'?parseFloat(m[1]):parseFloat(m[1])*100/window.innerWidth; }
@@ -73,15 +77,34 @@
     var kids=[].slice.call(sec.children);
     var boxes=kids.map(box);
 
-    /* --- category rail: text left of the search bar, in the same vertical band --- */
+    /* --- category rail ---
+       The rail used to be "any text left of the search label, in its vertical band",
+       which is a guess, and it was wrong: the "All" year chip sits a couple of pixels
+       inside that boundary and was picked up as a seventh category. It then took the
+       selected-category styling, which is why its pill lost its left edge, and
+       clicking it filtered by a category that does not exist.
+
+       The rail is a COLUMN, so the thing that identifies it is that its labels share
+       a left edge. Take the most common left among the candidates and keep only those.
+       The chips each sit at their own left and drop out on their own. */
     var railTexts=[], counts=[];
+    var cand=[];
     kids.forEach(function(k,i){
       var b=boxes[i]; if(!b||!/g-t/.test(k.className||'')) return;
       if(b.r>sb.l+0.2) return;
       if(b.t<sb.t-1.6||b.t>sb.t+18) return;
       var t=txt(k); if(!t) return;
-      (/^\d+$/.test(t)?counts:railTexts).push({el:k,b:b,t:t});
+      (/^\d+$/.test(t)?counts:cand).push({el:k,b:b,t:t});
     });
+    (function(){
+      var tally={}, best=null;
+      cand.forEach(function(c){
+        var key=c.b.l.toFixed(2);
+        tally[key]=(tally[key]||0)+1;
+        if(!best||tally[key]>tally[best]) best=key;
+      });
+      railTexts=cand.filter(function(c){ return c.b.l.toFixed(2)===best; });
+    })();
     if(railTexts.length<2) return;
     railTexts.sort(function(a,b){ return a.b.t-b.b.t; });
     counts.sort(function(a,b){ return a.b.t-b.b.t; });
@@ -269,6 +292,7 @@
     }
     function render(){
       var list0=docsFor(active).filter(function(d){
+        if(year&&fyOf(d)!==year) return false;
         return !query||d.t.toLowerCase().indexOf(query)>-1; });
       host.innerHTML='';
       list0.forEach(function(d,i){ host.appendChild(makeRow(d,i,i===0&&!query)); });
@@ -284,6 +308,11 @@
       railTexts.forEach(function(r,i){
         var on=i===active;
         r.el.classList.toggle('is-on',on);
+        if(INK){
+          r.el.style.color=(on?INK.on:INK.off).fg;
+          r.el.style.fontWeight=(on?INK.on:INK.off).fw;
+        }
+        paintBadge(r,on);
         /* The selected row's look is drawn into ONE slot in Figma and left there, so
            the peach plate and the red rule stayed on the category the design happened
            to have selected no matter what the reader clicked. Move the look to the
@@ -300,15 +329,29 @@
       r.el.classList.add('ax-inv-cat');
       r.el.setAttribute('role','button');
       r.el.setAttribute('tabindex','0');
-      var pick=function(){ active=i; render(); };
+      var pick=function(){ active=i; year=''; buildChips(); render(); };
       /* The clickable area is the ROW, not the label: the label text is only as wide
          as its words, so a click on the rest of the row -- most of it, and where the
          highlight makes it look clickable -- landed on nothing. Take the row plate
          behind the label when there is one, and hit-test against that. */
+      /* Scanned over the section's children as they are NOW, not the list captured
+         before the missing categories were cloned in: a cloned slot's own plate was
+         invisible to this, so the search fell through to the only other box that
+         contains the label -- the rail's whole background panel. Selecting that
+         category then painted the entire rail.
+
+         A plate also has to hold exactly ONE rail label. That is what a row is, and
+         it rules out the panel however the scan is ordered. */
       var row=null, rowA=Infinity;
-      kids.forEach(function(k,ki){
-        var b=boxes[ki]; if(!b||!/g-b/.test(k.className||'')) return;
+      [].slice.call(sec.children).forEach(function(k){
+        if(!/g-b/.test(k.className||'')) return;
+        var b=box(k); if(!b) return;
         if(r.b.l<b.l-0.3||r.b.r>b.r+0.3||r.b.t<b.t-0.5||r.b.b>b.b+0.5) return;
+        var holds=0;
+        railTexts.forEach(function(q){
+          if(q.b.l>=b.l-0.3&&q.b.r<=b.r+0.3&&q.b.t>=b.t-0.5&&q.b.b<=b.b+0.5) holds++;
+        });
+        if(holds!==1) return;
         var a=b.w*b.h; if(a<rowA){ rowA=a; row=k; }
       });
       var hitEl=row||r.el;
@@ -331,23 +374,236 @@
         if(badge) return;
         if(c.b.t+c.b.h/2>=r.b.t-0.4&&c.b.t+c.b.h/2<=r.b.b+0.4) badge=c;
       });
-      if(badge) badge.el.textContent=String(docsFor(i).length);
+      if(badge){
+        r.num=badge.el;
+        r.numBox=badge.b;
+        /* the grey lozenge the number sits on */
+        var pill=null, pillA=Infinity;
+        [].slice.call(sec.children).forEach(function(k){
+          if(!/g-b/.test(k.className||'')||k===r.row) return;
+          var b=box(k); if(!b) return;
+          if(badge.b.l<b.l-0.3||badge.b.r>b.r+0.3||badge.b.t<b.t-0.4||badge.b.b>b.b+0.4) return;
+          var a=b.w*b.h; if(a<pillA){ pillA=a; pill=k; r.pillBox=b; }
+        });
+        r.pill=pill;
+      }
     });
 
-    /* The two looks are read off the design's own slots rather than restated here,
-       so a colour change in Figma carries through without editing this file. */
-    var SKIN=null;
+    /* ---- THE TWO LOOKS ----
+       Figma draws the selected row and the unselected rows differently, and draws the
+       selected one into whichever slot it happened to have picked. Both looks are read
+       back off those slots rather than restated here, so a colour change in the design
+       still carries through.
+
+       Two of them, not one: the row plate (peach ground, red left rule) AND the count
+       badge (peach lozenge, red number). Only the plate was being moved, so the count
+       beside "Annual report" stayed orange whatever was selected and the selected
+       row's own count stayed grey. */
+    var SKIN=null, BADGE=null, INK=null;
     (function(){
       var on=null, off=null;
       railTexts.forEach(function(r){
         if(!r.row) return;
         var cs=getComputedStyle(r.row), bg=cs.backgroundColor;
-        var clear=!bg||bg==='transparent'||bg.replace(/\s/g,'')==='rgba(0,0,0,0)';
-        if(!clear){ if(!on) on={bg:bg,bc:cs.borderLeftColor}; }
+        if(!clearBg(bg)){ if(!on) on={bg:bg,bc:cs.borderLeftColor}; }
         else if(!off) off={bc:cs.borderLeftColor};
       });
       if(on&&off) SKIN={on:on,off:off};
     })();
+    (function(){
+      /* the label the design left selected is the one whose weight is the odd one out */
+      var tally={}, majority=null;
+      railTexts.forEach(function(r){
+        var w=getComputedStyle(r.el).fontWeight;
+        tally[w]=(tally[w]||0)+1;
+        if(!majority||tally[w]>tally[majority]) majority=w;
+      });
+      var on=null, off=null;
+      railTexts.forEach(function(r){
+        var cs=getComputedStyle(r.el), look={fg:cs.color,fw:cs.fontWeight};
+        if(cs.fontWeight===majority){ if(!off) off=look; }
+        else if(!on) on=look;
+      });
+      if(on&&off) INK={on:on,off:off};
+    })();
+    (function(){
+      /* the odd one out is the active look: every other lozenge shares one colour */
+      var tally={}, majority=null;
+      railTexts.forEach(function(r){
+        if(!r.pill) return;
+        var bg=getComputedStyle(r.pill).backgroundColor;
+        tally[bg]=(tally[bg]||0)+1;
+        if(!majority||tally[bg]>tally[majority]) majority=bg;
+      });
+      if(!majority) return;
+      var on=null, off=null;
+      railTexts.forEach(function(r){
+        if(!r.pill||!r.num) return;
+        var bg=getComputedStyle(r.pill).backgroundColor;
+        var look={bg:bg,fg:getComputedStyle(r.num).color};
+        if(bg===majority){ if(!off) off=look; }
+        else if(!on) on=look;
+      });
+      if(on&&off) BADGE={on:on,off:off};
+    })();
+
+    /* ---- COUNT BADGES ----
+       The number's slot is drawn one digit wide, so "123" hung off the end of its
+       lozenge. Both are sized to the number instead, growing leftwards from the right
+       edge the design gave them so the column of badges stays aligned. */
+    function paintBadge(r,on){
+      if(!r.num) return;
+      var n=String(docsFor(railTexts.indexOf(r)).length);
+      if(r.num.textContent!==n) r.num.textContent=n;
+      if(!r.numBox||!r.pillBox) return;
+      r.num.style.width='auto';
+      r.num.style.whiteSpace='nowrap';
+      r.num.style.textAlign='center';
+      var vwpx=window.innerWidth/100;
+      var ink=r.num.getBoundingClientRect().width/vwpx;
+      var pad=(r.pillBox.w-r.numBox.w)/2;
+      var w=Math.max(r.pillBox.w, ink+pad*2);
+      var right=r.pillBox.l+r.pillBox.w;
+      if(r.pill){
+        setv(r.pill,'width',w);
+        setv(r.pill,'left',right-w);
+        if(BADGE) r.pill.style.backgroundColor=(on?BADGE.on:BADGE.off).bg;
+      }
+      setv(r.num,'width',ink);
+      setv(r.num,'left',right-w+(w-ink)/2);
+      if(BADGE) r.num.style.color=(on?BADGE.on:BADGE.off).fg;
+    }
+
+    /* ---- YEAR CHIPS ----
+       "All" and three financial years are drawn beside the search field. They were
+       decoration: nothing read them, so the filter did nothing at all, and the three
+       years are whichever ones the designer happened to draw rather than the years the
+       library actually holds.
+
+       They are built from the data instead, one chip per financial year present in the
+       selected category, newest first. Extra chips are clones of the design's own, and
+       surplus ones are hidden, the same way the rail clones a slot for a category the
+       design predates. A chip that would match nothing is never drawn, so the filter
+       cannot dead-end.
+
+       Indian financial year: April to March, so Mar 2025 is FY 2024-25. */
+    function fyOf(d){
+      /* The document's own date is when it was PUBLISHED, which is not the year it is
+         about: the 2025-26 annual report was uploaded in Sep 2026 and would file under
+         FY 2026-27, where nobody would look for it. When the title states a financial
+         year, that is the answer; the upload date is only the fallback. */
+      var t=/\b(20\d\d)\s*[-\u2013]\s*(\d{2})\b/.exec(d.t||'');
+      if(t) return 'FY '+t[1]+'-'+t[2];
+      var m=/^([A-Za-z]{3})\s+(\d{4})$/.exec((d.d||'').trim());
+      if(!m) return '';
+      var mon=['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec']
+              .indexOf(m[1].toLowerCase())+1;
+      var y=parseInt(m[2],10);
+      if(!mon||!y) return '';
+      var start=mon>=4?y:y-1;
+      return 'FY '+start+'-'+String(start+1).slice(2);
+    }
+
+    var year='';
+    var chips=[];   /* {plate,label} in row order, the first being "All" */
+    (function collectChips(){
+      var lbls=[];
+      kids.forEach(function(k,i){
+        var b=boxes[i]; if(!b||!/g-t/.test(k.className||'')) return;
+        var t=txt(k);
+        if(!/^all$/i.test(t)&&!/^fy\s*\d{4}/i.test(t)) return;
+        if(railTexts.some(function(r){ return r.el===k; })) return;
+        lbls.push({el:k,b:b});
+      });
+      lbls.sort(function(a,b){ return a.b.l-b.b.l; });
+      lbls.forEach(function(o){
+        var plate=null, a=Infinity;
+        kids.forEach(function(k,i){
+          var b=boxes[i]; if(!b||!/g-b/.test(k.className||'')) return;
+          if(o.b.l<b.l-0.3||o.b.r>b.r+0.3||o.b.t<b.t-0.4||o.b.b>b.b+0.4) return;
+          if(b.w*b.h<a){ a=b.w*b.h; plate=k; }
+        });
+        if(plate) chips.push({plate:plate,label:o.el,pb:box(plate),lb:o.b});
+      });
+    })();
+
+    var CHIP=null;
+    if(chips.length>=2){
+      var onC=getComputedStyle(chips[0].label).color, onB=getComputedStyle(chips[0].plate).borderColor;
+      var offC=getComputedStyle(chips[1].label).color, offB=getComputedStyle(chips[1].plate).borderColor;
+      CHIP={on:{fg:onC,bd:onB},off:{fg:offC,bd:offB},
+            gap:chips.length>2?(chips[2].pb.l-(chips[1].pb.l+chips[1].pb.w)):0.24,
+            pad:(chips[1].pb.w-chips[1].lb.w)/2, left:chips[0].pb.l,
+            /* set on every chip each rebuild rather than left to what a clone
+               inherited: one clone rendered a row lower than the rest */
+            pt:chips[1].pb.t, lt:chips[1].lb.t};
+    }
+
+    function ensureChips(n){
+      if(!CHIP||chips.length<2) return;
+      while(chips.length<n){
+        var src=chips[chips.length-1];
+        var p=src.plate.cloneNode(true), l=src.label.cloneNode(true);
+        /* The section's reveal animation has already played by the time a chip is
+           cloned, so a copy that still carries its classes starts 20px low and stays
+           there. The document rows drop them for the same reason. */
+        [p,l].forEach(function(e){ e.classList.remove('ax-rv','ax-in'); e.style.transform='none'; });
+        src.plate.parentNode.appendChild(p);
+        src.label.parentNode.appendChild(l);
+        chips.push({plate:p,label:l,pb:box(p),lb:box(l)});
+      }
+    }
+
+    function buildChips(){
+      if(!CHIP) return;
+      var seen=[];
+      docsFor(active).forEach(function(d){
+        var f=fyOf(d);
+        if(f&&seen.indexOf(f)<0) seen.push(f);
+      });
+      seen.sort().reverse();
+      var want=[''].concat(seen);            /* '' is the All chip */
+      ensureChips(want.length);
+      var vwpx=window.innerWidth/100, x=CHIP.left;
+      chips.forEach(function(c,i){
+        if(i>=want.length){
+          c.plate.style.display='none'; c.label.style.display='none';
+          return;
+        }
+        c.plate.style.removeProperty('display');
+        c.label.style.removeProperty('display');
+        var text=want[i]||'All';
+        c.label.textContent=text;
+        c.label.style.width='auto';
+        c.label.style.whiteSpace='nowrap';
+        var ink=c.label.getBoundingClientRect().width/vwpx;
+        var w=ink+CHIP.pad*2;
+        setv(c.plate,'left',x); setv(c.plate,'width',w); setv(c.plate,'top',CHIP.pt);
+        setv(c.label,'left',x+CHIP.pad); setv(c.label,'width',ink); setv(c.label,'top',CHIP.lt);
+        c.plate.style.transform='none'; c.label.style.transform='none';
+        var on=want[i]===year;
+        c.label.style.color=(on?CHIP.on:CHIP.off).fg;
+        c.plate.style.borderColor=(on?CHIP.on:CHIP.off).bd;
+        c.plate.classList.add('ax-inv-chip');
+        c.label.classList.add('ax-inv-chip');
+        c.plate.setAttribute('role','button');
+        c.label.setAttribute('role','button');
+        if(!c.wired){
+          c.wired=1;
+          var hit=function(e){
+            var w2=want[chips.indexOf(c)];
+            if(w2===undefined) return;
+            e.preventDefault(); e.stopPropagation();
+            year=(w2===year&&w2)?'':w2;
+            buildChips(); render();
+          };
+          c.plate.addEventListener('click',hit,true);
+          c.label.addEventListener('click',hit,true);
+        }
+        x+=w+CHIP.gap;
+      });
+    }
+    buildChips();
 
     /* the designed "Search" label becomes a real field */
     var input=document.createElement('input');
