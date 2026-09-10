@@ -47,6 +47,7 @@ TCMQ = open(os.path.join(_HERE, '_tcmq.html'), encoding='utf-8').read()
 FRPAGER = open(os.path.join(_HERE, '_frpager.html'), encoding='utf-8').read()
 MMSUITE = open(os.path.join(_HERE, '_mmsuite.html'), encoding='utf-8').read()
 HEROWAVE = open(os.path.join(_HERE, '_herowave.html'), encoding='utf-8').read()
+PIXARROW = open(os.path.join(_HERE, '_pixarrow.html'), encoding='utf-8').read()
 
 # Site-wide fragments, as (sentinel, source filename), for `--refresh` to strip before
 # the injection guards below re-add the edited copy. Order does not matter; each is
@@ -69,6 +70,7 @@ GLOBAL_FRAGMENTS = [
     ('ax-frp-css', '_frpager.html'),
     ('ax-mmsuite-css', '_mmsuite.html'),
     ('ax-herowave-css', '_herowave.html'),
+    ('ax-pixarrow-css', '_pixarrow.html'),
     ('ax-deadbtn-css', '_deadbtn.html'),
 ]
 
@@ -307,6 +309,9 @@ def main():
         if 'ax-herowave-css' not in s and '</body>' in s:
             s = s.replace('</body>', HEROWAVE + '\n</body>', 1)
             stats['herowave'] = stats.get('herowave', 0) + 1
+        if 'ax-pixarrow-css' not in s and '</body>' in s:
+            s = s.replace('</body>', PIXARROW + '\n</body>', 1)
+            stats['pixarrow'] = stats.get('pixarrow', 0) + 1
         # Last of the site-wide fragments on purpose: it judges what every other one
         # has already wired, so it has to be injected after them.
         if 'ax-deadbtn-css' not in s and '</body>' in s:
