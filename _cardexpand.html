@@ -13,6 +13,7 @@
 .ax-cardex-m{transition:transform .3s cubic-bezier(.22,.61,.36,1)}
 .ax-cardex-d{transition:opacity .22s ease}
 .ax-cardex-hit{cursor:default}
+.ax-cardex-hit:focus-visible{outline:2px solid rgb(223,63,23);outline-offset:-2px}
 @media (prefers-reduced-motion:reduce){
   .ax-cardex,.ax-cardex-m,.ax-cardex-d{transition:none!important}
 }
@@ -137,6 +138,20 @@
       c.plate.el.classList.add('ax-cardex-m');
     });
 
+    /* Where each card SITS when the row has finished moving, in the root's own vw
+       frame. Both the layout and the hit test read this, so the pointer is always
+       matched against where the cards are going to be, never against where they
+       happen to be a third of the way through a 350ms slide. */
+    function positions(active){
+      var out=[], x=L0;
+      cards.forEach(function(c){
+        var w=(c===active?WIDE:NARROW);
+        out.push({l:x,r:x+w});
+        x+=w+GAP;
+      });
+      return out;
+    }
+
     function layout(active){
       var x=L0;
       cards.forEach(function(c){
@@ -166,27 +181,63 @@
 
     var current=open, pending=null;
     function show(c){
-      if(c===current) return;
+      if(!c||c===current) return;
       clearTimeout(pending);
       desc.el.style.opacity='0';
       current=c;
       pending=setTimeout(function(){ layout(c); },120);
     }
-    cards.forEach(function(c){
-      var hit=c.plate.el;
-      hit.classList.add('ax-cardex-hit');
-      hit.addEventListener('mouseenter',function(){ show(c); });
-      c.parts.forEach(function(o){
-        /* The description belongs to no single card: layout() relocates it into
-           whichever card is open. It is authored inside the card Figma drew open,
-           so binding it here gave it a permanent "reopen card one" handler --
-           hovering the open card's own copy snapped the row back to SAP angle,
-           and the 120ms opacity-0 window before layout() runs is why the card was
-           caught wide but blank. layout() already skips desc.el for this reason. */
-        if(o.el===desc.el) return;
-        o.el.addEventListener('mouseenter',function(){ show(c); });
+
+    /* ---- ONE HANDLER ON THE ROW, NOT ONE PER PIECE ----
+       These cards are flat siblings, not containers: the plate is a box, and the
+       title and the copy are separate boxes drawn ON TOP of it. mouseenter fires per
+       element and does not bubble, so a listener on the plate stops firing the
+       moment the pointer crosses onto the title sitting over it, and the pieces
+       themselves slide sideways mid-transition, entering and leaving under a
+       stationary cursor. Binding every piece was an attempt to paper over that, and
+       it left the row expanding while its copy never arrived.
+
+       The row is a horizontal band of four columns, so the honest test is simply
+       WHERE the pointer is. One mousemove on the row, matched against the plates'
+       live rectangles, cannot be defeated by anything stacked on top or by anything
+       moving underneath. */
+    function cardAt(clientX){
+      /* Live rects looked like the obvious thing to test and they are the wrong
+         thing: while the row slides, a card is momentarily anywhere between its old
+         place and its new one, so a pointer sweeping across kept resolving to a card
+         that was only passing through, and each of those cancelled the layout that
+         was already pending. Moving quickly, the row could be starved of the change
+         entirely, expanding but never filling in. Test against the settled geometry. */
+      var rr=root.getBoundingClientRect();
+      var vwpx=(document.documentElement.clientWidth||innerWidth)/100;
+      var x=(clientX-rr.left)/vwpx;
+      var p=positions(current);
+      for(var i=0;i<p.length;i++) if(x>=p[i].l&&x<=p[i].r) return cards[i];
+      return null;
+    }
+    var host=cards[0].plate.el.parentElement;
+    cards.forEach(function(c){ c.plate.el.classList.add('ax-cardex-hit'); });
+    host.addEventListener('mousemove',function(e){ show(cardAt(e.clientX)); });
+    /* Leaving the row returns it to the card the design drew open. */
+    host.addEventListener('mouseleave',function(){ show(open); });
+
+    /* Reachable without a mouse: the plates take focus and arrow keys walk the row. */
+    cards.forEach(function(c,i){
+      var el=c.plate.el;
+      el.setAttribute('tabindex','0');
+      el.setAttribute('role','button');
+      el.setAttribute('aria-label',txt(c.title.el));
+      el.addEventListener('focus',function(){ show(c); });
+      el.addEventListener('keydown',function(e){
+        var k=e.key, n=-1;
+        if(k==='ArrowRight'||k==='ArrowDown') n=(i+1)%cards.length;
+        else if(k==='ArrowLeft'||k==='ArrowUp') n=(i+cards.length-1)%cards.length;
+        else return;
+        e.preventDefault();
+        cards[n].plate.el.focus();
       });
     });
+
     layout(open);
     return true;
   }

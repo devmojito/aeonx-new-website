@@ -6430,6 +6430,401 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 
+<style id="ax-suitemap-css">
+/* "THE AEONX SaaS SUITE" -- six product logos wired by dotted curves down to a
+   central SAP mark. It was inert: _hover.html's tile engine cannot claim these
+   because the logo plates are far below its 12vw minimum tile width, so nothing
+   ever armed them. Hovering one now brings it forward and drops the rest back, so
+   the eye follows a single product down its curve into SAP.
+   Paint-only -- opacity / filter / transform. No box metric moves, same hard rule
+   _hover.html states, so the pixel-locked layout cannot shift. */
+.ax-sm-tile{transition:transform .24s cubic-bezier(.22,.61,.36,1),
+            opacity .24s ease, filter .24s ease}
+.ax-sm-row.ax-sm-hot .ax-sm-tile{opacity:.32}
+.ax-sm-row.ax-sm-hot .ax-sm-tile.ax-sm-on{opacity:1;
+  transform:translateY(-0.3125vw);
+  filter:drop-shadow(0 0.25vw 0.5vw rgba(35,39,46,.28))}
+/* the SAP hub is the shared destination, so it stays lit while any product leads */
+.ax-sm-row.ax-sm-hot .ax-sm-hub{opacity:1;filter:drop-shadow(0 0.2vw 0.45vw rgba(35,39,46,.22))}
+.ax-sm-tile:focus-visible{outline:0.1042vw solid rgb(223,63,23);outline-offset:0.15vw}
+@media (prefers-reduced-motion:reduce){
+  .ax-sm-tile{transition:none}
+  .ax-sm-row.ax-sm-hot .ax-sm-tile.ax-sm-on{transform:none}
+}
+</style>
+<script>
+/* ---- SaaS SUITE MAP: focus one product at a time ---- */
+(function(){
+  function init(){
+    /* the connector artwork is unique to this page, so it identifies the row */
+    var curve = document.querySelector('main.ax-page img.g-vec[src$="4752-8303.svg"]');
+    if (!curve || !curve.parentElement) return;
+    var row = curve.parentElement;
+    if (row.dataset.axSm) return;
+    row.dataset.axSm = '1';
+    row.classList.add('ax-sm-row');
+
+    /* The six logo plates sit in the TOP third of the row; the SAP hub and its
+       label sit near the bottom. Splitting on offsetTop is what separates them
+       without hardcoding ids that a Figma re-pull would renumber. */
+    var kids = [].slice.call(row.children).filter(function(e){ return e !== curve; });
+    var h = row.offsetHeight || 1;
+    var tiles = kids.filter(function(e){ return e.offsetHeight && e.offsetTop < h * 0.3; })
+                    .sort(function(a, b){ return a.offsetLeft - b.offsetLeft; });
+    var hub = kids.filter(function(e){ return e.offsetTop >= h * 0.3; })
+                  .sort(function(a, b){ return (b.offsetWidth * b.offsetHeight) - (a.offsetWidth * a.offsetHeight); })[0];
+    if (tiles.length < 2) return;                 /* not the layout we think it is */
+
+    tiles.forEach(function(t){
+      t.classList.add('ax-sm-tile');
+      t.setAttribute('tabindex', '0');
+      function on(){
+        row.classList.add('ax-sm-hot');
+        tiles.forEach(function(o){ o.classList.toggle('ax-sm-on', o === t); });
+      }
+      function off(){
+        row.classList.remove('ax-sm-hot');
+        tiles.forEach(function(o){ o.classList.remove('ax-sm-on'); });
+      }
+      t.addEventListener('mouseenter', on);
+      t.addEventListener('mouseleave', off);
+      t.addEventListener('focus', on);
+      t.addEventListener('blur', off);
+    });
+    if (hub) hub.classList.add('ax-sm-hub');
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+  addEventListener('load', function(){ setTimeout(init, 120); });
+})();
+</script>
+
+<style id="ax-reasons-css">
+/* ---- NUMBERED REASON GRID ----
+   The "Six reasons" grid (01..06 in outlined circles, each with a heading and a
+   line of copy) was completely static. This gives the cell the same hover language
+   the service cards use: the circle fills brand, its number goes white, the heading
+   goes brand, the body copy stays as it is.
+
+   Colour only, no transform. Every element here is absolutely positioned and also
+   carries the scroll-reveal's own transform, so moving anything would either fight
+   that or need the --ax-bt dance _hover.html does; a fill reads as clearly and
+   cannot shift the layout by a pixel. */
+.ax-rsn-c{transition:background-color .22s ease,box-shadow .22s ease}
+.ax-rsn-n,.ax-rsn-h{transition:color .22s ease}
+.ax-rsn-c.is-on{background-color:rgb(223,63,23)!important;
+  box-shadow:0 0.2083vw 0.625vw rgba(223,63,23,.28)}
+.ax-rsn-n.is-on{color:rgb(255,255,255)!important}
+.ax-rsn-h.is-on{color:rgb(223,63,23)!important}
+.ax-rsn-hit{cursor:default}
+@media (max-width:1024px){.ax-rsn-c,.ax-rsn-n,.ax-rsn-h{transition:none}}
+@media (prefers-reduced-motion:reduce){.ax-rsn-c,.ax-rsn-n,.ax-rsn-h{transition:none}}
+</style>
+<script>
+(function(){
+  function txt(e){ return (e.textContent||'').replace(/\s+/g,' ').trim(); }
+
+  function build(main){
+    var all = [].slice.call(main.querySelectorAll('.g-t,.g-b'));
+    var rect = function(e){ var r = e.getBoundingClientRect();
+      return r.width ? {el:e, l:r.left, t:r.top + scrollY, w:r.width, h:r.height,
+                        r:r.left + r.width, b:r.top + scrollY + r.height} : null; };
+    var boxes = all.map(rect).filter(Boolean);
+
+    /* a step circle: a round box with a two-digit number sitting in it */
+    var cells = [];
+    boxes.forEach(function(n){
+      if (!/g-t/.test(n.el.className || '') || !/^\d{2}$/.test(txt(n.el))) return;
+      var circle = null;
+      boxes.forEach(function(c){
+        if (!/g-b/.test(c.el.className || '') || c.w > 200) return;
+        if (c.w > c.h * 2 || c.h > c.w * 2) return;              /* a badge, not a bar */
+        /* circle (Six reasons, radius = half the width) or rounded rect (Why buy the
+           suite, 8px on 44px). Anything with square corners is not a step badge. */
+        if (parseFloat(getComputedStyle(c.el).borderRadius) < c.w * 0.12) return;
+        if (c.l > n.l + 4 || c.r < n.r - 4 || c.t > n.t + 4 || c.b < n.b - 4) return;
+        if (!circle || c.w < circle.w) circle = c;
+      });
+      if (circle) cells.push({num:n, circle:circle, cx:circle.l + circle.w / 2});
+    });
+    if (cells.length < 3) return false;
+
+    cells.sort(function(a, b){ return a.circle.t - b.circle.t || a.circle.l - b.circle.l; });
+    /* column and row pitch, from the grid itself */
+    var xs = cells.map(function(c){ return c.cx; }).sort(function(a, b){ return a - b; });
+    var px = 0, py = 0;
+    for (var i = 1; i < xs.length; i++){ var d = xs[i] - xs[i-1]; if (d > 20 && (!px || d < px)) px = d; }
+    for (var j = 1; j < cells.length; j++){
+      var dy = cells[j].circle.t - cells[0].circle.t;
+      if (dy > 40 && (!py || dy < py)) py = dy;
+    }
+    if (!px) px = cells[0].circle.w * 4;
+    if (!py) py = cells[0].circle.h * 4;
+
+    var single = cells.every(function(c){ return Math.abs(c.circle.t - cells[0].circle.t) < 8; });
+    cells.forEach(function(c){
+      /* the cell: this column, from the badge down to just short of the next row.
+         With a single row there is no next row to stop at, so the band runs to the
+         deepest text in the column -- "Why buy the suite" is four cells across, one
+         row, and a fixed guess either clipped the copy or spilled into the section
+         below it. */
+      var bot = single ? c.circle.b + c.circle.h * 8 : c.circle.t + py - 40;
+      c.box = {l:c.cx - px / 2, r:c.cx + px / 2, t:c.circle.t - 16, b:bot};
+      /* Prefer a REAL card box over the synthetic pitch band. The pitch band assumes
+         every row shares one column count, which breaks on an uneven grid -- the
+         careers page's "Five reasons" is 3 cards across the top and 2 across the
+         bottom, both spanning the same full width, so the top row's true pitch
+         (~467px) and the bottom row's (~700px) differ; the single global px picked
+         the smaller gap BETWEEN the two rows' x-positions (~233px) and every band
+         came out roughly half the true card width. Where Figma exports the card
+         itself as one box (it is not for "Six reasons" or "Why buy the suite",
+         hence the pitch fallback above still exists), use ITS bounds instead --
+         authored geometry, so it is correct regardless of how the grid is shaped. */
+      var realCard = null, realA = Infinity;
+      boxes.forEach(function(o){
+        if (!/g-b/.test(o.el.className || '') || o.el === c.circle.el) return;
+        if (o.l > c.circle.l + 2 || o.t > c.circle.t + 2 ||
+            o.r < c.circle.r - 2 || o.b < c.circle.b - 2) return;
+        if (o.w < c.circle.w * 3 || o.h < c.circle.h * 2) return;   /* the badge's own chip, not a card */
+        /* Must be THIS cell's own card, not a shared section/grid wrapper: reject
+         * anything that also contains another cell's badge. "Six reasons" has no
+         * per-cell box at all, only a section-wide background that swallows every
+         * circle -- without this check it "won" for all six cells and one card lit
+         * for the whole grid regardless of which badge was under the pointer. */
+        var swallowsAnother = cells.some(function(other){
+          return other !== c && other.circle &&
+                 other.circle.l >= o.l - 2 && other.circle.r <= o.r + 2 &&
+                 other.circle.t >= o.t - 2 && other.circle.b <= o.b + 2;
+        });
+        if (swallowsAnother) return;
+        var a = o.w * o.h;
+        if (a < realA){ realA = a; realCard = o; }
+      });
+      if (realCard){
+        c.box = {l:realCard.l, r:realCard.r, t:realCard.t, b:realCard.b};
+        /* _hover.html's own tile scan can independently recognise this same box
+           (painted border/background + a heading-weight line inside) and wrap it
+           in a second, competing hover skin -- the "interaction not consistent"
+           shape this codebase has hit before with other fragments. Opt it out,
+           and strip any claim already made if that scan won the race. */
+        realCard.el.dataset.axOwned = '1';
+        realCard.el.className = realCard.el.className.replace(/\bax-hv-\S+/g, '').trim();
+      }
+      c.parts = boxes.filter(function(o){
+        if (o.el === c.circle.el || o.el === c.num.el) return false;
+        if (!/g-t/.test(o.el.className || '')) return false;
+        var mid = o.l + o.w / 2;
+        return mid > c.box.l && mid < c.box.r && o.t > c.box.t && o.t < c.box.b;
+      });
+      if (!realCard && single && c.parts.length){
+        var deepest = c.parts.reduce(function(a, o){ return o.b > a ? o.b : a; }, c.circle.b);
+        c.box.b = deepest + 12;
+      }
+      /* the heading is the heaviest, largest line under the circle */
+      c.head = c.parts.slice().sort(function(a, b){
+        return (parseFloat(getComputedStyle(b.el).fontSize) || 0) -
+               (parseFloat(getComputedStyle(a.el).fontSize) || 0);
+      })[0] || null;
+      c.circle.el.classList.add('ax-rsn-c');
+      c.num.el.classList.add('ax-rsn-n');
+      if (c.head) c.head.el.classList.add('ax-rsn-h');
+      /* the whole cell is the target, so the copy reacts too */
+      c.parts.concat([c.circle, c.num]).forEach(function(o){ o.el.classList.add('ax-rsn-hit'); });
+    });
+
+    var cur = null;
+    function paint(c){
+      if (c === cur) return;
+      if (cur){
+        cur.circle.el.classList.remove('is-on');
+        cur.num.el.classList.remove('is-on');
+        if (cur.head) cur.head.el.classList.remove('is-on');
+      }
+      cur = c;
+      if (cur){
+        cur.circle.el.classList.add('is-on');
+        cur.num.el.classList.add('is-on');
+        if (cur.head) cur.head.el.classList.add('is-on');
+      }
+    }
+    /* One pointer listener over the grid rather than listeners per element: the
+       cells are a flat sheet of absolutely positioned boxes with no wrapper to
+       attach to, and a point test is what "hovering this cell" actually means. */
+    /* The cell bands were measured at build, in page coordinates, while the
+       scroll-reveal still held this section translated -- so every band sat about
+       27px off the cell it belonged to: edges did nothing and the strip below a cell
+       lit it. Keep the band's SHAPE from the design but anchor it to the badge's live
+       rect on each move, which cannot drift. Same fix as the flow diagram. */
+    cells.forEach(function(c){
+      c.dx = { l: c.box.l - c.circle.l, r: c.box.r - c.circle.l,
+               t: c.box.t - c.circle.t, b: c.box.b - c.circle.t };
+    });
+    var last = 0;
+    addEventListener('mousemove', function(e){
+      /* Throttled on a timestamp rather than rAF: rAF does not fire while the tab
+         is not compositing, which makes this untestable in a headless pane for no
+         benefit -- the test is a couple of comparisons per move. */
+      var now = e.timeStamp || 0;
+      if (now && now - last < 16) return;
+      last = now;
+      if (innerWidth <= 1024) { paint(null); return; }
+      var x = e.clientX, y = e.clientY, hit = null;
+      for (var k = 0; k < cells.length; k++){
+        var cr = cells[k].circle.el.getBoundingClientRect();
+        if (!cr.width) continue;
+        var d = cells[k].dx;
+        if (x >= cr.left + d.l && x <= cr.left + d.r &&
+            y >= cr.top + d.t && y <= cr.top + d.b) { hit = cells[k]; break; }
+      }
+      paint(hit);
+    }, {passive:true});
+    /* No paint(null) on scroll: with live anchoring the pointer is still inside the
+       same cell after the page moves, and blanking it mid-scroll was itself a flicker. */
+    return true;
+  }
+
+  function init(){
+    var main = document.querySelector('main.ax-page');
+    if (!main || main.dataset.axReasons) return;
+    if (innerWidth && innerWidth <= 1024) return;
+    if (build(main)) main.dataset.axReasons = '1';
+  }
+  if (document.readyState === 'loading')
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(init, 260); });
+  else setTimeout(init, 260);
+  addEventListener('load', function(){ setTimeout(init, 700); });
+})();
+</script>
+
+<style id="ax-pixarrow-css">
+/* ---- THE PIXEL ARROW CUE ----
+   Six pages carry a column of three pixel-art arrows pointing down, sitting between
+   the hero heading and the paragraph. They are a "keep going" cue and they were
+   completely still.
+
+   The three arrows are baked into ONE svg -- twelve flat <path> elements in three
+   identical clusters -- and page CSS cannot reach inside an <img>. The file is
+   inlined and its clusters wrapped in groups so each arrow can move on its own.
+
+   The cascade runs top to bottom, which is the direction the cue is pointing. Each
+   arrow is mostly faint and brightens as the pulse passes it, so the eye is led
+   down the column rather than three things blinking at once. */
+.ax-pa-g{opacity:.34;animation:ax-pa-pulse 1.9s cubic-bezier(.4,0,.6,1) infinite}
+@keyframes ax-pa-pulse{
+  0%,70%,100%{opacity:.34;transform:translateY(0)}
+  28%{opacity:1;transform:translateY(6%)}
+}
+@media (prefers-reduced-motion:reduce){
+  .ax-pa-g{opacity:.6;animation:none}
+}
+</style>
+<script>
+/* ---- ANIMATE THE PIXEL ARROW CUE ----
+   The svg is swapped for an inline copy of itself, at the same box and in the same
+   stacking slot, so the placement _gen.py computed still holds. Nothing is edited
+   into the asset on disk: _vecfetch.py --force would overwrite that on the next
+   pull, and the same three arrows appear on any page drawn from the same Figma
+   component.
+
+   Which images: the cue is a wide, short strip, so only images at least three times
+   wider than they are tall are even fetched. The real test is the shape of the file
+   -- twelve paths in three identical clusters down a column -- so a new page gets
+   this without being named here. */
+(function () {
+  var REDUCED = matchMedia('(prefers-reduced-motion:reduce)');
+
+  /* Cluster the paths by their first Y: the pixels within one arrow sit a few units
+     apart, the arrows themselves much further.
+
+     The threshold comes from the gaps themselves rather than from the box. A share
+     of the box height looked reasonable and was wrong -- the same three arrows are
+     drawn in a 783x64 box on five pages and a 518x144 box on the sixth, and a sixth
+     of 144 is wider than the gap between its arrows, so all twelve pixels came back
+     as one cluster and that page kept a still cue. Twice the median gap separates
+     them in both. */
+  function cluster(paths) {
+    var rows = paths.map(function (p) {
+      var n = (p.getAttribute('d') || '').match(/-?[\d.]+/g) || [];
+      return { el: p, y: parseFloat(n[1]) };
+    }).filter(function (r) { return r.y === r.y; });
+    if (rows.length !== paths.length) return null;
+    rows.sort(function (a, b) { return a.y - b.y; });
+    var gaps = [];
+    for (var j = 1; j < rows.length; j++) gaps.push(rows[j].y - rows[j - 1].y);
+    var med = gaps.slice().sort(function (a, b) { return a - b; })[gaps.length >> 1];
+    var cut = Math.max(med * 2, 0.5);
+    var out = [[rows[0]]];
+    for (var i = 1; i < rows.length; i++) {
+      if (rows[i].y - rows[i - 1].y > cut) out.push([]);
+      out[out.length - 1].push(rows[i]);
+    }
+    return out;
+  }
+
+  function inline(img, text) {
+    var doc = new DOMParser().parseFromString(text, 'image/svg+xml');
+    var svg = doc.documentElement;
+    if (!svg || svg.nodeName.toLowerCase() !== 'svg') return;
+    var vb = (svg.getAttribute('viewBox') || '').split(/\s+/);
+    var boxH = parseFloat(vb[3]);
+    if (!(boxH > 0)) return;
+
+    var paths = [].slice.call(svg.querySelectorAll('path'));
+    if (paths.length !== 12) return;
+    var groups = cluster(paths);
+    /* three arrows of four pixels each, or it is not this cue */
+    if (!groups || groups.length !== 3 || !groups.every(function (g) { return g.length === 4; })) return;
+
+    groups.forEach(function (g, gi) {
+      var wrap = doc.createElementNS('http://www.w3.org/2000/svg', 'g');
+      wrap.setAttribute('class', 'ax-pa-g');
+      /* The stagger is set here rather than by :nth-of-type. The arrows are not the
+         only <g> in these files, so counting siblings by type picked the wrong ones
+         and all three ran together. */
+      wrap.style.animationDelay = (gi * 0.19).toFixed(2) + 's';
+      /* each arrow turns about its own centre, not the box's */
+      var ys = g.map(function (r) { return r.y; });
+      wrap.style.transformOrigin = '0 ' + ((Math.min.apply(null, ys) +
+        Math.max.apply(null, ys)) / 2).toFixed(2) + 'px';
+      wrap.style.transformBox = 'view-box';
+      g[0].el.parentNode.insertBefore(wrap, g[0].el);
+      g.forEach(function (r) { wrap.appendChild(r.el); });
+    });
+
+    var el = document.importNode(svg, true);
+    /* Same box, same slot: the <img> carries the geometry the generator wrote. */
+    el.setAttribute('style', img.getAttribute('style') || '');
+    el.setAttribute('class', ((img.getAttribute('class') || '') + ' ax-pa').trim());
+    el.setAttribute('aria-hidden', 'true');
+    el.setAttribute('focusable', 'false');
+    el.removeAttribute('width'); el.removeAttribute('height');
+    img.parentNode.replaceChild(el, img);
+    /* No visibility gating here. It was tried and it stuck in the paused state, and
+       it was never worth it anyway: this is three groups of four rectangles, and a
+       browser already deprioritises animation on what it is not painting. */
+  }
+
+  function run() {
+    if (REDUCED.matches) return;
+    [].forEach.call(document.querySelectorAll('img.g-vec'), function (img) {
+      if (img.dataset.axPa) return;
+      var r = img.getBoundingClientRect();
+      if (!(r.width > 0) || r.width < r.height * 3) return;   /* a wide, short strip */
+      img.dataset.axPa = '1';
+      var src = img.getAttribute('src');
+      if (!src || !/\.svg$/i.test(src)) return;
+      fetch(src, { credentials: 'omit' })
+        .then(function (r2) { return r2.ok ? r2.text() : null; })
+        .then(function (t) { if (t && t.length < 6000) inline(img, t); })
+        .catch(function () {});
+    });
+  }
+
+  if (document.readyState === 'complete') setTimeout(run, 0);
+  else addEventListener('load', function () { setTimeout(run, 0); });
+})();
+</script>
+
 <style id="ax-hover-css">
 /* ---- HOVER / FOCUS AFFORDANCES ----------------------------------------------
    The layout is absolutely positioned and pixel-locked, and Figma exports a card
@@ -6603,7 +6998,12 @@ document.addEventListener("DOMContentLoaded",function(){
   /* was 8: a real card family (career page "Five reasons", row 2) sits at 6.98vw
      tall and fell just under the floor, so those two tiles never armed. Chips/
      badges sitewide run 1.3-2.5vw tall, so 6 still leaves them well clear. */
-  var TILE_MIN_H = 6,  TILE_MAX_H = 36;
+  /* 5.5, not 6: the manufacturing pain grid's second row is 5.83vw tall against the
+     first row's 7.08vw, because those two cards carry one line of copy where the
+     three above carry two. At a floor of 6 they were not tiles at all, so 01, 02 and
+     03 lit on hover and 04 and 05 sat dead beside them. Checked across every built
+     page: the lower floor admits those two boxes and nothing else. */
+  var TILE_MIN_H = 5.5, TILE_MAX_H = 36;
   var TOL = 3;                               /* px slack: offset* is integer-rounded */
   var LIFT_PX = 4;                           /* .ax-hv-tile lift: 0.2083vw @1920 */
   var STOP = {and:1,the:1,our:1,for:1,with:1,you:1,your:1,all:1,more:1,new:1,see:1,
@@ -7452,401 +7852,6 @@ document.addEventListener("DOMContentLoaded",function(){
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',run);
   else run();
   addEventListener('load',function(){ setTimeout(run,150); });
-})();
-</script>
-
-<style id="ax-suitemap-css">
-/* "THE AEONX SaaS SUITE" -- six product logos wired by dotted curves down to a
-   central SAP mark. It was inert: _hover.html's tile engine cannot claim these
-   because the logo plates are far below its 12vw minimum tile width, so nothing
-   ever armed them. Hovering one now brings it forward and drops the rest back, so
-   the eye follows a single product down its curve into SAP.
-   Paint-only -- opacity / filter / transform. No box metric moves, same hard rule
-   _hover.html states, so the pixel-locked layout cannot shift. */
-.ax-sm-tile{transition:transform .24s cubic-bezier(.22,.61,.36,1),
-            opacity .24s ease, filter .24s ease}
-.ax-sm-row.ax-sm-hot .ax-sm-tile{opacity:.32}
-.ax-sm-row.ax-sm-hot .ax-sm-tile.ax-sm-on{opacity:1;
-  transform:translateY(-0.3125vw);
-  filter:drop-shadow(0 0.25vw 0.5vw rgba(35,39,46,.28))}
-/* the SAP hub is the shared destination, so it stays lit while any product leads */
-.ax-sm-row.ax-sm-hot .ax-sm-hub{opacity:1;filter:drop-shadow(0 0.2vw 0.45vw rgba(35,39,46,.22))}
-.ax-sm-tile:focus-visible{outline:0.1042vw solid rgb(223,63,23);outline-offset:0.15vw}
-@media (prefers-reduced-motion:reduce){
-  .ax-sm-tile{transition:none}
-  .ax-sm-row.ax-sm-hot .ax-sm-tile.ax-sm-on{transform:none}
-}
-</style>
-<script>
-/* ---- SaaS SUITE MAP: focus one product at a time ---- */
-(function(){
-  function init(){
-    /* the connector artwork is unique to this page, so it identifies the row */
-    var curve = document.querySelector('main.ax-page img.g-vec[src$="4752-8303.svg"]');
-    if (!curve || !curve.parentElement) return;
-    var row = curve.parentElement;
-    if (row.dataset.axSm) return;
-    row.dataset.axSm = '1';
-    row.classList.add('ax-sm-row');
-
-    /* The six logo plates sit in the TOP third of the row; the SAP hub and its
-       label sit near the bottom. Splitting on offsetTop is what separates them
-       without hardcoding ids that a Figma re-pull would renumber. */
-    var kids = [].slice.call(row.children).filter(function(e){ return e !== curve; });
-    var h = row.offsetHeight || 1;
-    var tiles = kids.filter(function(e){ return e.offsetHeight && e.offsetTop < h * 0.3; })
-                    .sort(function(a, b){ return a.offsetLeft - b.offsetLeft; });
-    var hub = kids.filter(function(e){ return e.offsetTop >= h * 0.3; })
-                  .sort(function(a, b){ return (b.offsetWidth * b.offsetHeight) - (a.offsetWidth * a.offsetHeight); })[0];
-    if (tiles.length < 2) return;                 /* not the layout we think it is */
-
-    tiles.forEach(function(t){
-      t.classList.add('ax-sm-tile');
-      t.setAttribute('tabindex', '0');
-      function on(){
-        row.classList.add('ax-sm-hot');
-        tiles.forEach(function(o){ o.classList.toggle('ax-sm-on', o === t); });
-      }
-      function off(){
-        row.classList.remove('ax-sm-hot');
-        tiles.forEach(function(o){ o.classList.remove('ax-sm-on'); });
-      }
-      t.addEventListener('mouseenter', on);
-      t.addEventListener('mouseleave', off);
-      t.addEventListener('focus', on);
-      t.addEventListener('blur', off);
-    });
-    if (hub) hub.classList.add('ax-sm-hub');
-  }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-  else init();
-  addEventListener('load', function(){ setTimeout(init, 120); });
-})();
-</script>
-
-<style id="ax-reasons-css">
-/* ---- NUMBERED REASON GRID ----
-   The "Six reasons" grid (01..06 in outlined circles, each with a heading and a
-   line of copy) was completely static. This gives the cell the same hover language
-   the service cards use: the circle fills brand, its number goes white, the heading
-   goes brand, the body copy stays as it is.
-
-   Colour only, no transform. Every element here is absolutely positioned and also
-   carries the scroll-reveal's own transform, so moving anything would either fight
-   that or need the --ax-bt dance _hover.html does; a fill reads as clearly and
-   cannot shift the layout by a pixel. */
-.ax-rsn-c{transition:background-color .22s ease,box-shadow .22s ease}
-.ax-rsn-n,.ax-rsn-h{transition:color .22s ease}
-.ax-rsn-c.is-on{background-color:rgb(223,63,23)!important;
-  box-shadow:0 0.2083vw 0.625vw rgba(223,63,23,.28)}
-.ax-rsn-n.is-on{color:rgb(255,255,255)!important}
-.ax-rsn-h.is-on{color:rgb(223,63,23)!important}
-.ax-rsn-hit{cursor:default}
-@media (max-width:1024px){.ax-rsn-c,.ax-rsn-n,.ax-rsn-h{transition:none}}
-@media (prefers-reduced-motion:reduce){.ax-rsn-c,.ax-rsn-n,.ax-rsn-h{transition:none}}
-</style>
-<script>
-(function(){
-  function txt(e){ return (e.textContent||'').replace(/\s+/g,' ').trim(); }
-
-  function build(main){
-    var all = [].slice.call(main.querySelectorAll('.g-t,.g-b'));
-    var rect = function(e){ var r = e.getBoundingClientRect();
-      return r.width ? {el:e, l:r.left, t:r.top + scrollY, w:r.width, h:r.height,
-                        r:r.left + r.width, b:r.top + scrollY + r.height} : null; };
-    var boxes = all.map(rect).filter(Boolean);
-
-    /* a step circle: a round box with a two-digit number sitting in it */
-    var cells = [];
-    boxes.forEach(function(n){
-      if (!/g-t/.test(n.el.className || '') || !/^\d{2}$/.test(txt(n.el))) return;
-      var circle = null;
-      boxes.forEach(function(c){
-        if (!/g-b/.test(c.el.className || '') || c.w > 200) return;
-        if (c.w > c.h * 2 || c.h > c.w * 2) return;              /* a badge, not a bar */
-        /* circle (Six reasons, radius = half the width) or rounded rect (Why buy the
-           suite, 8px on 44px). Anything with square corners is not a step badge. */
-        if (parseFloat(getComputedStyle(c.el).borderRadius) < c.w * 0.12) return;
-        if (c.l > n.l + 4 || c.r < n.r - 4 || c.t > n.t + 4 || c.b < n.b - 4) return;
-        if (!circle || c.w < circle.w) circle = c;
-      });
-      if (circle) cells.push({num:n, circle:circle, cx:circle.l + circle.w / 2});
-    });
-    if (cells.length < 3) return false;
-
-    cells.sort(function(a, b){ return a.circle.t - b.circle.t || a.circle.l - b.circle.l; });
-    /* column and row pitch, from the grid itself */
-    var xs = cells.map(function(c){ return c.cx; }).sort(function(a, b){ return a - b; });
-    var px = 0, py = 0;
-    for (var i = 1; i < xs.length; i++){ var d = xs[i] - xs[i-1]; if (d > 20 && (!px || d < px)) px = d; }
-    for (var j = 1; j < cells.length; j++){
-      var dy = cells[j].circle.t - cells[0].circle.t;
-      if (dy > 40 && (!py || dy < py)) py = dy;
-    }
-    if (!px) px = cells[0].circle.w * 4;
-    if (!py) py = cells[0].circle.h * 4;
-
-    var single = cells.every(function(c){ return Math.abs(c.circle.t - cells[0].circle.t) < 8; });
-    cells.forEach(function(c){
-      /* the cell: this column, from the badge down to just short of the next row.
-         With a single row there is no next row to stop at, so the band runs to the
-         deepest text in the column -- "Why buy the suite" is four cells across, one
-         row, and a fixed guess either clipped the copy or spilled into the section
-         below it. */
-      var bot = single ? c.circle.b + c.circle.h * 8 : c.circle.t + py - 40;
-      c.box = {l:c.cx - px / 2, r:c.cx + px / 2, t:c.circle.t - 16, b:bot};
-      /* Prefer a REAL card box over the synthetic pitch band. The pitch band assumes
-         every row shares one column count, which breaks on an uneven grid -- the
-         careers page's "Five reasons" is 3 cards across the top and 2 across the
-         bottom, both spanning the same full width, so the top row's true pitch
-         (~467px) and the bottom row's (~700px) differ; the single global px picked
-         the smaller gap BETWEEN the two rows' x-positions (~233px) and every band
-         came out roughly half the true card width. Where Figma exports the card
-         itself as one box (it is not for "Six reasons" or "Why buy the suite",
-         hence the pitch fallback above still exists), use ITS bounds instead --
-         authored geometry, so it is correct regardless of how the grid is shaped. */
-      var realCard = null, realA = Infinity;
-      boxes.forEach(function(o){
-        if (!/g-b/.test(o.el.className || '') || o.el === c.circle.el) return;
-        if (o.l > c.circle.l + 2 || o.t > c.circle.t + 2 ||
-            o.r < c.circle.r - 2 || o.b < c.circle.b - 2) return;
-        if (o.w < c.circle.w * 3 || o.h < c.circle.h * 2) return;   /* the badge's own chip, not a card */
-        /* Must be THIS cell's own card, not a shared section/grid wrapper: reject
-         * anything that also contains another cell's badge. "Six reasons" has no
-         * per-cell box at all, only a section-wide background that swallows every
-         * circle -- without this check it "won" for all six cells and one card lit
-         * for the whole grid regardless of which badge was under the pointer. */
-        var swallowsAnother = cells.some(function(other){
-          return other !== c && other.circle &&
-                 other.circle.l >= o.l - 2 && other.circle.r <= o.r + 2 &&
-                 other.circle.t >= o.t - 2 && other.circle.b <= o.b + 2;
-        });
-        if (swallowsAnother) return;
-        var a = o.w * o.h;
-        if (a < realA){ realA = a; realCard = o; }
-      });
-      if (realCard){
-        c.box = {l:realCard.l, r:realCard.r, t:realCard.t, b:realCard.b};
-        /* _hover.html's own tile scan can independently recognise this same box
-           (painted border/background + a heading-weight line inside) and wrap it
-           in a second, competing hover skin -- the "interaction not consistent"
-           shape this codebase has hit before with other fragments. Opt it out,
-           and strip any claim already made if that scan won the race. */
-        realCard.el.dataset.axOwned = '1';
-        realCard.el.className = realCard.el.className.replace(/\bax-hv-\S+/g, '').trim();
-      }
-      c.parts = boxes.filter(function(o){
-        if (o.el === c.circle.el || o.el === c.num.el) return false;
-        if (!/g-t/.test(o.el.className || '')) return false;
-        var mid = o.l + o.w / 2;
-        return mid > c.box.l && mid < c.box.r && o.t > c.box.t && o.t < c.box.b;
-      });
-      if (!realCard && single && c.parts.length){
-        var deepest = c.parts.reduce(function(a, o){ return o.b > a ? o.b : a; }, c.circle.b);
-        c.box.b = deepest + 12;
-      }
-      /* the heading is the heaviest, largest line under the circle */
-      c.head = c.parts.slice().sort(function(a, b){
-        return (parseFloat(getComputedStyle(b.el).fontSize) || 0) -
-               (parseFloat(getComputedStyle(a.el).fontSize) || 0);
-      })[0] || null;
-      c.circle.el.classList.add('ax-rsn-c');
-      c.num.el.classList.add('ax-rsn-n');
-      if (c.head) c.head.el.classList.add('ax-rsn-h');
-      /* the whole cell is the target, so the copy reacts too */
-      c.parts.concat([c.circle, c.num]).forEach(function(o){ o.el.classList.add('ax-rsn-hit'); });
-    });
-
-    var cur = null;
-    function paint(c){
-      if (c === cur) return;
-      if (cur){
-        cur.circle.el.classList.remove('is-on');
-        cur.num.el.classList.remove('is-on');
-        if (cur.head) cur.head.el.classList.remove('is-on');
-      }
-      cur = c;
-      if (cur){
-        cur.circle.el.classList.add('is-on');
-        cur.num.el.classList.add('is-on');
-        if (cur.head) cur.head.el.classList.add('is-on');
-      }
-    }
-    /* One pointer listener over the grid rather than listeners per element: the
-       cells are a flat sheet of absolutely positioned boxes with no wrapper to
-       attach to, and a point test is what "hovering this cell" actually means. */
-    /* The cell bands were measured at build, in page coordinates, while the
-       scroll-reveal still held this section translated -- so every band sat about
-       27px off the cell it belonged to: edges did nothing and the strip below a cell
-       lit it. Keep the band's SHAPE from the design but anchor it to the badge's live
-       rect on each move, which cannot drift. Same fix as the flow diagram. */
-    cells.forEach(function(c){
-      c.dx = { l: c.box.l - c.circle.l, r: c.box.r - c.circle.l,
-               t: c.box.t - c.circle.t, b: c.box.b - c.circle.t };
-    });
-    var last = 0;
-    addEventListener('mousemove', function(e){
-      /* Throttled on a timestamp rather than rAF: rAF does not fire while the tab
-         is not compositing, which makes this untestable in a headless pane for no
-         benefit -- the test is a couple of comparisons per move. */
-      var now = e.timeStamp || 0;
-      if (now && now - last < 16) return;
-      last = now;
-      if (innerWidth <= 1024) { paint(null); return; }
-      var x = e.clientX, y = e.clientY, hit = null;
-      for (var k = 0; k < cells.length; k++){
-        var cr = cells[k].circle.el.getBoundingClientRect();
-        if (!cr.width) continue;
-        var d = cells[k].dx;
-        if (x >= cr.left + d.l && x <= cr.left + d.r &&
-            y >= cr.top + d.t && y <= cr.top + d.b) { hit = cells[k]; break; }
-      }
-      paint(hit);
-    }, {passive:true});
-    /* No paint(null) on scroll: with live anchoring the pointer is still inside the
-       same cell after the page moves, and blanking it mid-scroll was itself a flicker. */
-    return true;
-  }
-
-  function init(){
-    var main = document.querySelector('main.ax-page');
-    if (!main || main.dataset.axReasons) return;
-    if (innerWidth && innerWidth <= 1024) return;
-    if (build(main)) main.dataset.axReasons = '1';
-  }
-  if (document.readyState === 'loading')
-    document.addEventListener('DOMContentLoaded', function(){ setTimeout(init, 260); });
-  else setTimeout(init, 260);
-  addEventListener('load', function(){ setTimeout(init, 700); });
-})();
-</script>
-
-<style id="ax-pixarrow-css">
-/* ---- THE PIXEL ARROW CUE ----
-   Six pages carry a column of three pixel-art arrows pointing down, sitting between
-   the hero heading and the paragraph. They are a "keep going" cue and they were
-   completely still.
-
-   The three arrows are baked into ONE svg -- twelve flat <path> elements in three
-   identical clusters -- and page CSS cannot reach inside an <img>. The file is
-   inlined and its clusters wrapped in groups so each arrow can move on its own.
-
-   The cascade runs top to bottom, which is the direction the cue is pointing. Each
-   arrow is mostly faint and brightens as the pulse passes it, so the eye is led
-   down the column rather than three things blinking at once. */
-.ax-pa-g{opacity:.34;animation:ax-pa-pulse 1.9s cubic-bezier(.4,0,.6,1) infinite}
-@keyframes ax-pa-pulse{
-  0%,70%,100%{opacity:.34;transform:translateY(0)}
-  28%{opacity:1;transform:translateY(6%)}
-}
-@media (prefers-reduced-motion:reduce){
-  .ax-pa-g{opacity:.6;animation:none}
-}
-</style>
-<script>
-/* ---- ANIMATE THE PIXEL ARROW CUE ----
-   The svg is swapped for an inline copy of itself, at the same box and in the same
-   stacking slot, so the placement _gen.py computed still holds. Nothing is edited
-   into the asset on disk: _vecfetch.py --force would overwrite that on the next
-   pull, and the same three arrows appear on any page drawn from the same Figma
-   component.
-
-   Which images: the cue is a wide, short strip, so only images at least three times
-   wider than they are tall are even fetched. The real test is the shape of the file
-   -- twelve paths in three identical clusters down a column -- so a new page gets
-   this without being named here. */
-(function () {
-  var REDUCED = matchMedia('(prefers-reduced-motion:reduce)');
-
-  /* Cluster the paths by their first Y: the pixels within one arrow sit a few units
-     apart, the arrows themselves much further.
-
-     The threshold comes from the gaps themselves rather than from the box. A share
-     of the box height looked reasonable and was wrong -- the same three arrows are
-     drawn in a 783x64 box on five pages and a 518x144 box on the sixth, and a sixth
-     of 144 is wider than the gap between its arrows, so all twelve pixels came back
-     as one cluster and that page kept a still cue. Twice the median gap separates
-     them in both. */
-  function cluster(paths) {
-    var rows = paths.map(function (p) {
-      var n = (p.getAttribute('d') || '').match(/-?[\d.]+/g) || [];
-      return { el: p, y: parseFloat(n[1]) };
-    }).filter(function (r) { return r.y === r.y; });
-    if (rows.length !== paths.length) return null;
-    rows.sort(function (a, b) { return a.y - b.y; });
-    var gaps = [];
-    for (var j = 1; j < rows.length; j++) gaps.push(rows[j].y - rows[j - 1].y);
-    var med = gaps.slice().sort(function (a, b) { return a - b; })[gaps.length >> 1];
-    var cut = Math.max(med * 2, 0.5);
-    var out = [[rows[0]]];
-    for (var i = 1; i < rows.length; i++) {
-      if (rows[i].y - rows[i - 1].y > cut) out.push([]);
-      out[out.length - 1].push(rows[i]);
-    }
-    return out;
-  }
-
-  function inline(img, text) {
-    var doc = new DOMParser().parseFromString(text, 'image/svg+xml');
-    var svg = doc.documentElement;
-    if (!svg || svg.nodeName.toLowerCase() !== 'svg') return;
-    var vb = (svg.getAttribute('viewBox') || '').split(/\s+/);
-    var boxH = parseFloat(vb[3]);
-    if (!(boxH > 0)) return;
-
-    var paths = [].slice.call(svg.querySelectorAll('path'));
-    if (paths.length !== 12) return;
-    var groups = cluster(paths);
-    /* three arrows of four pixels each, or it is not this cue */
-    if (!groups || groups.length !== 3 || !groups.every(function (g) { return g.length === 4; })) return;
-
-    groups.forEach(function (g, gi) {
-      var wrap = doc.createElementNS('http://www.w3.org/2000/svg', 'g');
-      wrap.setAttribute('class', 'ax-pa-g');
-      /* The stagger is set here rather than by :nth-of-type. The arrows are not the
-         only <g> in these files, so counting siblings by type picked the wrong ones
-         and all three ran together. */
-      wrap.style.animationDelay = (gi * 0.19).toFixed(2) + 's';
-      /* each arrow turns about its own centre, not the box's */
-      var ys = g.map(function (r) { return r.y; });
-      wrap.style.transformOrigin = '0 ' + ((Math.min.apply(null, ys) +
-        Math.max.apply(null, ys)) / 2).toFixed(2) + 'px';
-      wrap.style.transformBox = 'view-box';
-      g[0].el.parentNode.insertBefore(wrap, g[0].el);
-      g.forEach(function (r) { wrap.appendChild(r.el); });
-    });
-
-    var el = document.importNode(svg, true);
-    /* Same box, same slot: the <img> carries the geometry the generator wrote. */
-    el.setAttribute('style', img.getAttribute('style') || '');
-    el.setAttribute('class', ((img.getAttribute('class') || '') + ' ax-pa').trim());
-    el.setAttribute('aria-hidden', 'true');
-    el.setAttribute('focusable', 'false');
-    el.removeAttribute('width'); el.removeAttribute('height');
-    img.parentNode.replaceChild(el, img);
-    /* No visibility gating here. It was tried and it stuck in the paused state, and
-       it was never worth it anyway: this is three groups of four rectangles, and a
-       browser already deprioritises animation on what it is not painting. */
-  }
-
-  function run() {
-    if (REDUCED.matches) return;
-    [].forEach.call(document.querySelectorAll('img.g-vec'), function (img) {
-      if (img.dataset.axPa) return;
-      var r = img.getBoundingClientRect();
-      if (!(r.width > 0) || r.width < r.height * 3) return;   /* a wide, short strip */
-      img.dataset.axPa = '1';
-      var src = img.getAttribute('src');
-      if (!src || !/\.svg$/i.test(src)) return;
-      fetch(src, { credentials: 'omit' })
-        .then(function (r2) { return r2.ok ? r2.text() : null; })
-        .then(function (t) { if (t && t.length < 6000) inline(img, t); })
-        .catch(function () {});
-    });
-  }
-
-  if (document.readyState === 'complete') setTimeout(run, 0);
-  else addEventListener('load', function () { setTimeout(run, 0); });
 })();
 </script>
 

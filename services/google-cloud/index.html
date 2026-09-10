@@ -6319,6 +6319,414 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 
+<style id="ax-gchero-css">
+/* Google Cloud hero: the headline sits on a static field of curved line-art
+   (node 5069:5380). Give it slow ambient life so the section reads as alive
+   rather than a flat screenshot -- a gentle drift plus a breathing scale, on the
+   backdrop only.
+   Safe by construction: the target is an aria-hidden decorative <img>, and
+   transform cannot reflow anything, so the pixel-locked layout is untouched.
+   Deliberately long (34s) and small (1.5% scale, 0.35vw travel) so it never
+   competes with the headline or the CTAs painted on top of it. */
+main.ax-page .g-vec[data-vec="5069:5380"]{
+  transform-origin:50% 45%;
+  animation:ax-gc-drift 34s ease-in-out infinite;
+  will-change:transform;
+}
+@keyframes ax-gc-drift{
+  0%,100%{transform:scale(1) translate3d(0,0,0)}
+  50%    {transform:scale(1.015) translate3d(0,-0.35vw,0)}
+}
+@media (prefers-reduced-motion:reduce){
+  main.ax-page .g-vec[data-vec="5069:5380"]{animation:none}
+}
+</style>
+
+<style id="ax-flowfx-css">
+/* ---- DATABRIDGE FLOW DIAGRAM ----
+   The diagram is six node cards (SAP ECC, Extractors, Model Templates,
+   Reconciliation, BigQuery, Looker) plus the four day cards under it, and it was
+   entirely static. Each node already carries its own accent as its border colour,
+   so the hover uses THAT rather than a hard-coded palette: the card's outline goes
+   solid and it picks up a soft glow in its own hue, so hovering "Reconciliation"
+   reads purple and "BigQuery" teal without this file knowing either colour.
+
+   Border and shadow only -- no transform. These cards sit on the same absolute
+   sheet as the connector artwork behind them, and moving one would break the lines
+   that run into it. */
+.ax-flow-c{transition:box-shadow .24s ease,border-color .24s ease}
+/* the hover glow is ADDED to whatever shadow the design already gives the card,
+   never substituted for it -- these cards ship with their own soft drop shadow */
+.ax-flow-t{transition:color .24s ease}
+/* Guided-tour dots: default-on, no hover needed. One dot per connector segment,
+   riding the SAME <path> the line itself draws (animateMotion + mpath), so it is
+   pixel-locked to the curve no matter what the curve is. Coloured per segment
+   from --dot-c, set in JS from the source card's own accent -- same "read the
+   colour off the DOM, don't hard-code it" rule the hover glow above already
+   follows. The line itself stays exactly as Figma draws it (grey for the two
+   downstream hops); only the travelling dot carries colour through those. */
+.ax-flow-dot{filter:drop-shadow(0 0 0.3125vw var(--dot-c))}
+@media (prefers-reduced-motion:reduce){.ax-flow-c,.ax-flow-t{transition:none}.ax-flow-dot{display:none}}
+</style>
+<script>
+(function(){
+  function alpha(c, a){
+    var m = /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/.exec(c || '');
+    return m ? 'rgba(' + m[1] + ',' + m[2] + ',' + m[3] + ',' + a + ')' : null;
+  }
+  var SVGNS = 'http://www.w3.org/2000/svg';
+
+  /* Three waves, timed on one shared clock (same `dur`, no per-element `begin`
+     offset -- SMIL keeps them phase-locked forever, no JS ticking required):
+     orange dots leave SAP ECC first, then blue dots pick up from wherever they
+     land, then purple dots carry on to BigQuery/Looker. Each wave's dot is
+     parked and invisible outside its own slice of the cycle -- keyTimes/values
+     share one array so the fade and the motion always switch at the same instant. */
+  var DUR = '7s';
+  var WAVES = [
+    {keyTimes:'0;0.02;0.26;1',                   pts:'0;0;1;1',        op:'0;1;1;0'},
+    {keyTimes:'0;0.30;0.32;0.56;0.58;1',         pts:'0;0;0;1;1;1',    op:'0;0;1;1;0;0'},
+    {keyTimes:'0;0.60;0.62;0.88;0.90;1',         pts:'0;0;0;1;1;1',    op:'0;0;1;1;0;0'}
+  ];
+
+  function dotOn(path, i, color, wave){
+    path.id = 'ax-flow-p' + i;
+    var c = document.createElementNS(SVGNS, 'circle');
+    c.setAttribute('r', '4.5');
+    c.setAttribute('fill', color);
+    c.classList.add('ax-flow-dot');
+    c.style.setProperty('--dot-c', color);
+
+    var mo = document.createElementNS(SVGNS, 'animateMotion');
+    mo.setAttribute('dur', DUR);
+    mo.setAttribute('repeatCount', 'indefinite');
+    mo.setAttribute('calcMode', 'linear');
+    mo.setAttribute('keyTimes', wave.keyTimes);
+    mo.setAttribute('keyPoints', wave.pts);
+    var mp = document.createElementNS(SVGNS, 'mpath');
+    mp.setAttributeNS('http://www.w3.org/1999/xlink', 'href', '#' + path.id);
+    mo.appendChild(mp);
+
+    var op = document.createElementNS(SVGNS, 'animate');
+    op.setAttribute('attributeName', 'opacity');
+    op.setAttribute('dur', DUR);
+    op.setAttribute('repeatCount', 'indefinite');
+    op.setAttribute('calcMode', 'linear');
+    op.setAttribute('keyTimes', wave.keyTimes);
+    op.setAttribute('values', wave.op);
+
+    c.appendChild(mo);
+    c.appendChild(op);
+    path.parentNode.appendChild(c);
+  }
+
+  /* The connector art (SAP ECC -> Extractors/Model Templates -> Reconciliation ->
+     BigQuery/Looker) ships as one flattened <img>, opaque to CSS/JS. Fetch its
+     own SVG and swap it in place so each segment's real <path> -- the exact
+     curve already drawn -- can carry a dot. Two of the eight paths are filled
+     compound shapes (the decorative SAP-ECC-to-BigQuery arc through "14 Days"),
+     not simple strokes; only the six single-direction strokes that trace the
+     card-to-card story get a dot. Within those six, classification is by stroke
+     colour and the path's own bounding box (left/right half, upper/lower half
+     of the viewBox) rather than a hand-picked path index, so a re-export that
+     reorders the paths still lands each dot on the right segment and the right
+     colour -- but a redesign that changes the diagram's SHAPE (a fifth branch,
+     a re-routed line) needs this reworked, not just re-run. */
+  function inlineConnector(main, cards){
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    /* By node id, not geometry: a band/size search here (width>400, inside the
+       panel's vertical band) also matches the final-CTA rainbow-wash background
+       art (RAIN in the chrome tail script) sitting in the same region -- it is
+       FIRST in DOM order, so a loose filter swapped the wrong image in and left
+       the real connector art untouched (0 dots, no error, nothing to see).
+       5069:5380 is Figma's own id for this exact asset, confirmed against the
+       live file -- fixed unless the diagram is rebuilt under a new node. */
+    var img = main.querySelector('img.g-vec[data-vec="5069:5380"]');
+    if (!img) return;
+    function accentOf(name){
+      var c = cards.filter(function(x){ return x.cap && (x.cap.el.textContent || '').trim() === name; })[0];
+      return c ? getComputedStyle(c.el).borderTopColor : 'rgb(35,39,46)';
+    }
+    var orange = accentOf('SAP ECC'), recon = accentOf('Reconciliation');
+    fetch(img.src).then(function(r){ return r.text(); }).then(function(svgText){
+      var tmp = document.createElement('div');
+      tmp.innerHTML = svgText;
+      var svg = tmp.querySelector('svg');
+      if (!svg) return;
+      svg.setAttribute('class', 'g-vec');
+      if (img.dataset.vec) svg.setAttribute('data-vec', img.dataset.vec);
+      svg.setAttribute('style', img.getAttribute('style'));
+      svg.setAttribute('role', 'presentation');
+      svg.setAttribute('aria-hidden', 'true');
+      img.parentNode.replaceChild(svg, img);
+
+      var vb = (svg.getAttribute('viewBox') || '').split(/\s+/).map(parseFloat);
+      var H = vb[3];
+      if (!H) return;
+      var n = 0, grey = [];
+      [].slice.call(svg.querySelectorAll('path[stroke]')).forEach(function(p){
+        if (/^#?FF6A21$/i.test(p.getAttribute('stroke') || '')) dotOn(p, n++, orange, WAVES[0]);
+        else grey.push(p);
+      });
+      /* The four grey strokes split cleanly into a left pair (into Reconciliation)
+         and a right pair (out of it) -- sort by x and halve, rather than testing
+         against viewBox-midpoint: the two clusters are not centred on it (in the
+         current export they sit either side of x=~680, not the viewBox's own 608),
+         so a fixed fraction put both left-pair paths on the wrong side. Sorting is
+         self-calibrating to wherever the clusters actually are. */
+      grey.sort(function(a, b){ return a.getBBox().x - b.getBBox().x; });
+      grey.forEach(function(p, i){
+        var bb = p.getBBox();
+        if (i < grey.length / 2) dotOn(p, n++, accentOf(bb.y < H / 2 ? 'Extractors' : 'Model Templates'), WAVES[1]);
+        else dotOn(p, n++, recon, WAVES[2]);
+      });
+    }).catch(function(){});
+  }
+  function solid(c){
+    var m = /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/.exec(c || '');
+    return m ? 'rgb(' + m[1] + ',' + m[2] + ',' + m[3] + ')' : null;
+  }
+
+  function build(main){
+    var label = [].slice.call(main.querySelectorAll('.g-t')).filter(function(e){
+      return /^DataBridge Flow$/i.test((e.textContent || '').trim()); })[0];
+    if (!label) return false;
+    var lb = label.getBoundingClientRect();
+    var top = lb.top + scrollY - 60, bot = top + 1000;
+
+    var cards = [].slice.call(main.querySelectorAll('.g-b')).map(function(e){
+      var r = e.getBoundingClientRect();
+      return {el:e, l:r.left, t:r.top + scrollY, w:r.width, h:r.height,
+              r:r.left + r.width, b:r.top + scrollY + r.height};
+    }).filter(function(o){
+      if (!o.w || o.t < top || o.b > bot) return false;
+      if (o.w < 80 || o.w > 420 || o.h < 40 || o.h > 220) return false;
+      var cs = getComputedStyle(o.el);
+      if (parseFloat(cs.borderRadius) < 8) return false;
+      if (cs.borderTopWidth === '0px') return false;
+      return !!solid(cs.borderTopColor);
+    });
+    if (cards.length < 3) return false;
+
+    /* a card swallowed by a bigger card is the same control drawn twice */
+    cards = cards.filter(function(o){
+      return !cards.some(function(p){
+        return p !== o && p.l <= o.l && p.r >= o.r && p.t <= o.t && p.b >= o.b && p.w > o.w;
+      });
+    });
+
+    cards.forEach(function(c){
+      var cs = getComputedStyle(c.el);
+      c.base = cs.borderTopColor;
+      c.glow = alpha(c.base, 0.34) || 'rgba(35,39,46,.18)';
+      c.shadow0 = cs.boxShadow === 'none' ? '' : cs.boxShadow;
+      /* Remember the resting border and write it back on leave. Clearing an inline
+         borderColor does NOT fall back to the `border:` shorthand these cards carry
+         -- it resolves to currentColor, i.e. black. Same trap as resetting a colour
+         with '' elsewhere in this codebase. */
+      c.border0 = c.base;
+      c.hot = solid(c.base);
+      c.el.classList.add('ax-flow-c');
+      /* the caption sitting directly above the card travels with it */
+      c.cap = [].slice.call(main.querySelectorAll('.g-t')).map(function(e){
+        var r = e.getBoundingClientRect();
+        return {el:e, l:r.left, t:r.top + scrollY, w:r.width, b:r.top + scrollY + r.height};
+      }).filter(function(t){
+        return t.w && t.b <= c.t + 4 && t.b > c.t - 46 &&
+               t.l >= c.l - 30 && t.l <= c.r;
+      })[0] || null;
+      if (c.cap) c.cap.el.classList.add('ax-flow-t');
+    });
+
+    inlineConnector(main, cards);
+
+    var cur = null;
+    function paint(c){
+      if (c === cur) return;
+      if (cur){
+        cur.el.classList.remove('is-on');
+        cur.el.style.boxShadow = '';
+        cur.el.style.borderColor = cur.border0;
+      }
+      cur = c;
+      if (cur){
+        cur.el.classList.add('is-on');
+        cur.el.style.boxShadow = (cur.shadow0 ? cur.shadow0 + ', ' : '') +
+                                 '0 6px 18px ' + cur.glow;
+        if (cur.hot) cur.el.style.borderColor = cur.hot;   /* faint outlines go solid */
+      }
+    }
+    /* Hit-test against LIVE rects, not the ones measured at build. This file runs
+       300ms in, while the scroll-reveal still holds the section at translateY(1.4vw)
+       -- about 27px -- so every stored box sat that far off the card it belonged to.
+       The cards are tall enough that the middle still worked, which is why it read as
+       glitchy rather than dead: edges did nothing, the strip just below a card lit it,
+       and moving between two cards crossed a gap that belonged to neither.
+
+       Eleven getBoundingClientRect calls on a throttled mousemove is nothing, and it
+       cannot go stale -- no re-measure hooks, no ordering to get wrong. */
+    var last = 0;
+    addEventListener('mousemove', function(e){
+      var now = e.timeStamp || 0;
+      if (now && now - last < 16) return;
+      last = now;
+      if (innerWidth <= 1024) { paint(null); return; }
+      var x = e.clientX, y = e.clientY, hit = null;
+      for (var i = 0; i < cards.length; i++){
+        var b = cards[i].el.getBoundingClientRect();
+        if (!b.width) continue;
+        if (x >= b.left && x <= b.right && y >= b.top && y <= b.bottom) { hit = cards[i]; break; }
+      }
+      paint(hit);
+    }, {passive:true});
+    /* No paint(null) on scroll. It was there because the stored boxes drifted once
+       the page moved; with live rects the pointer is still over the same card after a
+       scroll, and blanking the highlight mid-scroll was itself part of the flicker. */
+    return true;
+  }
+
+  function init(){
+    var main = document.querySelector('main.ax-page');
+    if (!main || main.dataset.axFlowfx) return;
+    if (innerWidth && innerWidth <= 1024) return;
+    if (build(main)) main.dataset.axFlowfx = '1';
+  }
+  if (document.readyState === 'loading')
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(init, 300); });
+  else setTimeout(init, 300);
+  addEventListener('load', function(){ setTimeout(init, 750); });
+})();
+</script>
+
+<style id="ax-pixarrow-css">
+/* ---- THE PIXEL ARROW CUE ----
+   Six pages carry a column of three pixel-art arrows pointing down, sitting between
+   the hero heading and the paragraph. They are a "keep going" cue and they were
+   completely still.
+
+   The three arrows are baked into ONE svg -- twelve flat <path> elements in three
+   identical clusters -- and page CSS cannot reach inside an <img>. The file is
+   inlined and its clusters wrapped in groups so each arrow can move on its own.
+
+   The cascade runs top to bottom, which is the direction the cue is pointing. Each
+   arrow is mostly faint and brightens as the pulse passes it, so the eye is led
+   down the column rather than three things blinking at once. */
+.ax-pa-g{opacity:.34;animation:ax-pa-pulse 1.9s cubic-bezier(.4,0,.6,1) infinite}
+@keyframes ax-pa-pulse{
+  0%,70%,100%{opacity:.34;transform:translateY(0)}
+  28%{opacity:1;transform:translateY(6%)}
+}
+@media (prefers-reduced-motion:reduce){
+  .ax-pa-g{opacity:.6;animation:none}
+}
+</style>
+<script>
+/* ---- ANIMATE THE PIXEL ARROW CUE ----
+   The svg is swapped for an inline copy of itself, at the same box and in the same
+   stacking slot, so the placement _gen.py computed still holds. Nothing is edited
+   into the asset on disk: _vecfetch.py --force would overwrite that on the next
+   pull, and the same three arrows appear on any page drawn from the same Figma
+   component.
+
+   Which images: the cue is a wide, short strip, so only images at least three times
+   wider than they are tall are even fetched. The real test is the shape of the file
+   -- twelve paths in three identical clusters down a column -- so a new page gets
+   this without being named here. */
+(function () {
+  var REDUCED = matchMedia('(prefers-reduced-motion:reduce)');
+
+  /* Cluster the paths by their first Y: the pixels within one arrow sit a few units
+     apart, the arrows themselves much further.
+
+     The threshold comes from the gaps themselves rather than from the box. A share
+     of the box height looked reasonable and was wrong -- the same three arrows are
+     drawn in a 783x64 box on five pages and a 518x144 box on the sixth, and a sixth
+     of 144 is wider than the gap between its arrows, so all twelve pixels came back
+     as one cluster and that page kept a still cue. Twice the median gap separates
+     them in both. */
+  function cluster(paths) {
+    var rows = paths.map(function (p) {
+      var n = (p.getAttribute('d') || '').match(/-?[\d.]+/g) || [];
+      return { el: p, y: parseFloat(n[1]) };
+    }).filter(function (r) { return r.y === r.y; });
+    if (rows.length !== paths.length) return null;
+    rows.sort(function (a, b) { return a.y - b.y; });
+    var gaps = [];
+    for (var j = 1; j < rows.length; j++) gaps.push(rows[j].y - rows[j - 1].y);
+    var med = gaps.slice().sort(function (a, b) { return a - b; })[gaps.length >> 1];
+    var cut = Math.max(med * 2, 0.5);
+    var out = [[rows[0]]];
+    for (var i = 1; i < rows.length; i++) {
+      if (rows[i].y - rows[i - 1].y > cut) out.push([]);
+      out[out.length - 1].push(rows[i]);
+    }
+    return out;
+  }
+
+  function inline(img, text) {
+    var doc = new DOMParser().parseFromString(text, 'image/svg+xml');
+    var svg = doc.documentElement;
+    if (!svg || svg.nodeName.toLowerCase() !== 'svg') return;
+    var vb = (svg.getAttribute('viewBox') || '').split(/\s+/);
+    var boxH = parseFloat(vb[3]);
+    if (!(boxH > 0)) return;
+
+    var paths = [].slice.call(svg.querySelectorAll('path'));
+    if (paths.length !== 12) return;
+    var groups = cluster(paths);
+    /* three arrows of four pixels each, or it is not this cue */
+    if (!groups || groups.length !== 3 || !groups.every(function (g) { return g.length === 4; })) return;
+
+    groups.forEach(function (g, gi) {
+      var wrap = doc.createElementNS('http://www.w3.org/2000/svg', 'g');
+      wrap.setAttribute('class', 'ax-pa-g');
+      /* The stagger is set here rather than by :nth-of-type. The arrows are not the
+         only <g> in these files, so counting siblings by type picked the wrong ones
+         and all three ran together. */
+      wrap.style.animationDelay = (gi * 0.19).toFixed(2) + 's';
+      /* each arrow turns about its own centre, not the box's */
+      var ys = g.map(function (r) { return r.y; });
+      wrap.style.transformOrigin = '0 ' + ((Math.min.apply(null, ys) +
+        Math.max.apply(null, ys)) / 2).toFixed(2) + 'px';
+      wrap.style.transformBox = 'view-box';
+      g[0].el.parentNode.insertBefore(wrap, g[0].el);
+      g.forEach(function (r) { wrap.appendChild(r.el); });
+    });
+
+    var el = document.importNode(svg, true);
+    /* Same box, same slot: the <img> carries the geometry the generator wrote. */
+    el.setAttribute('style', img.getAttribute('style') || '');
+    el.setAttribute('class', ((img.getAttribute('class') || '') + ' ax-pa').trim());
+    el.setAttribute('aria-hidden', 'true');
+    el.setAttribute('focusable', 'false');
+    el.removeAttribute('width'); el.removeAttribute('height');
+    img.parentNode.replaceChild(el, img);
+    /* No visibility gating here. It was tried and it stuck in the paused state, and
+       it was never worth it anyway: this is three groups of four rectangles, and a
+       browser already deprioritises animation on what it is not painting. */
+  }
+
+  function run() {
+    if (REDUCED.matches) return;
+    [].forEach.call(document.querySelectorAll('img.g-vec'), function (img) {
+      if (img.dataset.axPa) return;
+      var r = img.getBoundingClientRect();
+      if (!(r.width > 0) || r.width < r.height * 3) return;   /* a wide, short strip */
+      img.dataset.axPa = '1';
+      var src = img.getAttribute('src');
+      if (!src || !/\.svg$/i.test(src)) return;
+      fetch(src, { credentials: 'omit' })
+        .then(function (r2) { return r2.ok ? r2.text() : null; })
+        .then(function (t) { if (t && t.length < 6000) inline(img, t); })
+        .catch(function () {});
+    });
+  }
+
+  if (document.readyState === 'complete') setTimeout(run, 0);
+  else addEventListener('load', function () { setTimeout(run, 0); });
+})();
+</script>
+
 <style id="ax-hover-css">
 /* ---- HOVER / FOCUS AFFORDANCES ----------------------------------------------
    The layout is absolutely positioned and pixel-locked, and Figma exports a card
@@ -6492,7 +6900,12 @@ document.addEventListener("DOMContentLoaded",function(){
   /* was 8: a real card family (career page "Five reasons", row 2) sits at 6.98vw
      tall and fell just under the floor, so those two tiles never armed. Chips/
      badges sitewide run 1.3-2.5vw tall, so 6 still leaves them well clear. */
-  var TILE_MIN_H = 6,  TILE_MAX_H = 36;
+  /* 5.5, not 6: the manufacturing pain grid's second row is 5.83vw tall against the
+     first row's 7.08vw, because those two cards carry one line of copy where the
+     three above carry two. At a floor of 6 they were not tiles at all, so 01, 02 and
+     03 lit on hover and 04 and 05 sat dead beside them. Checked across every built
+     page: the lower floor admits those two boxes and nothing else. */
+  var TILE_MIN_H = 5.5, TILE_MAX_H = 36;
   var TOL = 3;                               /* px slack: offset* is integer-rounded */
   var LIFT_PX = 4;                           /* .ax-hv-tile lift: 0.2083vw @1920 */
   var STOP = {and:1,the:1,our:1,for:1,with:1,you:1,your:1,all:1,more:1,new:1,see:1,
@@ -7341,414 +7754,6 @@ document.addEventListener("DOMContentLoaded",function(){
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',run);
   else run();
   addEventListener('load',function(){ setTimeout(run,150); });
-})();
-</script>
-
-<style id="ax-gchero-css">
-/* Google Cloud hero: the headline sits on a static field of curved line-art
-   (node 5069:5380). Give it slow ambient life so the section reads as alive
-   rather than a flat screenshot -- a gentle drift plus a breathing scale, on the
-   backdrop only.
-   Safe by construction: the target is an aria-hidden decorative <img>, and
-   transform cannot reflow anything, so the pixel-locked layout is untouched.
-   Deliberately long (34s) and small (1.5% scale, 0.35vw travel) so it never
-   competes with the headline or the CTAs painted on top of it. */
-main.ax-page .g-vec[data-vec="5069:5380"]{
-  transform-origin:50% 45%;
-  animation:ax-gc-drift 34s ease-in-out infinite;
-  will-change:transform;
-}
-@keyframes ax-gc-drift{
-  0%,100%{transform:scale(1) translate3d(0,0,0)}
-  50%    {transform:scale(1.015) translate3d(0,-0.35vw,0)}
-}
-@media (prefers-reduced-motion:reduce){
-  main.ax-page .g-vec[data-vec="5069:5380"]{animation:none}
-}
-</style>
-
-<style id="ax-flowfx-css">
-/* ---- DATABRIDGE FLOW DIAGRAM ----
-   The diagram is six node cards (SAP ECC, Extractors, Model Templates,
-   Reconciliation, BigQuery, Looker) plus the four day cards under it, and it was
-   entirely static. Each node already carries its own accent as its border colour,
-   so the hover uses THAT rather than a hard-coded palette: the card's outline goes
-   solid and it picks up a soft glow in its own hue, so hovering "Reconciliation"
-   reads purple and "BigQuery" teal without this file knowing either colour.
-
-   Border and shadow only -- no transform. These cards sit on the same absolute
-   sheet as the connector artwork behind them, and moving one would break the lines
-   that run into it. */
-.ax-flow-c{transition:box-shadow .24s ease,border-color .24s ease}
-/* the hover glow is ADDED to whatever shadow the design already gives the card,
-   never substituted for it -- these cards ship with their own soft drop shadow */
-.ax-flow-t{transition:color .24s ease}
-/* Guided-tour dots: default-on, no hover needed. One dot per connector segment,
-   riding the SAME <path> the line itself draws (animateMotion + mpath), so it is
-   pixel-locked to the curve no matter what the curve is. Coloured per segment
-   from --dot-c, set in JS from the source card's own accent -- same "read the
-   colour off the DOM, don't hard-code it" rule the hover glow above already
-   follows. The line itself stays exactly as Figma draws it (grey for the two
-   downstream hops); only the travelling dot carries colour through those. */
-.ax-flow-dot{filter:drop-shadow(0 0 0.3125vw var(--dot-c))}
-@media (prefers-reduced-motion:reduce){.ax-flow-c,.ax-flow-t{transition:none}.ax-flow-dot{display:none}}
-</style>
-<script>
-(function(){
-  function alpha(c, a){
-    var m = /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/.exec(c || '');
-    return m ? 'rgba(' + m[1] + ',' + m[2] + ',' + m[3] + ',' + a + ')' : null;
-  }
-  var SVGNS = 'http://www.w3.org/2000/svg';
-
-  /* Three waves, timed on one shared clock (same `dur`, no per-element `begin`
-     offset -- SMIL keeps them phase-locked forever, no JS ticking required):
-     orange dots leave SAP ECC first, then blue dots pick up from wherever they
-     land, then purple dots carry on to BigQuery/Looker. Each wave's dot is
-     parked and invisible outside its own slice of the cycle -- keyTimes/values
-     share one array so the fade and the motion always switch at the same instant. */
-  var DUR = '7s';
-  var WAVES = [
-    {keyTimes:'0;0.02;0.26;1',                   pts:'0;0;1;1',        op:'0;1;1;0'},
-    {keyTimes:'0;0.30;0.32;0.56;0.58;1',         pts:'0;0;0;1;1;1',    op:'0;0;1;1;0;0'},
-    {keyTimes:'0;0.60;0.62;0.88;0.90;1',         pts:'0;0;0;1;1;1',    op:'0;0;1;1;0;0'}
-  ];
-
-  function dotOn(path, i, color, wave){
-    path.id = 'ax-flow-p' + i;
-    var c = document.createElementNS(SVGNS, 'circle');
-    c.setAttribute('r', '4.5');
-    c.setAttribute('fill', color);
-    c.classList.add('ax-flow-dot');
-    c.style.setProperty('--dot-c', color);
-
-    var mo = document.createElementNS(SVGNS, 'animateMotion');
-    mo.setAttribute('dur', DUR);
-    mo.setAttribute('repeatCount', 'indefinite');
-    mo.setAttribute('calcMode', 'linear');
-    mo.setAttribute('keyTimes', wave.keyTimes);
-    mo.setAttribute('keyPoints', wave.pts);
-    var mp = document.createElementNS(SVGNS, 'mpath');
-    mp.setAttributeNS('http://www.w3.org/1999/xlink', 'href', '#' + path.id);
-    mo.appendChild(mp);
-
-    var op = document.createElementNS(SVGNS, 'animate');
-    op.setAttribute('attributeName', 'opacity');
-    op.setAttribute('dur', DUR);
-    op.setAttribute('repeatCount', 'indefinite');
-    op.setAttribute('calcMode', 'linear');
-    op.setAttribute('keyTimes', wave.keyTimes);
-    op.setAttribute('values', wave.op);
-
-    c.appendChild(mo);
-    c.appendChild(op);
-    path.parentNode.appendChild(c);
-  }
-
-  /* The connector art (SAP ECC -> Extractors/Model Templates -> Reconciliation ->
-     BigQuery/Looker) ships as one flattened <img>, opaque to CSS/JS. Fetch its
-     own SVG and swap it in place so each segment's real <path> -- the exact
-     curve already drawn -- can carry a dot. Two of the eight paths are filled
-     compound shapes (the decorative SAP-ECC-to-BigQuery arc through "14 Days"),
-     not simple strokes; only the six single-direction strokes that trace the
-     card-to-card story get a dot. Within those six, classification is by stroke
-     colour and the path's own bounding box (left/right half, upper/lower half
-     of the viewBox) rather than a hand-picked path index, so a re-export that
-     reorders the paths still lands each dot on the right segment and the right
-     colour -- but a redesign that changes the diagram's SHAPE (a fifth branch,
-     a re-routed line) needs this reworked, not just re-run. */
-  function inlineConnector(main, cards){
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    /* By node id, not geometry: a band/size search here (width>400, inside the
-       panel's vertical band) also matches the final-CTA rainbow-wash background
-       art (RAIN in the chrome tail script) sitting in the same region -- it is
-       FIRST in DOM order, so a loose filter swapped the wrong image in and left
-       the real connector art untouched (0 dots, no error, nothing to see).
-       5069:5380 is Figma's own id for this exact asset, confirmed against the
-       live file -- fixed unless the diagram is rebuilt under a new node. */
-    var img = main.querySelector('img.g-vec[data-vec="5069:5380"]');
-    if (!img) return;
-    function accentOf(name){
-      var c = cards.filter(function(x){ return x.cap && (x.cap.el.textContent || '').trim() === name; })[0];
-      return c ? getComputedStyle(c.el).borderTopColor : 'rgb(35,39,46)';
-    }
-    var orange = accentOf('SAP ECC'), recon = accentOf('Reconciliation');
-    fetch(img.src).then(function(r){ return r.text(); }).then(function(svgText){
-      var tmp = document.createElement('div');
-      tmp.innerHTML = svgText;
-      var svg = tmp.querySelector('svg');
-      if (!svg) return;
-      svg.setAttribute('class', 'g-vec');
-      if (img.dataset.vec) svg.setAttribute('data-vec', img.dataset.vec);
-      svg.setAttribute('style', img.getAttribute('style'));
-      svg.setAttribute('role', 'presentation');
-      svg.setAttribute('aria-hidden', 'true');
-      img.parentNode.replaceChild(svg, img);
-
-      var vb = (svg.getAttribute('viewBox') || '').split(/\s+/).map(parseFloat);
-      var H = vb[3];
-      if (!H) return;
-      var n = 0, grey = [];
-      [].slice.call(svg.querySelectorAll('path[stroke]')).forEach(function(p){
-        if (/^#?FF6A21$/i.test(p.getAttribute('stroke') || '')) dotOn(p, n++, orange, WAVES[0]);
-        else grey.push(p);
-      });
-      /* The four grey strokes split cleanly into a left pair (into Reconciliation)
-         and a right pair (out of it) -- sort by x and halve, rather than testing
-         against viewBox-midpoint: the two clusters are not centred on it (in the
-         current export they sit either side of x=~680, not the viewBox's own 608),
-         so a fixed fraction put both left-pair paths on the wrong side. Sorting is
-         self-calibrating to wherever the clusters actually are. */
-      grey.sort(function(a, b){ return a.getBBox().x - b.getBBox().x; });
-      grey.forEach(function(p, i){
-        var bb = p.getBBox();
-        if (i < grey.length / 2) dotOn(p, n++, accentOf(bb.y < H / 2 ? 'Extractors' : 'Model Templates'), WAVES[1]);
-        else dotOn(p, n++, recon, WAVES[2]);
-      });
-    }).catch(function(){});
-  }
-  function solid(c){
-    var m = /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/.exec(c || '');
-    return m ? 'rgb(' + m[1] + ',' + m[2] + ',' + m[3] + ')' : null;
-  }
-
-  function build(main){
-    var label = [].slice.call(main.querySelectorAll('.g-t')).filter(function(e){
-      return /^DataBridge Flow$/i.test((e.textContent || '').trim()); })[0];
-    if (!label) return false;
-    var lb = label.getBoundingClientRect();
-    var top = lb.top + scrollY - 60, bot = top + 1000;
-
-    var cards = [].slice.call(main.querySelectorAll('.g-b')).map(function(e){
-      var r = e.getBoundingClientRect();
-      return {el:e, l:r.left, t:r.top + scrollY, w:r.width, h:r.height,
-              r:r.left + r.width, b:r.top + scrollY + r.height};
-    }).filter(function(o){
-      if (!o.w || o.t < top || o.b > bot) return false;
-      if (o.w < 80 || o.w > 420 || o.h < 40 || o.h > 220) return false;
-      var cs = getComputedStyle(o.el);
-      if (parseFloat(cs.borderRadius) < 8) return false;
-      if (cs.borderTopWidth === '0px') return false;
-      return !!solid(cs.borderTopColor);
-    });
-    if (cards.length < 3) return false;
-
-    /* a card swallowed by a bigger card is the same control drawn twice */
-    cards = cards.filter(function(o){
-      return !cards.some(function(p){
-        return p !== o && p.l <= o.l && p.r >= o.r && p.t <= o.t && p.b >= o.b && p.w > o.w;
-      });
-    });
-
-    cards.forEach(function(c){
-      var cs = getComputedStyle(c.el);
-      c.base = cs.borderTopColor;
-      c.glow = alpha(c.base, 0.34) || 'rgba(35,39,46,.18)';
-      c.shadow0 = cs.boxShadow === 'none' ? '' : cs.boxShadow;
-      /* Remember the resting border and write it back on leave. Clearing an inline
-         borderColor does NOT fall back to the `border:` shorthand these cards carry
-         -- it resolves to currentColor, i.e. black. Same trap as resetting a colour
-         with '' elsewhere in this codebase. */
-      c.border0 = c.base;
-      c.hot = solid(c.base);
-      c.el.classList.add('ax-flow-c');
-      /* the caption sitting directly above the card travels with it */
-      c.cap = [].slice.call(main.querySelectorAll('.g-t')).map(function(e){
-        var r = e.getBoundingClientRect();
-        return {el:e, l:r.left, t:r.top + scrollY, w:r.width, b:r.top + scrollY + r.height};
-      }).filter(function(t){
-        return t.w && t.b <= c.t + 4 && t.b > c.t - 46 &&
-               t.l >= c.l - 30 && t.l <= c.r;
-      })[0] || null;
-      if (c.cap) c.cap.el.classList.add('ax-flow-t');
-    });
-
-    inlineConnector(main, cards);
-
-    var cur = null;
-    function paint(c){
-      if (c === cur) return;
-      if (cur){
-        cur.el.classList.remove('is-on');
-        cur.el.style.boxShadow = '';
-        cur.el.style.borderColor = cur.border0;
-      }
-      cur = c;
-      if (cur){
-        cur.el.classList.add('is-on');
-        cur.el.style.boxShadow = (cur.shadow0 ? cur.shadow0 + ', ' : '') +
-                                 '0 6px 18px ' + cur.glow;
-        if (cur.hot) cur.el.style.borderColor = cur.hot;   /* faint outlines go solid */
-      }
-    }
-    /* Hit-test against LIVE rects, not the ones measured at build. This file runs
-       300ms in, while the scroll-reveal still holds the section at translateY(1.4vw)
-       -- about 27px -- so every stored box sat that far off the card it belonged to.
-       The cards are tall enough that the middle still worked, which is why it read as
-       glitchy rather than dead: edges did nothing, the strip just below a card lit it,
-       and moving between two cards crossed a gap that belonged to neither.
-
-       Eleven getBoundingClientRect calls on a throttled mousemove is nothing, and it
-       cannot go stale -- no re-measure hooks, no ordering to get wrong. */
-    var last = 0;
-    addEventListener('mousemove', function(e){
-      var now = e.timeStamp || 0;
-      if (now && now - last < 16) return;
-      last = now;
-      if (innerWidth <= 1024) { paint(null); return; }
-      var x = e.clientX, y = e.clientY, hit = null;
-      for (var i = 0; i < cards.length; i++){
-        var b = cards[i].el.getBoundingClientRect();
-        if (!b.width) continue;
-        if (x >= b.left && x <= b.right && y >= b.top && y <= b.bottom) { hit = cards[i]; break; }
-      }
-      paint(hit);
-    }, {passive:true});
-    /* No paint(null) on scroll. It was there because the stored boxes drifted once
-       the page moved; with live rects the pointer is still over the same card after a
-       scroll, and blanking the highlight mid-scroll was itself part of the flicker. */
-    return true;
-  }
-
-  function init(){
-    var main = document.querySelector('main.ax-page');
-    if (!main || main.dataset.axFlowfx) return;
-    if (innerWidth && innerWidth <= 1024) return;
-    if (build(main)) main.dataset.axFlowfx = '1';
-  }
-  if (document.readyState === 'loading')
-    document.addEventListener('DOMContentLoaded', function(){ setTimeout(init, 300); });
-  else setTimeout(init, 300);
-  addEventListener('load', function(){ setTimeout(init, 750); });
-})();
-</script>
-
-<style id="ax-pixarrow-css">
-/* ---- THE PIXEL ARROW CUE ----
-   Six pages carry a column of three pixel-art arrows pointing down, sitting between
-   the hero heading and the paragraph. They are a "keep going" cue and they were
-   completely still.
-
-   The three arrows are baked into ONE svg -- twelve flat <path> elements in three
-   identical clusters -- and page CSS cannot reach inside an <img>. The file is
-   inlined and its clusters wrapped in groups so each arrow can move on its own.
-
-   The cascade runs top to bottom, which is the direction the cue is pointing. Each
-   arrow is mostly faint and brightens as the pulse passes it, so the eye is led
-   down the column rather than three things blinking at once. */
-.ax-pa-g{opacity:.34;animation:ax-pa-pulse 1.9s cubic-bezier(.4,0,.6,1) infinite}
-@keyframes ax-pa-pulse{
-  0%,70%,100%{opacity:.34;transform:translateY(0)}
-  28%{opacity:1;transform:translateY(6%)}
-}
-@media (prefers-reduced-motion:reduce){
-  .ax-pa-g{opacity:.6;animation:none}
-}
-</style>
-<script>
-/* ---- ANIMATE THE PIXEL ARROW CUE ----
-   The svg is swapped for an inline copy of itself, at the same box and in the same
-   stacking slot, so the placement _gen.py computed still holds. Nothing is edited
-   into the asset on disk: _vecfetch.py --force would overwrite that on the next
-   pull, and the same three arrows appear on any page drawn from the same Figma
-   component.
-
-   Which images: the cue is a wide, short strip, so only images at least three times
-   wider than they are tall are even fetched. The real test is the shape of the file
-   -- twelve paths in three identical clusters down a column -- so a new page gets
-   this without being named here. */
-(function () {
-  var REDUCED = matchMedia('(prefers-reduced-motion:reduce)');
-
-  /* Cluster the paths by their first Y: the pixels within one arrow sit a few units
-     apart, the arrows themselves much further.
-
-     The threshold comes from the gaps themselves rather than from the box. A share
-     of the box height looked reasonable and was wrong -- the same three arrows are
-     drawn in a 783x64 box on five pages and a 518x144 box on the sixth, and a sixth
-     of 144 is wider than the gap between its arrows, so all twelve pixels came back
-     as one cluster and that page kept a still cue. Twice the median gap separates
-     them in both. */
-  function cluster(paths) {
-    var rows = paths.map(function (p) {
-      var n = (p.getAttribute('d') || '').match(/-?[\d.]+/g) || [];
-      return { el: p, y: parseFloat(n[1]) };
-    }).filter(function (r) { return r.y === r.y; });
-    if (rows.length !== paths.length) return null;
-    rows.sort(function (a, b) { return a.y - b.y; });
-    var gaps = [];
-    for (var j = 1; j < rows.length; j++) gaps.push(rows[j].y - rows[j - 1].y);
-    var med = gaps.slice().sort(function (a, b) { return a - b; })[gaps.length >> 1];
-    var cut = Math.max(med * 2, 0.5);
-    var out = [[rows[0]]];
-    for (var i = 1; i < rows.length; i++) {
-      if (rows[i].y - rows[i - 1].y > cut) out.push([]);
-      out[out.length - 1].push(rows[i]);
-    }
-    return out;
-  }
-
-  function inline(img, text) {
-    var doc = new DOMParser().parseFromString(text, 'image/svg+xml');
-    var svg = doc.documentElement;
-    if (!svg || svg.nodeName.toLowerCase() !== 'svg') return;
-    var vb = (svg.getAttribute('viewBox') || '').split(/\s+/);
-    var boxH = parseFloat(vb[3]);
-    if (!(boxH > 0)) return;
-
-    var paths = [].slice.call(svg.querySelectorAll('path'));
-    if (paths.length !== 12) return;
-    var groups = cluster(paths);
-    /* three arrows of four pixels each, or it is not this cue */
-    if (!groups || groups.length !== 3 || !groups.every(function (g) { return g.length === 4; })) return;
-
-    groups.forEach(function (g, gi) {
-      var wrap = doc.createElementNS('http://www.w3.org/2000/svg', 'g');
-      wrap.setAttribute('class', 'ax-pa-g');
-      /* The stagger is set here rather than by :nth-of-type. The arrows are not the
-         only <g> in these files, so counting siblings by type picked the wrong ones
-         and all three ran together. */
-      wrap.style.animationDelay = (gi * 0.19).toFixed(2) + 's';
-      /* each arrow turns about its own centre, not the box's */
-      var ys = g.map(function (r) { return r.y; });
-      wrap.style.transformOrigin = '0 ' + ((Math.min.apply(null, ys) +
-        Math.max.apply(null, ys)) / 2).toFixed(2) + 'px';
-      wrap.style.transformBox = 'view-box';
-      g[0].el.parentNode.insertBefore(wrap, g[0].el);
-      g.forEach(function (r) { wrap.appendChild(r.el); });
-    });
-
-    var el = document.importNode(svg, true);
-    /* Same box, same slot: the <img> carries the geometry the generator wrote. */
-    el.setAttribute('style', img.getAttribute('style') || '');
-    el.setAttribute('class', ((img.getAttribute('class') || '') + ' ax-pa').trim());
-    el.setAttribute('aria-hidden', 'true');
-    el.setAttribute('focusable', 'false');
-    el.removeAttribute('width'); el.removeAttribute('height');
-    img.parentNode.replaceChild(el, img);
-    /* No visibility gating here. It was tried and it stuck in the paused state, and
-       it was never worth it anyway: this is three groups of four rectangles, and a
-       browser already deprioritises animation on what it is not painting. */
-  }
-
-  function run() {
-    if (REDUCED.matches) return;
-    [].forEach.call(document.querySelectorAll('img.g-vec'), function (img) {
-      if (img.dataset.axPa) return;
-      var r = img.getBoundingClientRect();
-      if (!(r.width > 0) || r.width < r.height * 3) return;   /* a wide, short strip */
-      img.dataset.axPa = '1';
-      var src = img.getAttribute('src');
-      if (!src || !/\.svg$/i.test(src)) return;
-      fetch(src, { credentials: 'omit' })
-        .then(function (r2) { return r2.ok ? r2.text() : null; })
-        .then(function (t) { if (t && t.length < 6000) inline(img, t); })
-        .catch(function () {});
-    });
-  }
-
-  if (document.readyState === 'complete') setTimeout(run, 0);
-  else addEventListener('load', function () { setTimeout(run, 0); });
 })();
 </script>
 

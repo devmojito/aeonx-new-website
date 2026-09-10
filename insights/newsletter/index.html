@@ -6136,6 +6136,303 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 
+<style id="ax-nlform-css">
+/* ---- NEWSLETTER SIGNUP (/insights/newsletter/) ----
+   The designed form is three pictures: a box captioned "Your company name" under a
+   "Role*" label, a box showing jaideep.waghela@aeonx.digital -- a real person's
+   address used as filler -- and a Subscribe pill the CTA pass had linkified to
+   /contact-us/. Real fields, real validation, and a Subscribe that subscribes.
+   CLIENT OWES a newsletter endpoint; until then the address is confirmed in place
+   and offered to the team as a plain mailto link, exactly like the footer form. */
+.ax-nl-input{position:absolute;left:0;top:0;width:100%;height:100%;border:0;outline:none;
+  background:transparent;padding:0;font-family:'Nunito Sans',sans-serif;color:rgb(35,39,46)}
+.ax-nl-input::placeholder{color:rgb(134,149,170);opacity:1}
+.ax-nl-box{transition:border-color .18s ease}
+.ax-nl-box:focus-within{border-color:rgb(223,63,23)!important}
+.ax-nl-note{position:absolute;font-family:'Nunito Sans',sans-serif;font-weight:600;
+  font-size:0.7292vw;line-height:1.0417vw;color:rgb(21,128,61);opacity:0;
+  transition:opacity .25s ease;white-space:nowrap;pointer-events:none}
+.ax-nl-note.on{opacity:1;pointer-events:auto}
+.ax-nl-note.err{color:rgb(220,38,38)}
+.ax-nl-note a{color:rgb(223,63,23);text-decoration:underline}
+.ax-nl-pill{cursor:pointer}
+@media (max-width:1024px){.ax-nl-note{font-size:2.7907vw;line-height:3.4884vw}}
+@media (prefers-reduced-motion:reduce){.ax-nl-note,.ax-nl-box{transition:none}}
+</style>
+<script>
+(function(){
+  function txt(e){ return (e.textContent||'').replace(/\s+/g,' ').trim(); }
+  function num(el,p){ var v=el.style[p]; if(!v) return null;
+    var m=/^(-?[\d.]+)(vw|px)$/.exec(String(v).trim()); if(!m) return null;
+    return m[2]==='vw'?parseFloat(m[1]):parseFloat(m[1])*100/window.innerWidth; }
+
+  /* the box a label points at: the next painted sibling on the label's own row */
+  function boxFor(lab){
+    var n=lab.nextElementSibling;
+    for(var i=0;i<6&&n;i++,n=n.nextElementSibling){
+      if(!/g-b/.test(n.className||'')) continue;
+      var st=n.getAttribute('style')||'';
+      if(/background-color|border/.test(st)) return n;
+    }
+    return null;
+  }
+
+  function fieldify(lab, opts){
+    var box=boxFor(lab); if(!box) return null;
+    if(box.dataset.axNl) return box.querySelector('input');
+    var dummy=[].slice.call(box.querySelectorAll('.g-t')).filter(function(e){ return txt(e); })[0];
+    box.dataset.axNl='1';
+    box.classList.add('ax-nl-box');
+    var input=document.createElement('input');
+    input.type=opts.type||'text';
+    input.className='ax-nl-input';
+    input.placeholder=opts.placeholder;
+    input.setAttribute('aria-label',opts.label);
+    if(opts.required) input.required=true;
+    /* The input goes in the BOX, not inside the dummy text node: that node is only
+       as wide as its words (107px inside a 483px field), so an input parented to it
+       inherits a third of the field. The dummy is hidden and the input is inset to
+       fill the box, which is what the design draws. */
+    if(dummy){
+      var cs=getComputedStyle(dummy);
+      input.style.fontSize=cs.fontSize;
+      input.style.fontWeight=cs.fontWeight;
+      input.style.color=cs.color;
+      var dl=num(dummy,'left'), dt=num(dummy,'top');
+      dummy.style.display='none';
+      if(dl!==null) input.style.left=dl+'vw';
+      /* Fill the field box vertically. Sizing the input to the dummy's line box left a
+         16px-tall hit area inside a 50px-tall field, so most of a click on the field
+         landed on the card behind it. */
+      if(dt!==null){ input.style.top=dt+'vw'; input.style.height='calc(100% - '+(dt*2)+'vw)'; }
+      input.style.width=(dl!==null?('calc(100% - '+(dl*2)+'vw)'):'100%');
+    } else {
+      input.style.padding='0 0.6vw';
+    }
+    box.appendChild(input);
+    return input;
+  }
+
+  function init(){
+    var main=document.querySelector('main.ax-page');
+    if(!main||main.dataset.axNlForm) return;
+    var labels=[].slice.call(main.querySelectorAll('.g-t')).filter(function(e){
+      return e.getBoundingClientRect().width>0 && !e.closest('.ax-mob'); });
+    var emailLab=labels.filter(function(e){ return /^email id\*?$/i.test(txt(e)); })[0];
+    if(!emailLab) return;
+    main.dataset.axNlForm='1';
+    var roleLab=labels.filter(function(e){ return /^role\*?$/i.test(txt(e)); })[0];
+
+    var role=roleLab?fieldify(roleLab,{label:'Role',placeholder:'Your role'}):null;
+    var email=fieldify(emailLab,{label:'Email ID',placeholder:'you@company.com',type:'email',required:true});
+    if(!email) return;
+
+    /* the confirmation line sits under the field, in the field's own column */
+    var note=document.createElement('div');
+    note.className='ax-nl-note';
+    note.setAttribute('role','status');
+    note.setAttribute('aria-live','polite');
+    var ebox=email.closest('.ax-nl-box')||emailLab;
+    /* Figma draws the email field with its "Simple Text Input With Validation"
+       component stuck in the VERIFIED state, so an empty field shipped pale green.
+       Keep the design's colour, but make it mean what it says: neutral until the
+       address parses. */
+    var OK='rgb(220, 252, 231)';
+    if(getComputedStyle(ebox).backgroundColor===OK){
+      var paint=function(){ ebox.style.backgroundColor=
+        /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test((email.value||'').trim())?OK:'#fff'; };
+      email.addEventListener('input',paint);
+      email.addEventListener('change',paint);
+      paint();
+    }
+    var bl=num(ebox,'left'), bt=num(ebox,'top'), bh=num(ebox,'height');
+    if(bl!==null&&bt!==null) note.style.cssText='left:'+bl+'vw;top:'+(bt+(bh||2.2)+0.4)+'vw';
+    (ebox.parentElement||main).appendChild(note);
+    function say(html,bad){
+      note.innerHTML=html;
+      note.classList.toggle('err',!!bad);
+      note.classList.add('on');
+      clearTimeout(note.__t);
+      note.__t=setTimeout(function(){ note.classList.remove('on'); },9000);
+    }
+
+    var pill=labels.filter(function(e){ return /^subscribe$/i.test(txt(e)); })[0];
+    if(!pill) return;
+    var pbox=pill.parentElement;
+    while(pbox&&pbox!==main&&!/background-color/.test(pbox.getAttribute('style')||'')) pbox=pbox.parentElement;
+    var hit=(pbox&&pbox!==main)?pbox:pill;
+    hit.classList.add('ax-nl-pill');
+    hit.setAttribute('role','button');
+    hit.setAttribute('tabindex','0');
+
+    var busy=false;
+    function submit(){
+      var v=(email.value||'').trim();
+      if(!v||!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(v)){
+        say('Enter a valid work email address.',true); email.focus(); return;
+      }
+      var body='Please subscribe this address to the AeonX newsletter: '+v+
+               (role&&role.value?(' (role: '+role.value.trim()+')'):'');
+      var href='mailto:sales@aeonx.digital?subject='+encodeURIComponent('Newsletter subscription')+
+               '&body='+encodeURIComponent(body);
+      say('Thanks &mdash; we have your address. <a rel="noopener noreferrer" href="'+
+          href.replace(/"/g,'&quot;')+'">Email it to the team</a>');
+      email.value=''; if(role) role.value='';
+    }
+    /* document capture, ahead of the chrome CTA pass that owns this pill, and
+       matched by click POINT as well as target -- an invisible shell sits over it */
+    document.addEventListener('click',function(e){
+      var t=e.target;
+      var on=(t&&t.nodeType===1&&(hit.contains(t)||pill.contains(t)));
+      if(!on&&(e.clientX||e.clientY)){
+        var r=hit.getBoundingClientRect();
+        on=r.width>0&&e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom;
+      }
+      if(!on) return;
+      e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+      if(busy) return;
+      busy=true; setTimeout(function(){ busy=false; },150);
+      submit();
+    },true);
+    hit.addEventListener('keydown',function(e){
+      if(e.key==='Enter'||e.key===' '){ e.preventDefault(); submit(); } });
+    email.addEventListener('keydown',function(e){ if(e.key==='Enter'){ e.preventDefault(); submit(); } });
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){ setTimeout(init,120); });
+  else setTimeout(init,120);
+  addEventListener('load',function(){ setTimeout(init,400); });
+})();
+</script>
+
+<style id="ax-pixarrow-css">
+/* ---- THE PIXEL ARROW CUE ----
+   Six pages carry a column of three pixel-art arrows pointing down, sitting between
+   the hero heading and the paragraph. They are a "keep going" cue and they were
+   completely still.
+
+   The three arrows are baked into ONE svg -- twelve flat <path> elements in three
+   identical clusters -- and page CSS cannot reach inside an <img>. The file is
+   inlined and its clusters wrapped in groups so each arrow can move on its own.
+
+   The cascade runs top to bottom, which is the direction the cue is pointing. Each
+   arrow is mostly faint and brightens as the pulse passes it, so the eye is led
+   down the column rather than three things blinking at once. */
+.ax-pa-g{opacity:.34;animation:ax-pa-pulse 1.9s cubic-bezier(.4,0,.6,1) infinite}
+@keyframes ax-pa-pulse{
+  0%,70%,100%{opacity:.34;transform:translateY(0)}
+  28%{opacity:1;transform:translateY(6%)}
+}
+@media (prefers-reduced-motion:reduce){
+  .ax-pa-g{opacity:.6;animation:none}
+}
+</style>
+<script>
+/* ---- ANIMATE THE PIXEL ARROW CUE ----
+   The svg is swapped for an inline copy of itself, at the same box and in the same
+   stacking slot, so the placement _gen.py computed still holds. Nothing is edited
+   into the asset on disk: _vecfetch.py --force would overwrite that on the next
+   pull, and the same three arrows appear on any page drawn from the same Figma
+   component.
+
+   Which images: the cue is a wide, short strip, so only images at least three times
+   wider than they are tall are even fetched. The real test is the shape of the file
+   -- twelve paths in three identical clusters down a column -- so a new page gets
+   this without being named here. */
+(function () {
+  var REDUCED = matchMedia('(prefers-reduced-motion:reduce)');
+
+  /* Cluster the paths by their first Y: the pixels within one arrow sit a few units
+     apart, the arrows themselves much further.
+
+     The threshold comes from the gaps themselves rather than from the box. A share
+     of the box height looked reasonable and was wrong -- the same three arrows are
+     drawn in a 783x64 box on five pages and a 518x144 box on the sixth, and a sixth
+     of 144 is wider than the gap between its arrows, so all twelve pixels came back
+     as one cluster and that page kept a still cue. Twice the median gap separates
+     them in both. */
+  function cluster(paths) {
+    var rows = paths.map(function (p) {
+      var n = (p.getAttribute('d') || '').match(/-?[\d.]+/g) || [];
+      return { el: p, y: parseFloat(n[1]) };
+    }).filter(function (r) { return r.y === r.y; });
+    if (rows.length !== paths.length) return null;
+    rows.sort(function (a, b) { return a.y - b.y; });
+    var gaps = [];
+    for (var j = 1; j < rows.length; j++) gaps.push(rows[j].y - rows[j - 1].y);
+    var med = gaps.slice().sort(function (a, b) { return a - b; })[gaps.length >> 1];
+    var cut = Math.max(med * 2, 0.5);
+    var out = [[rows[0]]];
+    for (var i = 1; i < rows.length; i++) {
+      if (rows[i].y - rows[i - 1].y > cut) out.push([]);
+      out[out.length - 1].push(rows[i]);
+    }
+    return out;
+  }
+
+  function inline(img, text) {
+    var doc = new DOMParser().parseFromString(text, 'image/svg+xml');
+    var svg = doc.documentElement;
+    if (!svg || svg.nodeName.toLowerCase() !== 'svg') return;
+    var vb = (svg.getAttribute('viewBox') || '').split(/\s+/);
+    var boxH = parseFloat(vb[3]);
+    if (!(boxH > 0)) return;
+
+    var paths = [].slice.call(svg.querySelectorAll('path'));
+    if (paths.length !== 12) return;
+    var groups = cluster(paths);
+    /* three arrows of four pixels each, or it is not this cue */
+    if (!groups || groups.length !== 3 || !groups.every(function (g) { return g.length === 4; })) return;
+
+    groups.forEach(function (g, gi) {
+      var wrap = doc.createElementNS('http://www.w3.org/2000/svg', 'g');
+      wrap.setAttribute('class', 'ax-pa-g');
+      /* The stagger is set here rather than by :nth-of-type. The arrows are not the
+         only <g> in these files, so counting siblings by type picked the wrong ones
+         and all three ran together. */
+      wrap.style.animationDelay = (gi * 0.19).toFixed(2) + 's';
+      /* each arrow turns about its own centre, not the box's */
+      var ys = g.map(function (r) { return r.y; });
+      wrap.style.transformOrigin = '0 ' + ((Math.min.apply(null, ys) +
+        Math.max.apply(null, ys)) / 2).toFixed(2) + 'px';
+      wrap.style.transformBox = 'view-box';
+      g[0].el.parentNode.insertBefore(wrap, g[0].el);
+      g.forEach(function (r) { wrap.appendChild(r.el); });
+    });
+
+    var el = document.importNode(svg, true);
+    /* Same box, same slot: the <img> carries the geometry the generator wrote. */
+    el.setAttribute('style', img.getAttribute('style') || '');
+    el.setAttribute('class', ((img.getAttribute('class') || '') + ' ax-pa').trim());
+    el.setAttribute('aria-hidden', 'true');
+    el.setAttribute('focusable', 'false');
+    el.removeAttribute('width'); el.removeAttribute('height');
+    img.parentNode.replaceChild(el, img);
+    /* No visibility gating here. It was tried and it stuck in the paused state, and
+       it was never worth it anyway: this is three groups of four rectangles, and a
+       browser already deprioritises animation on what it is not painting. */
+  }
+
+  function run() {
+    if (REDUCED.matches) return;
+    [].forEach.call(document.querySelectorAll('img.g-vec'), function (img) {
+      if (img.dataset.axPa) return;
+      var r = img.getBoundingClientRect();
+      if (!(r.width > 0) || r.width < r.height * 3) return;   /* a wide, short strip */
+      img.dataset.axPa = '1';
+      var src = img.getAttribute('src');
+      if (!src || !/\.svg$/i.test(src)) return;
+      fetch(src, { credentials: 'omit' })
+        .then(function (r2) { return r2.ok ? r2.text() : null; })
+        .then(function (t) { if (t && t.length < 6000) inline(img, t); })
+        .catch(function () {});
+    });
+  }
+
+  if (document.readyState === 'complete') setTimeout(run, 0);
+  else addEventListener('load', function () { setTimeout(run, 0); });
+})();
+</script>
+
 <style id="ax-hover-css">
 /* ---- HOVER / FOCUS AFFORDANCES ----------------------------------------------
    The layout is absolutely positioned and pixel-locked, and Figma exports a card
@@ -6309,7 +6606,12 @@ document.addEventListener("DOMContentLoaded",function(){
   /* was 8: a real card family (career page "Five reasons", row 2) sits at 6.98vw
      tall and fell just under the floor, so those two tiles never armed. Chips/
      badges sitewide run 1.3-2.5vw tall, so 6 still leaves them well clear. */
-  var TILE_MIN_H = 6,  TILE_MAX_H = 36;
+  /* 5.5, not 6: the manufacturing pain grid's second row is 5.83vw tall against the
+     first row's 7.08vw, because those two cards carry one line of copy where the
+     three above carry two. At a floor of 6 they were not tiles at all, so 01, 02 and
+     03 lit on hover and 04 and 05 sat dead beside them. Checked across every built
+     page: the lower floor admits those two boxes and nothing else. */
+  var TILE_MIN_H = 5.5, TILE_MAX_H = 36;
   var TOL = 3;                               /* px slack: offset* is integer-rounded */
   var LIFT_PX = 4;                           /* .ax-hv-tile lift: 0.2083vw @1920 */
   var STOP = {and:1,the:1,our:1,for:1,with:1,you:1,your:1,all:1,more:1,new:1,see:1,
@@ -7158,303 +7460,6 @@ document.addEventListener("DOMContentLoaded",function(){
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',run);
   else run();
   addEventListener('load',function(){ setTimeout(run,150); });
-})();
-</script>
-
-<style id="ax-nlform-css">
-/* ---- NEWSLETTER SIGNUP (/insights/newsletter/) ----
-   The designed form is three pictures: a box captioned "Your company name" under a
-   "Role*" label, a box showing jaideep.waghela@aeonx.digital -- a real person's
-   address used as filler -- and a Subscribe pill the CTA pass had linkified to
-   /contact-us/. Real fields, real validation, and a Subscribe that subscribes.
-   CLIENT OWES a newsletter endpoint; until then the address is confirmed in place
-   and offered to the team as a plain mailto link, exactly like the footer form. */
-.ax-nl-input{position:absolute;left:0;top:0;width:100%;height:100%;border:0;outline:none;
-  background:transparent;padding:0;font-family:'Nunito Sans',sans-serif;color:rgb(35,39,46)}
-.ax-nl-input::placeholder{color:rgb(134,149,170);opacity:1}
-.ax-nl-box{transition:border-color .18s ease}
-.ax-nl-box:focus-within{border-color:rgb(223,63,23)!important}
-.ax-nl-note{position:absolute;font-family:'Nunito Sans',sans-serif;font-weight:600;
-  font-size:0.7292vw;line-height:1.0417vw;color:rgb(21,128,61);opacity:0;
-  transition:opacity .25s ease;white-space:nowrap;pointer-events:none}
-.ax-nl-note.on{opacity:1;pointer-events:auto}
-.ax-nl-note.err{color:rgb(220,38,38)}
-.ax-nl-note a{color:rgb(223,63,23);text-decoration:underline}
-.ax-nl-pill{cursor:pointer}
-@media (max-width:1024px){.ax-nl-note{font-size:2.7907vw;line-height:3.4884vw}}
-@media (prefers-reduced-motion:reduce){.ax-nl-note,.ax-nl-box{transition:none}}
-</style>
-<script>
-(function(){
-  function txt(e){ return (e.textContent||'').replace(/\s+/g,' ').trim(); }
-  function num(el,p){ var v=el.style[p]; if(!v) return null;
-    var m=/^(-?[\d.]+)(vw|px)$/.exec(String(v).trim()); if(!m) return null;
-    return m[2]==='vw'?parseFloat(m[1]):parseFloat(m[1])*100/window.innerWidth; }
-
-  /* the box a label points at: the next painted sibling on the label's own row */
-  function boxFor(lab){
-    var n=lab.nextElementSibling;
-    for(var i=0;i<6&&n;i++,n=n.nextElementSibling){
-      if(!/g-b/.test(n.className||'')) continue;
-      var st=n.getAttribute('style')||'';
-      if(/background-color|border/.test(st)) return n;
-    }
-    return null;
-  }
-
-  function fieldify(lab, opts){
-    var box=boxFor(lab); if(!box) return null;
-    if(box.dataset.axNl) return box.querySelector('input');
-    var dummy=[].slice.call(box.querySelectorAll('.g-t')).filter(function(e){ return txt(e); })[0];
-    box.dataset.axNl='1';
-    box.classList.add('ax-nl-box');
-    var input=document.createElement('input');
-    input.type=opts.type||'text';
-    input.className='ax-nl-input';
-    input.placeholder=opts.placeholder;
-    input.setAttribute('aria-label',opts.label);
-    if(opts.required) input.required=true;
-    /* The input goes in the BOX, not inside the dummy text node: that node is only
-       as wide as its words (107px inside a 483px field), so an input parented to it
-       inherits a third of the field. The dummy is hidden and the input is inset to
-       fill the box, which is what the design draws. */
-    if(dummy){
-      var cs=getComputedStyle(dummy);
-      input.style.fontSize=cs.fontSize;
-      input.style.fontWeight=cs.fontWeight;
-      input.style.color=cs.color;
-      var dl=num(dummy,'left'), dt=num(dummy,'top');
-      dummy.style.display='none';
-      if(dl!==null) input.style.left=dl+'vw';
-      /* Fill the field box vertically. Sizing the input to the dummy's line box left a
-         16px-tall hit area inside a 50px-tall field, so most of a click on the field
-         landed on the card behind it. */
-      if(dt!==null){ input.style.top=dt+'vw'; input.style.height='calc(100% - '+(dt*2)+'vw)'; }
-      input.style.width=(dl!==null?('calc(100% - '+(dl*2)+'vw)'):'100%');
-    } else {
-      input.style.padding='0 0.6vw';
-    }
-    box.appendChild(input);
-    return input;
-  }
-
-  function init(){
-    var main=document.querySelector('main.ax-page');
-    if(!main||main.dataset.axNlForm) return;
-    var labels=[].slice.call(main.querySelectorAll('.g-t')).filter(function(e){
-      return e.getBoundingClientRect().width>0 && !e.closest('.ax-mob'); });
-    var emailLab=labels.filter(function(e){ return /^email id\*?$/i.test(txt(e)); })[0];
-    if(!emailLab) return;
-    main.dataset.axNlForm='1';
-    var roleLab=labels.filter(function(e){ return /^role\*?$/i.test(txt(e)); })[0];
-
-    var role=roleLab?fieldify(roleLab,{label:'Role',placeholder:'Your role'}):null;
-    var email=fieldify(emailLab,{label:'Email ID',placeholder:'you@company.com',type:'email',required:true});
-    if(!email) return;
-
-    /* the confirmation line sits under the field, in the field's own column */
-    var note=document.createElement('div');
-    note.className='ax-nl-note';
-    note.setAttribute('role','status');
-    note.setAttribute('aria-live','polite');
-    var ebox=email.closest('.ax-nl-box')||emailLab;
-    /* Figma draws the email field with its "Simple Text Input With Validation"
-       component stuck in the VERIFIED state, so an empty field shipped pale green.
-       Keep the design's colour, but make it mean what it says: neutral until the
-       address parses. */
-    var OK='rgb(220, 252, 231)';
-    if(getComputedStyle(ebox).backgroundColor===OK){
-      var paint=function(){ ebox.style.backgroundColor=
-        /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test((email.value||'').trim())?OK:'#fff'; };
-      email.addEventListener('input',paint);
-      email.addEventListener('change',paint);
-      paint();
-    }
-    var bl=num(ebox,'left'), bt=num(ebox,'top'), bh=num(ebox,'height');
-    if(bl!==null&&bt!==null) note.style.cssText='left:'+bl+'vw;top:'+(bt+(bh||2.2)+0.4)+'vw';
-    (ebox.parentElement||main).appendChild(note);
-    function say(html,bad){
-      note.innerHTML=html;
-      note.classList.toggle('err',!!bad);
-      note.classList.add('on');
-      clearTimeout(note.__t);
-      note.__t=setTimeout(function(){ note.classList.remove('on'); },9000);
-    }
-
-    var pill=labels.filter(function(e){ return /^subscribe$/i.test(txt(e)); })[0];
-    if(!pill) return;
-    var pbox=pill.parentElement;
-    while(pbox&&pbox!==main&&!/background-color/.test(pbox.getAttribute('style')||'')) pbox=pbox.parentElement;
-    var hit=(pbox&&pbox!==main)?pbox:pill;
-    hit.classList.add('ax-nl-pill');
-    hit.setAttribute('role','button');
-    hit.setAttribute('tabindex','0');
-
-    var busy=false;
-    function submit(){
-      var v=(email.value||'').trim();
-      if(!v||!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(v)){
-        say('Enter a valid work email address.',true); email.focus(); return;
-      }
-      var body='Please subscribe this address to the AeonX newsletter: '+v+
-               (role&&role.value?(' (role: '+role.value.trim()+')'):'');
-      var href='mailto:sales@aeonx.digital?subject='+encodeURIComponent('Newsletter subscription')+
-               '&body='+encodeURIComponent(body);
-      say('Thanks &mdash; we have your address. <a rel="noopener noreferrer" href="'+
-          href.replace(/"/g,'&quot;')+'">Email it to the team</a>');
-      email.value=''; if(role) role.value='';
-    }
-    /* document capture, ahead of the chrome CTA pass that owns this pill, and
-       matched by click POINT as well as target -- an invisible shell sits over it */
-    document.addEventListener('click',function(e){
-      var t=e.target;
-      var on=(t&&t.nodeType===1&&(hit.contains(t)||pill.contains(t)));
-      if(!on&&(e.clientX||e.clientY)){
-        var r=hit.getBoundingClientRect();
-        on=r.width>0&&e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom;
-      }
-      if(!on) return;
-      e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
-      if(busy) return;
-      busy=true; setTimeout(function(){ busy=false; },150);
-      submit();
-    },true);
-    hit.addEventListener('keydown',function(e){
-      if(e.key==='Enter'||e.key===' '){ e.preventDefault(); submit(); } });
-    email.addEventListener('keydown',function(e){ if(e.key==='Enter'){ e.preventDefault(); submit(); } });
-  }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){ setTimeout(init,120); });
-  else setTimeout(init,120);
-  addEventListener('load',function(){ setTimeout(init,400); });
-})();
-</script>
-
-<style id="ax-pixarrow-css">
-/* ---- THE PIXEL ARROW CUE ----
-   Six pages carry a column of three pixel-art arrows pointing down, sitting between
-   the hero heading and the paragraph. They are a "keep going" cue and they were
-   completely still.
-
-   The three arrows are baked into ONE svg -- twelve flat <path> elements in three
-   identical clusters -- and page CSS cannot reach inside an <img>. The file is
-   inlined and its clusters wrapped in groups so each arrow can move on its own.
-
-   The cascade runs top to bottom, which is the direction the cue is pointing. Each
-   arrow is mostly faint and brightens as the pulse passes it, so the eye is led
-   down the column rather than three things blinking at once. */
-.ax-pa-g{opacity:.34;animation:ax-pa-pulse 1.9s cubic-bezier(.4,0,.6,1) infinite}
-@keyframes ax-pa-pulse{
-  0%,70%,100%{opacity:.34;transform:translateY(0)}
-  28%{opacity:1;transform:translateY(6%)}
-}
-@media (prefers-reduced-motion:reduce){
-  .ax-pa-g{opacity:.6;animation:none}
-}
-</style>
-<script>
-/* ---- ANIMATE THE PIXEL ARROW CUE ----
-   The svg is swapped for an inline copy of itself, at the same box and in the same
-   stacking slot, so the placement _gen.py computed still holds. Nothing is edited
-   into the asset on disk: _vecfetch.py --force would overwrite that on the next
-   pull, and the same three arrows appear on any page drawn from the same Figma
-   component.
-
-   Which images: the cue is a wide, short strip, so only images at least three times
-   wider than they are tall are even fetched. The real test is the shape of the file
-   -- twelve paths in three identical clusters down a column -- so a new page gets
-   this without being named here. */
-(function () {
-  var REDUCED = matchMedia('(prefers-reduced-motion:reduce)');
-
-  /* Cluster the paths by their first Y: the pixels within one arrow sit a few units
-     apart, the arrows themselves much further.
-
-     The threshold comes from the gaps themselves rather than from the box. A share
-     of the box height looked reasonable and was wrong -- the same three arrows are
-     drawn in a 783x64 box on five pages and a 518x144 box on the sixth, and a sixth
-     of 144 is wider than the gap between its arrows, so all twelve pixels came back
-     as one cluster and that page kept a still cue. Twice the median gap separates
-     them in both. */
-  function cluster(paths) {
-    var rows = paths.map(function (p) {
-      var n = (p.getAttribute('d') || '').match(/-?[\d.]+/g) || [];
-      return { el: p, y: parseFloat(n[1]) };
-    }).filter(function (r) { return r.y === r.y; });
-    if (rows.length !== paths.length) return null;
-    rows.sort(function (a, b) { return a.y - b.y; });
-    var gaps = [];
-    for (var j = 1; j < rows.length; j++) gaps.push(rows[j].y - rows[j - 1].y);
-    var med = gaps.slice().sort(function (a, b) { return a - b; })[gaps.length >> 1];
-    var cut = Math.max(med * 2, 0.5);
-    var out = [[rows[0]]];
-    for (var i = 1; i < rows.length; i++) {
-      if (rows[i].y - rows[i - 1].y > cut) out.push([]);
-      out[out.length - 1].push(rows[i]);
-    }
-    return out;
-  }
-
-  function inline(img, text) {
-    var doc = new DOMParser().parseFromString(text, 'image/svg+xml');
-    var svg = doc.documentElement;
-    if (!svg || svg.nodeName.toLowerCase() !== 'svg') return;
-    var vb = (svg.getAttribute('viewBox') || '').split(/\s+/);
-    var boxH = parseFloat(vb[3]);
-    if (!(boxH > 0)) return;
-
-    var paths = [].slice.call(svg.querySelectorAll('path'));
-    if (paths.length !== 12) return;
-    var groups = cluster(paths);
-    /* three arrows of four pixels each, or it is not this cue */
-    if (!groups || groups.length !== 3 || !groups.every(function (g) { return g.length === 4; })) return;
-
-    groups.forEach(function (g, gi) {
-      var wrap = doc.createElementNS('http://www.w3.org/2000/svg', 'g');
-      wrap.setAttribute('class', 'ax-pa-g');
-      /* The stagger is set here rather than by :nth-of-type. The arrows are not the
-         only <g> in these files, so counting siblings by type picked the wrong ones
-         and all three ran together. */
-      wrap.style.animationDelay = (gi * 0.19).toFixed(2) + 's';
-      /* each arrow turns about its own centre, not the box's */
-      var ys = g.map(function (r) { return r.y; });
-      wrap.style.transformOrigin = '0 ' + ((Math.min.apply(null, ys) +
-        Math.max.apply(null, ys)) / 2).toFixed(2) + 'px';
-      wrap.style.transformBox = 'view-box';
-      g[0].el.parentNode.insertBefore(wrap, g[0].el);
-      g.forEach(function (r) { wrap.appendChild(r.el); });
-    });
-
-    var el = document.importNode(svg, true);
-    /* Same box, same slot: the <img> carries the geometry the generator wrote. */
-    el.setAttribute('style', img.getAttribute('style') || '');
-    el.setAttribute('class', ((img.getAttribute('class') || '') + ' ax-pa').trim());
-    el.setAttribute('aria-hidden', 'true');
-    el.setAttribute('focusable', 'false');
-    el.removeAttribute('width'); el.removeAttribute('height');
-    img.parentNode.replaceChild(el, img);
-    /* No visibility gating here. It was tried and it stuck in the paused state, and
-       it was never worth it anyway: this is three groups of four rectangles, and a
-       browser already deprioritises animation on what it is not painting. */
-  }
-
-  function run() {
-    if (REDUCED.matches) return;
-    [].forEach.call(document.querySelectorAll('img.g-vec'), function (img) {
-      if (img.dataset.axPa) return;
-      var r = img.getBoundingClientRect();
-      if (!(r.width > 0) || r.width < r.height * 3) return;   /* a wide, short strip */
-      img.dataset.axPa = '1';
-      var src = img.getAttribute('src');
-      if (!src || !/\.svg$/i.test(src)) return;
-      fetch(src, { credentials: 'omit' })
-        .then(function (r2) { return r2.ok ? r2.text() : null; })
-        .then(function (t) { if (t && t.length < 6000) inline(img, t); })
-        .catch(function () {});
-    });
-  }
-
-  if (document.readyState === 'complete') setTimeout(run, 0);
-  else addEventListener('load', function () { setTimeout(run, 0); });
 })();
 </script>
 

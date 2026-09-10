@@ -6383,6 +6383,321 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 
+<style id="ax-gearspin-css">
+/* Industries hero gears. Each industries page decorates its hero with two big
+   radial gear/fan vectors (top-left and bottom-right corner, one pair per page,
+   all ~square exports so they rotate about their own centre without wobble).
+   Selector-gated by asset id: nothing else on the site matches. The top-left
+   gear turns clockwise, the bottom-right counter-clockwise and slightly slower,
+   like a meshed pair. transform is free on these imgs (the generator writes
+   only position + blur), and the hero clip keeps the swing inside the section. */
+img.g-vec[src*="4690-13422"],
+img.g-vec[src*="6131-22640"],
+img.g-vec[src*="6138-25615"],
+img.g-vec[src*="6138-25921"],
+img.g-vec[src*="6138-26092"],
+img.g-vec[src*="6138-26187"]{animation:ax-gear-cw 80s linear infinite}
+img.g-vec[src*="4690-13425"],
+img.g-vec[src*="6138-25456"],
+img.g-vec[src*="6138-25767"],
+img.g-vec[src*="6138-25985"],
+img.g-vec[src*="6138-26117"],
+img.g-vec[src*="6138-26173"]{animation:ax-gear-ccw 104s linear infinite}
+/* Animate the standalone `rotate` property, NOT `transform`: the scroll-reveal
+   fragment leaves `transform:translateY(0)` on revealed hero elements, and a
+   keyframe to transform:rotate(360deg) against that base has MISMATCHED transform
+   lists -- the browser falls back to matrix interpolation, and rotate(360deg) AS A
+   MATRIX is the identity matrix, so the whole animation collapsed to a no-op
+   (proven: 0px screenshot diff at animation-delay:-20s). `rotate` composes with
+   any transform value and cannot collide with it. */
+@keyframes ax-gear-cw{from{rotate:0turn}to{rotate:1turn}}
+@keyframes ax-gear-ccw{from{rotate:0turn}to{rotate:-1turn}}
+@media (prefers-reduced-motion:reduce){
+  img.g-vec[src*="4690-134"],img.g-vec[src*="6131-22640"],img.g-vec[src*="6138-25"],
+  img.g-vec[src*="6138-26"]{animation:none}
+}
+</style>
+
+<style id="ax-caseread-css">
+/* ---- CASE-STUDY CARD CTA ALIGNMENT ----
+   "Read the story" and its chevron sit in their own wrapper inside each card, and
+   those wrappers drift right of the card's title -- 12px on the first card, 26 on
+   the second, 40 on the third, growing with the column. The design lines the CTA up
+   with the headline above it, so each label (and the chevron travelling with it) is
+   nudged back onto its title's left edge.
+
+   The WRAPPER moves, never the label. The label sits 12px inside a 157px box with
+   overflow:hidden, so nudging the label itself just slid it under that box's left
+   edge -- the second card read "ad The Story" and the third "The Story". Moving the
+   wrapper carries the label and its chevron together and clips nothing.
+
+   Position only, and only along X: the vertical rhythm of the card is untouched.
+
+   The row is a TEXT link, not a pill. _hover.html reads its white box as an outlined
+   button and washes it on hover, which is not what the design shows -- the client
+   asked for a slight lift and nothing else. The button skins are stripped and this
+   lift is all that is left.
+
+   The wrapper is also widened when its own content would not fit: it is a fixed
+   157px box with overflow:hidden, so at font metrics even slightly wider than the
+   design's the chevron lands outside it and simply disappears. The box has no
+   visible fill of its own (white on white), so widening it shows nothing new. */
+.ax-csr{transition:transform .2s cubic-bezier(.22,.61,.36,1)}
+.ax-csr:hover{transform:translateY(-0.1042vw)}
+/* the skins _hover.html would otherwise paint on this row */
+.ax-csr.ax-hv-out.ax-hv-selfon,.ax-csr.ax-hv-fill.ax-hv-selfon,
+.ax-csr.ax-hv-out.ax-hv-on,.ax-csr.ax-hv-fill.ax-hv-on{
+  background-image:none!important;background-size:0 100%!important;
+  box-shadow:none!important;border-color:transparent!important}
+@media (prefers-reduced-motion:reduce){.ax-csr{transition:none}.ax-csr:hover{transform:none}}
+</style>
+<script>
+(function(){
+  function txt(e){ return (e.textContent||'').replace(/\s+/g,' ').trim(); }
+  function leftVw(el){
+    var m = (el.getAttribute('style') || '').match(/left:\s*(-?[\d.]+)vw/);
+    return m ? parseFloat(m[1]) : null;
+  }
+  function setLeftVw(el, v){
+    var s = el.getAttribute('style') || '';
+    el.setAttribute('style', s.replace(/left:\s*-?[\d.]+vw/, 'left:' + v.toFixed(4) + 'vw'));
+  }
+
+  function align(root){
+    var vwpx = (document.documentElement.clientWidth || 1920) / 100;
+    var labels = [].slice.call(root.querySelectorAll('.g-t')).filter(function(e){
+      return /^read the story\b/i.test(txt(e)) && e.getBoundingClientRect().width;
+    });
+    if (!labels.length) return false;
+    var moved = 0;
+    labels.forEach(function(lab){
+      var lb = lab.getBoundingClientRect();
+      /* the card's headline: the nearest long line of text above the CTA, in the
+         same column */
+      var title = [].slice.call(root.querySelectorAll('.g-t')).map(function(e){
+        return {el:e, r:e.getBoundingClientRect()};
+      }).filter(function(o){
+        return o.r.width && o.el !== lab && txt(o.el).length > 24 &&
+               o.r.bottom <= lb.top + 4 && o.r.bottom > lb.top - 300 &&
+               Math.abs(o.r.left - lb.left) < 200;
+      }).sort(function(a, b){ return b.r.bottom - a.r.bottom; })[0];
+      if (!title) return;
+      var dx = title.r.left - lb.left;
+      /* the box that owns the CTA row: the label's positioned parent, as long as it
+         is a row and not the whole card */
+      var wrap = lab.parentElement;
+      if (!wrap) return;
+      var wr = wrap.getBoundingClientRect();
+      if (!wr.width || wr.width > 400 || wr.height > 120) return;
+      if (Math.abs(dx) < 1) { pin(); return; }
+      /* The wrapper's left may be vw (as generated) or px -- the CTA auto-fit writes
+         px when it shifts a row along. Read whichever is there and always write back
+         vw, so the fix survives a resize like the rest of the layout. */
+      var cur = leftVw(wrap);
+      if (cur === null){
+        var px = parseFloat(getComputedStyle(wrap).left);
+        if (isNaN(px)) return;
+        cur = px / vwpx;
+        var st = wrap.getAttribute('style') || '';
+        wrap.setAttribute('style', st.replace(/left:\s*-?[\d.]+px/, 'left:' + cur.toFixed(4) + 'vw'));
+      }
+      setLeftVw(wrap, cur + dx / vwpx);
+      pin();
+      moved++;
+
+      /* PIN the chevron to the label's ink at the design's gap. Its source `left`
+         is a fixed x sized for the design's font metrics; render the label any
+         wider (fonts, zoom, Title Case) and other passes shove the chevron around
+         -- it shipped ~100px adrift of the label and, before the box was widened,
+         clipped out of sight entirely. Written every pass, so nothing that runs
+         later can leave it anywhere else. Figma draws an 8px gap. */
+      function pin(){
+        wrap.classList.remove('ax-hv-out', 'ax-hv-fill', 'ax-hv-fill--pale', 'ax-hv-btn');
+        wrap.classList.add('ax-csr');
+        /* The wrapper ships with a white fill -- invisible inside the white card,
+           but once this pass moves it left it overlaps the card's border lines and
+           reads as a white slab. It paints nothing the design needs. */
+        wrap.style.backgroundColor = 'transparent';
+        var chev = [].slice.call(wrap.children).filter(function(e){
+          return /g-vec/.test(e.className || '') && e.getBoundingClientRect().width;
+        })[0];
+        if (!chev) return;
+        var rng = document.createRange();
+        rng.selectNodeContents(lab);
+        var ink = rng.getBoundingClientRect();
+        var nwr = wrap.getBoundingClientRect();
+        if (!ink.width || !nwr.width) return;
+        var gap = 8 * vwpx / (1920 / 100);            /* 8px at the 1920 design width */
+        var want = (ink.right + gap) - nwr.left;      /* chevron left, wrapper-local px */
+        var cr = chev.getBoundingClientRect();
+        if (Math.abs((cr.left - nwr.left) - want) > 1){
+          var st2 = chev.getAttribute('style') || '';
+          var vwL = want / vwpx;
+          chev.setAttribute('style', /left:\s*-?[\d.]+(vw|px)/.test(st2)
+            ? st2.replace(/left:\s*-?[\d.]+(vw|px)/, 'left:' + vwL.toFixed(4) + 'vw')
+            : st2 + ';left:' + vwL.toFixed(4) + 'vw');
+          cr = chev.getBoundingClientRect();
+        }
+        /* and the clip box must hold it */
+        var over = (cr.right + 6) - nwr.right;
+        if (over > 0){
+          var wpx = parseFloat(getComputedStyle(wrap).width);
+          if (!isNaN(wpx)){
+            var st3 = wrap.getAttribute('style') || '';
+            var vwW = (wpx + over) / vwpx;
+            wrap.setAttribute('style', /width:\s*-?[\d.]+(vw|px)/.test(st3)
+              ? st3.replace(/width:\s*-?[\d.]+(vw|px)/, 'width:' + vwW.toFixed(4) + 'vw')
+              : st3 + ';width:' + vwW.toFixed(4) + 'vw');
+          }
+        }
+      }
+    });
+    return moved > 0;
+  }
+
+  /* Run repeatedly rather than once. The CTA auto-fit shifts a row's later pills
+     along AFTER this file's first pass, which left a residual 5px on the second card
+     and 10px on the third; align() only writes when a label is more than a pixel out,
+     so re-running simply converges and costs nothing once it is right. */
+  function init(){
+    var main = document.querySelector('main.ax-page');
+    if (main) align(main);
+  }
+  [700, 1300, 1900, 2600].forEach(function(t){ setTimeout(init, t); });
+  addEventListener('load', function(){ setTimeout(init, 800); });
+  addEventListener('resize', function(){ setTimeout(init, 500); });
+})();
+</script>
+
+<style id="ax-pixarrow-css">
+/* ---- THE PIXEL ARROW CUE ----
+   Six pages carry a column of three pixel-art arrows pointing down, sitting between
+   the hero heading and the paragraph. They are a "keep going" cue and they were
+   completely still.
+
+   The three arrows are baked into ONE svg -- twelve flat <path> elements in three
+   identical clusters -- and page CSS cannot reach inside an <img>. The file is
+   inlined and its clusters wrapped in groups so each arrow can move on its own.
+
+   The cascade runs top to bottom, which is the direction the cue is pointing. Each
+   arrow is mostly faint and brightens as the pulse passes it, so the eye is led
+   down the column rather than three things blinking at once. */
+.ax-pa-g{opacity:.34;animation:ax-pa-pulse 1.9s cubic-bezier(.4,0,.6,1) infinite}
+@keyframes ax-pa-pulse{
+  0%,70%,100%{opacity:.34;transform:translateY(0)}
+  28%{opacity:1;transform:translateY(6%)}
+}
+@media (prefers-reduced-motion:reduce){
+  .ax-pa-g{opacity:.6;animation:none}
+}
+</style>
+<script>
+/* ---- ANIMATE THE PIXEL ARROW CUE ----
+   The svg is swapped for an inline copy of itself, at the same box and in the same
+   stacking slot, so the placement _gen.py computed still holds. Nothing is edited
+   into the asset on disk: _vecfetch.py --force would overwrite that on the next
+   pull, and the same three arrows appear on any page drawn from the same Figma
+   component.
+
+   Which images: the cue is a wide, short strip, so only images at least three times
+   wider than they are tall are even fetched. The real test is the shape of the file
+   -- twelve paths in three identical clusters down a column -- so a new page gets
+   this without being named here. */
+(function () {
+  var REDUCED = matchMedia('(prefers-reduced-motion:reduce)');
+
+  /* Cluster the paths by their first Y: the pixels within one arrow sit a few units
+     apart, the arrows themselves much further.
+
+     The threshold comes from the gaps themselves rather than from the box. A share
+     of the box height looked reasonable and was wrong -- the same three arrows are
+     drawn in a 783x64 box on five pages and a 518x144 box on the sixth, and a sixth
+     of 144 is wider than the gap between its arrows, so all twelve pixels came back
+     as one cluster and that page kept a still cue. Twice the median gap separates
+     them in both. */
+  function cluster(paths) {
+    var rows = paths.map(function (p) {
+      var n = (p.getAttribute('d') || '').match(/-?[\d.]+/g) || [];
+      return { el: p, y: parseFloat(n[1]) };
+    }).filter(function (r) { return r.y === r.y; });
+    if (rows.length !== paths.length) return null;
+    rows.sort(function (a, b) { return a.y - b.y; });
+    var gaps = [];
+    for (var j = 1; j < rows.length; j++) gaps.push(rows[j].y - rows[j - 1].y);
+    var med = gaps.slice().sort(function (a, b) { return a - b; })[gaps.length >> 1];
+    var cut = Math.max(med * 2, 0.5);
+    var out = [[rows[0]]];
+    for (var i = 1; i < rows.length; i++) {
+      if (rows[i].y - rows[i - 1].y > cut) out.push([]);
+      out[out.length - 1].push(rows[i]);
+    }
+    return out;
+  }
+
+  function inline(img, text) {
+    var doc = new DOMParser().parseFromString(text, 'image/svg+xml');
+    var svg = doc.documentElement;
+    if (!svg || svg.nodeName.toLowerCase() !== 'svg') return;
+    var vb = (svg.getAttribute('viewBox') || '').split(/\s+/);
+    var boxH = parseFloat(vb[3]);
+    if (!(boxH > 0)) return;
+
+    var paths = [].slice.call(svg.querySelectorAll('path'));
+    if (paths.length !== 12) return;
+    var groups = cluster(paths);
+    /* three arrows of four pixels each, or it is not this cue */
+    if (!groups || groups.length !== 3 || !groups.every(function (g) { return g.length === 4; })) return;
+
+    groups.forEach(function (g, gi) {
+      var wrap = doc.createElementNS('http://www.w3.org/2000/svg', 'g');
+      wrap.setAttribute('class', 'ax-pa-g');
+      /* The stagger is set here rather than by :nth-of-type. The arrows are not the
+         only <g> in these files, so counting siblings by type picked the wrong ones
+         and all three ran together. */
+      wrap.style.animationDelay = (gi * 0.19).toFixed(2) + 's';
+      /* each arrow turns about its own centre, not the box's */
+      var ys = g.map(function (r) { return r.y; });
+      wrap.style.transformOrigin = '0 ' + ((Math.min.apply(null, ys) +
+        Math.max.apply(null, ys)) / 2).toFixed(2) + 'px';
+      wrap.style.transformBox = 'view-box';
+      g[0].el.parentNode.insertBefore(wrap, g[0].el);
+      g.forEach(function (r) { wrap.appendChild(r.el); });
+    });
+
+    var el = document.importNode(svg, true);
+    /* Same box, same slot: the <img> carries the geometry the generator wrote. */
+    el.setAttribute('style', img.getAttribute('style') || '');
+    el.setAttribute('class', ((img.getAttribute('class') || '') + ' ax-pa').trim());
+    el.setAttribute('aria-hidden', 'true');
+    el.setAttribute('focusable', 'false');
+    el.removeAttribute('width'); el.removeAttribute('height');
+    img.parentNode.replaceChild(el, img);
+    /* No visibility gating here. It was tried and it stuck in the paused state, and
+       it was never worth it anyway: this is three groups of four rectangles, and a
+       browser already deprioritises animation on what it is not painting. */
+  }
+
+  function run() {
+    if (REDUCED.matches) return;
+    [].forEach.call(document.querySelectorAll('img.g-vec'), function (img) {
+      if (img.dataset.axPa) return;
+      var r = img.getBoundingClientRect();
+      if (!(r.width > 0) || r.width < r.height * 3) return;   /* a wide, short strip */
+      img.dataset.axPa = '1';
+      var src = img.getAttribute('src');
+      if (!src || !/\.svg$/i.test(src)) return;
+      fetch(src, { credentials: 'omit' })
+        .then(function (r2) { return r2.ok ? r2.text() : null; })
+        .then(function (t) { if (t && t.length < 6000) inline(img, t); })
+        .catch(function () {});
+    });
+  }
+
+  if (document.readyState === 'complete') setTimeout(run, 0);
+  else addEventListener('load', function () { setTimeout(run, 0); });
+})();
+</script>
+
 <style id="ax-hover-css">
 /* ---- HOVER / FOCUS AFFORDANCES ----------------------------------------------
    The layout is absolutely positioned and pixel-locked, and Figma exports a card
@@ -6556,7 +6871,12 @@ document.addEventListener("DOMContentLoaded",function(){
   /* was 8: a real card family (career page "Five reasons", row 2) sits at 6.98vw
      tall and fell just under the floor, so those two tiles never armed. Chips/
      badges sitewide run 1.3-2.5vw tall, so 6 still leaves them well clear. */
-  var TILE_MIN_H = 6,  TILE_MAX_H = 36;
+  /* 5.5, not 6: the manufacturing pain grid's second row is 5.83vw tall against the
+     first row's 7.08vw, because those two cards carry one line of copy where the
+     three above carry two. At a floor of 6 they were not tiles at all, so 01, 02 and
+     03 lit on hover and 04 and 05 sat dead beside them. Checked across every built
+     page: the lower floor admits those two boxes and nothing else. */
+  var TILE_MIN_H = 5.5, TILE_MAX_H = 36;
   var TOL = 3;                               /* px slack: offset* is integer-rounded */
   var LIFT_PX = 4;                           /* .ax-hv-tile lift: 0.2083vw @1920 */
   var STOP = {and:1,the:1,our:1,for:1,with:1,you:1,your:1,all:1,more:1,new:1,see:1,
@@ -7405,321 +7725,6 @@ document.addEventListener("DOMContentLoaded",function(){
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',run);
   else run();
   addEventListener('load',function(){ setTimeout(run,150); });
-})();
-</script>
-
-<style id="ax-gearspin-css">
-/* Industries hero gears. Each industries page decorates its hero with two big
-   radial gear/fan vectors (top-left and bottom-right corner, one pair per page,
-   all ~square exports so they rotate about their own centre without wobble).
-   Selector-gated by asset id: nothing else on the site matches. The top-left
-   gear turns clockwise, the bottom-right counter-clockwise and slightly slower,
-   like a meshed pair. transform is free on these imgs (the generator writes
-   only position + blur), and the hero clip keeps the swing inside the section. */
-img.g-vec[src*="4690-13422"],
-img.g-vec[src*="6131-22640"],
-img.g-vec[src*="6138-25615"],
-img.g-vec[src*="6138-25921"],
-img.g-vec[src*="6138-26092"],
-img.g-vec[src*="6138-26187"]{animation:ax-gear-cw 80s linear infinite}
-img.g-vec[src*="4690-13425"],
-img.g-vec[src*="6138-25456"],
-img.g-vec[src*="6138-25767"],
-img.g-vec[src*="6138-25985"],
-img.g-vec[src*="6138-26117"],
-img.g-vec[src*="6138-26173"]{animation:ax-gear-ccw 104s linear infinite}
-/* Animate the standalone `rotate` property, NOT `transform`: the scroll-reveal
-   fragment leaves `transform:translateY(0)` on revealed hero elements, and a
-   keyframe to transform:rotate(360deg) against that base has MISMATCHED transform
-   lists -- the browser falls back to matrix interpolation, and rotate(360deg) AS A
-   MATRIX is the identity matrix, so the whole animation collapsed to a no-op
-   (proven: 0px screenshot diff at animation-delay:-20s). `rotate` composes with
-   any transform value and cannot collide with it. */
-@keyframes ax-gear-cw{from{rotate:0turn}to{rotate:1turn}}
-@keyframes ax-gear-ccw{from{rotate:0turn}to{rotate:-1turn}}
-@media (prefers-reduced-motion:reduce){
-  img.g-vec[src*="4690-134"],img.g-vec[src*="6131-22640"],img.g-vec[src*="6138-25"],
-  img.g-vec[src*="6138-26"]{animation:none}
-}
-</style>
-
-<style id="ax-caseread-css">
-/* ---- CASE-STUDY CARD CTA ALIGNMENT ----
-   "Read the story" and its chevron sit in their own wrapper inside each card, and
-   those wrappers drift right of the card's title -- 12px on the first card, 26 on
-   the second, 40 on the third, growing with the column. The design lines the CTA up
-   with the headline above it, so each label (and the chevron travelling with it) is
-   nudged back onto its title's left edge.
-
-   The WRAPPER moves, never the label. The label sits 12px inside a 157px box with
-   overflow:hidden, so nudging the label itself just slid it under that box's left
-   edge -- the second card read "ad The Story" and the third "The Story". Moving the
-   wrapper carries the label and its chevron together and clips nothing.
-
-   Position only, and only along X: the vertical rhythm of the card is untouched.
-
-   The row is a TEXT link, not a pill. _hover.html reads its white box as an outlined
-   button and washes it on hover, which is not what the design shows -- the client
-   asked for a slight lift and nothing else. The button skins are stripped and this
-   lift is all that is left.
-
-   The wrapper is also widened when its own content would not fit: it is a fixed
-   157px box with overflow:hidden, so at font metrics even slightly wider than the
-   design's the chevron lands outside it and simply disappears. The box has no
-   visible fill of its own (white on white), so widening it shows nothing new. */
-.ax-csr{transition:transform .2s cubic-bezier(.22,.61,.36,1)}
-.ax-csr:hover{transform:translateY(-0.1042vw)}
-/* the skins _hover.html would otherwise paint on this row */
-.ax-csr.ax-hv-out.ax-hv-selfon,.ax-csr.ax-hv-fill.ax-hv-selfon,
-.ax-csr.ax-hv-out.ax-hv-on,.ax-csr.ax-hv-fill.ax-hv-on{
-  background-image:none!important;background-size:0 100%!important;
-  box-shadow:none!important;border-color:transparent!important}
-@media (prefers-reduced-motion:reduce){.ax-csr{transition:none}.ax-csr:hover{transform:none}}
-</style>
-<script>
-(function(){
-  function txt(e){ return (e.textContent||'').replace(/\s+/g,' ').trim(); }
-  function leftVw(el){
-    var m = (el.getAttribute('style') || '').match(/left:\s*(-?[\d.]+)vw/);
-    return m ? parseFloat(m[1]) : null;
-  }
-  function setLeftVw(el, v){
-    var s = el.getAttribute('style') || '';
-    el.setAttribute('style', s.replace(/left:\s*-?[\d.]+vw/, 'left:' + v.toFixed(4) + 'vw'));
-  }
-
-  function align(root){
-    var vwpx = (document.documentElement.clientWidth || 1920) / 100;
-    var labels = [].slice.call(root.querySelectorAll('.g-t')).filter(function(e){
-      return /^read the story\b/i.test(txt(e)) && e.getBoundingClientRect().width;
-    });
-    if (!labels.length) return false;
-    var moved = 0;
-    labels.forEach(function(lab){
-      var lb = lab.getBoundingClientRect();
-      /* the card's headline: the nearest long line of text above the CTA, in the
-         same column */
-      var title = [].slice.call(root.querySelectorAll('.g-t')).map(function(e){
-        return {el:e, r:e.getBoundingClientRect()};
-      }).filter(function(o){
-        return o.r.width && o.el !== lab && txt(o.el).length > 24 &&
-               o.r.bottom <= lb.top + 4 && o.r.bottom > lb.top - 300 &&
-               Math.abs(o.r.left - lb.left) < 200;
-      }).sort(function(a, b){ return b.r.bottom - a.r.bottom; })[0];
-      if (!title) return;
-      var dx = title.r.left - lb.left;
-      /* the box that owns the CTA row: the label's positioned parent, as long as it
-         is a row and not the whole card */
-      var wrap = lab.parentElement;
-      if (!wrap) return;
-      var wr = wrap.getBoundingClientRect();
-      if (!wr.width || wr.width > 400 || wr.height > 120) return;
-      if (Math.abs(dx) < 1) { pin(); return; }
-      /* The wrapper's left may be vw (as generated) or px -- the CTA auto-fit writes
-         px when it shifts a row along. Read whichever is there and always write back
-         vw, so the fix survives a resize like the rest of the layout. */
-      var cur = leftVw(wrap);
-      if (cur === null){
-        var px = parseFloat(getComputedStyle(wrap).left);
-        if (isNaN(px)) return;
-        cur = px / vwpx;
-        var st = wrap.getAttribute('style') || '';
-        wrap.setAttribute('style', st.replace(/left:\s*-?[\d.]+px/, 'left:' + cur.toFixed(4) + 'vw'));
-      }
-      setLeftVw(wrap, cur + dx / vwpx);
-      pin();
-      moved++;
-
-      /* PIN the chevron to the label's ink at the design's gap. Its source `left`
-         is a fixed x sized for the design's font metrics; render the label any
-         wider (fonts, zoom, Title Case) and other passes shove the chevron around
-         -- it shipped ~100px adrift of the label and, before the box was widened,
-         clipped out of sight entirely. Written every pass, so nothing that runs
-         later can leave it anywhere else. Figma draws an 8px gap. */
-      function pin(){
-        wrap.classList.remove('ax-hv-out', 'ax-hv-fill', 'ax-hv-fill--pale', 'ax-hv-btn');
-        wrap.classList.add('ax-csr');
-        /* The wrapper ships with a white fill -- invisible inside the white card,
-           but once this pass moves it left it overlaps the card's border lines and
-           reads as a white slab. It paints nothing the design needs. */
-        wrap.style.backgroundColor = 'transparent';
-        var chev = [].slice.call(wrap.children).filter(function(e){
-          return /g-vec/.test(e.className || '') && e.getBoundingClientRect().width;
-        })[0];
-        if (!chev) return;
-        var rng = document.createRange();
-        rng.selectNodeContents(lab);
-        var ink = rng.getBoundingClientRect();
-        var nwr = wrap.getBoundingClientRect();
-        if (!ink.width || !nwr.width) return;
-        var gap = 8 * vwpx / (1920 / 100);            /* 8px at the 1920 design width */
-        var want = (ink.right + gap) - nwr.left;      /* chevron left, wrapper-local px */
-        var cr = chev.getBoundingClientRect();
-        if (Math.abs((cr.left - nwr.left) - want) > 1){
-          var st2 = chev.getAttribute('style') || '';
-          var vwL = want / vwpx;
-          chev.setAttribute('style', /left:\s*-?[\d.]+(vw|px)/.test(st2)
-            ? st2.replace(/left:\s*-?[\d.]+(vw|px)/, 'left:' + vwL.toFixed(4) + 'vw')
-            : st2 + ';left:' + vwL.toFixed(4) + 'vw');
-          cr = chev.getBoundingClientRect();
-        }
-        /* and the clip box must hold it */
-        var over = (cr.right + 6) - nwr.right;
-        if (over > 0){
-          var wpx = parseFloat(getComputedStyle(wrap).width);
-          if (!isNaN(wpx)){
-            var st3 = wrap.getAttribute('style') || '';
-            var vwW = (wpx + over) / vwpx;
-            wrap.setAttribute('style', /width:\s*-?[\d.]+(vw|px)/.test(st3)
-              ? st3.replace(/width:\s*-?[\d.]+(vw|px)/, 'width:' + vwW.toFixed(4) + 'vw')
-              : st3 + ';width:' + vwW.toFixed(4) + 'vw');
-          }
-        }
-      }
-    });
-    return moved > 0;
-  }
-
-  /* Run repeatedly rather than once. The CTA auto-fit shifts a row's later pills
-     along AFTER this file's first pass, which left a residual 5px on the second card
-     and 10px on the third; align() only writes when a label is more than a pixel out,
-     so re-running simply converges and costs nothing once it is right. */
-  function init(){
-    var main = document.querySelector('main.ax-page');
-    if (main) align(main);
-  }
-  [700, 1300, 1900, 2600].forEach(function(t){ setTimeout(init, t); });
-  addEventListener('load', function(){ setTimeout(init, 800); });
-  addEventListener('resize', function(){ setTimeout(init, 500); });
-})();
-</script>
-
-<style id="ax-pixarrow-css">
-/* ---- THE PIXEL ARROW CUE ----
-   Six pages carry a column of three pixel-art arrows pointing down, sitting between
-   the hero heading and the paragraph. They are a "keep going" cue and they were
-   completely still.
-
-   The three arrows are baked into ONE svg -- twelve flat <path> elements in three
-   identical clusters -- and page CSS cannot reach inside an <img>. The file is
-   inlined and its clusters wrapped in groups so each arrow can move on its own.
-
-   The cascade runs top to bottom, which is the direction the cue is pointing. Each
-   arrow is mostly faint and brightens as the pulse passes it, so the eye is led
-   down the column rather than three things blinking at once. */
-.ax-pa-g{opacity:.34;animation:ax-pa-pulse 1.9s cubic-bezier(.4,0,.6,1) infinite}
-@keyframes ax-pa-pulse{
-  0%,70%,100%{opacity:.34;transform:translateY(0)}
-  28%{opacity:1;transform:translateY(6%)}
-}
-@media (prefers-reduced-motion:reduce){
-  .ax-pa-g{opacity:.6;animation:none}
-}
-</style>
-<script>
-/* ---- ANIMATE THE PIXEL ARROW CUE ----
-   The svg is swapped for an inline copy of itself, at the same box and in the same
-   stacking slot, so the placement _gen.py computed still holds. Nothing is edited
-   into the asset on disk: _vecfetch.py --force would overwrite that on the next
-   pull, and the same three arrows appear on any page drawn from the same Figma
-   component.
-
-   Which images: the cue is a wide, short strip, so only images at least three times
-   wider than they are tall are even fetched. The real test is the shape of the file
-   -- twelve paths in three identical clusters down a column -- so a new page gets
-   this without being named here. */
-(function () {
-  var REDUCED = matchMedia('(prefers-reduced-motion:reduce)');
-
-  /* Cluster the paths by their first Y: the pixels within one arrow sit a few units
-     apart, the arrows themselves much further.
-
-     The threshold comes from the gaps themselves rather than from the box. A share
-     of the box height looked reasonable and was wrong -- the same three arrows are
-     drawn in a 783x64 box on five pages and a 518x144 box on the sixth, and a sixth
-     of 144 is wider than the gap between its arrows, so all twelve pixels came back
-     as one cluster and that page kept a still cue. Twice the median gap separates
-     them in both. */
-  function cluster(paths) {
-    var rows = paths.map(function (p) {
-      var n = (p.getAttribute('d') || '').match(/-?[\d.]+/g) || [];
-      return { el: p, y: parseFloat(n[1]) };
-    }).filter(function (r) { return r.y === r.y; });
-    if (rows.length !== paths.length) return null;
-    rows.sort(function (a, b) { return a.y - b.y; });
-    var gaps = [];
-    for (var j = 1; j < rows.length; j++) gaps.push(rows[j].y - rows[j - 1].y);
-    var med = gaps.slice().sort(function (a, b) { return a - b; })[gaps.length >> 1];
-    var cut = Math.max(med * 2, 0.5);
-    var out = [[rows[0]]];
-    for (var i = 1; i < rows.length; i++) {
-      if (rows[i].y - rows[i - 1].y > cut) out.push([]);
-      out[out.length - 1].push(rows[i]);
-    }
-    return out;
-  }
-
-  function inline(img, text) {
-    var doc = new DOMParser().parseFromString(text, 'image/svg+xml');
-    var svg = doc.documentElement;
-    if (!svg || svg.nodeName.toLowerCase() !== 'svg') return;
-    var vb = (svg.getAttribute('viewBox') || '').split(/\s+/);
-    var boxH = parseFloat(vb[3]);
-    if (!(boxH > 0)) return;
-
-    var paths = [].slice.call(svg.querySelectorAll('path'));
-    if (paths.length !== 12) return;
-    var groups = cluster(paths);
-    /* three arrows of four pixels each, or it is not this cue */
-    if (!groups || groups.length !== 3 || !groups.every(function (g) { return g.length === 4; })) return;
-
-    groups.forEach(function (g, gi) {
-      var wrap = doc.createElementNS('http://www.w3.org/2000/svg', 'g');
-      wrap.setAttribute('class', 'ax-pa-g');
-      /* The stagger is set here rather than by :nth-of-type. The arrows are not the
-         only <g> in these files, so counting siblings by type picked the wrong ones
-         and all three ran together. */
-      wrap.style.animationDelay = (gi * 0.19).toFixed(2) + 's';
-      /* each arrow turns about its own centre, not the box's */
-      var ys = g.map(function (r) { return r.y; });
-      wrap.style.transformOrigin = '0 ' + ((Math.min.apply(null, ys) +
-        Math.max.apply(null, ys)) / 2).toFixed(2) + 'px';
-      wrap.style.transformBox = 'view-box';
-      g[0].el.parentNode.insertBefore(wrap, g[0].el);
-      g.forEach(function (r) { wrap.appendChild(r.el); });
-    });
-
-    var el = document.importNode(svg, true);
-    /* Same box, same slot: the <img> carries the geometry the generator wrote. */
-    el.setAttribute('style', img.getAttribute('style') || '');
-    el.setAttribute('class', ((img.getAttribute('class') || '') + ' ax-pa').trim());
-    el.setAttribute('aria-hidden', 'true');
-    el.setAttribute('focusable', 'false');
-    el.removeAttribute('width'); el.removeAttribute('height');
-    img.parentNode.replaceChild(el, img);
-    /* No visibility gating here. It was tried and it stuck in the paused state, and
-       it was never worth it anyway: this is three groups of four rectangles, and a
-       browser already deprioritises animation on what it is not painting. */
-  }
-
-  function run() {
-    if (REDUCED.matches) return;
-    [].forEach.call(document.querySelectorAll('img.g-vec'), function (img) {
-      if (img.dataset.axPa) return;
-      var r = img.getBoundingClientRect();
-      if (!(r.width > 0) || r.width < r.height * 3) return;   /* a wide, short strip */
-      img.dataset.axPa = '1';
-      var src = img.getAttribute('src');
-      if (!src || !/\.svg$/i.test(src)) return;
-      fetch(src, { credentials: 'omit' })
-        .then(function (r2) { return r2.ok ? r2.text() : null; })
-        .then(function (t) { if (t && t.length < 6000) inline(img, t); })
-        .catch(function () {});
-    });
-  }
-
-  if (document.readyState === 'complete') setTimeout(run, 0);
-  else addEventListener('load', function () { setTimeout(run, 0); });
 })();
 </script>
 

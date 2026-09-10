@@ -6366,6 +6366,292 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 
+<style id="ax-awstabs-css">
+/* AWS services "Tab Switch" (Figma set 4830:16255). Only the pinned variant was on
+   the canvas, so the other five tabs were dead: every variant is the same strip +
+   one description paragraph, so the switch is an active-pill restyle plus a
+   description swap -- no geometry moves. */
+.ax-awt-pill{cursor:pointer;transition:background-color .25s ease}
+.ax-awt-pill>.g-t{pointer-events:none;transition:color .25s ease}
+/* shared tab motion language: copy slips out toward the old tab, slides in from
+   the direction of travel; --axd = +1/-1 from the index delta */
+.ax-awt-desc{transition:opacity .16s ease,transform .16s ease}
+.ax-awt-desc.ax-awt-fade{opacity:0;transform:translateX(calc(var(--axd,1)*-0.5208vw))}
+.ax-awt-in{animation:ax-awt-in .34s cubic-bezier(.22,.61,.36,1) both}
+@keyframes ax-awt-in{
+  from{opacity:0;transform:translateX(calc(var(--axd,1)*0.9375vw))}
+  to{opacity:1;transform:none}
+}
+.ax-awt-pill:focus-visible{outline:2px solid rgb(35,39,46);outline-offset:-3px}
+.ax-awt-pill:focus:not(:focus-visible){outline:none}
+@media (prefers-reduced-motion:reduce){
+  .ax-awt-pill,.ax-awt-pill>.g-t,.ax-awt-desc{transition:none}
+  .ax-awt-in{animation:none}
+}
+</style>
+<script>
+/* ---- AWS SERVICES TAB SWITCH ----
+   Tabs and description are matched by TEXT, not position, so the same code arms
+   the desktop layout and the .ax-mob copy (which may be injected after this
+   script -- init also re-runs on DOMContentLoaded). Active/idle colours are
+   captured from the generated markup itself (tab 1 ships active, the rest idle),
+   so a Figma re-pull that changes the palette keeps working. */
+(function(){
+  var LABELS = ['Landing Zone & Foundation', 'Cloud Migration', 'DevOps Platform',
+                'SAP on AWS', 'AI & ML on AWS', 'Multi-cloud CMS'];
+  var DESCS = [
+    'Secure AWS foundation  Control Tower, Organizations, IAM baseline. Landing zone in 2 weeks, policy-as-code from day one.',
+    'Lift & shift, re-platform, re-architect  the 6Rs, well-planned. Migration factory model with parallel runs for zero-downtime cutovers.',
+    'CI/CD, Infrastructure-as-Code, platform engineering, DORA-aligned delivery. Containers (EKS, ECS), serverless (Lambda), event-driven architectures.',
+    'AWS-certified SAP workload optimisation. HANA on EC2 with high availability, disaster recovery, and FinOps-aligned commercials.',
+    'Bedrock, SageMaker, Amazon Q. Agentic services. Vector databases. Production-grade RAG and AI workloads.',
+    '24x7 managed operations on AWS  unified with GCP and SAP BTP via CloudLedger FinOps.'
+  ];
+  var uid = 0;
+
+  function txt(e){ return (e.textContent || '').replace(/\s+/g, ' ').trim(); }
+
+  function setup(scope){
+    /* collect the six pills of ONE strip. A pill is the label's parent clip and
+       must contain NOTHING but that label: the mobile layout stacks all six
+       services as full cards whose titles are direct children of the whole
+       section clip, and without this guard the section itself got armed as one
+       giant pill (six labels, same parent) -- a tap then painted the entire
+       section orange. */
+    var pills = [];
+    var all = scope.querySelectorAll('.g-b.g-clip > .g-t');
+    for (var i = 0; i < LABELS.length; i++){
+      var hit = null;
+      for (var j = 0; j < all.length; j++)
+        if (txt(all[j]) === LABELS[i] && txt(all[j].parentElement) === LABELS[i] &&
+            !all[j].parentElement.hasAttribute('data-ax-awt')){
+          hit = all[j].parentElement; break;
+        }
+      if (!hit) return;                     /* this scope has no (unarmed) strip */
+      pills.push(hit);
+    }
+    /* all six must be DISTINCT siblings of one strip */
+    var strip0 = pills[0].parentElement;
+    for (var i = 0; i < 6; i++)
+      for (var j = i + 1; j < 6; j++)
+        if (pills[i] === pills[j] || pills[i].parentElement !== strip0) return;
+    /* the description text node: starts with the pinned variant's copy */
+    var desc = null;
+    var ts = scope.querySelectorAll('.g-t');
+    for (var k = 0; k < ts.length; k++)
+      if (txt(ts[k]).indexOf('Secure AWS foundation') === 0 && !ts[k].hasAttribute('data-ax-awt') &&
+          !ts[k].closest('.ax-mob')){    /* the mobile card body starts with the same copy */
+        desc = ts[k]; break;
+      }
+    if (!desc) return;
+
+    var n = ++uid;
+    desc.setAttribute('data-ax-awt', '1');
+    desc.classList.add('ax-awt-desc');
+    desc.id = 'ax-awt-p' + n;
+    desc.setAttribute('role', 'tabpanel');
+    desc.setAttribute('aria-live', 'polite');
+
+    /* palette captured from the generated markup: pill 0 ships active */
+    var activeBg = pills[0].style.backgroundColor || 'rgb(223,63,23)';
+    var activeCol = pills[0].querySelector('.g-t').style.color || 'rgb(255,255,255)';
+    var idleCol = pills[1].querySelector('.g-t').style.color || 'rgb(82,96,119)';
+
+    var strip = pills[0].parentElement;
+    strip.setAttribute('role', 'tablist');
+    var cur = 0, timer = null;
+
+    for (var i = 0; i < 6; i++) (function(i){
+      var p = pills[i], l = p.querySelector('.g-t');
+      p.setAttribute('data-ax-awt', '1');
+      p.classList.add('ax-awt-pill');
+      p.id = 'ax-awt-t' + n + i;
+      p.setAttribute('role', 'tab');
+      p.setAttribute('aria-controls', 'ax-awt-p' + n);
+      l.id = 'ax-awt-l' + n + i;
+      p.setAttribute('aria-labelledby', 'ax-awt-l' + n + i);
+
+      p.addEventListener('click', function(){ select(i); });
+      p.addEventListener('keydown', function(e){
+        var k = e.key, m = null;
+        if (k === 'Enter' || k === ' ' || k === 'Spacebar') m = i;
+        else if (k === 'ArrowRight' || k === 'ArrowDown') m = (cur + 1) % 6;
+        else if (k === 'ArrowLeft' || k === 'ArrowUp') m = (cur + 5) % 6;
+        else if (k === 'Home') m = 0;
+        else if (k === 'End') m = 5;
+        if (m !== null){ e.preventDefault(); select(m, true); }
+      });
+    })(i);
+
+    function select(k, focus){
+      var dir = k > cur ? 1 : -1;
+      cur = k;
+      for (var i = 0; i < 6; i++){
+        var on = i === k;
+        pills[i].style.backgroundColor = on ? activeBg : 'transparent';
+        pills[i].querySelector('.g-t').style.color = on ? activeCol : idleCol;
+        pills[i].setAttribute('aria-selected', on ? 'true' : 'false');
+        pills[i].setAttribute('tabindex', on ? '0' : '-1');
+      }
+      /* copy slips out toward the old tab, swaps, slides in from the travel side */
+      if (timer) clearTimeout(timer);
+      desc.classList.remove('ax-awt-in');
+      desc.style.setProperty('--axd', dir);
+      desc.classList.add('ax-awt-fade');
+      timer = setTimeout(function(){
+        desc.textContent = DESCS[k];
+        desc.classList.remove('ax-awt-fade');
+        void desc.offsetWidth;
+        desc.classList.add('ax-awt-in');
+      }, 170);
+      if (focus) pills[k].focus();
+    }
+
+    /* arm the rest state without running the fade */
+    for (var i = 0; i < 6; i++){
+      var on = i === 0;
+      pills[i].setAttribute('aria-selected', on ? 'true' : 'false');
+      pills[i].setAttribute('tabindex', on ? '0' : '-1');
+    }
+  }
+
+  /* Desktop only ON PURPOSE: the mobile layout is not tabs -- it stacks all six
+     services as always-visible cards, so there is nothing to switch. */
+  function init(){ setup(document); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
+
+<style id="ax-pixarrow-css">
+/* ---- THE PIXEL ARROW CUE ----
+   Six pages carry a column of three pixel-art arrows pointing down, sitting between
+   the hero heading and the paragraph. They are a "keep going" cue and they were
+   completely still.
+
+   The three arrows are baked into ONE svg -- twelve flat <path> elements in three
+   identical clusters -- and page CSS cannot reach inside an <img>. The file is
+   inlined and its clusters wrapped in groups so each arrow can move on its own.
+
+   The cascade runs top to bottom, which is the direction the cue is pointing. Each
+   arrow is mostly faint and brightens as the pulse passes it, so the eye is led
+   down the column rather than three things blinking at once. */
+.ax-pa-g{opacity:.34;animation:ax-pa-pulse 1.9s cubic-bezier(.4,0,.6,1) infinite}
+@keyframes ax-pa-pulse{
+  0%,70%,100%{opacity:.34;transform:translateY(0)}
+  28%{opacity:1;transform:translateY(6%)}
+}
+@media (prefers-reduced-motion:reduce){
+  .ax-pa-g{opacity:.6;animation:none}
+}
+</style>
+<script>
+/* ---- ANIMATE THE PIXEL ARROW CUE ----
+   The svg is swapped for an inline copy of itself, at the same box and in the same
+   stacking slot, so the placement _gen.py computed still holds. Nothing is edited
+   into the asset on disk: _vecfetch.py --force would overwrite that on the next
+   pull, and the same three arrows appear on any page drawn from the same Figma
+   component.
+
+   Which images: the cue is a wide, short strip, so only images at least three times
+   wider than they are tall are even fetched. The real test is the shape of the file
+   -- twelve paths in three identical clusters down a column -- so a new page gets
+   this without being named here. */
+(function () {
+  var REDUCED = matchMedia('(prefers-reduced-motion:reduce)');
+
+  /* Cluster the paths by their first Y: the pixels within one arrow sit a few units
+     apart, the arrows themselves much further.
+
+     The threshold comes from the gaps themselves rather than from the box. A share
+     of the box height looked reasonable and was wrong -- the same three arrows are
+     drawn in a 783x64 box on five pages and a 518x144 box on the sixth, and a sixth
+     of 144 is wider than the gap between its arrows, so all twelve pixels came back
+     as one cluster and that page kept a still cue. Twice the median gap separates
+     them in both. */
+  function cluster(paths) {
+    var rows = paths.map(function (p) {
+      var n = (p.getAttribute('d') || '').match(/-?[\d.]+/g) || [];
+      return { el: p, y: parseFloat(n[1]) };
+    }).filter(function (r) { return r.y === r.y; });
+    if (rows.length !== paths.length) return null;
+    rows.sort(function (a, b) { return a.y - b.y; });
+    var gaps = [];
+    for (var j = 1; j < rows.length; j++) gaps.push(rows[j].y - rows[j - 1].y);
+    var med = gaps.slice().sort(function (a, b) { return a - b; })[gaps.length >> 1];
+    var cut = Math.max(med * 2, 0.5);
+    var out = [[rows[0]]];
+    for (var i = 1; i < rows.length; i++) {
+      if (rows[i].y - rows[i - 1].y > cut) out.push([]);
+      out[out.length - 1].push(rows[i]);
+    }
+    return out;
+  }
+
+  function inline(img, text) {
+    var doc = new DOMParser().parseFromString(text, 'image/svg+xml');
+    var svg = doc.documentElement;
+    if (!svg || svg.nodeName.toLowerCase() !== 'svg') return;
+    var vb = (svg.getAttribute('viewBox') || '').split(/\s+/);
+    var boxH = parseFloat(vb[3]);
+    if (!(boxH > 0)) return;
+
+    var paths = [].slice.call(svg.querySelectorAll('path'));
+    if (paths.length !== 12) return;
+    var groups = cluster(paths);
+    /* three arrows of four pixels each, or it is not this cue */
+    if (!groups || groups.length !== 3 || !groups.every(function (g) { return g.length === 4; })) return;
+
+    groups.forEach(function (g, gi) {
+      var wrap = doc.createElementNS('http://www.w3.org/2000/svg', 'g');
+      wrap.setAttribute('class', 'ax-pa-g');
+      /* The stagger is set here rather than by :nth-of-type. The arrows are not the
+         only <g> in these files, so counting siblings by type picked the wrong ones
+         and all three ran together. */
+      wrap.style.animationDelay = (gi * 0.19).toFixed(2) + 's';
+      /* each arrow turns about its own centre, not the box's */
+      var ys = g.map(function (r) { return r.y; });
+      wrap.style.transformOrigin = '0 ' + ((Math.min.apply(null, ys) +
+        Math.max.apply(null, ys)) / 2).toFixed(2) + 'px';
+      wrap.style.transformBox = 'view-box';
+      g[0].el.parentNode.insertBefore(wrap, g[0].el);
+      g.forEach(function (r) { wrap.appendChild(r.el); });
+    });
+
+    var el = document.importNode(svg, true);
+    /* Same box, same slot: the <img> carries the geometry the generator wrote. */
+    el.setAttribute('style', img.getAttribute('style') || '');
+    el.setAttribute('class', ((img.getAttribute('class') || '') + ' ax-pa').trim());
+    el.setAttribute('aria-hidden', 'true');
+    el.setAttribute('focusable', 'false');
+    el.removeAttribute('width'); el.removeAttribute('height');
+    img.parentNode.replaceChild(el, img);
+    /* No visibility gating here. It was tried and it stuck in the paused state, and
+       it was never worth it anyway: this is three groups of four rectangles, and a
+       browser already deprioritises animation on what it is not painting. */
+  }
+
+  function run() {
+    if (REDUCED.matches) return;
+    [].forEach.call(document.querySelectorAll('img.g-vec'), function (img) {
+      if (img.dataset.axPa) return;
+      var r = img.getBoundingClientRect();
+      if (!(r.width > 0) || r.width < r.height * 3) return;   /* a wide, short strip */
+      img.dataset.axPa = '1';
+      var src = img.getAttribute('src');
+      if (!src || !/\.svg$/i.test(src)) return;
+      fetch(src, { credentials: 'omit' })
+        .then(function (r2) { return r2.ok ? r2.text() : null; })
+        .then(function (t) { if (t && t.length < 6000) inline(img, t); })
+        .catch(function () {});
+    });
+  }
+
+  if (document.readyState === 'complete') setTimeout(run, 0);
+  else addEventListener('load', function () { setTimeout(run, 0); });
+})();
+</script>
+
 <style id="ax-hover-css">
 /* ---- HOVER / FOCUS AFFORDANCES ----------------------------------------------
    The layout is absolutely positioned and pixel-locked, and Figma exports a card
@@ -6539,7 +6825,12 @@ document.addEventListener("DOMContentLoaded",function(){
   /* was 8: a real card family (career page "Five reasons", row 2) sits at 6.98vw
      tall and fell just under the floor, so those two tiles never armed. Chips/
      badges sitewide run 1.3-2.5vw tall, so 6 still leaves them well clear. */
-  var TILE_MIN_H = 6,  TILE_MAX_H = 36;
+  /* 5.5, not 6: the manufacturing pain grid's second row is 5.83vw tall against the
+     first row's 7.08vw, because those two cards carry one line of copy where the
+     three above carry two. At a floor of 6 they were not tiles at all, so 01, 02 and
+     03 lit on hover and 04 and 05 sat dead beside them. Checked across every built
+     page: the lower floor admits those two boxes and nothing else. */
+  var TILE_MIN_H = 5.5, TILE_MAX_H = 36;
   var TOL = 3;                               /* px slack: offset* is integer-rounded */
   var LIFT_PX = 4;                           /* .ax-hv-tile lift: 0.2083vw @1920 */
   var STOP = {and:1,the:1,our:1,for:1,with:1,you:1,your:1,all:1,more:1,new:1,see:1,
@@ -7388,292 +7679,6 @@ document.addEventListener("DOMContentLoaded",function(){
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',run);
   else run();
   addEventListener('load',function(){ setTimeout(run,150); });
-})();
-</script>
-
-<style id="ax-awstabs-css">
-/* AWS services "Tab Switch" (Figma set 4830:16255). Only the pinned variant was on
-   the canvas, so the other five tabs were dead: every variant is the same strip +
-   one description paragraph, so the switch is an active-pill restyle plus a
-   description swap -- no geometry moves. */
-.ax-awt-pill{cursor:pointer;transition:background-color .25s ease}
-.ax-awt-pill>.g-t{pointer-events:none;transition:color .25s ease}
-/* shared tab motion language: copy slips out toward the old tab, slides in from
-   the direction of travel; --axd = +1/-1 from the index delta */
-.ax-awt-desc{transition:opacity .16s ease,transform .16s ease}
-.ax-awt-desc.ax-awt-fade{opacity:0;transform:translateX(calc(var(--axd,1)*-0.5208vw))}
-.ax-awt-in{animation:ax-awt-in .34s cubic-bezier(.22,.61,.36,1) both}
-@keyframes ax-awt-in{
-  from{opacity:0;transform:translateX(calc(var(--axd,1)*0.9375vw))}
-  to{opacity:1;transform:none}
-}
-.ax-awt-pill:focus-visible{outline:2px solid rgb(35,39,46);outline-offset:-3px}
-.ax-awt-pill:focus:not(:focus-visible){outline:none}
-@media (prefers-reduced-motion:reduce){
-  .ax-awt-pill,.ax-awt-pill>.g-t,.ax-awt-desc{transition:none}
-  .ax-awt-in{animation:none}
-}
-</style>
-<script>
-/* ---- AWS SERVICES TAB SWITCH ----
-   Tabs and description are matched by TEXT, not position, so the same code arms
-   the desktop layout and the .ax-mob copy (which may be injected after this
-   script -- init also re-runs on DOMContentLoaded). Active/idle colours are
-   captured from the generated markup itself (tab 1 ships active, the rest idle),
-   so a Figma re-pull that changes the palette keeps working. */
-(function(){
-  var LABELS = ['Landing Zone & Foundation', 'Cloud Migration', 'DevOps Platform',
-                'SAP on AWS', 'AI & ML on AWS', 'Multi-cloud CMS'];
-  var DESCS = [
-    'Secure AWS foundation  Control Tower, Organizations, IAM baseline. Landing zone in 2 weeks, policy-as-code from day one.',
-    'Lift & shift, re-platform, re-architect  the 6Rs, well-planned. Migration factory model with parallel runs for zero-downtime cutovers.',
-    'CI/CD, Infrastructure-as-Code, platform engineering, DORA-aligned delivery. Containers (EKS, ECS), serverless (Lambda), event-driven architectures.',
-    'AWS-certified SAP workload optimisation. HANA on EC2 with high availability, disaster recovery, and FinOps-aligned commercials.',
-    'Bedrock, SageMaker, Amazon Q. Agentic services. Vector databases. Production-grade RAG and AI workloads.',
-    '24x7 managed operations on AWS  unified with GCP and SAP BTP via CloudLedger FinOps.'
-  ];
-  var uid = 0;
-
-  function txt(e){ return (e.textContent || '').replace(/\s+/g, ' ').trim(); }
-
-  function setup(scope){
-    /* collect the six pills of ONE strip. A pill is the label's parent clip and
-       must contain NOTHING but that label: the mobile layout stacks all six
-       services as full cards whose titles are direct children of the whole
-       section clip, and without this guard the section itself got armed as one
-       giant pill (six labels, same parent) -- a tap then painted the entire
-       section orange. */
-    var pills = [];
-    var all = scope.querySelectorAll('.g-b.g-clip > .g-t');
-    for (var i = 0; i < LABELS.length; i++){
-      var hit = null;
-      for (var j = 0; j < all.length; j++)
-        if (txt(all[j]) === LABELS[i] && txt(all[j].parentElement) === LABELS[i] &&
-            !all[j].parentElement.hasAttribute('data-ax-awt')){
-          hit = all[j].parentElement; break;
-        }
-      if (!hit) return;                     /* this scope has no (unarmed) strip */
-      pills.push(hit);
-    }
-    /* all six must be DISTINCT siblings of one strip */
-    var strip0 = pills[0].parentElement;
-    for (var i = 0; i < 6; i++)
-      for (var j = i + 1; j < 6; j++)
-        if (pills[i] === pills[j] || pills[i].parentElement !== strip0) return;
-    /* the description text node: starts with the pinned variant's copy */
-    var desc = null;
-    var ts = scope.querySelectorAll('.g-t');
-    for (var k = 0; k < ts.length; k++)
-      if (txt(ts[k]).indexOf('Secure AWS foundation') === 0 && !ts[k].hasAttribute('data-ax-awt') &&
-          !ts[k].closest('.ax-mob')){    /* the mobile card body starts with the same copy */
-        desc = ts[k]; break;
-      }
-    if (!desc) return;
-
-    var n = ++uid;
-    desc.setAttribute('data-ax-awt', '1');
-    desc.classList.add('ax-awt-desc');
-    desc.id = 'ax-awt-p' + n;
-    desc.setAttribute('role', 'tabpanel');
-    desc.setAttribute('aria-live', 'polite');
-
-    /* palette captured from the generated markup: pill 0 ships active */
-    var activeBg = pills[0].style.backgroundColor || 'rgb(223,63,23)';
-    var activeCol = pills[0].querySelector('.g-t').style.color || 'rgb(255,255,255)';
-    var idleCol = pills[1].querySelector('.g-t').style.color || 'rgb(82,96,119)';
-
-    var strip = pills[0].parentElement;
-    strip.setAttribute('role', 'tablist');
-    var cur = 0, timer = null;
-
-    for (var i = 0; i < 6; i++) (function(i){
-      var p = pills[i], l = p.querySelector('.g-t');
-      p.setAttribute('data-ax-awt', '1');
-      p.classList.add('ax-awt-pill');
-      p.id = 'ax-awt-t' + n + i;
-      p.setAttribute('role', 'tab');
-      p.setAttribute('aria-controls', 'ax-awt-p' + n);
-      l.id = 'ax-awt-l' + n + i;
-      p.setAttribute('aria-labelledby', 'ax-awt-l' + n + i);
-
-      p.addEventListener('click', function(){ select(i); });
-      p.addEventListener('keydown', function(e){
-        var k = e.key, m = null;
-        if (k === 'Enter' || k === ' ' || k === 'Spacebar') m = i;
-        else if (k === 'ArrowRight' || k === 'ArrowDown') m = (cur + 1) % 6;
-        else if (k === 'ArrowLeft' || k === 'ArrowUp') m = (cur + 5) % 6;
-        else if (k === 'Home') m = 0;
-        else if (k === 'End') m = 5;
-        if (m !== null){ e.preventDefault(); select(m, true); }
-      });
-    })(i);
-
-    function select(k, focus){
-      var dir = k > cur ? 1 : -1;
-      cur = k;
-      for (var i = 0; i < 6; i++){
-        var on = i === k;
-        pills[i].style.backgroundColor = on ? activeBg : 'transparent';
-        pills[i].querySelector('.g-t').style.color = on ? activeCol : idleCol;
-        pills[i].setAttribute('aria-selected', on ? 'true' : 'false');
-        pills[i].setAttribute('tabindex', on ? '0' : '-1');
-      }
-      /* copy slips out toward the old tab, swaps, slides in from the travel side */
-      if (timer) clearTimeout(timer);
-      desc.classList.remove('ax-awt-in');
-      desc.style.setProperty('--axd', dir);
-      desc.classList.add('ax-awt-fade');
-      timer = setTimeout(function(){
-        desc.textContent = DESCS[k];
-        desc.classList.remove('ax-awt-fade');
-        void desc.offsetWidth;
-        desc.classList.add('ax-awt-in');
-      }, 170);
-      if (focus) pills[k].focus();
-    }
-
-    /* arm the rest state without running the fade */
-    for (var i = 0; i < 6; i++){
-      var on = i === 0;
-      pills[i].setAttribute('aria-selected', on ? 'true' : 'false');
-      pills[i].setAttribute('tabindex', on ? '0' : '-1');
-    }
-  }
-
-  /* Desktop only ON PURPOSE: the mobile layout is not tabs -- it stacks all six
-     services as always-visible cards, so there is nothing to switch. */
-  function init(){ setup(document); }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-  else init();
-})();
-</script>
-
-<style id="ax-pixarrow-css">
-/* ---- THE PIXEL ARROW CUE ----
-   Six pages carry a column of three pixel-art arrows pointing down, sitting between
-   the hero heading and the paragraph. They are a "keep going" cue and they were
-   completely still.
-
-   The three arrows are baked into ONE svg -- twelve flat <path> elements in three
-   identical clusters -- and page CSS cannot reach inside an <img>. The file is
-   inlined and its clusters wrapped in groups so each arrow can move on its own.
-
-   The cascade runs top to bottom, which is the direction the cue is pointing. Each
-   arrow is mostly faint and brightens as the pulse passes it, so the eye is led
-   down the column rather than three things blinking at once. */
-.ax-pa-g{opacity:.34;animation:ax-pa-pulse 1.9s cubic-bezier(.4,0,.6,1) infinite}
-@keyframes ax-pa-pulse{
-  0%,70%,100%{opacity:.34;transform:translateY(0)}
-  28%{opacity:1;transform:translateY(6%)}
-}
-@media (prefers-reduced-motion:reduce){
-  .ax-pa-g{opacity:.6;animation:none}
-}
-</style>
-<script>
-/* ---- ANIMATE THE PIXEL ARROW CUE ----
-   The svg is swapped for an inline copy of itself, at the same box and in the same
-   stacking slot, so the placement _gen.py computed still holds. Nothing is edited
-   into the asset on disk: _vecfetch.py --force would overwrite that on the next
-   pull, and the same three arrows appear on any page drawn from the same Figma
-   component.
-
-   Which images: the cue is a wide, short strip, so only images at least three times
-   wider than they are tall are even fetched. The real test is the shape of the file
-   -- twelve paths in three identical clusters down a column -- so a new page gets
-   this without being named here. */
-(function () {
-  var REDUCED = matchMedia('(prefers-reduced-motion:reduce)');
-
-  /* Cluster the paths by their first Y: the pixels within one arrow sit a few units
-     apart, the arrows themselves much further.
-
-     The threshold comes from the gaps themselves rather than from the box. A share
-     of the box height looked reasonable and was wrong -- the same three arrows are
-     drawn in a 783x64 box on five pages and a 518x144 box on the sixth, and a sixth
-     of 144 is wider than the gap between its arrows, so all twelve pixels came back
-     as one cluster and that page kept a still cue. Twice the median gap separates
-     them in both. */
-  function cluster(paths) {
-    var rows = paths.map(function (p) {
-      var n = (p.getAttribute('d') || '').match(/-?[\d.]+/g) || [];
-      return { el: p, y: parseFloat(n[1]) };
-    }).filter(function (r) { return r.y === r.y; });
-    if (rows.length !== paths.length) return null;
-    rows.sort(function (a, b) { return a.y - b.y; });
-    var gaps = [];
-    for (var j = 1; j < rows.length; j++) gaps.push(rows[j].y - rows[j - 1].y);
-    var med = gaps.slice().sort(function (a, b) { return a - b; })[gaps.length >> 1];
-    var cut = Math.max(med * 2, 0.5);
-    var out = [[rows[0]]];
-    for (var i = 1; i < rows.length; i++) {
-      if (rows[i].y - rows[i - 1].y > cut) out.push([]);
-      out[out.length - 1].push(rows[i]);
-    }
-    return out;
-  }
-
-  function inline(img, text) {
-    var doc = new DOMParser().parseFromString(text, 'image/svg+xml');
-    var svg = doc.documentElement;
-    if (!svg || svg.nodeName.toLowerCase() !== 'svg') return;
-    var vb = (svg.getAttribute('viewBox') || '').split(/\s+/);
-    var boxH = parseFloat(vb[3]);
-    if (!(boxH > 0)) return;
-
-    var paths = [].slice.call(svg.querySelectorAll('path'));
-    if (paths.length !== 12) return;
-    var groups = cluster(paths);
-    /* three arrows of four pixels each, or it is not this cue */
-    if (!groups || groups.length !== 3 || !groups.every(function (g) { return g.length === 4; })) return;
-
-    groups.forEach(function (g, gi) {
-      var wrap = doc.createElementNS('http://www.w3.org/2000/svg', 'g');
-      wrap.setAttribute('class', 'ax-pa-g');
-      /* The stagger is set here rather than by :nth-of-type. The arrows are not the
-         only <g> in these files, so counting siblings by type picked the wrong ones
-         and all three ran together. */
-      wrap.style.animationDelay = (gi * 0.19).toFixed(2) + 's';
-      /* each arrow turns about its own centre, not the box's */
-      var ys = g.map(function (r) { return r.y; });
-      wrap.style.transformOrigin = '0 ' + ((Math.min.apply(null, ys) +
-        Math.max.apply(null, ys)) / 2).toFixed(2) + 'px';
-      wrap.style.transformBox = 'view-box';
-      g[0].el.parentNode.insertBefore(wrap, g[0].el);
-      g.forEach(function (r) { wrap.appendChild(r.el); });
-    });
-
-    var el = document.importNode(svg, true);
-    /* Same box, same slot: the <img> carries the geometry the generator wrote. */
-    el.setAttribute('style', img.getAttribute('style') || '');
-    el.setAttribute('class', ((img.getAttribute('class') || '') + ' ax-pa').trim());
-    el.setAttribute('aria-hidden', 'true');
-    el.setAttribute('focusable', 'false');
-    el.removeAttribute('width'); el.removeAttribute('height');
-    img.parentNode.replaceChild(el, img);
-    /* No visibility gating here. It was tried and it stuck in the paused state, and
-       it was never worth it anyway: this is three groups of four rectangles, and a
-       browser already deprioritises animation on what it is not painting. */
-  }
-
-  function run() {
-    if (REDUCED.matches) return;
-    [].forEach.call(document.querySelectorAll('img.g-vec'), function (img) {
-      if (img.dataset.axPa) return;
-      var r = img.getBoundingClientRect();
-      if (!(r.width > 0) || r.width < r.height * 3) return;   /* a wide, short strip */
-      img.dataset.axPa = '1';
-      var src = img.getAttribute('src');
-      if (!src || !/\.svg$/i.test(src)) return;
-      fetch(src, { credentials: 'omit' })
-        .then(function (r2) { return r2.ok ? r2.text() : null; })
-        .then(function (t) { if (t && t.length < 6000) inline(img, t); })
-        .catch(function () {});
-    });
-  }
-
-  if (document.readyState === 'complete') setTimeout(run, 0);
-  else addEventListener('load', function () { setTimeout(run, 0); });
 })();
 </script>
 
