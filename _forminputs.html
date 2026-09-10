@@ -329,6 +329,20 @@ select.ax-cf-code{left:0!important;top:0!important;height:100%!important;cursor:
      the keystroke instead. Digits, spaces and the punctuation a real number uses
      are kept; the caret is put back where it was so editing mid-string still
      works. */
+  /* Dial codes, most-used first rather than alphabetical: this is a sales form, not
+     an atlas. The label carries the ISO code so the list reads the way the design's
+     own chip did ("IND (+91)"). */
+  var DIAL = [['IND','+91'],['UAE','+971'],['USA','+1'],['UK','+44'],['SGP','+65'],
+              ['AUS','+61'],['CAN','+1'],['DEU','+49'],['FRA','+33'],['NLD','+31'],
+              ['CHE','+41'],['ZAF','+27'],['SAU','+966'],['QAT','+974'],['KWT','+965'],
+              ['OMN','+968'],['BHR','+973'],['MYS','+60'],['IDN','+62'],['JPN','+81'],
+              ['CHN','+86'],['KOR','+82'],['NZL','+64'],['ESP','+34'],['ITA','+39'],
+              ['SWE','+46'],['NOR','+47'],['DNK','+45'],['IRL','+353'],['BEL','+32'],
+              ['POL','+48'],['BRA','+55'],['MEX','+52'],['KEN','+254'],['NGA','+234'],
+              ['EGY','+20'],['TUR','+90'],['ISR','+972'],['LKA','+94'],['BGD','+880'],
+              ['NPL','+977'],['PAK','+92'],['PHL','+63'],['THA','+66'],['VNM','+84'],
+              ['HKG','+852'],['TWN','+886'],['RUS','+7'],['PRT','+351'],['AUT','+43']];
+
   function digitsOnly(el){
     if (el.dataset.axDigits) return;      /* init() runs twice */
     el.dataset.axDigits = '1';
@@ -339,6 +353,24 @@ select.ax-cf-code{left:0!important;top:0!important;height:100%!important;cursor:
       el.value = clean;
       try { el.setSelectionRange(at, at); } catch (e) {}
     });
+  }
+
+  /* The pattern only says "six or more of these characters", so twenty ones passed.
+     Count the DIGITS instead and hold the browser's own validation message until
+     there are between 7 and 15 of them, the ITU range that covers every code in the
+     list above. Checked as they type, so the form cannot be sent with a number
+     nobody can call. */
+  function phoneLength(el){
+    if (el.dataset.axLen) return;
+    el.dataset.axLen = '1';
+    var check = function(){
+      var n = (el.value.match(/\d/g) || []).length;
+      el.setCustomValidity(!el.value.trim() ? ''
+        : (n < 7 || n > 15) ? 'Enter a phone number with 7 to 15 digits.' : '');
+    };
+    el.addEventListener('input', check);
+    el.addEventListener('blur', check);
+    check();
   }
 
   function wirePanel(scope, kind){
@@ -356,24 +388,35 @@ select.ax-cf-code{left:0!important;top:0!important;height:100%!important;cursor:
        example number reads as an instruction instead of noise. */
     var phone = field(form, 'Phone Number', { required:true, type:'tel', placeholder:'98765 43210',
       pattern:'[0-9 ()+-]{6,}' });   /* a hyphen LAST needs no escape; the old \\-\\s made an invalid range, so browsers dropped the pattern and the field accepted letters */
-    if (phone) digitsOnly(phone);
-    /* The country-code chip beside Phone Number ("IND(+91)") was static Figma text --
-       flag + label + chevron drawn to look like a dropdown, wired to nothing. Made a
-       plain editable box instead of a picker: neither icon means anything without a
-       list to open or a country actually chosen, so both are hidden and the field
-       takes over the flag's own left inset instead of leaving a gap where it was. */
+    if (phone){
+      digitsOnly(phone);
+      phoneLength(phone);
+    }
+    /* The country-code chip beside Phone Number ("IND(+91)") is drawn in Figma as a
+       flag, a label and a chevron: it looks like a picker. It was first made a plain
+       text box, which is worse than either option -- it still looked like a dropdown
+       and now accepted anything typed into it. It is the picker it looks like.
+
+       The chevron stays and the flag goes: one country's flag over a list of many is
+       wrong, and the chevron is the affordance the design already drew. India first,
+       because that is where the company is. */
     var codeBox = findLabelBox(form, 'Phone Number', true);
     var codeDummy = codeBox && dummyIn(codeBox);
     if (codeDummy){
-      var code = swap(codeBox, codeDummy, function(){ return document.createElement('input'); });
-      code.type = 'text';
+      var code = swap(codeBox, codeDummy, function(){ return document.createElement('select'); });
       code.name = 'Country Code';
-      code.placeholder = 'IND(+91)';
       code.required = true;
+      DIAL.forEach(function(d){
+        var o = document.createElement('option');
+        o.value = d[1]; o.textContent = d[0] + ' (' + d[1] + ')';
+        code.appendChild(o);
+      });
       var icons = [].slice.call(codeBox.querySelectorAll('.g-vec'));
-      if (icons.length){
+      /* the flag is the leftmost mark, the chevron the rightmost */
+      if (icons.length > 1){
+        icons.sort(function(a,b){ return (parseFloat(a.style.left)||0)-(parseFloat(b.style.left)||0); });
         code.style.left = icons[0].style.left;
-        icons.forEach(function(v){ v.style.display = 'none'; });
+        icons[0].style.display = 'none';
       }
     }
 

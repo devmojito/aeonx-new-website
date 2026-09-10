@@ -244,7 +244,16 @@
      URL or nav label, so token matching genuinely cannot resolve them. Taken from
      the Figma prototype's own click-through targets, not invented: the "SAP Cloud
      ERP" card's Learn More points at Grow with SAP. */
-  var HEADING_ROUTES = { 'sap cloud erp': '/services/grow-with-sap' };
+  /* The AXIOM products have no page of their own, so token matching finds nothing
+     to point their cards at and leaves the "Learn More" row inert -- it reads as a
+     link and does nothing, which is what a reader reported on the manufacturing
+     page. They all live on one page, and the chrome's CTA map already sends
+     "Explore SupplierX" and friends there; these cards go to the same place. */
+  var HEADING_ROUTES = { 'sap cloud erp': '/services/grow-with-sap',
+                         'supplierx': '/products/axiom/', 'orderx': '/products/axiom/',
+                         'xpense': '/products/axiom/', 'logystix': '/products/axiom/',
+                         'manufex': '/products/axiom/', 'aeonxiq': '/products/axiom/',
+                         'aeonx iq': '/products/axiom/' };
 
   function matchRoute(routes, heading){
     var explicit = HEADING_ROUTES[norm(heading).toLowerCase()];
