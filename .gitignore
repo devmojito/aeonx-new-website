@@ -53,3 +53,6 @@ AeonX-Deployment-Architecture.pdf
 .claude/worktrees/
 .vercel
 .env*
+
+# Originals kept aside when a headshot is replaced by hand.
+.photo-backups/

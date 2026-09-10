@@ -12,6 +12,16 @@
 .ax-cardex{transition:width .3s cubic-bezier(.22,.61,.36,1)}
 .ax-cardex-m{transition:transform .3s cubic-bezier(.22,.61,.36,1)}
 .ax-cardex-d{transition:opacity .22s ease}
+/* ---- THE COPY HAS TO PAINT ABOVE THE CARDS ----
+   Figma exports this row flat: the four plates and the text are siblings, and the
+   copy is authored inside the card the design drew open, so it sits at DOM position
+   2, before three of the four plates. Absolutely positioned siblings with no z-index
+   paint in document order, so the moment the copy moved into the Cloud, Product or
+   AXIOM card it went UNDER that card's plate. It was the right text in the right
+   place at full opacity and simply invisible, which is why only the SAP angle ever
+   read as having any copy: its plate is the one that comes first.
+   The text sits above the plates, and it is the text of whichever card is open. */
+.ax-cardex-d,.ax-cardex-t{z-index:2}
 .ax-cardex-hit{cursor:default}
 .ax-cardex-hit:focus-visible{outline:2px solid rgb(223,63,23);outline-offset:-2px}
 @media (prefers-reduced-motion:reduce){
@@ -136,6 +146,8 @@
       c.plate.el.classList.add('ax-cardex');
       c.parts.forEach(function(o){ o.el.classList.add('ax-cardex-m'); });
       c.plate.el.classList.add('ax-cardex-m');
+      /* the title travels between cards the same way the copy does */
+      c.title.el.classList.add('ax-cardex-t');
     });
 
     /* Where each card SITS when the row has finished moving, in the root's own vw
@@ -242,12 +254,17 @@
     return true;
   }
 
-  function init(){
+  /* build() reads the row's geometry, and on a cold load it can run before the page
+     has settled into it -- the row is measured, rejected as "not the expand pattern"
+     and never looked at again, so the whole section sits inert. Two fixed attempts
+     were not enough. Keep trying briefly and stop the moment one succeeds. */
+  function init(tries){
     var main=document.querySelector('main.ax-page');
     if(!main||main.dataset.axCardex) return;
     /* desktop only: the mobile block stacks these cards, nothing to expand */
     if(window.innerWidth&&window.innerWidth<=1024) return;
-    if(build(main)) main.dataset.axCardex='1';
+    if(build(main)){ main.dataset.axCardex='1'; return; }
+    if((tries||0)<10) setTimeout(function(){ init((tries||0)+1); },250);
   }
   if(document.readyState==='loading')
     document.addEventListener('DOMContentLoaded',function(){ setTimeout(init,200); });
