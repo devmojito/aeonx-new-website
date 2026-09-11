@@ -245,6 +245,16 @@
       return 'deco';
     }
 
+    /* The "Latest" and "PDF" badges are dropped from every row: each label and the
+       pill plate drawn behind it. A plate is whatever sits around a badge label at
+       roughly its size, which keeps the row's own background out of it. */
+    var badges=tmpl.filter(function(o){ var k=classify(o); return k==='latest'||k==='kind'; });
+    tmpl=tmpl.filter(function(o){
+      return !badges.some(function(g){
+        return o===g||(o.w<g.w*3&&o.h<g.h*3&&o.l<=g.l+0.05&&o.r>=g.r-0.05&&o.t<=g.t+0.05&&o.b>=g.b-0.05);
+      });
+    });
+
     function makeRow(doc,i,isFirst){
       var frag=document.createElement('div');
       frag.className='ax-inv-row';
@@ -262,7 +272,6 @@
           c.style.overflow='hidden'; c.style.textOverflow='ellipsis'; c.style.width=(list.b.w*0.70)+'vw'; }
         else if(kind==='date'){ c.textContent=doc.d||''; }
         else if(kind==='chip'){ c.textContent=(doc.d||'').split(' ')[1]||''; }
-        else if(kind==='latest'){ if(!isFirst){ c.style.display='none'; } }
         frag.appendChild(c);
       });
       /* A document still hosted on the retired ashokalcochem domain has no file to
@@ -716,3 +725,26 @@
   else setTimeout(start,80);
 })();
 </script>
+<script>
+/* ---- MOBILE: drop the "Latest" and "PDF" badges ----
+   The mobile list is the design's own static rows, not the rows built above, so the
+   badges are removed here: each label and the pill plate that shares its parent and
+   sits around it at roughly its size. */
+(function(){
+  function run(){
+    [].forEach.call(document.querySelectorAll('.ax-mob .g-t'),function(t){
+      if(!/^(latest|pdf)$/i.test((t.textContent||'').trim())) return;
+      var lb=t.getBoundingClientRect();
+      [].forEach.call(t.parentElement.children,function(s){
+        if(s===t) return;
+        var b=s.getBoundingClientRect();
+        if(b.width&&b.width<lb.width*3&&b.left<=lb.left+1&&b.right>=lb.right-1&&
+           b.top<=lb.top+1&&b.bottom>=lb.bottom-1) s.style.display='none';
+      });
+      t.style.display='none';
+    });
+  }
+  if(document.readyState==='complete') run(); else addEventListener('load',run);
+})();
+</script>
+
