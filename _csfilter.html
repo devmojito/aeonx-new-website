@@ -214,11 +214,16 @@
         c.text=((title?txt(title):'')+' '+(tag?txt(tag):'')+' '+((c.post&&c.post.s)||'')).toLowerCase();
         c.sector=((c.post&&c.post.s)||(tag?txt(tag):'')).toUpperCase();
         if(c.post){
-          c.shell.setAttribute('role','link'); c.shell.setAttribute('tabindex','0');
-          c.shell.dataset.axTo=c.post.u;
+          /* Only the "Read the story" pill opens the story. The whole card used to:
+             a click on the image or the title took the reader away mid-browse. */
           var go=function(){ location.href=c.post.u; };
-          c.mem.forEach(function(m){ m.el.classList.add('ax-csf-link'); capture(m.el,go); });
-          c.shell.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' ') go(e); });
+          c.mem.forEach(function(m){
+            if(!/^read the story$/i.test(txt(m.el))) return;
+            m.el.setAttribute('role','link'); m.el.setAttribute('tabindex','0');
+            m.el.dataset.axTo=c.post.u;
+            m.el.classList.add('ax-csf-link'); capture(m.el,go);
+            m.el.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); go(e); } });
+          });
         }
         else {
           /* Six designed stories have no page to open (no per-story pages exist yet).
@@ -545,8 +550,43 @@
   }
   /* Now, while the page is still parsing, so the buttons are settled before the
      chrome's own passes run; again once the DOM and the web font are in. */
-  copy(); layout();
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){ copy(); layout(); });
+  /* LEARN MORE opens the case study its tile describes, where one is published.
+     The button is the only way in; the tile itself is not a link. The other tiles
+     (Ashapura, both Raymond stories) have no page yet, so their button stays inert. */
+  var CASES=[[/ITD Cementation/i,'/2023/04/14/itd/05/25/44/240713/success-stories-sap/admin/'],
+             [/CK Birla/i,'/2023/01/03/ckbh-case-study/07/01/09/240160/success-stories-aws/admin/'],
+             [/Delux Bearings/i,'/2023/03/01/sap-on-aws-delux-bearings/04/21/19/240608/success-stories-aws/admin/']];
+  function wire(){
+    [document.querySelector('main.ax-page'),document.querySelector('.ax-mob')].forEach(function(root){
+      if(!root) return;
+      lm(root).forEach(function(t){
+        var pill=t.parentElement, tile=pill.parentElement;
+        if(pill.dataset.axCase||!tile||tile.children.length>30) return;   /* a tile, not a section */
+        var words=[].filter.call(tile.querySelectorAll('.g-t'),function(e){ return e!==t; })
+          .map(function(e){ return e.textContent; }).join(' ');
+        var hit=CASES.filter(function(c){ return c[0].test(words); })[0];
+        if(!hit) return;
+        pill.dataset.axCase='1';
+        pill.setAttribute('role','link'); pill.setAttribute('tabindex','0');
+        pill.dataset.axTo=hit[1]; pill.style.cursor='pointer';
+      });
+    });
+  }
+  /* Taken at document capture, ahead of every other listener: the hover engine
+     resolves a bare "Learn more" from the nearest heading and had its own handler
+     on these pills, so a click queued the case study and then /services/aws/, and
+     the second navigation won. */
+  function own(e){
+    var pill=e.target&&e.target.closest&&e.target.closest('[data-ax-case]');
+    if(!pill) return;
+    if(e.type==='keydown'&&e.key!=='Enter'&&e.key!==' ') return;
+    e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+    location.href=pill.dataset.axTo;
+  }
+  document.addEventListener('click',own,true);
+  document.addEventListener('keydown',own,true);
+  copy(); layout(); wire();
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){ copy(); layout(); wire(); });
   /* fonts.ready can settle before the web font has even been requested, which
      leaves a fallback-font measurement in place; loadingdone and load catch it */
   if(document.fonts){ document.fonts.ready.then(layout);
