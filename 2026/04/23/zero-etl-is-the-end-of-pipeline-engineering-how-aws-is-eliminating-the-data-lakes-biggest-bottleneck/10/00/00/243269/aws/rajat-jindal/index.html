@@ -1393,6 +1393,8 @@ document.addEventListener('DOMContentLoaded',function(){
       return best;
     }
     pills.forEach(function(p){
+      /* a button a page fragment has laid out itself (data-ax-laid) is left alone */
+      if(p.closest('[data-ax-laid]'))return;
       var lab=p.querySelector('.g-t'); if(!lab)return;
       /* Desktop only. This is the pill-grower for 16px labels on a 1920 layout; the
          .ax-mob block is authored at 430 with Figma's own pill widths, and running it
@@ -1493,6 +1495,7 @@ document.addEventListener('DOMContentLoaded',function(){
     });
     // shift later pills in the same row so gaps survive the growth
     pills.forEach(function(p){
+      if(p.closest('[data-ax-laid]'))return;
       var pr=p.getBoundingClientRect();
       var key=Math.round((pr.top+scrollY)/6);
       var shift=0;

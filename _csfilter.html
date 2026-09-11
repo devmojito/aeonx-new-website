@@ -503,24 +503,34 @@
    past the pill, where the clip hides it. That is why the later tiles lost their
    arrows. data-ax-laid tells those passes to leave the button alone. */
 (function(){
-  function lm(root){ return [].filter.call(root.querySelectorAll('.g-t'),function(t){
-    return /^\s*learn more\s*$/i.test(t.textContent); }); }
+  var LEARN=/^\s*learn more\s*$/i, STORY=/^\s*read the story\s*$/i;
+  function labels(root,re){ return [].filter.call(root.querySelectorAll('.g-t'),function(t){
+    return re.test(t.textContent)&&(root.classList.contains('ax-mob')||!t.closest('.ax-mob')); }); }
+  function lm(root){ return labels(root,LEARN); }
   function arrowOf(t){ var a=t.nextElementSibling; return a&&a.matches('img.g-vec')?a:null; }
+  /* "Read the story" has the same defect as LEARN MORE: Figma drew the arrow on the
+     first four story cards only. Each kind copies from its own first arrowed button. */
   function copy(){
     [document.querySelector('main.ax-page'),document.querySelector('.ax-mob')].forEach(function(root){
       if(!root) return;
-      var btns=lm(root), ref=null;
-      btns.forEach(function(t){ if(!ref&&arrowOf(t)) ref=t; });
-      if(!ref) return;
-      var refW=parseFloat(ref.parentElement.style.width);
-      btns.forEach(function(t){
-        if(arrowOf(t)) return;
-        /* only a pill of the same size; anything else is a different button */
-        if(Math.abs(parseFloat(t.parentElement.style.width)-refW)>0.05) return;
-        t.style.left=ref.style.left;
-        var c=arrowOf(ref).cloneNode(true);
-        c.removeAttribute('loading');
-        t.parentNode.insertBefore(c,t.nextSibling);
+      [LEARN,STORY].forEach(function(re){
+        var btns=labels(root,re), ref=null;
+        /* Figma's label position, kept before the chrome's own passes can move it:
+           a story label is laid out from where the design put it, not from wherever
+           an earlier pass left it (they centred it in the pill, off the title's line). */
+        btns.forEach(function(t){ if(t.dataset.axL===undefined) t.dataset.axL=t.style.left; });
+        btns.forEach(function(t){ if(!ref&&arrowOf(t)) ref=t; });
+        if(!ref) return;
+        var refW=parseFloat(ref.parentElement.style.width);
+        btns.forEach(function(t){
+          if(arrowOf(t)) return;
+          /* only a pill of the same size; anything else is a different button */
+          if(Math.abs(parseFloat(t.parentElement.style.width)-refW)>0.05) return;
+          t.style.left=ref.dataset.axL||ref.style.left; t.dataset.axL=t.style.left;
+          var c=arrowOf(ref).cloneNode(true);
+          c.removeAttribute('loading');
+          t.parentNode.insertBefore(c,t.nextSibling);
+        });
       });
     });
   }
@@ -532,24 +542,31 @@
         fv=parseFloat(t.style.fontSize);
     return (px&&fs&&fv)?px/fs*fv:0;
   }
+  /* LEARN MORE is a bordered button: label and arrow are centred in it as a group.
+     "Read the story" is a text link lined up under the card title, so the label
+     keeps its place and the arrow follows the words. Its pill was cut for Figma's
+     narrower text box and clipped the arrow's tip, so it is widened to hold it;
+     the pill is the card's own white, so the extra width does not show. */
   function layout(){
     var main=document.querySelector('main.ax-page'); if(!main) return;
-    lm(main).forEach(function(t){
-      var a=arrowOf(t), pill=t.parentElement; if(!a) return;
-      var ink=inkVw(t), pw=parseFloat(pill.style.width), aw=parseFloat(a.style.width);
-      if(!(ink>0&&pw>0&&aw>0)) return;
-      var gap=aw*0.43;                             /* Figma: 0.54vw beside a 1.25vw arrow */
-      var start=(pw-(ink+gap+aw))/2;
-      t.style.left=start.toFixed(4)+'vw';
-      t.style.width=ink.toFixed(4)+'vw';
-      t.style.whiteSpace='nowrap';
-      a.style.left=(start+ink+gap).toFixed(4)+'vw';
-      pill.dataset.axLaid='1';
-      t.dataset.axCentred='1';
+    [[LEARN,true],[STORY,false]].forEach(function(k){
+      labels(main,k[0]).forEach(function(t){
+        var a=arrowOf(t), pill=t.parentElement; if(!a) return;
+        var ink=inkVw(t), pw=parseFloat(pill.style.width), aw=parseFloat(a.style.width);
+        if(!(ink>0&&pw>0&&aw>0)) return;
+        var gap=aw*0.43;                           /* Figma: 0.54vw beside a 1.25vw arrow */
+        if(pill.dataset.axW===undefined) pill.dataset.axW=String(pw);
+        var start=k[1]?(pw-(ink+gap+aw))/2:parseFloat(t.dataset.axL||t.style.left);
+        t.style.left=start.toFixed(4)+'vw';
+        t.style.width=ink.toFixed(4)+'vw';
+        t.style.whiteSpace='nowrap';
+        a.style.left=(start+ink+gap).toFixed(4)+'vw';
+        if(!k[1]) pill.style.width=Math.max(parseFloat(pill.dataset.axW),start+ink+gap+aw+0.3).toFixed(4)+'vw';
+        pill.dataset.axLaid='1';
+        t.dataset.axCentred='1';
+      });
     });
   }
-  /* Now, while the page is still parsing, so the buttons are settled before the
-     chrome's own passes run; again once the DOM and the web font are in. */
   /* LEARN MORE opens the case study its tile describes, where one is published.
      The button is the only way in; the tile itself is not a link. The other tiles
      (Ashapura, both Raymond stories) have no page yet, so their button stays inert. */
