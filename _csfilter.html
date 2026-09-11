@@ -250,6 +250,7 @@
                  'TECHNOLOGY & SOFTWARE','FINANCIAL SERVICES'];
     var chips=texts.filter(function(e){ return SECTORS.indexOf(txt(e).toUpperCase())>-1; });
 
+
     var input=null;
     if(searchLbl){
       input=document.createElement('input');
@@ -483,4 +484,136 @@
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){ setTimeout(init,60); });
   else setTimeout(init,60);
 })();
+
+/* ---- CUSTOMER STORIES: EVERY "LEARN MORE" GETS ITS ARROW ----
+   Figma draws this button two ways: label plus arrow on the first cards, label
+   alone and centred on the rest, so the arrows stopped partway along the shelf.
+   Every button gets the arrow, and on desktop every button is laid out here:
+   label and arrow centred in the pill as one group, from the label's rendered ink.
+
+   Laid out here rather than by _uifx's spaceArrows() and balanceLabels(). Those
+   find a button's pill from the arrow's on-screen box, and on a tile that has not
+   scrolled into view the reveal animation still has the arrow offset, so they
+   matched the whole card instead: the label was centred alone and the arrow pushed
+   past the pill, where the clip hides it. That is why the later tiles lost their
+   arrows. data-ax-laid tells those passes to leave the button alone. */
+(function(){
+  function lm(root){ return [].filter.call(root.querySelectorAll('.g-t'),function(t){
+    return /^\s*learn more\s*$/i.test(t.textContent); }); }
+  function arrowOf(t){ var a=t.nextElementSibling; return a&&a.matches('img.g-vec')?a:null; }
+  function copy(){
+    [document.querySelector('main.ax-page'),document.querySelector('.ax-mob')].forEach(function(root){
+      if(!root) return;
+      var btns=lm(root), ref=null;
+      btns.forEach(function(t){ if(!ref&&arrowOf(t)) ref=t; });
+      if(!ref) return;
+      var refW=parseFloat(ref.parentElement.style.width);
+      btns.forEach(function(t){
+        if(arrowOf(t)) return;
+        /* only a pill of the same size; anything else is a different button */
+        if(Math.abs(parseFloat(t.parentElement.style.width)-refW)>0.05) return;
+        t.style.left=ref.style.left;
+        var c=arrowOf(ref).cloneNode(true);
+        c.removeAttribute('loading');
+        t.parentNode.insertBefore(c,t.nextSibling);
+      });
+    });
+  }
+  /* Ink width in vw, scaled from the type's own size rather than divided by the
+     viewport, so a measurement taken while the window is changing size holds. */
+  function inkVw(t){
+    var rg=document.createRange(); rg.selectNodeContents(t);
+    var px=rg.getBoundingClientRect().width, fs=parseFloat(getComputedStyle(t).fontSize),
+        fv=parseFloat(t.style.fontSize);
+    return (px&&fs&&fv)?px/fs*fv:0;
+  }
+  function layout(){
+    var main=document.querySelector('main.ax-page'); if(!main) return;
+    lm(main).forEach(function(t){
+      var a=arrowOf(t), pill=t.parentElement; if(!a) return;
+      var ink=inkVw(t), pw=parseFloat(pill.style.width), aw=parseFloat(a.style.width);
+      if(!(ink>0&&pw>0&&aw>0)) return;
+      var gap=aw*0.43;                             /* Figma: 0.54vw beside a 1.25vw arrow */
+      var start=(pw-(ink+gap+aw))/2;
+      t.style.left=start.toFixed(4)+'vw';
+      t.style.width=ink.toFixed(4)+'vw';
+      t.style.whiteSpace='nowrap';
+      a.style.left=(start+ink+gap).toFixed(4)+'vw';
+      pill.dataset.axLaid='1';
+      t.dataset.axCentred='1';
+    });
+  }
+  /* Now, while the page is still parsing, so the buttons are settled before the
+     chrome's own passes run; again once the DOM and the web font are in. */
+  copy(); layout();
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){ copy(); layout(); });
+  /* fonts.ready can settle before the web font has even been requested, which
+     leaves a fallback-font measurement in place; loadingdone and load catch it */
+  if(document.fonts){ document.fonts.ready.then(layout);
+    if(document.fonts.addEventListener) document.fonts.addEventListener('loadingdone',layout); }
+  addEventListener('load',layout);
+})();
+/* ---- CUSTOMER STORIES: SECTOR CHIP PLATES ----
+   Each chip's grey plate was cut for Figma's text box, which is narrower than the
+   label actually renders: the words ran off the right edge with 4px on the left,
+   on both layouts. The plate is refitted to the rendered label with even padding
+   and the label centred in it. Desktop measures in bold so the selected state fits.
+
+   A chip is a sector label whose plate starts on the "Filter by sector" heading's
+   left edge, which keeps the sector tags on the story cards out of it. */
+(function(){
+  var SECTORS=['EDUCATION & SCIENCE','ENERGY','MANUFACTURING','RETAIL & CONSUMER GOODS',
+               'HEALTHCARE & LIFE SCIENCES','PUBLIC SECTOR','TRANSPORTATION & LOGISTICS',
+               'TECHNOLOGY & SOFTWARE','FINANCIAL SERVICES'];
+  function fit(root,pad,bold){
+    var vw=(document.documentElement.clientWidth||innerWidth)/100;
+    var texts=[].filter.call(root.querySelectorAll('.g-t'),function(t){
+      return root.classList.contains('ax-mob')||!t.closest('.ax-mob'); });
+    var head=texts.filter(function(t){ return /^filter by sector/i.test((t.textContent||'').trim()); })[0];
+    if(!head||!vw) return;
+    var hl=parseFloat(head.style.left);
+    texts.forEach(function(ch){
+      if(SECTORS.indexOf((ch.textContent||'').trim().toUpperCase())<0) return;
+      var ct=parseFloat(ch.style.top), chh=parseFloat(ch.style.height);
+      var plate=[].filter.call(ch.parentElement.children,function(s){
+        if(s===ch||!/\bg-b\b/.test(s.className)) return false;
+        var t=parseFloat(s.style.top), h=parseFloat(s.style.height);
+        return Math.abs(parseFloat(s.style.left)-hl)<0.3&&h<chh*2.2&&t<=ct+0.05&&t+h>=ct+chh-0.05;
+      })[0];
+      if(!plate) return;
+      if(bold) ch.style.fontWeight='700';
+      /* ink in vw scaled from the type size, not divided by the viewport, so a
+         measurement taken mid-resize cannot skew it */
+      var rg=document.createRange(); rg.selectNodeContents(ch);
+      var px=rg.getBoundingClientRect().width, fs=parseFloat(getComputedStyle(ch).fontSize),
+          fv=parseFloat(ch.style.fontSize);
+      var ink=(px&&fs&&fv)?px/fs*fv:px/vw;
+      if(bold) ch.style.fontWeight='';
+      if(!ink) return;                    /* layout not showing; done when it is */
+      var pl=parseFloat(plate.style.left);
+      plate.style.width=(ink+2*pad).toFixed(4)+'vw';
+      ch.style.left=(pl+pad).toFixed(4)+'vw';
+      ch.style.width=ink.toFixed(4)+'vw';
+      ch.style.textAlign='center';
+      /* centred here, to the ink; _uifx's centerLabels() would otherwise take the
+         now text-align:center label as its own and nudge it off again */
+      ch.dataset.axCentred='1';
+    });
+  }
+  function run(){
+    var main=document.querySelector('main.ax-page'), mob=document.querySelector('.ax-mob');
+    if(main) fit(main,0.4167,true);       /* 8px at 1920 */
+    if(mob) fit(mob,1.8605,false);        /* 8px at 430 */
+  }
+  function start(){
+    run();
+    if(document.fonts){ document.fonts.ready.then(run);
+      if(document.fonts.addEventListener) document.fonts.addEventListener('loadingdone',run); }
+    addEventListener('load',run);
+    var t=null;
+    addEventListener('resize',function(){ clearTimeout(t); t=setTimeout(run,250); });
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',start); else start();
+})();
 </script>
+

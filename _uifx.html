@@ -321,6 +321,8 @@
 
   function spaceArrows(){
     [].slice.call(document.querySelectorAll('.ax-hv-arrow')).forEach(function(a){
+      /* a button a page fragment has already laid out (data-ax-laid) is left alone */
+      if(a.closest('[data-ax-laid]')) return;
       var ar=a.getBoundingClientRect();
       if(!ar.width) return;
       var pill=null,best=Infinity;
@@ -787,7 +789,7 @@
      that carry a trailing arrow are handled by spaceArrows() as a group. */
   function balanceLabels(){
     [].slice.call(document.querySelectorAll('.g-b[data-cta],.g-b[data-axpill]')).forEach(function(pill){
-      if(pill.closest('.ax-mob')) return;
+      if(pill.closest('.ax-mob')||pill.closest('[data-ax-laid]')) return;
       var pr=pill.getBoundingClientRect(); if(!pr.width) return;
       var lab=pill.querySelector('.g-t'); if(!lab||!txt(lab)) return;
       /* an arrow inside the pill means the pair is positioned as a group */
