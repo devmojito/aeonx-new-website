@@ -1439,6 +1439,7 @@ document.addEventListener('DOMContentLoaded',function(){
     if(!href||href.charAt(0)==='#') return false;
     if(/^(mailto:|tel:|javascript:)/i.test(href)) return false;
     if(a.hasAttribute('download')) return false;
+    if(/\.pdf$/i.test(a.pathname||'')) return false;   /* the browser's viewer, not a page */
     if(a.target&&a.target!=='_self') return false;
     if(a.origin&&a.origin!==location.origin) return false;
     /* same page, only the hash differs -> no navigation */
@@ -1455,7 +1456,11 @@ document.addEventListener('DOMContentLoaded',function(){
     /* The chrome turns Figma's non-anchor CTA pills into role="link" and navigates them
        from its own handler, so they never produce an <a> click to hook. */
     var r=t.closest('[role="link"]');
-    if(r&&r.getAttribute('data-href')!=='#') show();
+    /* The linkifiers store the destination in data-ax-to. Only a same-origin page
+       counts: a PDF or another site opens in a new tab, this page never unloads, and
+       the scrim sat there until its 6s fail-safe. */
+    var to=r&&(r.getAttribute('data-ax-to')||r.getAttribute('data-href'));
+    if(to&&to!=='#'&&!/\.pdf([?#]|$)/i.test(to)&&new URL(to,location.href).origin===location.origin) show();
   },true);
 
   /* Coming back via bfcache re-runs no scripts, so clear the scrim explicitly. */
