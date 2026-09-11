@@ -461,7 +461,7 @@ main.ax-post{position:relative;max-width:100vw;overflow-x:hidden;background:#fff
 </header>
 <main class="ax-post">
 <div class="ax-post__wrap">
-<div class="ax-post__eyebrow">Sap</div>
+<div class="ax-post__eyebrow">SAP</div>
 <h1 class="ax-post__title">Top 30 SAP Interview Questions &amp; Answers</h1>
 <div class="ax-post__meta">January 28, 2021 &middot; Admin</div>
 <img class="ax-post__hero" src="https://dhixs8fi5fryo.cloudfront.net/blog/2021/db4b87d801e4-Untitled-design-5.jpg" alt="Top 30 SAP Interview Questions &amp; Answers">
@@ -606,7 +606,7 @@ main.ax-post{position:relative;max-width:100vw;overflow-x:hidden;background:#fff
 
 
 
-<h2 class="wp-block-heading" id="13-other-than-sap-are-there-any-erp-softwares-in-the-market"><strong>13. Other than SAP, are there any ERP softwares in the market?</strong></h2>
+<h2 class="wp-block-heading" id="13-other-than-sap-are-there-any-erp-software-in-the-market"><strong>13. Other than SAP, are there any ERP software in the market?</strong></h2>
 
 
 
@@ -5542,13 +5542,30 @@ document.addEventListener("DOMContentLoaded",function(){
                 /* Figma spells the product names three ways ("Logystix" in the footer,
                    "LogystiX" on the cards). One casing per brand, sitewide. */
                 [/\bLogystix\b/g,'LogystiX'],[/\bManuFex\b/g,'ManufeX'],[/\bManufex\b/g,'ManufeX'],
-                [/\bSupplierx\b/g,'SupplierX'],[/\bOrderx\b/g,'OrderX'],[/\bAeonx\b/g,'AeonX']];
+                [/\bSupplierx\b/g,'SupplierX'],[/\bOrderx\b/g,'OrderX'],[/\bAeonx\b/g,'AeonX'],
+                /* Misspellings found by a sitewide spellcheck. All ship in the Figma
+                   dump, so they are corrected here rather than in the markup. */
+                [/\bDelievery\b/g,'Delivery'],[/\bDELIEVER\b/g,'DELIVER'],[/\bPRATICE\b/g,'PRACTICE'],
+                [/\bReciept\b/g,'Receipt'],[/\bACCELARATOR\b/g,'ACCELERATOR'],[/\bexractors\b/g,'extractors'],
+                [/\bPublshed\b/g,'Published'],[/\bSignup to\b/g,'Sign up to'],[/\bDIgital\b/g,'Digital'],
+                [/\bContianer\b/g,'Container']];
   function copyFix(){
     [].slice.call(document.querySelectorAll('.g-t,section.ax-footer a,.ax-mm2__ln,.ax-nav__link')).forEach(function(e){
-      if(e.children.length) return;
-      var t=e.textContent, o=t;
+      /* Text nodes, not textContent: a label broken with <br> ("Amazon DynamoDB<br>
+         Delievery") has an element child, and skipping those left its typo in. */
+      [].forEach.call(e.childNodes,function(n){
+        if(n.nodeType!==3) return;
+        var t=n.nodeValue, o=t;
+        COPY_FIX.forEach(function(f){ t=t.replace(f[0],f[1]); });
+        if(t!==o) n.nodeValue=t;
+      });
+    });
+    /* Image labels too: the generator writes Figma's layer name into aria-label,
+       so a typo there is read out by screen readers. */
+    [].slice.call(document.querySelectorAll('[aria-label]')).forEach(function(e){
+      var t=e.getAttribute('aria-label'), o=t;
       COPY_FIX.forEach(function(f){ t=t.replace(f[0],f[1]); });
-      if(t!==o) e.textContent=t;
+      if(t!==o) e.setAttribute('aria-label',t);
     });
   }
 

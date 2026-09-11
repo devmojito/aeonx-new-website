@@ -255,6 +255,10 @@
       });
     });
 
+    /* Titles come from the client's document register (the API, or the snapshot
+       above); a typo there is corrected on the way to the page. */
+    function fixT(t){ return (t||'').replace(/\bALONWITH\b/g,'ALONG WITH'); }
+
     function makeRow(doc,i,isFirst){
       var frag=document.createElement('div');
       frag.className='ax-inv-row';
@@ -268,7 +272,7 @@
         setv(c,'left',o.l);
         setv(c,'top',o.t-rowTop);
         var kind=classify(o);
-        if(kind==='title'){ c.textContent=doc.t; c.style.whiteSpace='nowrap';
+        if(kind==='title'){ c.textContent=fixT(doc.t); c.style.whiteSpace='nowrap';
           c.style.overflow='hidden'; c.style.textOverflow='ellipsis'; c.style.width=(list.b.w*0.70)+'vw'; }
         else if(kind==='date'){ c.textContent=doc.d||''; }
         else if(kind==='chip'){ c.textContent=(doc.d||'').split(' ')[1]||''; }
@@ -281,13 +285,13 @@
       if(doc.gone){
         frag.classList.add('is-gone');
         frag.setAttribute('title','Document not currently available — being restored');
-        frag.setAttribute('aria-label',doc.t+(doc.d?(', '+doc.d):'')+', document not currently available');
+        frag.setAttribute('aria-label',fixT(doc.t)+(doc.d?(', '+doc.d):'')+', document not currently available');
         return frag;
       }
       frag.setAttribute('role','link');
       frag.dataset.axTo=doc.u;
       frag.setAttribute('tabindex','0');
-      frag.setAttribute('aria-label',doc.t+(doc.d?(', '+doc.d):'')+', PDF');
+      frag.setAttribute('aria-label',fixT(doc.t)+(doc.d?(', '+doc.d):'')+', PDF');
       var open=function(){ window.open(doc.u,'_blank','noopener'); };
       frag.addEventListener('click',function(e){ e.preventDefault(); e.stopPropagation(); open(); });
       frag.addEventListener('keydown',function(e){

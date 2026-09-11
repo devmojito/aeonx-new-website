@@ -461,7 +461,7 @@ main.ax-post{position:relative;max-width:100vw;overflow-x:hidden;background:#fff
 </header>
 <main class="ax-post">
 <div class="ax-post__wrap">
-<div class="ax-post__eyebrow">Sap</div>
+<div class="ax-post__eyebrow">SAP</div>
 <h1 class="ax-post__title">Sales Order – Level Approval Workflow</h1>
 <div class="ax-post__meta">October 12, 2020 &middot; Admin</div>
 <img class="ax-post__hero" src="https://dhixs8fi5fryo.cloudfront.net/blog/2020/d36e107fb34a-Untitled-design-9-400x250.jpg" alt="Sales Order – Level Approval Workflow">
@@ -538,7 +538,7 @@ main.ax-post{position:relative;max-width:100vw;overflow-x:hidden;background:#fff
 
 
 
-<p>Goto SWDD and create a new workflow. After ‘Abbreviations’ and ‘Description’ in the ‘Basic Data’ tab, you can register events in the ‘Start Event’ tab. Here, we have two events of standard BO “BUS2032” and one custom event of class “ZSO_APPROVAL_EXIT“.</p>
+<p>Go to SWDD and create a new workflow. After ‘Abbreviations’ and ‘Description’ in the ‘Basic Data’ tab, you can register events in the ‘Start Event’ tab. Here, we have two events of standard BO “BUS2032” and one custom event of class “ZSO_APPROVAL_EXIT“.</p>
 
 
 
@@ -1035,12 +1035,12 @@ DATA : lv_lines TYPE i.
         IMPORTING
           value = _res.
 
-***IF A Persion has clicked on Approve button, _res = 0001. and _wf will be received from Workflow.
+***IF A Person has clicked on Approve button, _res = 0001. and _wf will be received from Workflow.
       IF _res EQ '0001' AND ( _wf EQ 'CREATED' OR _wf EQ 'CHANGED' ).
 
 ***Code to change SO status in JEST standard table.
 ***You can use 'I_CHANGE_STATUS' FM
-***After getting approved by the approver, it will trigger workflow to next approver level as maitained in ZSO_APPROVAL Table.
+***After getting approved by the approver, it will trigger workflow to next approver level as maintained in ZSO_APPROVAL Table.
 ***Manually Trigger workflow to next level approver.
 ***
 ***
@@ -1076,7 +1076,7 @@ ENDIF.</code></pre>
 
 
 
-<pre class="wp-block-code"><code>*** ITAB and ISO are imporing parameters.
+<pre class="wp-block-code"><code>*** ITAB and ISO are importing parameters.
 *** By using ISO that is SO Number you can get details of Materials
 *** Append each HTML Line to ITAB &#91; ITAB TYPE ZSOLISTI1_TT ] Create TableType of SOLISTI1.
 DATA : wa_contents TYPE solisti1.
@@ -1217,7 +1217,7 @@ wa_contents-line = |&lt;/tfoot&gt;&lt;/table&gt;&lt;/body&gt;&lt;/html&gt;|.APPE
 *** MANUALLY TRIGGER WORKFLOW FOR VKM1
 
 
-*** CODE TO REMOVE OLD/PENDING WORKFLOW TRIGGERD FOR THE SAME SO.
+*** CODE TO REMOVE OLD/PENDING WORKFLOW TRIGGERED FOR THE SAME SO.
       lv_srch = |%{ lv_vbeln }|.       "CONCATE % WITH SO NUMBER
 
       SELECT wi_id wi_aagent wi_cd wi_ct FROM swwwihead INTO TABLE wtab
@@ -1246,7 +1246,7 @@ wa_contents-line = |&lt;/tfoot&gt;&lt;/table&gt;&lt;/body&gt;&lt;/html&gt;|.APPE
 
 
 
-<ul class="wp-block-list"><li>You can create a workflow with standard BO events and custom class event by following this prototype. It is also possible to merge multiple workitem in a single workflow .</li><li>Dynamic agent assignment using Function Module.</li><li>You can design your own stylish content in mail body using CSS + HTML.</li><li>Further, you can also add validation in Outbound Delivery and Invoice as well to restrict it without final level approvel.</li></ul>
+<ul class="wp-block-list"><li>You can create a workflow with standard BO events and custom class event by following this prototype. It is also possible to merge multiple workitem in a single workflow .</li><li>Dynamic agent assignment using Function Module.</li><li>You can design your own stylish content in mail body using CSS + HTML.</li><li>Further, you can also add validation in Outbound Delivery and Invoice as well to restrict it without final level approval.</li></ul>
 
 
 
@@ -6050,13 +6050,30 @@ document.addEventListener("DOMContentLoaded",function(){
                 /* Figma spells the product names three ways ("Logystix" in the footer,
                    "LogystiX" on the cards). One casing per brand, sitewide. */
                 [/\bLogystix\b/g,'LogystiX'],[/\bManuFex\b/g,'ManufeX'],[/\bManufex\b/g,'ManufeX'],
-                [/\bSupplierx\b/g,'SupplierX'],[/\bOrderx\b/g,'OrderX'],[/\bAeonx\b/g,'AeonX']];
+                [/\bSupplierx\b/g,'SupplierX'],[/\bOrderx\b/g,'OrderX'],[/\bAeonx\b/g,'AeonX'],
+                /* Misspellings found by a sitewide spellcheck. All ship in the Figma
+                   dump, so they are corrected here rather than in the markup. */
+                [/\bDelievery\b/g,'Delivery'],[/\bDELIEVER\b/g,'DELIVER'],[/\bPRATICE\b/g,'PRACTICE'],
+                [/\bReciept\b/g,'Receipt'],[/\bACCELARATOR\b/g,'ACCELERATOR'],[/\bexractors\b/g,'extractors'],
+                [/\bPublshed\b/g,'Published'],[/\bSignup to\b/g,'Sign up to'],[/\bDIgital\b/g,'Digital'],
+                [/\bContianer\b/g,'Container']];
   function copyFix(){
     [].slice.call(document.querySelectorAll('.g-t,section.ax-footer a,.ax-mm2__ln,.ax-nav__link')).forEach(function(e){
-      if(e.children.length) return;
-      var t=e.textContent, o=t;
+      /* Text nodes, not textContent: a label broken with <br> ("Amazon DynamoDB<br>
+         Delievery") has an element child, and skipping those left its typo in. */
+      [].forEach.call(e.childNodes,function(n){
+        if(n.nodeType!==3) return;
+        var t=n.nodeValue, o=t;
+        COPY_FIX.forEach(function(f){ t=t.replace(f[0],f[1]); });
+        if(t!==o) n.nodeValue=t;
+      });
+    });
+    /* Image labels too: the generator writes Figma's layer name into aria-label,
+       so a typo there is read out by screen readers. */
+    [].slice.call(document.querySelectorAll('[aria-label]')).forEach(function(e){
+      var t=e.getAttribute('aria-label'), o=t;
       COPY_FIX.forEach(function(f){ t=t.replace(f[0],f[1]); });
-      if(t!==o) e.textContent=t;
+      if(t!==o) e.setAttribute('aria-label',t);
     });
   }
 

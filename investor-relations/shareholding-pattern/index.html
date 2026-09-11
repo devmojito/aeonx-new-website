@@ -5428,13 +5428,30 @@ document.addEventListener("DOMContentLoaded",function(){
                 /* Figma spells the product names three ways ("Logystix" in the footer,
                    "LogystiX" on the cards). One casing per brand, sitewide. */
                 [/\bLogystix\b/g,'LogystiX'],[/\bManuFex\b/g,'ManufeX'],[/\bManufex\b/g,'ManufeX'],
-                [/\bSupplierx\b/g,'SupplierX'],[/\bOrderx\b/g,'OrderX'],[/\bAeonx\b/g,'AeonX']];
+                [/\bSupplierx\b/g,'SupplierX'],[/\bOrderx\b/g,'OrderX'],[/\bAeonx\b/g,'AeonX'],
+                /* Misspellings found by a sitewide spellcheck. All ship in the Figma
+                   dump, so they are corrected here rather than in the markup. */
+                [/\bDelievery\b/g,'Delivery'],[/\bDELIEVER\b/g,'DELIVER'],[/\bPRATICE\b/g,'PRACTICE'],
+                [/\bReciept\b/g,'Receipt'],[/\bACCELARATOR\b/g,'ACCELERATOR'],[/\bexractors\b/g,'extractors'],
+                [/\bPublshed\b/g,'Published'],[/\bSignup to\b/g,'Sign up to'],[/\bDIgital\b/g,'Digital'],
+                [/\bContianer\b/g,'Container']];
   function copyFix(){
     [].slice.call(document.querySelectorAll('.g-t,section.ax-footer a,.ax-mm2__ln,.ax-nav__link')).forEach(function(e){
-      if(e.children.length) return;
-      var t=e.textContent, o=t;
+      /* Text nodes, not textContent: a label broken with <br> ("Amazon DynamoDB<br>
+         Delievery") has an element child, and skipping those left its typo in. */
+      [].forEach.call(e.childNodes,function(n){
+        if(n.nodeType!==3) return;
+        var t=n.nodeValue, o=t;
+        COPY_FIX.forEach(function(f){ t=t.replace(f[0],f[1]); });
+        if(t!==o) n.nodeValue=t;
+      });
+    });
+    /* Image labels too: the generator writes Figma's layer name into aria-label,
+       so a typo there is read out by screen readers. */
+    [].slice.call(document.querySelectorAll('[aria-label]')).forEach(function(e){
+      var t=e.getAttribute('aria-label'), o=t;
       COPY_FIX.forEach(function(f){ t=t.replace(f[0],f[1]); });
-      if(t!==o) e.textContent=t;
+      if(t!==o) e.setAttribute('aria-label',t);
     });
   }
 
@@ -7377,6 +7394,30 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 
+<script>
+/* ---- MOBILE: drop the "Latest" and "PDF" badges ----
+   The mobile list is the design's own static rows, not the rows built above, so the
+   badges are removed here: each label and the pill plate that shares its parent and
+   sits around it at roughly its size. */
+(function(){
+  function run(){
+    [].forEach.call(document.querySelectorAll('.ax-mob .g-t'),function(t){
+      if(!/^(latest|pdf)$/i.test((t.textContent||'').trim())) return;
+      var lb=t.getBoundingClientRect();
+      [].forEach.call(t.parentElement.children,function(s){
+        if(s===t) return;
+        var b=s.getBoundingClientRect();
+        if(b.width&&b.width<lb.width*3&&b.left<=lb.left+1&&b.right>=lb.right-1&&
+           b.top<=lb.top+1&&b.bottom>=lb.bottom-1) s.style.display='none';
+      });
+      t.style.display='none';
+    });
+  }
+  if(document.readyState==='complete') run(); else addEventListener('load',run);
+})();
+</script>
+
+
 <style id="ax-invdocs-css">
 /* ---- INVESTOR DOCUMENT BROWSER ----
    Figma draws the browser (category rail with counts, search field, document rows,
@@ -7634,6 +7675,10 @@ document.addEventListener("DOMContentLoaded",function(){
       });
     });
 
+    /* Titles come from the client's document register (the API, or the snapshot
+       above); a typo there is corrected on the way to the page. */
+    function fixT(t){ return (t||'').replace(/\bALONWITH\b/g,'ALONG WITH'); }
+
     function makeRow(doc,i,isFirst){
       var frag=document.createElement('div');
       frag.className='ax-inv-row';
@@ -7647,7 +7692,7 @@ document.addEventListener("DOMContentLoaded",function(){
         setv(c,'left',o.l);
         setv(c,'top',o.t-rowTop);
         var kind=classify(o);
-        if(kind==='title'){ c.textContent=doc.t; c.style.whiteSpace='nowrap';
+        if(kind==='title'){ c.textContent=fixT(doc.t); c.style.whiteSpace='nowrap';
           c.style.overflow='hidden'; c.style.textOverflow='ellipsis'; c.style.width=(list.b.w*0.70)+'vw'; }
         else if(kind==='date'){ c.textContent=doc.d||''; }
         else if(kind==='chip'){ c.textContent=(doc.d||'').split(' ')[1]||''; }
@@ -7660,13 +7705,13 @@ document.addEventListener("DOMContentLoaded",function(){
       if(doc.gone){
         frag.classList.add('is-gone');
         frag.setAttribute('title','Document not currently available — being restored');
-        frag.setAttribute('aria-label',doc.t+(doc.d?(', '+doc.d):'')+', document not currently available');
+        frag.setAttribute('aria-label',fixT(doc.t)+(doc.d?(', '+doc.d):'')+', document not currently available');
         return frag;
       }
       frag.setAttribute('role','link');
       frag.dataset.axTo=doc.u;
       frag.setAttribute('tabindex','0');
-      frag.setAttribute('aria-label',doc.t+(doc.d?(', '+doc.d):'')+', PDF');
+      frag.setAttribute('aria-label',fixT(doc.t)+(doc.d?(', '+doc.d):'')+', PDF');
       var open=function(){ window.open(doc.u,'_blank','noopener'); };
       frag.addEventListener('click',function(e){ e.preventDefault(); e.stopPropagation(); open(); });
       frag.addEventListener('keydown',function(e){

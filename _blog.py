@@ -17,6 +17,7 @@ import io, json, os, re, sys, html as htmlmod
 
 import _gen  # reuse get_shell() so posts carry the identical nav/footer
 
+from _bloglist_build import LABEL
 DATA = '_blogdata.json'
 LOGO = '/assets/aeonx-logo.svg'          # placeholder for posts with no image
 
@@ -102,14 +103,31 @@ def pretty_date(y, m, d):
         return '%s-%s-%s' % (y, m, d)
 
 
+# Misspellings in the posts carried over from WordPress, found by a sitewide
+# spellcheck. Corrected at build time so a fresh export from /manage/ keeps them fixed.
+TYPOS = [
+    (r'\bapprovel\b', 'approval'), (r'\bmaitained\b', 'maintained'),
+    (r'\bimporing\b', 'importing'), (r'\bPersion\b', 'Person'),
+    (r'\bTRIGGERD\b', 'TRIGGERED'), (r'\bGoto SWDD\b', 'Go to SWDD'),
+    (r'\bcould bekat budgets\b', 'could be about budgets'), (r'Acccounts', 'Accounts'),
+    (r'\bsoftwares\b', 'software'), (r'\bfeedbacks\b', 'feedback'), (r'\bAeonx\b', 'AeonX'),
+]
+
+
+def fix_typos(s):
+    for a, b in TYPOS:
+        s = re.sub(a, b, s)
+    return s
+
+
 def build_post(p, top, footer, bottom):
-    title = re.sub(r'\s*[-|]\s*AeonX Digital\s*$', '', p['title'] or p['slug'])
-    cat = p['category'].replace('-', ' ').title()
+    title = fix_typos(re.sub(r'\s*[-|]\s*AeonX Digital\s*$', '', p['title'] or p['slug']))
+    cat = LABEL.get(p['category'], p['category'].replace('-', ' ').title())
     date = pretty_date(p['year'], p['month'], p['day'])
     author = p['author'].replace('-', ' ').title()
     thumb = p['thumb'] or LOGO
     ph = ' ax-post__hero--ph' if not p['thumb'] else ''
-    body = clean_body(p['html'], p.get('brokenInline') or [])
+    body = fix_typos(clean_body(p['html'], p.get('brokenInline') or []))
 
     head = re.sub(r'<title>.*?</title>', '<title>%s — AeonX Digital</title>' % esc(title),
                   top, flags=re.S)

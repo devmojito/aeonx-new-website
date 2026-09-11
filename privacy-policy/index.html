@@ -526,7 +526,7 @@ main.ax-page.ax-legal-page{height:auto!important;overflow:visible!important}
 <h2>Customer Data</h2>
 <p>Aeonx Digital receives and processes information (in paper and electronic form) in accordance with its clients’ instructions for the purpose of providing services to its customers. At Aeonx Digital, we recognize the importance of privacy to our customers and we strive to safeguard any personal information we receive and may need to use in support of our customers.</p>
 <p>Aeonx Digital Customer Information</p>
-<ul><li>Email address</li><li>Phone number</li><li>Information regarding your role within your company</li><li>Company information, including company name, address, billing information (e.g., P.O. number, bank information, credit card number), and company size and</li><li>Contact information for other relevant points of contact within your company as needed for Aeonx DIgital to provide its services.</li><li>Information regarding the issue or topic being reached out over;</li></ul>
+<ul><li>Email address</li><li>Phone number</li><li>Information regarding your role within your company</li><li>Company information, including company name, address, billing information (e.g., P.O. number, bank information, credit card number), and company size and</li><li>Contact information for other relevant points of contact within your company as needed for Aeonx Digital to provide its services.</li><li>Information regarding the issue or topic being reached out over;</li></ul>
 <p>If you purchased one of Aeonx Digital’s technical solutions you may have the option to add additional users to your account. We will ask for the name and email address of the additional users you want to add. This information is used by Aeonx Digital to provide the requested service.</p>
 <p>In the course of using Aeonx Digital’s technical solutions or services, you may provide business information related to your company or employees. Business information may include copies of your company’s policies and process documents, responses to assessment questionnaires and evidence to support those responses. This is information is stored on Aeonx Digital’s systems, and is used to provide contracted services in accordance with the applicable terms and conditions of agreements between Aeonx Digital and your company.</p>
 <h2>Children</h2>
@@ -5337,13 +5337,30 @@ document.addEventListener("DOMContentLoaded",function(){
                 /* Figma spells the product names three ways ("Logystix" in the footer,
                    "LogystiX" on the cards). One casing per brand, sitewide. */
                 [/\bLogystix\b/g,'LogystiX'],[/\bManuFex\b/g,'ManufeX'],[/\bManufex\b/g,'ManufeX'],
-                [/\bSupplierx\b/g,'SupplierX'],[/\bOrderx\b/g,'OrderX'],[/\bAeonx\b/g,'AeonX']];
+                [/\bSupplierx\b/g,'SupplierX'],[/\bOrderx\b/g,'OrderX'],[/\bAeonx\b/g,'AeonX'],
+                /* Misspellings found by a sitewide spellcheck. All ship in the Figma
+                   dump, so they are corrected here rather than in the markup. */
+                [/\bDelievery\b/g,'Delivery'],[/\bDELIEVER\b/g,'DELIVER'],[/\bPRATICE\b/g,'PRACTICE'],
+                [/\bReciept\b/g,'Receipt'],[/\bACCELARATOR\b/g,'ACCELERATOR'],[/\bexractors\b/g,'extractors'],
+                [/\bPublshed\b/g,'Published'],[/\bSignup to\b/g,'Sign up to'],[/\bDIgital\b/g,'Digital'],
+                [/\bContianer\b/g,'Container']];
   function copyFix(){
     [].slice.call(document.querySelectorAll('.g-t,section.ax-footer a,.ax-mm2__ln,.ax-nav__link')).forEach(function(e){
-      if(e.children.length) return;
-      var t=e.textContent, o=t;
+      /* Text nodes, not textContent: a label broken with <br> ("Amazon DynamoDB<br>
+         Delievery") has an element child, and skipping those left its typo in. */
+      [].forEach.call(e.childNodes,function(n){
+        if(n.nodeType!==3) return;
+        var t=n.nodeValue, o=t;
+        COPY_FIX.forEach(function(f){ t=t.replace(f[0],f[1]); });
+        if(t!==o) n.nodeValue=t;
+      });
+    });
+    /* Image labels too: the generator writes Figma's layer name into aria-label,
+       so a typo there is read out by screen readers. */
+    [].slice.call(document.querySelectorAll('[aria-label]')).forEach(function(e){
+      var t=e.getAttribute('aria-label'), o=t;
       COPY_FIX.forEach(function(f){ t=t.replace(f[0],f[1]); });
-      if(t!==o) e.textContent=t;
+      if(t!==o) e.setAttribute('aria-label',t);
     });
   }
 
