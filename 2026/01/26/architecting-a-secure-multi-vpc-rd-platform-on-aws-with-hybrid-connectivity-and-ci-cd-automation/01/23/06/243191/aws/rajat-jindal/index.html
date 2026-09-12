@@ -4224,154 +4224,6 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 
-<style id="ax-annc-css">
-/* Nothing to style: the bar already has its design. This block only exists so
-   _postbuild.py has a sentinel to test for. */
-</style>
-<script>
-/* ---- ANNOUNCEMENT BAR, EDITED FROM /manage/ ----
-   The strip above the nav is baked into all 91 pages, so changing its wording used
-   to mean a rebuild and a redeploy -- which is why it shipped carrying Figma's
-   placeholder ("Grep, Embeddings, or Both? ... June 30th") for months. It now reads
-   siteconfig.Announcement at runtime.
-
-   Same contract as the investor document browser: with no API reachable the page
-   keeps whatever is baked into it, so an outage degrades to slightly stale copy
-   rather than an empty orange band. */
-(function () {
-  var API_BASE = (window.AX_API_BASE ||
-    (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8000' : ''))
-    .replace(/\/+$/, '');
-  /* Empty string is the CORRECT base: the site and the API are served by one
-     CloudFront distribution, so a relative fetch is same-origin. Testing for
-     !API_BASE made every page skip the API on production entirely. */
-  if (!window.fetch) return;
-
-  /* Hiding the bar shortens the fixed header, and a page whose layout reserved a
-     strip for it is then left with an empty band under the nav.
-
-     Only some pages reserve it. The V2 homepage starts its content at 5.885vw,
-     which is the bar plus the nav, because Figma drew both above the fold. A
-     sub-page starts at 2.29vw and its hero art is meant to run up under the nav,
-     so it reserves nothing and must not move.
-
-     That is the discriminator: the page reserved the strip only if its topmost
-     element begins at or below the WHOLE header, bar included. Comparing against
-     the bar alone would catch the sub-pages too, since their 44px start happens
-     to equal the bar's height. With the reserve confirmed the page moves up by
-     the bar's height and nothing else. A negative margin is enough: everything
-     inside is absolutely positioned against .ax-page, so the whole page travels
-     together and the document gets shorter by the same amount.
-
-     Measured while the bar is still visible, and in vw, so a resize keeps it. */
-  var shifted = null;   /* the page we pulled up, so the shift can be undone */
-
-  function reclaim(bar) {
-    if (shifted) return;
-    var h = bar.getBoundingClientRect().height;
-    var header = bar.closest('header') || bar.parentElement;
-    var H = header ? header.getBoundingClientRect().height : 0;
-    if (!(h > 1) || !(H > h) || !window.innerWidth) return;
-    var page = document.querySelector('main.ax-page');
-    if (!page || page.closest('.ax-mob')) return;   /* mobile hides the chrome outright */
-    var top = Infinity;
-    [].forEach.call(page.children, function (el) {
-      var t = el.getBoundingClientRect().top;
-      if (t < top) top = t;
-    });
-    if (!(top >= H - 1)) return;                    /* nothing was reserved */
-    shifted = { page: page, was: page.style.marginTop };
-    page.style.marginTop = '-' + (h / window.innerWidth * 100).toFixed(4) + 'vw';
-  }
-
-  function unreclaim() {
-    if (!shifted) return;
-    shifted.page.style.marginTop = shifted.was;
-    shifted = null;
-  }
-
-  function apply(d) {
-    var bars = document.querySelectorAll('a.ax-annc, .ax-annc');
-    if (!bars.length) return;
-    [].forEach.call(bars, function (bar) {
-      var txt = bar.querySelector('.ax-annc__txt');
-      if (!d.active || !d.text) { reclaim(bar); bar.hidden = true; bar.style.display = 'none'; return; }
-      unreclaim();
-      bar.hidden = false;
-      bar.style.removeProperty('display');
-      if (txt) txt.textContent = d.text;
-      if (bar.tagName === 'A') {
-        if (d.url) {
-          bar.setAttribute('href', d.url);
-          bar.style.removeProperty('cursor');
-          /* off-site links open in a new tab, matching every other external CTA */
-          if (/^https?:/i.test(d.url) && d.url.indexOf(location.host) === -1) {
-            bar.setAttribute('target', '_blank');
-            bar.setAttribute('rel', 'noopener noreferrer');
-          } else {
-            bar.removeAttribute('target');
-            bar.removeAttribute('rel');
-          }
-        } else {
-          /* No destination: keep it as text rather than a link that goes nowhere.
-             href="#" would jump to the top of the page and looks broken. */
-          bar.removeAttribute('href');
-          bar.removeAttribute('target');
-          bar.style.cursor = 'default';
-        }
-      }
-    });
-  }
-
-  /* ---- No flash of the placeholder ----
-     The bar is baked into the HTML carrying Figma's webinar copy, and the truth
-     only arrives a round trip later. Every load therefore showed the placeholder
-     for a moment and then yanked it away, taking 44px of page with it.
-
-     So the last known answer is remembered and applied here, during parse, before
-     the first paint. With nothing remembered the bar starts hidden: there is no
-     announcement most of the time, and a bar arriving a moment late is far less
-     jarring than one that appears and vanishes. Whatever the API says then wins,
-     and is remembered for next time.
-
-     Storage can throw outright in a private window, so every touch is guarded. */
-  var KEY = 'ax-annc';
-  function remembered() {
-    try { return JSON.parse(localStorage.getItem(KEY)); } catch (e) { return null; }
-  }
-  function remember(d) {
-    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) {}
-  }
-
-  /* The bar ships with href="#" baked in from the design. Until the API says there
-     is somewhere to go, it is not a link: no page on the site may take a reader to
-     a hash. apply() puts a real href back the moment one arrives. */
-  [].forEach.call(document.querySelectorAll('a.ax-annc'), function (bar) {
-    var h = bar.getAttribute('href');
-    if (!h || h.charAt(0) === '#') {
-      bar.removeAttribute('href');
-      bar.style.cursor = 'default';
-    }
-  });
-
-  var last = remembered();
-  apply(last && last.active && last.text ? last : { active: false });
-
-  fetch(API_BASE + '/api/announcement/', { credentials: 'omit' })
-    .then(function (r) { return r.ok ? r.json() : null; })
-    .then(function (d) {
-      if (!d) return;
-      apply(d);
-      remember(d.active && d.text ? { active: true, text: d.text, url: d.url || '' }
-                                  : { active: false });
-    })
-    /* An unreachable API leaves the remembered state showing, which is the last
-       thing the site actually published. That beats the baked copy: the baked
-       copy is a placeholder from the design file and was never true. */
-    .catch(function () {});
-})();
-</script>
-
 <style id="ax-mmsuite-css">
 /* ---- Mega-menu "Explore" illustration ----
    Figma component set 6924:20276 is not a still. It holds two variants of the same
@@ -7665,6 +7517,266 @@ a.ax-pt-cta[href]:hover,a.ax-pt-cta[href]:focus-visible{background-color:rgb(21,
   /* lazily: the .ax-mob block is not guaranteed to precede this script */
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
+})();
+</script>
+
+<style id="ax-annc-css">
+/* Nothing to style: the bar already has its design. This block only exists so
+   _postbuild.py has a sentinel to test for. */
+</style>
+<script>
+/* ---- ANNOUNCEMENT BAR, EDITED FROM /manage/ ----
+   The strip above the nav is baked into all 91 pages, so changing its wording used
+   to mean a rebuild and a redeploy -- which is why it shipped carrying Figma's
+   placeholder ("Grep, Embeddings, or Both? ... June 30th") for months. It now reads
+   siteconfig.Announcement at runtime.
+
+   Same contract as the investor document browser: with no API reachable the page
+   keeps whatever is baked into it, so an outage degrades to slightly stale copy
+   rather than an empty orange band. */
+(function () {
+  var API_BASE = (window.AX_API_BASE ||
+    (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'http://localhost:8000' : ''))
+    .replace(/\/+$/, '');
+  /* Empty string is the CORRECT base: the site and the API are served by one
+     CloudFront distribution, so a relative fetch is same-origin. Testing for
+     !API_BASE made every page skip the API on production entirely. */
+  if (!window.fetch) return;
+
+  /* Hiding the bar shortens the fixed header, and a page whose layout reserved a
+     strip for it is then left with an empty band under the nav.
+
+     Only some pages reserve it. The V2 homepage starts its content at 5.885vw,
+     which is the bar plus the nav, because Figma drew both above the fold. A
+     sub-page starts at 2.29vw and its hero art is meant to run up under the nav,
+     so it reserves nothing and must not move.
+
+     That is the discriminator: the page reserved the strip only if its topmost
+     element begins at or below the WHOLE header, bar included. Comparing against
+     the bar alone would catch the sub-pages too, since their 44px start happens
+     to equal the bar's height. With the reserve confirmed the page moves up by
+     the bar's height and nothing else. A negative margin is enough: everything
+     inside is absolutely positioned against .ax-page, so the whole page travels
+     together and the document gets shorter by the same amount.
+
+     Measured while the bar is still visible, and in vw, so a resize keeps it. */
+  var shifted = null;   /* the page we pulled up, so the shift can be undone */
+
+  function reclaim(bar) {
+    if (shifted) return;
+    var h = bar.getBoundingClientRect().height;
+    var header = bar.closest('header') || bar.parentElement;
+    var H = header ? header.getBoundingClientRect().height : 0;
+    if (!(h > 1) || !(H > h) || !window.innerWidth) return;
+    var page = document.querySelector('main.ax-page');
+    if (!page || page.closest('.ax-mob')) return;   /* mobile hides the chrome outright */
+    var top = Infinity;
+    [].forEach.call(page.children, function (el) {
+      var t = el.getBoundingClientRect().top;
+      if (t < top) top = t;
+    });
+    if (!(top >= H - 1)) return;                    /* nothing was reserved */
+    shifted = { page: page, was: page.style.marginTop };
+    page.style.marginTop = '-' + (h / window.innerWidth * 100).toFixed(4) + 'vw';
+  }
+
+  function unreclaim() {
+    if (!shifted) return;
+    shifted.page.style.marginTop = shifted.was;
+    shifted = null;
+  }
+
+  /* ---- THE PHONE'S OWN BAR ----
+     Below 768px the mobile shell hides the whole desktop chrome, this bar with it,
+     so the phone shows the one Figma drew into the mobile frame instead: a painted
+     full-width box at y=0 and a single centred line of text, SIBLINGS of each other
+     and direct children of the page. Nothing marks them, so they are found by that
+     shape and driven as one. Left alone they showed Figma's placeholder ("Signup to
+     LlamaParse for 10k free credits!") on every phone, which is exactly the bug the
+     rest of this file exists to fix.
+
+     Hiding them leaves no gap: _mobfx pins the promo strip and then pins the navbar
+     directly under whatever it measured, so with the strip display:none the navbar
+     pins flush at the top, and everything below is absolutely positioned and does
+     not move. */
+  function mobBar() {
+    var mob = document.querySelector('.ax-mob');
+    if (!mob) return null;
+    var page = mob.querySelector('main.ax-page') || mob;
+    var kids = [].slice.call(page.children);
+    var strip = null;
+    for (var i = 0; i < kids.length; i++) {
+      var e = kids[i], st = e.style;
+      if (!e.classList.contains('g-b')) continue;
+      if (parseFloat(st.top) !== 0 || parseFloat(st.left) !== 0) continue;
+      if (!(parseFloat(st.width) >= 99)) continue;
+      var h = parseFloat(st.height);
+      /* the strip is 9.53vw of a 430 frame; the cap keeps a full-bleed hero panel,
+         which also starts at 0,0 and runs the width, out of it */
+      if (!(h > 0) || h > 16) continue;
+      if (!st.background && !st.backgroundColor) continue;
+      strip = e; break;
+    }
+    if (!strip) return null;
+    var top = parseFloat(strip.style.top), bot = top + parseFloat(strip.style.height);
+    var txt = null;
+    for (var j = 0; j < kids.length; j++) {
+      var t = kids[j];
+      if (!t.classList.contains('g-t')) continue;
+      var y = parseFloat(t.style.top);
+      if (y >= top - 0.5 && y + parseFloat(t.style.height) <= bot + 0.5) { txt = t; break; }
+    }
+    return { el: strip, txt: txt, mob: true };
+  }
+
+  function bars() {
+    var out = [];
+    [].forEach.call(document.querySelectorAll('a.ax-annc, .ax-annc'), function (b) {
+      out.push({ el: b, txt: b.querySelector('.ax-annc__txt') });
+    });
+    var m = mobBar();
+    if (m) out.push(m);
+    return out;
+  }
+
+  /* The phone's strip is a div, so the anchor branch below never reaches it. Give it
+     the same destination by hand, on the text too: the label is painted over the
+     strip, so that is what a thumb actually lands on. */
+  function mobLink(b, url) {
+    [b.el, b.txt].forEach(function (e) {
+      if (!e) return;
+      if (!url) {
+        e.style.removeProperty('cursor');
+        e.removeAttribute('role');
+        e.removeAttribute('tabindex');
+        e.__axTo = '';
+        return;
+      }
+      e.__axTo = url;
+      e.style.cursor = 'pointer';
+      e.setAttribute('role', 'link');
+      e.setAttribute('tabindex', '0');
+      if (e.__axAnncWired) return;
+      e.__axAnncWired = 1;
+      var go = function (ev) {
+        if (!e.__axTo) return;
+        if (ev.type === 'keydown' && ev.key !== 'Enter' && ev.key !== ' ') return;
+        ev.preventDefault();
+        if (/^https?:/i.test(e.__axTo) && e.__axTo.indexOf(location.host) === -1) {
+          window.open(e.__axTo, '_blank', 'noopener');
+        } else {
+          location.href = e.__axTo;
+        }
+      };
+      e.addEventListener('click', go);
+      e.addEventListener('keydown', go);
+    });
+  }
+
+  function apply(d) {
+    var list = bars();
+    if (!list.length) return;
+    list.forEach(function (b) {
+      var bar = b.el, txt = b.txt;
+      if (!d.active || !d.text) {
+        reclaim(bar);
+        bar.hidden = true; bar.style.display = 'none';
+        if (txt) { txt.hidden = true; txt.style.display = 'none'; }
+        if (b.mob) mobLink(b, '');
+        return;
+      }
+      unreclaim();
+      bar.hidden = false;
+      bar.style.removeProperty('display');
+      if (txt) { txt.hidden = false; txt.style.removeProperty('display'); }
+      if (txt) txt.textContent = d.text;
+      if (b.mob) {
+        /* Figma's label is a fixed-width nowrap box centred in the bar, sized to the
+           placeholder. Real copy is a different length, so give it the whole width to
+           be centred in and clip rather than bleed past the strip. */
+        txt && (txt.style.left = '0', txt.style.width = '100vw',
+                txt.style.textAlign = 'center', txt.style.overflow = 'hidden',
+                txt.style.textOverflow = 'ellipsis');
+        mobLink(b, d.url || '');
+        return;
+      }
+      if (bar.tagName === 'A') {
+        if (d.url) {
+          bar.setAttribute('href', d.url);
+          bar.style.removeProperty('cursor');
+          /* off-site links open in a new tab, matching every other external CTA */
+          if (/^https?:/i.test(d.url) && d.url.indexOf(location.host) === -1) {
+            bar.setAttribute('target', '_blank');
+            bar.setAttribute('rel', 'noopener noreferrer');
+          } else {
+            bar.removeAttribute('target');
+            bar.removeAttribute('rel');
+          }
+        } else {
+          /* No destination: keep it as text rather than a link that goes nowhere.
+             href="#" would jump to the top of the page and looks broken. */
+          bar.removeAttribute('href');
+          bar.removeAttribute('target');
+          bar.style.cursor = 'default';
+        }
+      }
+    });
+  }
+
+  /* ---- No flash of the placeholder ----
+     The bar is baked into the HTML carrying Figma's webinar copy, and the truth
+     only arrives a round trip later. Every load therefore showed the placeholder
+     for a moment and then yanked it away, taking 44px of page with it.
+
+     So the last known answer is remembered and applied here, during parse, before
+     the first paint. With nothing remembered the bar starts hidden: there is no
+     announcement most of the time, and a bar arriving a moment late is far less
+     jarring than one that appears and vanishes. Whatever the API says then wins,
+     and is remembered for next time.
+
+     Storage can throw outright in a private window, so every touch is guarded. */
+  var KEY = 'ax-annc';
+  function remembered() {
+    try { return JSON.parse(localStorage.getItem(KEY)); } catch (e) { return null; }
+  }
+  function remember(d) {
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) {}
+  }
+
+  /* The bar ships with href="#" baked in from the design. Until the API says there
+     is somewhere to go, it is not a link: no page on the site may take a reader to
+     a hash. apply() puts a real href back the moment one arrives. */
+  [].forEach.call(document.querySelectorAll('a.ax-annc'), function (bar) {
+    var h = bar.getAttribute('href');
+    if (!h || h.charAt(0) === '#') {
+      bar.removeAttribute('href');
+      bar.style.cursor = 'default';
+    }
+  });
+
+  var last = remembered();
+  var state = last && last.active && last.text ? last : { active: false };
+  apply(state);
+  /* The mobile block sits before this script today, so the pass above already sees
+     it. Run once more when parsing is done rather than depend on that ordering: a
+     fragment refresh moves these blocks around. */
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () { apply(state); });
+  }
+
+  fetch(API_BASE + '/api/announcement/', { credentials: 'omit' })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (d) {
+      if (!d) return;
+      state = d;
+      apply(d);
+      remember(d.active && d.text ? { active: true, text: d.text, url: d.url || '' }
+                                  : { active: false });
+    })
+    /* An unreachable API leaves the remembered state showing, which is the last
+       thing the site actually published. That beats the baked copy: the baked
+       copy is a placeholder from the design file and was never true. */
+    .catch(function () {});
 })();
 </script>
 

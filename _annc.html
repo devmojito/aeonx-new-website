@@ -64,16 +64,120 @@
     shifted = null;
   }
 
+  /* ---- THE PHONE'S OWN BAR ----
+     Below 768px the mobile shell hides the whole desktop chrome, this bar with it,
+     so the phone shows the one Figma drew into the mobile frame instead: a painted
+     full-width box at y=0 and a single centred line of text, SIBLINGS of each other
+     and direct children of the page. Nothing marks them, so they are found by that
+     shape and driven as one. Left alone they showed Figma's placeholder ("Signup to
+     LlamaParse for 10k free credits!") on every phone, which is exactly the bug the
+     rest of this file exists to fix.
+
+     Hiding them leaves no gap: _mobfx pins the promo strip and then pins the navbar
+     directly under whatever it measured, so with the strip display:none the navbar
+     pins flush at the top, and everything below is absolutely positioned and does
+     not move. */
+  function mobBar() {
+    var mob = document.querySelector('.ax-mob');
+    if (!mob) return null;
+    var page = mob.querySelector('main.ax-page') || mob;
+    var kids = [].slice.call(page.children);
+    var strip = null;
+    for (var i = 0; i < kids.length; i++) {
+      var e = kids[i], st = e.style;
+      if (!e.classList.contains('g-b')) continue;
+      if (parseFloat(st.top) !== 0 || parseFloat(st.left) !== 0) continue;
+      if (!(parseFloat(st.width) >= 99)) continue;
+      var h = parseFloat(st.height);
+      /* the strip is 9.53vw of a 430 frame; the cap keeps a full-bleed hero panel,
+         which also starts at 0,0 and runs the width, out of it */
+      if (!(h > 0) || h > 16) continue;
+      if (!st.background && !st.backgroundColor) continue;
+      strip = e; break;
+    }
+    if (!strip) return null;
+    var top = parseFloat(strip.style.top), bot = top + parseFloat(strip.style.height);
+    var txt = null;
+    for (var j = 0; j < kids.length; j++) {
+      var t = kids[j];
+      if (!t.classList.contains('g-t')) continue;
+      var y = parseFloat(t.style.top);
+      if (y >= top - 0.5 && y + parseFloat(t.style.height) <= bot + 0.5) { txt = t; break; }
+    }
+    return { el: strip, txt: txt, mob: true };
+  }
+
+  function bars() {
+    var out = [];
+    [].forEach.call(document.querySelectorAll('a.ax-annc, .ax-annc'), function (b) {
+      out.push({ el: b, txt: b.querySelector('.ax-annc__txt') });
+    });
+    var m = mobBar();
+    if (m) out.push(m);
+    return out;
+  }
+
+  /* The phone's strip is a div, so the anchor branch below never reaches it. Give it
+     the same destination by hand, on the text too: the label is painted over the
+     strip, so that is what a thumb actually lands on. */
+  function mobLink(b, url) {
+    [b.el, b.txt].forEach(function (e) {
+      if (!e) return;
+      if (!url) {
+        e.style.removeProperty('cursor');
+        e.removeAttribute('role');
+        e.removeAttribute('tabindex');
+        e.__axTo = '';
+        return;
+      }
+      e.__axTo = url;
+      e.style.cursor = 'pointer';
+      e.setAttribute('role', 'link');
+      e.setAttribute('tabindex', '0');
+      if (e.__axAnncWired) return;
+      e.__axAnncWired = 1;
+      var go = function (ev) {
+        if (!e.__axTo) return;
+        if (ev.type === 'keydown' && ev.key !== 'Enter' && ev.key !== ' ') return;
+        ev.preventDefault();
+        if (/^https?:/i.test(e.__axTo) && e.__axTo.indexOf(location.host) === -1) {
+          window.open(e.__axTo, '_blank', 'noopener');
+        } else {
+          location.href = e.__axTo;
+        }
+      };
+      e.addEventListener('click', go);
+      e.addEventListener('keydown', go);
+    });
+  }
+
   function apply(d) {
-    var bars = document.querySelectorAll('a.ax-annc, .ax-annc');
-    if (!bars.length) return;
-    [].forEach.call(bars, function (bar) {
-      var txt = bar.querySelector('.ax-annc__txt');
-      if (!d.active || !d.text) { reclaim(bar); bar.hidden = true; bar.style.display = 'none'; return; }
+    var list = bars();
+    if (!list.length) return;
+    list.forEach(function (b) {
+      var bar = b.el, txt = b.txt;
+      if (!d.active || !d.text) {
+        reclaim(bar);
+        bar.hidden = true; bar.style.display = 'none';
+        if (txt) { txt.hidden = true; txt.style.display = 'none'; }
+        if (b.mob) mobLink(b, '');
+        return;
+      }
       unreclaim();
       bar.hidden = false;
       bar.style.removeProperty('display');
+      if (txt) { txt.hidden = false; txt.style.removeProperty('display'); }
       if (txt) txt.textContent = d.text;
+      if (b.mob) {
+        /* Figma's label is a fixed-width nowrap box centred in the bar, sized to the
+           placeholder. Real copy is a different length, so give it the whole width to
+           be centred in and clip rather than bleed past the strip. */
+        txt && (txt.style.left = '0', txt.style.width = '100vw',
+                txt.style.textAlign = 'center', txt.style.overflow = 'hidden',
+                txt.style.textOverflow = 'ellipsis');
+        mobLink(b, d.url || '');
+        return;
+      }
       if (bar.tagName === 'A') {
         if (d.url) {
           bar.setAttribute('href', d.url);
@@ -129,12 +233,20 @@
   });
 
   var last = remembered();
-  apply(last && last.active && last.text ? last : { active: false });
+  var state = last && last.active && last.text ? last : { active: false };
+  apply(state);
+  /* The mobile block sits before this script today, so the pass above already sees
+     it. Run once more when parsing is done rather than depend on that ordering: a
+     fragment refresh moves these blocks around. */
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () { apply(state); });
+  }
 
   fetch(API_BASE + '/api/announcement/', { credentials: 'omit' })
     .then(function (r) { return r.ok ? r.json() : null; })
     .then(function (d) {
       if (!d) return;
+      state = d;
       apply(d);
       remember(d.active && d.text ? { active: true, text: d.text, url: d.url || '' }
                                   : { active: false });
