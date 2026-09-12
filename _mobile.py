@@ -55,6 +55,14 @@ def main():
         # The Anthropic page's desktop frame is on the Light V2 canvas, not the one
         # build_route_map() reads, so its mobile frame has no desktop name to match.
         'What we do/Alliances/Anthropic': 'alliances/anthropic',
+        # Same for the six product pages: their desktop frames are on the Light V2
+        # canvas too, so nothing in build_route_map() carries their names.
+        'What we do/Products/CRM360': 'products/crm-360',
+        'What we do/Products/SetuMove': 'products/setu-move',
+        'What we do/Products/Quic': 'products/quic',
+        'What we do/Products/Jarvis': 'products/jarvis',
+        'What we do/Products/Datasetu.ai': 'products/datasetu-ai',
+        'What we do/Products/SetuEdge': 'products/setuedge',
         'Investor/Financial Highlights': 'investor-relations',
         'Investor/Shareholding pattern.': 'investor-relations/shareholding-pattern',
     }

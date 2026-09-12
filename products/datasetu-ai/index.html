@@ -389,7 +389,7 @@ html.ax-pre-off #ax-pre{opacity:0;transform:translateY(-2vw);pointer-events:none
 
 <link rel="canonical" href="https://aeonx.digital/products/datasetu-ai/">
 <meta property="og:url" content="https://aeonx.digital/products/datasetu-ai/">
-</head>
+<style id="ax-mob-css">.ax-mob{display:none}@media(max-width:768px){body>*:not(.ax-mob):not(.ax-mnav){display:none!important}.ax-mob{display:block!important}}</style></head>
 <body>
 <div id="ax-pre" aria-hidden="true"><b>Loading&hellip;</b><div id="ax-pre-cluster"></div><div id="ax-pre-num"></div><div id="ax-pre-credit">AeonX&nbsp;&bull;&nbsp;Digital</div></div>
 
@@ -1633,227 +1633,6 @@ document.addEventListener('DOMContentLoaded',function(){
 </script>
 
 
-
-<style id="ax-scrollrow-css">
-/* Figma exports an over-wide row inside a clipped box and ships NO scroller, so every
-   card past the clip edge is simply unreachable (the leadership page hides 5 of its 8
-   people this way). Turning the existing clip into a real scroller costs no layout
-   change: the children are absolutely positioned, so the box already reports the full
-   scrollWidth -- it just was not allowed to scroll. */
-.ax-srow{overflow-x:auto!important;overflow-y:hidden!important;
-  scrollbar-width:none;scroll-behavior:smooth;overscroll-behavior-x:contain;
-  -webkit-overflow-scrolling:touch;cursor:grab}
-.ax-srow.is-drag{cursor:grabbing;scroll-behavior:auto}
-/* Draggable, not scrollbar-able: the bar is drawn nowhere, on any engine. */
-.ax-srow::-webkit-scrollbar{display:none}
-/* edge fades hint that there is more to the right */
-.ax-srow-wrap{position:relative}
-.ax-srow-fade{position:absolute;top:0;bottom:0;width:3vw;pointer-events:none;z-index:3;
-  opacity:0;transition:opacity .2s ease}
-.ax-srow-fade--l{left:0;background:linear-gradient(90deg,#fff,rgba(255,255,255,0))}
-.ax-srow-fade--r{right:0;background:linear-gradient(270deg,#fff,rgba(255,255,255,0))}
-.ax-srow-fade.on{opacity:1}
-@media (prefers-reduced-motion:reduce){.ax-srow{scroll-behavior:auto}}
-/* ---- PAGER OVERLAY ----
-   Figma exports the carousel's pager -- the dot strip and the prev/next buttons --
-   as ONE flat SVG, so nothing under the cursor was ever clickable and the dots
-   could not track position. Real controls are laid over that picture using its own
-   viewBox geometry (1728x40: dots at x17/73/89/105/121, prev at 1660, next 1708),
-   so the design is untouched and the hit areas land exactly on what is drawn. */
-.ax-srp{position:absolute;pointer-events:none;z-index:3}
-/* The pager is counter-translated every scroll frame to hold its place. The
-   scroll-reveal class on the baked art carries a transform TRANSITION, so each
-   new value animated instead of applying -- the art lagged the scroll and still
-   drifted while the dots stayed put. Pinning must be instant. */
-.ax-srp,.ax-srp-art{transition:none!important}
-/* The dot strip is gone. It was drawn twice -- baked into the exported art AND
-   painted over as live buttons -- and the overlay only existed to mask the static
-   version underneath. With the overlay removed the baked dots would surface as a
-   fake indicator frozen on page 2, so clip them off the art too. The pager export
-   is one shared component (viewBox 1728x40: dot pill 0-138, prev 1640, next 1688 --
-   the same constants this file already places the buttons with), so the clip is
-   safe wherever it is armed. Prev/next and the scrollbar remain. */
-.ax-srp-art{clip-path:inset(0 0 0 7.99%)}
-.ax-srp__btn{position:absolute;pointer-events:auto;cursor:pointer;background:transparent;
-  border:0;padding:0;border-radius:99px}
-.ax-srp__btn[disabled]{cursor:default;opacity:.45}
-.ax-srp__btn:focus-visible{outline:2px solid #23272E;outline-offset:2px}
-</style>
-<script>
-/* ---- OVER-WIDE FIGMA ROWS -> REAL SCROLLERS ---- */
-(function(){
-  var MIN_OVERFLOW = 1.15;
-  var REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;      /* content must exceed the box by 15% to be worth it */
-
-  function arm(box){
-    if (box.dataset.axSrow) return;
-    box.dataset.axSrow = '1';
-    box.classList.add('ax-srow');
-
-    /* keyboard: the box itself becomes focusable and arrow-scrollable, because the cards
-       inside are plain divs with nothing tabbable of their own */
-    if (!box.hasAttribute('tabindex')) box.setAttribute('tabindex', '0');
-    box.setAttribute('role', 'group');
-    if (!box.getAttribute('aria-label')) box.setAttribute('aria-label', 'Scrollable row, use the arrow keys');
-    box.addEventListener('keydown', function(e){
-      var step = box.clientWidth * 0.8;
-      if (e.key === 'ArrowRight'){ e.preventDefault(); box.scrollLeft += step; }
-      else if (e.key === 'ArrowLeft'){ e.preventDefault(); box.scrollLeft -= step; }
-      else if (e.key === 'Home'){ e.preventDefault(); box.scrollLeft = 0; }
-      else if (e.key === 'End'){ e.preventDefault(); box.scrollLeft = box.scrollWidth; }
-    });
-
-    /* pointer drag, so it feels like the carousel it looks like */
-    var down = null;
-    box.addEventListener('pointerdown', function(e){
-      if (e.pointerType === 'mouse' && e.button !== 0) return;
-      down = { x:e.clientX, l:box.scrollLeft, moved:false };
-      box.classList.add('is-drag');
-    });
-    box.addEventListener('pointermove', function(e){
-      if (!down) return;
-      var d = e.clientX - down.x;
-      if (Math.abs(d) > 3) down.moved = true;
-      box.scrollLeft = down.l - d;
-    });
-    function up(){ if (down) { down = null; box.classList.remove('is-drag'); } }
-    ['pointerup','pointercancel','pointerleave'].forEach(function(ev){
-      box.addEventListener(ev, up);
-    });
-    /* a drag must not fire the click of whatever card it ended on */
-    box.addEventListener('click', function(e){
-      if (down && down.moved) { e.preventDefault(); e.stopPropagation(); }
-    }, true);
-
-    /* edge fades. The wrapper is the clip's own parent when we can use it, otherwise the
-       fades are skipped -- never restructure the DOM, the layout is pixel-locked. */
-    var host = box.parentElement;
-    if (host && !host.dataset.axSrowWrap) {
-      host.dataset.axSrowWrap = '1';
-      var cs = getComputedStyle(host);
-      if (cs.position !== 'static') {
-        host.classList.add('ax-srow-wrap');
-        var l = document.createElement('div'), r = document.createElement('div');
-        l.className = 'ax-srow-fade ax-srow-fade--l';
-        r.className = 'ax-srow-fade ax-srow-fade--r';
-        /* sit the fades exactly over the scroller, not the whole host */
-        [l, r].forEach(function(f){
-          f.style.top = box.offsetTop + 'px';
-          f.style.height = box.offsetHeight + 'px';
-          f.style.bottom = 'auto';
-          host.appendChild(f);
-        });
-        var paint = function(){
-          var max = box.scrollWidth - box.clientWidth;
-          l.classList.toggle('on', box.scrollLeft > 4);
-          r.classList.toggle('on', box.scrollLeft < max - 4);
-        };
-        box.addEventListener('scroll', paint);
-        addEventListener('resize', paint);
-        paint();
-      }
-    }
-  }
-
-  /* The pager graphic: a wide, short vector sitting at the bottom of the row. */
-  function pagerOf(box){
-    var br = box.getBoundingClientRect();
-    var best = null;
-    [].slice.call(box.querySelectorAll('img.g-vec')).forEach(function(img){
-      var r = img.getBoundingClientRect();
-      if (!r.width || r.width < br.width * 0.5) return;
-      if (r.height > 60 || r.width / r.height < 20) return;      /* long and thin */
-      if (r.top - br.top < br.height * 0.6) return;              /* near the bottom */
-      if (!best || r.top > best.getBoundingClientRect().top) best = img;
-    });
-    return best;
-  }
-
-  function buildPager(box, img){
-    if (img.dataset.axSrp) return;
-    img.dataset.axSrp = '1';
-    img.classList.add('ax-srp-art');
-    var host = img.parentElement;
-    if (!host) return;
-    if (getComputedStyle(host).position === 'static') host.style.position = 'relative';
-
-    var VB = 1728, VH = 40;                    /* the export's own viewBox */
-    var wrap = document.createElement('div');
-    wrap.className = 'ax-srp';
-    function place(){
-      wrap.style.left = img.style.left; wrap.style.top = img.style.top;
-      wrap.style.width = img.style.width; wrap.style.height = img.style.height;
-    }
-    place();
-    host.insertBefore(wrap, img.nextSibling);
-
-    var pct = function(v){ return (v / VB * 100) + '%'; };
-    var vpct = function(v){ return (v / VH * 100) + '%'; };
-
-    function mkBtn(x0, x1, label){
-      var b = document.createElement('button');
-      b.type = 'button'; b.className = 'ax-srp__btn'; b.setAttribute('aria-label', label);
-      b.style.left = pct(x0); b.style.width = pct(x1 - x0);
-      b.style.top = '0'; b.style.height = '100%';
-      wrap.appendChild(b);
-      return b;
-    }
-    var prev = mkBtn(1640, 1682, 'Previous');
-    var next = mkBtn(1686, 1728, 'Next');
-
-    function step(){ return box.clientWidth * 0.9; }
-    function maxScroll(){ return box.scrollWidth - box.clientWidth; }
-
-    function render(){
-      var max = maxScroll();
-      prev.disabled = box.scrollLeft <= 4;
-      next.disabled = box.scrollLeft >= max - 4;
-      /* Figma draws the pager INSIDE the row it controls, so once that row became a
-         real scroller the arrows and dots slid away with the cards -- scroll to the
-         end and the controls were off-screen. Counter-translate them by exactly the
-         scroll offset so they hold their designed position while the cards move
-         under them. Paint-level only: no re-parenting (moving a row element out of
-         its track lays out but never paints), and the pager is position:absolute so
-         a transform cannot reflow the row. */
-      var t = 'translateX(' + box.scrollLeft + 'px)';
-      wrap.style.transform = t;
-      img.style.transform = t;
-    }
-
-    prev.addEventListener('click', function(){
-      box.scrollBy({ left: -step(), behavior: REDUCED ? 'auto' : 'smooth' }); });
-    next.addEventListener('click', function(){
-      box.scrollBy({ left: step(), behavior: REDUCED ? 'auto' : 'smooth' }); });
-    box.addEventListener('scroll', render, { passive: true });
-    addEventListener('resize', function(){ place(); render(); });
-    render();
-  }
-
-  function scan(){
-    var boxes = [].slice.call(document.querySelectorAll('.g-clip'));
-    boxes.forEach(function(b){
-      if (b.closest('header') || b.closest('footer') || b.closest('.ax-footer')) return;
-      var cw = b.clientWidth;
-      if (!cw || b.scrollWidth <= cw * MIN_OVERFLOW) return;
-      /* only rows: a tall clipped block is a masked graphic, not a carousel */
-      if (b.clientHeight > cw) return;
-      /* it must actually hold several sibling blocks, not one wide image */
-      var kids = [].slice.call(b.children).filter(function(k){ return k.offsetWidth; });
-      if (kids.length < 3) return;
-      /* leave anything another enhancer already drives */
-      if (b.querySelector('.ax-mq,.ax-recog__win,.ax-carm') || b.classList.contains('ax-carm')) return;
-      arm(b);
-      var pg = pagerOf(b);
-      if (pg) buildPager(b, pg);
-    });
-  }
-
-  function init(){ scan(); addEventListener('resize', function(){ setTimeout(scan, 200); }); }
-  /* lazily: the .ax-mob block is not guaranteed to precede this script */
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-  else init();
-})();
-</script>
 
 <style id="ax-stathov-css">
 /* Stats-band hover micro-interaction (homepage "proof" strip: BSE / 280+ / 15+ ...).
@@ -3944,6 +3723,238 @@ document.addEventListener('DOMContentLoaded',function(){
 })();
 </script>
 
+<div class="ax-mob"><main class="ax-page" style="position:relative;height:1759.7674vw">
+<div class="g-b" style="position:absolute;left:0.0000vw;top:21.3953vw;width:100.0000vw;height:197.4419vw;box-sizing:border-box;border-top:0.2326vw solid rgb(236,238,242);border-bottom:0.2326vw solid rgb(236,238,242);"></div>
+<div class="g-b" style="position:absolute;left:3.7209vw;top:21.6279vw;width:92.5581vw;height:187.6744vw;box-sizing:border-box;border-right:0.2326vw solid rgb(236,238,242);border-bottom:0.2326vw solid rgb(236,238,242);border-left:0.2326vw solid rgb(236,238,242);"></div>
+<div class="g-t" style="position:absolute;left:5.8140vw;top:32.7907vw;width:88.6047vw;height:5.1163vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:3.0233vw;line-height:5.1163vw;color:rgb(223,63,23);text-align:left;white-space:nowrap;">CANONICAL DATA FABRIC</div>
+<div class="g-t" style="position:absolute;left:5.8140vw;top:40.9302vw;width:88.6047vw;height:20.4651vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:8.3721vw;line-height:10.2326vw;color:rgb(35,39,46);text-align:left;white-space:pre-wrap;">One API over every SAP edition you run.</div>
+<div class="g-t" style="position:absolute;left:5.8140vw;top:72.5581vw;width:88.6047vw;height:22.3256vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:4.6512vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:pre-wrap;">Ten canonical entities across three SAP edition families, document AI on our own models, and a 21-agent library any product can call.</div>
+<div class="g-b g-clip" style="position:absolute;left:5.8140vw;top:105.1163vw;width:36.0465vw;height:10.2326vw;background-color:rgb(255,255,255);overflow:hidden;">
+<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.4651vw;width:36.0465vw;height:9.3023vw;background-color:rgb(223,63,23);border-radius:1.8605vw;overflow:hidden;">
+<div class="g-t" style="position:absolute;left:5.5814vw;top:2.3256vw;width:24.8837vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:2.7907vw;line-height:4.6512vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">Request a Proposal</div>
+</div>
+</div>
+<div class="g-b g-clip" style="position:absolute;left:41.8605vw;top:104.1860vw;width:35.3488vw;height:12.0930vw;background-color:rgb(255,255,255);overflow:hidden;">
+<div class="g-b g-clip" style="position:absolute;left:2.9070vw;top:1.3953vw;width:29.5349vw;height:9.3023vw;background-color:rgb(255,255,255);border-radius:1.8605vw;box-sizing:border-box;border:0.2326vw solid rgb(213,218,226);overflow:hidden;">
+<div class="g-t" style="position:absolute;left:8.6047vw;top:2.3256vw;width:12.3256vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:2.7907vw;line-height:4.6512vw;color:rgb(58,67,82);text-align:center;white-space:nowrap;">Talk to us</div>
+</div>
+</div>
+<img class="g-vec" src="/assets/vec/7110-29025.svg" data-vec="7110:29025" loading="lazy" decoding="async" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:3.9535vw;top:120.0000vw;width:92.3256vw;height:89.0698vw;">
+<div class="g-b" style="position:absolute;left:0.0000vw;top:1005.8140vw;width:100.0930vw;height:93.4884vw;background-color:rgb(246,247,249);"></div>
+<div class="g-t" style="position:absolute;left:5.5814vw;top:1015.1163vw;width:88.8372vw;height:20.4651vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:8.3721vw;line-height:10.2326vw;color:rgb(35,39,46);text-align:left;white-space:pre-wrap;">See DataSetu.ai on your own data.</div>
+<div class="g-t" style="position:absolute;left:5.9302vw;top:1038.3721vw;width:88.1395vw;height:19.5349vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:4.1860vw;line-height:6.5116vw;color:rgb(82,96,119);text-align:left;white-space:pre-wrap;">A working session against your estate and your processes. Bring the thing that costs you money.</div>
+<div class="g-b g-clip" style="position:absolute;left:5.5814vw;top:1064.8837vw;width:88.8372vw;height:11.1628vw;background-color:rgb(223,63,23);border-radius:1.8605vw;overflow:hidden;">
+<div class="g-t" style="position:absolute;left:3.7209vw;top:3.2558vw;width:28.8372vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:3.2558vw;line-height:4.6512vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">Request a proposal</div>
+<img class="g-vec" src="/assets/vec/I7110-29064;4046-29821.svg" data-vec="I7110:29064;4046:29821" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:79.0698vw;top:2.7907vw;width:5.5814vw;height:5.5814vw;">
+</div>
+<div class="g-b g-clip" style="position:absolute;left:5.5814vw;top:1078.8372vw;width:88.8372vw;height:11.1628vw;background-color:rgb(255,255,255);border-radius:1.8605vw;box-sizing:border-box;border:0.2326vw solid rgb(213,218,226);overflow:hidden;">
+<div class="g-t" style="position:absolute;left:3.7209vw;top:3.2558vw;width:14.4186vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:3.2558vw;line-height:4.6512vw;color:rgb(58,67,82);text-align:center;white-space:nowrap;">Talk to us</div>
+<img class="g-vec" src="/assets/vec/I7110-29065;4046-29893.svg" data-vec="I7110:29065;4046:29893" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:79.0698vw;top:2.7907vw;width:5.5814vw;height:5.5814vw;">
+</div>
+<div class="g-b" style="position:absolute;left:0.0000vw;top:1099.3023vw;width:100.0000vw;height:668.7385vw;background-color:rgb(255,255,255);"></div>
+<img class="g-vec" src="/assets/vec/7110-29073.svg" data-vec="7110:29073" loading="lazy" decoding="async" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:3.7209vw;top:1108.6047vw;width:23.2558vw;height:13.2558vw;">
+<div class="g-t" style="position:absolute;left:7.9070vw;top:1134.9050vw;width:41.6279vw;height:6.0465vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:4.2706vw;line-height:5.8721vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Sign up to learn more </div>
+<div class="g-t" style="position:absolute;left:7.9070vw;top:1145.7559vw;width:84.1860vw;height:6.0465vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:4.2706vw;line-height:5.8721vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">SAP. Cloud. AI. One accountable partner.
+</div>
+<div class="g-b g-clip" style="position:absolute;left:7.9070vw;top:1161.1445vw;width:84.1860vw;height:11.1628vw;background-color:rgb(223,63,23);border-radius:1.8605vw;overflow:hidden;">
+<div class="g-t" style="position:absolute;left:3.7209vw;top:3.2558vw;width:17.4419vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:3.2558vw;line-height:4.6512vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">Get Started</div>
+<img class="g-vec" src="/assets/vec/I7110-29106;4046-29821.svg" data-vec="I7110:29106;4046:29821" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:74.4186vw;top:2.7907vw;width:5.5814vw;height:5.5814vw;">
+</div>
+<div class="g-t" style="position:absolute;left:10.1267vw;top:1185.3861vw;width:22.3256vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:3.7209vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Who we are
+</div>
+<div class="g-t" style="position:absolute;left:10.1267vw;top:1198.4410vw;width:19.7674vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Foundation
+</div>
+<div class="g-t" style="position:absolute;left:10.1267vw;top:1208.2931vw;width:18.3721vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Leadership</div>
+<div class="g-t" style="position:absolute;left:10.1267vw;top:1218.1451vw;width:12.3256vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Culture</div>
+<div class="g-t" style="position:absolute;left:10.1267vw;top:1227.9971vw;width:11.1628vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Career</div>
+<div class="g-t" style="position:absolute;left:10.1267vw;top:1237.8492vw;width:17.9070vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Contact us</div>
+<div class="g-t" style="position:absolute;left:10.1267vw;top:1257.3103vw;width:14.4186vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:3.7209vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Services</div>
+<div class="g-t" style="position:absolute;left:10.1267vw;top:1270.3652vw;width:20.4651vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">All services
+</div>
+<div class="g-t" style="position:absolute;left:10.1267vw;top:1280.2172vw;width:24.6512vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">RISE with SAP</div>
+<div class="g-t" style="position:absolute;left:10.1267vw;top:1290.0693vw;width:29.7674vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">GROW with SAP
+</div>
+<div class="g-t" style="position:absolute;left:10.1267vw;top:1299.9213vw;width:33.0233vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">SAP AMS (AXIOM)
+</div>
+<div class="g-t" style="position:absolute;left:10.1267vw;top:1309.7733vw;width:10.0000vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">AWS
+</div>
+<div class="g-t" style="position:absolute;left:10.1267vw;top:1319.6254vw;width:23.0233vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Google Cloud</div>
+<div class="g-t" style="position:absolute;left:10.1267vw;top:1329.4774vw;width:28.3721vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Multi-cloud CMS</div>
+<div class="g-t" style="position:absolute;left:10.1267vw;top:1348.9384vw;width:15.5814vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:3.7209vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Products</div>
+<div class="g-t" style="position:absolute;left:10.1267vw;top:1361.9933vw;width:21.6279vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">All products
+</div>
+<div class="g-t" style="position:absolute;left:10.1267vw;top:1371.8454vw;width:16.5116vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">SupplierX</div>
+<div class="g-t" style="position:absolute;left:10.1267vw;top:1381.6974vw;width:12.0930vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">OrderX</div>
+<div class="g-t" style="position:absolute;left:10.1267vw;top:1391.5494vw;width:12.5581vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Xpense</div>
+<div class="g-t" style="position:absolute;left:10.1267vw;top:1401.4015vw;width:14.1860vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Logystix</div>
+<div class="g-t" style="position:absolute;left:10.1267vw;top:1411.2536vw;width:15.8140vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">ManuFeX</div>
+<div class="g-t" style="position:absolute;left:10.1267vw;top:1421.1056vw;width:32.3256vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">AXIOM AI Platform</div>
+<div class="g-t" style="position:absolute;left:10.1267vw;top:1440.5664vw;width:17.2093vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:3.7209vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Industries</div>
+<div class="g-t" style="position:absolute;left:10.1267vw;top:1453.6217vw;width:25.1163vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Manufacturing
+</div>
+<div class="g-t" style="position:absolute;left:10.1267vw;top:1463.4736vw;width:36.7442vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Metals &amp; Engineering
+</div>
+<div class="g-t" style="position:absolute;left:10.1267vw;top:1473.3258vw;width:33.0233vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Energy &amp; Oil &amp; Gas
+</div>
+<div class="g-t" style="position:absolute;left:10.1267vw;top:1483.1777vw;width:13.0233vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Textiles</div>
+<div class="g-t" style="position:absolute;left:10.1267vw;top:1493.0298vw;width:35.3488vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">FMCG &amp; Distribution
+</div>
+<div class="g-t" style="position:absolute;left:10.1267vw;top:1502.8818vw;width:42.5581vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Automotive &amp; Aerospace
+</div>
+<div class="g-t" style="position:absolute;left:10.1267vw;top:1512.7339vw;width:15.3488vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Alliances</div>
+<div class="g-t" style="position:absolute;left:10.1267vw;top:1532.1945vw;width:16.5116vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:3.7209vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">About Us</div>
+<div class="g-t" style="position:absolute;left:10.1267vw;top:1545.2498vw;width:21.1628vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Case studies</div>
+<div class="g-t" style="position:absolute;left:10.1267vw;top:1555.1017vw;width:26.9767vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Trust &amp; security
+</div>
+<div class="g-t" style="position:absolute;left:10.1267vw;top:1564.9539vw;width:7.9070vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Blog</div>
+<div class="g-t" style="position:absolute;left:10.1267vw;top:1574.8058vw;width:30.0000vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Investor relations
+</div>
+<div class="g-t" style="position:absolute;left:10.1267vw;top:1584.6580vw;width:26.7442vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">BSE disclosures</div>
+<div class="g-t" style="position:absolute;left:10.1267vw;top:1604.1188vw;width:17.4419vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:3.7209vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Follow Us</div>
+<div class="g-t" style="position:absolute;left:10.1267vw;top:1617.1741vw;width:11.8605vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Twitter</div>
+<div class="g-t" style="position:absolute;left:10.1267vw;top:1627.0260vw;width:14.1860vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">LinkedIn</div>
+<div class="g-img" data-ref="1a6724d5f1b0e3e74c7e42c83b442f552edd6040" role="img" aria-label="4 8" style="position:absolute;left:76.0465vw;top:1622.7907vw;width:20.2326vw;height:34.4186vw;background-image:url(/assets/partners/gptw-certified.png);background-size:contain;background-position:center;background-repeat:no-repeat;"></div>
+<div class="g-img" data-ref="9eb08a9ddab314e538d8d079612a05d15204b1c3" role="img" aria-label="4 8" style="position:absolute;left:74.8837vw;top:1567.2093vw;width:21.3953vw;height:21.3953vw;background-image:url(/assets/gen/9eb08a9ddab314e538d8d079612a05d15204b1c3.webp);background-size:35.6589vw 21.3953vw;background-position:-6.6258vw -0.0000vw;background-repeat:no-repeat;"></div>
+<div class="g-img" data-ref="f098495ead3741a8d723bd5d9f56e3a681293a2d" role="img" aria-label="4 9" style="position:absolute;left:74.1860vw;top:1594.1860vw;width:22.0930vw;height:23.0233vw;background-image:url(/assets/gen/f098495ead3741a8d723bd5d9f56e3a681293a2d.webp);background-size:22.9805vw 23.0233vw;background-position:-0.2104vw -0.0000vw;background-repeat:no-repeat;"></div>
+<div class="g-b" style="position:absolute;left:3.7209vw;top:1645.1285vw;width:92.5581vw;height:63.6100vw;box-sizing:border-box;border-bottom:0.2326vw solid rgb(236,238,242);"></div>
+<div class="g-t" style="position:absolute;left:10.3938vw;top:1651.2675vw;width:33.7209vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">sales@aeonx.digital</div>
+<div class="g-t" style="position:absolute;left:10.3938vw;top:1661.1196vw;width:32.5581vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Terms &amp; Conditions</div>
+<div class="g-t" style="position:absolute;left:47.6749vw;top:1661.0833vw;width:23.0233vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Privacy Policy</div>
+<div class="g-t" style="position:absolute;left:10.4656vw;top:1680.1531vw;width:79.0698vw;height:22.3256vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:pre-wrap;">© 2026 AeonX Digital Technology Limited. BSE-listed. |  All rights reserved. · SAP Gold Partner · AWS Advanced Tier · Google Cloud Partner</div>
+<div class="g-t" style="position:absolute;left:10.3938vw;top:1670.9716vw;width:13.0233vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Cookies</div>
+<div class="g-t" style="position:absolute;left:33.0237vw;top:1671.0833vw;width:13.9535vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Sitemap</div>
+<div class="g-b" style="position:absolute;left:3.7209vw;top:1645.0368vw;width:92.5581vw;height:0.2326vw;background:linear-gradient(90deg, rgba(133,128,123,0.180) 0.0%);"></div>
+<div class="g-b" style="position:absolute;left:3.7209vw;top:1717.1107vw;width:92.5581vw;height:10.6977vw;box-sizing:border-box;border:0.2326vw solid rgb(236,238,242);"></div>
+<div class="g-t" style="position:absolute;left:7.6744vw;top:1720.1340vw;width:46.7442vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:3.2558vw;line-height:4.6512vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Get an AI summary of this page</div>
+<img class="g-vec" src="/assets/vec/7110-29255.svg" data-vec="7110:29255" loading="lazy" decoding="async" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:71.8605vw;top:1720.1340vw;width:20.0000vw;height:4.6512vw;">
+<div class="g-b" style="position:absolute;left:3.7209vw;top:1727.8084vw;width:92.5581vw;height:28.1395vw;box-sizing:border-box;border-right:0.2326vw solid rgb(236,238,242);border-bottom:0.2326vw solid rgb(236,238,242);border-left:0.2326vw solid rgb(236,238,242);"></div>
+<div class="g-t" style="position:absolute;left:7.6744vw;top:1730.5991vw;width:49.3023vw;height:6.5116vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:4.1860vw;line-height:6.5116vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Get the latest from Aeonx</div>
+<div class="g-b g-clip" style="position:absolute;left:7.6744vw;top:1741.7619vw;width:54.6512vw;height:10.2326vw;border-radius:0.4651vw;box-sizing:border-box;border:0.1860vw solid rgb(246,168,123);overflow:hidden;">
+<div class="g-t" style="position:absolute;left:3.9072vw;top:2.3256vw;width:46.8372vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:3.7209vw;line-height:5.5814vw;color:rgb(134,149,170);text-align:left;white-space:nowrap;">Work email</div>
+</div>
+<div class="g-b g-clip" style="position:absolute;left:65.1163vw;top:1741.7619vw;width:27.6744vw;height:10.2326vw;border-radius:0.4651vw;overflow:hidden;">
+<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:27.6744vw;height:10.2326vw;background-color:rgb(223,63,23);border-radius:1.8605vw;overflow:hidden;">
+<div class="g-t" style="position:absolute;left:6.5116vw;top:2.7907vw;width:14.6512vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:3.2558vw;line-height:4.6512vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">Subscribe</div>
+</div>
+</div>
+<div class="g-b" style="position:absolute;left:0.0000vw;top:412.7907vw;width:100.0000vw;height:321.1628vw;box-sizing:border-box;border-bottom:0.2326vw solid rgb(236,238,242);"></div>
+<div class="g-t" style="position:absolute;left:3.7209vw;top:422.0930vw;width:19.5349vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:2.7907vw;line-height:4.6512vw;color:rgb(223,63,23);text-align:left;white-space:nowrap;">WHAT WE DO</div>
+<div class="g-t" style="position:absolute;left:3.7209vw;top:429.7674vw;width:88.1395vw;height:10.2326vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:8.3721vw;line-height:10.2326vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Inside DataSetu.ai.</div>
+<div class="g-b g-clip" style="position:absolute;left:3.7209vw;top:445.5814vw;width:92.5581vw;height:66.2791vw;background-color:rgb(255,255,255);overflow:hidden;">
+<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:92.5581vw;height:66.2791vw;background-color:rgb(255,255,255);box-sizing:border-box;border:0.2326vw solid rgb(236,238,242);overflow:hidden;">
+<div class="g-b" style="position:absolute;left:3.9535vw;top:3.9535vw;width:10.2326vw;height:6.5116vw;background-color:rgb(213,218,226);border-radius:1.8605vw;"></div>
+<div class="g-t" style="position:absolute;left:6.5116vw;top:3.9535vw;width:5.1163vw;height:6.5116vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:4.1860vw;line-height:6.5116vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">01</div>
+<div class="g-t" style="position:absolute;left:7.6744vw;top:17.9070vw;width:77.2093vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:4.6512vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">One shape for every edition</div>
+<div class="g-t" style="position:absolute;left:7.6744vw;top:26.2791vw;width:77.2093vw;height:33.4884vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:pre-wrap;">Vendor, Material, Purchase Order, Sales Order, Goods Movement, Outbound Delivery, Stock Transport Order, Supplier Invoice, Customer and Plant, modelled once and mapped per edition, with per-customer field overrides on top.</div>
+</div>
+</div>
+<div class="g-b g-clip" style="position:absolute;left:3.7209vw;top:511.8605vw;width:92.5581vw;height:50.2326vw;background-color:rgb(255,255,255);overflow:hidden;">
+<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:92.5581vw;height:50.2326vw;background-color:rgb(255,255,255);box-sizing:border-box;border-right:0.2326vw solid rgb(236,238,242);border-bottom:0.2326vw solid rgb(236,238,242);border-left:0.2326vw solid rgb(236,238,242);overflow:hidden;">
+<div class="g-b" style="position:absolute;left:3.7209vw;top:3.7209vw;width:10.2326vw;height:6.5116vw;background-color:rgb(213,218,226);border-radius:1.8605vw;"></div>
+<div class="g-t" style="position:absolute;left:6.2791vw;top:3.7209vw;width:5.1163vw;height:6.5116vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:4.1860vw;line-height:6.5116vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">02</div>
+<div class="g-t" style="position:absolute;left:7.4419vw;top:17.6744vw;width:81.1628vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:4.6512vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Three edition families</div>
+<div class="g-t" style="position:absolute;left:7.4419vw;top:26.0465vw;width:81.1628vw;height:16.7442vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:pre-wrap;">S/4HANA public cloud and GROW, S/4HANA private, RISE and on-premise, and ECC, each with its own mapping tables.</div>
+</div>
+</div>
+<div class="g-b g-clip" style="position:absolute;left:3.7209vw;top:562.0930vw;width:92.5581vw;height:50.4651vw;background-color:rgb(255,255,255);overflow:hidden;">
+<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:92.5581vw;height:50.4651vw;background-color:rgb(255,255,255);box-sizing:border-box;border-right:0.2326vw solid rgb(236,238,242);border-bottom:0.2326vw solid rgb(236,238,242);border-left:0.2326vw solid rgb(236,238,242);overflow:hidden;">
+<div class="g-b" style="position:absolute;left:3.9535vw;top:3.7209vw;width:10.2326vw;height:6.5116vw;background-color:rgb(213,218,226);border-radius:1.8605vw;"></div>
+<div class="g-t" style="position:absolute;left:6.5116vw;top:3.7209vw;width:5.1163vw;height:6.5116vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:4.1860vw;line-height:6.5116vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">03</div>
+<div class="g-t" style="position:absolute;left:7.6744vw;top:17.6744vw;width:77.2093vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:4.6512vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Two transports</div>
+<div class="g-t" style="position:absolute;left:7.6744vw;top:26.0465vw;width:77.2093vw;height:16.7442vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:pre-wrap;">Every read and write runs over direct OData or the AWS for SAP MCP server, chosen per tenant.</div>
+</div>
+</div>
+<div class="g-b g-clip" style="position:absolute;left:3.7209vw;top:612.5581vw;width:92.5581vw;height:56.0465vw;background-color:rgb(255,255,255);overflow:hidden;">
+<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:92.5581vw;height:56.0465vw;background-color:rgb(255,255,255);box-sizing:border-box;border-right:0.2326vw solid rgb(236,238,242);border-bottom:0.2326vw solid rgb(236,238,242);border-left:0.2326vw solid rgb(236,238,242);overflow:hidden;">
+<div class="g-b" style="position:absolute;left:3.9535vw;top:3.7209vw;width:10.2326vw;height:6.5116vw;background-color:rgb(213,218,226);border-radius:1.8605vw;"></div>
+<div class="g-t" style="position:absolute;left:6.5116vw;top:3.7209vw;width:5.1163vw;height:6.5116vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:4.1860vw;line-height:6.5116vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">04</div>
+<div class="g-t" style="position:absolute;left:7.6744vw;top:17.6744vw;width:77.2093vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:4.6512vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Writes are opt-in twice</div>
+<div class="g-t" style="position:absolute;left:7.6744vw;top:26.0465vw;width:77.2093vw;height:22.3256vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:pre-wrap;">Declaring an entity writable enables nothing. The tenant&#x27;s stack needs the write flag on and the autonomy gate must resolve to execute. New customers start in dry-run.</div>
+</div>
+</div>
+<div class="g-b g-clip" style="position:absolute;left:3.7209vw;top:668.6047vw;width:92.5581vw;height:55.8140vw;background-color:rgb(255,255,255);overflow:hidden;">
+<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:92.5581vw;height:55.8140vw;background-color:rgb(255,255,255);box-sizing:border-box;border-right:0.2326vw solid rgb(236,238,242);border-bottom:0.2326vw solid rgb(236,238,242);border-left:0.2326vw solid rgb(236,238,242);overflow:hidden;">
+<div class="g-b" style="position:absolute;left:3.9535vw;top:3.7209vw;width:10.2326vw;height:6.5116vw;background-color:rgb(213,218,226);border-radius:1.8605vw;"></div>
+<div class="g-t" style="position:absolute;left:6.5116vw;top:3.7209vw;width:5.1163vw;height:6.5116vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:4.1860vw;line-height:6.5116vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">05</div>
+<div class="g-t" style="position:absolute;left:7.6744vw;top:17.6744vw;width:77.2093vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:4.6512vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Document AI on our own models</div>
+<div class="g-t" style="position:absolute;left:7.6744vw;top:26.0465vw;width:77.2093vw;height:22.0930vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:pre-wrap;">Invoice and receipt extraction served to SupplierX, Xpense and Logystix, plus number-plate recognition and fine-tuning infrastructure.</div>
+</div>
+</div>
+<div class="g-b" style="position:absolute;left:0.0000vw;top:218.8372vw;width:100.0000vw;height:193.9535vw;background-color:rgb(223,63,23);"></div>
+<div class="g-b" style="position:absolute;left:0.0000vw;top:228.1395vw;width:100.0000vw;height:0.2326vw;background-color:rgba(31,29,30,0.200);"></div>
+<div class="g-b" style="position:absolute;left:0.0000vw;top:228.1395vw;width:100.0000vw;height:0.2326vw;background-color:rgb(236,238,242);"></div>
+<div class="g-b" style="position:absolute;left:0.0000vw;top:263.1628vw;width:100.0000vw;height:0.2326vw;background-color:rgba(31,29,30,0.200);"></div>
+<div class="g-b" style="position:absolute;left:0.0000vw;top:263.2558vw;width:100.0000vw;height:0.2326vw;background-color:rgb(236,238,242);"></div>
+<div class="g-b" style="position:absolute;left:0.0000vw;top:298.1860vw;width:100.0000vw;height:0.2326vw;background-color:rgba(31,29,30,0.200);"></div>
+<div class="g-b" style="position:absolute;left:0.0000vw;top:298.1395vw;width:100.0000vw;height:0.2326vw;background-color:rgb(236,238,242);"></div>
+<div class="g-b" style="position:absolute;left:0.0000vw;top:333.2093vw;width:100.0000vw;height:0.2326vw;background-color:rgba(31,29,30,0.200);"></div>
+<div class="g-b" style="position:absolute;left:0.0000vw;top:333.2558vw;width:100.0000vw;height:0.2326vw;background-color:rgb(236,238,242);"></div>
+<div class="g-b" style="position:absolute;left:0.0000vw;top:368.2325vw;width:100.0000vw;height:0.2326vw;background-color:rgba(31,29,30,0.200);"></div>
+<div class="g-b" style="position:absolute;left:0.0000vw;top:368.1395vw;width:100.0000vw;height:0.2326vw;background-color:rgb(236,238,242);"></div>
+<div class="g-b" style="position:absolute;left:0.0000vw;top:403.2558vw;width:100.0000vw;height:0.2326vw;background-color:rgba(31,29,30,0.200);"></div>
+<div class="g-b" style="position:absolute;left:0.0000vw;top:403.2558vw;width:446.5116vw;height:0.2326vw;background-color:rgb(236,238,242);"></div>
+<div class="g-b" style="position:absolute;left:6.9767vw;top:228.1395vw;width:81.3953vw;height:44.8837vw;background-color:rgb(223,63,23);box-sizing:border-box;border:0.2326vw solid rgb(236,238,242);"></div>
+<div class="g-t" style="position:absolute;left:10.9302vw;top:235.8140vw;width:24.1860vw;height:20.0000vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:20.0000vw;line-height:20.0000vw;color:rgb(255,255,255);text-align:left;white-space:nowrap;">10</div>
+<div class="g-t" style="position:absolute;left:10.9048vw;top:255.7922vw;width:59.3023vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:4.6512vw;line-height:5.5814vw;color:rgb(213,218,226);text-align:left;white-space:nowrap;">Canonical entities</div>
+<div class="g-b" style="position:absolute;left:6.9767vw;top:271.4535vw;width:81.3953vw;height:44.8837vw;background-color:rgb(223,63,23);box-sizing:border-box;border:0.2326vw solid rgb(236,238,242);"></div>
+<div class="g-t" style="position:absolute;left:10.9302vw;top:279.1279vw;width:12.0930vw;height:20.0000vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:20.0000vw;line-height:20.0000vw;color:rgb(255,255,255);text-align:left;white-space:nowrap;">3</div>
+<div class="g-t" style="position:absolute;left:10.9048vw;top:299.1061vw;width:59.3023vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:4.6512vw;line-height:5.5814vw;color:rgb(213,218,226);text-align:left;white-space:nowrap;">SAP edition families
+</div>
+<div class="g-b" style="position:absolute;left:6.9767vw;top:315.2907vw;width:81.3953vw;height:44.8837vw;background-color:rgb(223,63,23);box-sizing:border-box;border:0.2326vw solid rgb(236,238,242);"></div>
+<div class="g-t" style="position:absolute;left:10.9302vw;top:323.0807vw;width:73.9535vw;height:20.0000vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:20.0000vw;line-height:20.0000vw;color:rgb(255,255,255);text-align:left;white-space:nowrap;">21</div>
+<div class="g-t" style="position:absolute;left:10.9302vw;top:343.0814vw;width:74.1860vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:4.6512vw;line-height:5.5814vw;color:rgb(213,218,226);text-align:left;white-space:nowrap;">Agents in the library</div>
+<div class="g-b" style="position:absolute;left:6.9767vw;top:358.6047vw;width:81.3953vw;height:44.8837vw;background-color:rgb(223,63,23);box-sizing:border-box;border:0.2326vw solid rgb(236,238,242);"></div>
+<div class="g-t" style="position:absolute;left:10.9302vw;top:366.2791vw;width:49.7674vw;height:17.6744vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:20.0000vw;line-height:20.0000vw;color:rgb(255,255,255);text-align:left;white-space:nowrap;">34</div>
+<div class="g-t" style="position:absolute;left:10.9684vw;top:386.2573vw;width:80.6977vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:4.6512vw;line-height:5.5814vw;color:rgb(213,218,226);text-align:left;white-space:nowrap;">External verification tools</div>
+<div class="g-b" style="position:absolute;left:0.0000vw;top:881.3953vw;width:100.0000vw;height:124.4186vw;box-sizing:border-box;border:0.2326vw solid rgb(213,218,226);"></div>
+<div class="g-t" style="position:absolute;left:6.0011vw;top:890.6977vw;width:20.0000vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:2.7907vw;line-height:4.6512vw;color:rgb(223,63,23);text-align:left;white-space:nowrap;">INTEHRATONS</div>
+<div class="g-t" style="position:absolute;left:6.0011vw;top:898.3721vw;width:88.1395vw;height:10.2326vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:8.3721vw;line-height:10.2326vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">What it connects to.</div>
+<div class="g-b" style="position:absolute;left:3.7209vw;top:916.9767vw;width:11.6279vw;height:11.6279vw;background-color:rgb(223,63,23);border-radius:9.3023vw;"></div>
+<div class="g-t" style="position:absolute;left:8.2558vw;top:919.5349vw;width:2.5581vw;height:6.5116vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:4.1860vw;line-height:6.5116vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">1</div>
+<div class="g-b" style="position:absolute;left:9.3023vw;top:930.4651vw;width:0.4651vw;height:6.0465vw;background:linear-gradient(90deg, rgb(254,245,238) 0.0%, rgb(223,63,23) 100.0%);"></div>
+<div class="g-t" style="position:absolute;left:18.1395vw;top:923.4884vw;width:72.5581vw;height:6.5116vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:4.1860vw;line-height:6.5116vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">SAP ECC, S/4HANA, RISE and GROW</div>
+<div class="g-b" style="position:absolute;left:3.7209vw;top:940.2326vw;width:11.6279vw;height:11.6279vw;background-color:rgb(223,63,23);border-radius:9.3023vw;"></div>
+<div class="g-t" style="position:absolute;left:8.2558vw;top:942.7907vw;width:2.5581vw;height:6.5116vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:4.1860vw;line-height:6.5116vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">2</div>
+<div class="g-b" style="position:absolute;left:9.3023vw;top:953.7209vw;width:0.4651vw;height:2.7907vw;background:linear-gradient(90deg, rgb(254,245,238) 0.0%, rgb(223,63,23) 100.0%);"></div>
+<div class="g-t" style="position:absolute;left:18.1395vw;top:945.1163vw;width:72.5581vw;height:6.5116vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:4.1860vw;line-height:6.5116vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">AWS for SAP MCP server</div>
+<div class="g-b" style="position:absolute;left:3.7209vw;top:960.2326vw;width:11.6279vw;height:11.6279vw;background-color:rgb(223,63,23);border-radius:9.3023vw;"></div>
+<div class="g-t" style="position:absolute;left:8.2558vw;top:962.7907vw;width:2.5581vw;height:6.5116vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:4.1860vw;line-height:6.5116vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">3</div>
+<div class="g-b" style="position:absolute;left:9.3023vw;top:973.7209vw;width:0.4651vw;height:2.7907vw;background:linear-gradient(90deg, rgb(254,245,238) 0.0%, rgb(223,63,23) 100.0%);"></div>
+<div class="g-t" style="position:absolute;left:18.1395vw;top:965.1163vw;width:72.5581vw;height:6.5116vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:4.1860vw;line-height:6.5116vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Google BigQuery and Firestore</div>
+<div class="g-b" style="position:absolute;left:3.7209vw;top:980.2326vw;width:11.6279vw;height:11.6279vw;background-color:rgb(223,63,23);border-radius:9.3023vw;"></div>
+<div class="g-t" style="position:absolute;left:8.2558vw;top:982.7907vw;width:2.5581vw;height:6.5116vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:4.1860vw;line-height:6.5116vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">4</div>
+<div class="g-t" style="position:absolute;left:18.1395vw;top:981.8605vw;width:72.5581vw;height:13.0233vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:4.1860vw;line-height:6.5116vw;color:rgb(82,96,119);text-align:left;white-space:pre-wrap;">GST, PAN, bank, MSME and sanctions sources</div>
+<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:733.7209vw;width:100.0000vw;height:147.6744vw;box-sizing:border-box;border-bottom:0.2326vw solid rgb(236,238,242);overflow:hidden;">
+<div class="g-t" style="position:absolute;left:5.8140vw;top:11.2791vw;width:13.0233vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:2.7907vw;line-height:4.6512vw;color:rgb(223,63,23);text-align:center;white-space:nowrap;">AI INSIDE</div>
+<div class="g-t" style="position:absolute;left:3.7209vw;top:20.0945vw;width:92.5581vw;height:10.2326vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:8.3721vw;line-height:10.2326vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Shipped, not shown.</div>
+<div class="g-t" style="position:absolute;left:3.7209vw;top:35.8140vw;width:96.5116vw;height:16.7442vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:pre-wrap;">Everything below runs in the product today. Where a capability is deterministic rather than a model, we say so.<br></div>
+<div class="g-b" style="position:absolute;left:3.7209vw;top:66.9767vw;width:82.7907vw;height:63.0233vw;background-color:rgb(236,238,242);box-sizing:border-box;border:0.2326vw solid rgb(236,238,242);"></div>
+<div class="g-b" style="position:absolute;left:7.6744vw;top:70.4651vw;width:10.2326vw;height:8.3721vw;background-color:rgb(213,218,226);border-radius:1.8605vw;"></div>
+<div class="g-t" style="position:absolute;left:10.0000vw;top:71.8605vw;width:5.5814vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:4.6512vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">01</div>
+<div class="g-t" style="position:absolute;left:6.7442vw;top:86.9767vw;width:76.7442vw;height:8.3721vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:5.5814vw;line-height:8.3721vw;color:rgb(223,63,23);text-align:left;white-space:nowrap;">A 21-agent library
+</div>
+<div class="g-t" style="position:absolute;left:6.7442vw;top:98.1395vw;width:76.7442vw;height:26.0465vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:4.1860vw;line-height:6.5116vw;color:rgb(82,96,119);text-align:left;white-space:pre-wrap;">Master data, procurement, sales and analytics agents that any product can call the same family that runs inside SupplierX, available as a service.</div>
+<div class="g-b" style="position:absolute;left:90.2326vw;top:66.9767vw;width:82.7907vw;height:66.7442vw;background-color:rgb(236,238,242);box-sizing:border-box;border:0.2326vw solid rgb(236,238,242);"></div>
+<div class="g-b" style="position:absolute;left:94.1860vw;top:70.4651vw;width:10.2326vw;height:8.3721vw;background-color:rgb(213,218,226);border-radius:1.8605vw;"></div>
+<div class="g-t" style="position:absolute;left:96.5116vw;top:71.8605vw;width:5.5814vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:4.6512vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">02</div>
+<div class="g-t" style="position:absolute;left:93.2558vw;top:86.9767vw;width:76.7442vw;height:8.3721vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:5.5814vw;line-height:8.3721vw;color:rgb(223,63,23);text-align:left;white-space:nowrap;">Replay a run and diff it
+</div>
+<div class="g-t" style="position:absolute;left:93.2558vw;top:98.1395vw;width:76.7442vw;height:32.5581vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:4.1860vw;line-height:6.5116vw;color:rgb(82,96,119);text-align:left;white-space:pre-wrap;">Pull a run id, rehydrate its prompt and tool results, re-execute in a sandbox and compare the outcome. That is how a regression gets caught before a customer does.</div>
+<div class="g-b" style="position:absolute;left:176.7442vw;top:66.9767vw;width:82.7907vw;height:71.3953vw;background-color:rgb(236,238,242);box-sizing:border-box;border:0.2326vw solid rgb(236,238,242);"></div>
+<div class="g-b" style="position:absolute;left:180.6977vw;top:70.4651vw;width:10.2326vw;height:8.3721vw;background-color:rgb(213,218,226);border-radius:1.8605vw;"></div>
+<div class="g-t" style="position:absolute;left:183.0233vw;top:71.8605vw;width:5.5814vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:4.6512vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">03</div>
+<div class="g-t" style="position:absolute;left:179.7674vw;top:86.9767vw;width:76.7442vw;height:16.7442vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:5.5814vw;line-height:8.3721vw;color:rgb(223,63,23);text-align:left;white-space:pre-wrap;">Verification that reaches outside</div>
+<div class="g-t" style="position:absolute;left:179.7674vw;top:106.5116vw;width:76.7442vw;height:26.0465vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:4.1860vw;line-height:6.5116vw;color:rgb(82,96,119);text-align:left;white-space:pre-wrap;">Live GST and PAN, bank and MSME checks, sanctions screening, news, web search and marketplace lookups as tools an agent calls, not a batch job.</div>
+<div class="g-b" style="position:absolute;left:263.2558vw;top:66.9767vw;width:82.7907vw;height:45.1163vw;background-color:rgb(236,238,242);box-sizing:border-box;border:0.2326vw solid rgb(236,238,242);"></div>
+<div class="g-b" style="position:absolute;left:267.2093vw;top:70.4651vw;width:10.2326vw;height:8.3721vw;background-color:rgb(213,218,226);border-radius:1.8605vw;"></div>
+<div class="g-t" style="position:absolute;left:269.5349vw;top:71.8605vw;width:5.5814vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:4.6512vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">04</div>
+<div class="g-t" style="position:absolute;left:266.2791vw;top:84.8837vw;width:76.7442vw;height:8.3721vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:5.5814vw;line-height:8.3721vw;color:rgb(223,63,23);text-align:left;white-space:nowrap;">Budgeted per tenant</div>
+<div class="g-t" style="position:absolute;left:266.2791vw;top:96.0465vw;width:76.7442vw;height:13.0233vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:4.1860vw;line-height:6.5116vw;color:rgb(82,96,119);text-align:left;white-space:pre-wrap;">A daily spend ceiling and an hourly rate cap per agent, enforced in the run loop.</div>
+</div>
+<img class="g-vec" src="/assets/vec/7110-29614.svg" data-vec="7110:29614" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:1.8605vw;top:10.4651vw;width:96.2791vw;height:11.8605vw;backdrop-filter:blur(0.2326vw);-webkit-backdrop-filter:blur(0.2326vw);">
+<div class="g-b" style="position:absolute;left:0.0000vw;top:0.0000vw;width:100.0000vw;height:9.5349vw;background:linear-gradient(270deg, rgb(255,135,5) 25.0%, rgba(223,63,23,0.920) 90.0%);"></div>
+<div class="g-t" style="position:absolute;left:19.4186vw;top:2.4419vw;width:61.1628vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.2558vw;line-height:4.6512vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">Signup to LlamaParse for 10k free credits!</div>
+</main></div>
 <style id="ax-ctawash-css">.ax-ctawash{position:absolute;pointer-events:none;opacity:.45;transition:opacity .7s ease;background:radial-gradient(38% 55% at 18% 80%,rgba(244,114,182,.55),transparent 70%),radial-gradient(30% 50% at 42% 90%,rgba(96,165,250,.5),transparent 70%),radial-gradient(28% 45% at 60% 82%,rgba(52,211,153,.45),transparent 70%),radial-gradient(30% 45% at 78% 88%,rgba(251,191,36,.5),transparent 70%),radial-gradient(40% 55% at 30% 25%,rgba(255,237,213,.7),transparent 75%);filter:blur(1.5vw);}.ax-ctawash.is-hot{opacity:1;}@media (prefers-reduced-motion:reduce){.ax-ctawash{transition:none;}}</style>
 <script>
 /* Final-CTA rainbow wash. The design puts a "Gradient Lines" asset in these
@@ -7331,6 +7342,234 @@ a.ax-pt-cta[href]:hover,a.ax-pt-cta[href]:focus-visible{background-color:rgb(21,
 
   if (document.readyState === 'complete') setTimeout(init, 0);
   else window.addEventListener('load', function () { setTimeout(init, 0); });
+})();
+</script>
+
+<style id="ax-scrollrow-css">
+/* Figma exports an over-wide row inside a clipped box and ships NO scroller, so every
+   card past the clip edge is simply unreachable (the leadership page hides 5 of its 8
+   people this way). Turning the existing clip into a real scroller costs no layout
+   change: the children are absolutely positioned, so the box already reports the full
+   scrollWidth -- it just was not allowed to scroll. */
+.ax-srow{overflow-x:auto!important;overflow-y:hidden!important;
+  scrollbar-width:thin;scrollbar-color:rgba(35,39,46,.12) transparent;scroll-behavior:smooth;overscroll-behavior-x:contain;
+  -webkit-overflow-scrolling:touch;cursor:grab}
+.ax-srow.is-drag{cursor:grabbing;scroll-behavior:auto}
+/* The bar used to sit hard against the cards and read too dark. Reserve space for
+   it below the row and lighten the thumb. padding-bottom is safe here: this box is
+   the scroll container itself, and its children are absolutely positioned, so the
+   extra space cannot push anything around. */
+.ax-srow{padding-bottom:0.9vw}
+.ax-srow::-webkit-scrollbar{height:5px}
+.ax-srow::-webkit-scrollbar-thumb{background:rgba(35,39,46,.12);border-radius:99px}
+.ax-srow::-webkit-scrollbar-thumb:hover{background:rgba(35,39,46,.22)}
+.ax-srow::-webkit-scrollbar-track{background:transparent}
+/* edge fades hint that there is more to the right */
+.ax-srow-wrap{position:relative}
+.ax-srow-fade{position:absolute;top:0;bottom:0;width:3vw;pointer-events:none;z-index:3;
+  opacity:0;transition:opacity .2s ease}
+.ax-srow-fade--l{left:0;background:linear-gradient(90deg,#fff,rgba(255,255,255,0))}
+.ax-srow-fade--r{right:0;background:linear-gradient(270deg,#fff,rgba(255,255,255,0))}
+.ax-srow-fade.on{opacity:1}
+@media (prefers-reduced-motion:reduce){.ax-srow{scroll-behavior:auto}}
+/* ---- PAGER OVERLAY ----
+   Figma exports the carousel's pager -- the dot strip and the prev/next buttons --
+   as ONE flat SVG, so nothing under the cursor was ever clickable and the dots
+   could not track position. Real controls are laid over that picture using its own
+   viewBox geometry (1728x40: dots at x17/73/89/105/121, prev at 1660, next 1708),
+   so the design is untouched and the hit areas land exactly on what is drawn. */
+.ax-srp{position:absolute;pointer-events:none;z-index:3}
+/* The pager is counter-translated every scroll frame to hold its place. The
+   scroll-reveal class on the baked art carries a transform TRANSITION, so each
+   new value animated instead of applying -- the art lagged the scroll and still
+   drifted while the dots stayed put. Pinning must be instant. */
+.ax-srp,.ax-srp-art{transition:none!important}
+/* The dot strip is gone. It was drawn twice -- baked into the exported art AND
+   painted over as live buttons -- and the overlay only existed to mask the static
+   version underneath. With the overlay removed the baked dots would surface as a
+   fake indicator frozen on page 2, so clip them off the art too. The pager export
+   is one shared component (viewBox 1728x40: dot pill 0-138, prev 1640, next 1688 --
+   the same constants this file already places the buttons with), so the clip is
+   safe wherever it is armed. Prev/next and the scrollbar remain. */
+.ax-srp-art{clip-path:inset(0 0 0 7.99%)}
+.ax-srp__btn{position:absolute;pointer-events:auto;cursor:pointer;background:transparent;
+  border:0;padding:0;border-radius:99px}
+.ax-srp__btn[disabled]{cursor:default;opacity:.45}
+.ax-srp__btn:focus-visible{outline:2px solid #23272E;outline-offset:2px}
+</style>
+<script>
+/* ---- OVER-WIDE FIGMA ROWS -> REAL SCROLLERS ---- */
+(function(){
+  var MIN_OVERFLOW = 1.15;
+  var REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;      /* content must exceed the box by 15% to be worth it */
+
+  function arm(box){
+    if (box.dataset.axSrow) return;
+    box.dataset.axSrow = '1';
+    box.classList.add('ax-srow');
+
+    /* keyboard: the box itself becomes focusable and arrow-scrollable, because the cards
+       inside are plain divs with nothing tabbable of their own */
+    if (!box.hasAttribute('tabindex')) box.setAttribute('tabindex', '0');
+    box.setAttribute('role', 'group');
+    if (!box.getAttribute('aria-label')) box.setAttribute('aria-label', 'Scrollable row, use the arrow keys');
+    box.addEventListener('keydown', function(e){
+      var step = box.clientWidth * 0.8;
+      if (e.key === 'ArrowRight'){ e.preventDefault(); box.scrollLeft += step; }
+      else if (e.key === 'ArrowLeft'){ e.preventDefault(); box.scrollLeft -= step; }
+      else if (e.key === 'Home'){ e.preventDefault(); box.scrollLeft = 0; }
+      else if (e.key === 'End'){ e.preventDefault(); box.scrollLeft = box.scrollWidth; }
+    });
+
+    /* pointer drag, so it feels like the carousel it looks like */
+    var down = null;
+    box.addEventListener('pointerdown', function(e){
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      down = { x:e.clientX, l:box.scrollLeft, moved:false };
+      box.classList.add('is-drag');
+    });
+    box.addEventListener('pointermove', function(e){
+      if (!down) return;
+      var d = e.clientX - down.x;
+      if (Math.abs(d) > 3) down.moved = true;
+      box.scrollLeft = down.l - d;
+    });
+    function up(){ if (down) { down = null; box.classList.remove('is-drag'); } }
+    ['pointerup','pointercancel','pointerleave'].forEach(function(ev){
+      box.addEventListener(ev, up);
+    });
+    /* a drag must not fire the click of whatever card it ended on */
+    box.addEventListener('click', function(e){
+      if (down && down.moved) { e.preventDefault(); e.stopPropagation(); }
+    }, true);
+
+    /* edge fades. The wrapper is the clip's own parent when we can use it, otherwise the
+       fades are skipped -- never restructure the DOM, the layout is pixel-locked. */
+    var host = box.parentElement;
+    if (host && !host.dataset.axSrowWrap) {
+      host.dataset.axSrowWrap = '1';
+      var cs = getComputedStyle(host);
+      if (cs.position !== 'static') {
+        host.classList.add('ax-srow-wrap');
+        var l = document.createElement('div'), r = document.createElement('div');
+        l.className = 'ax-srow-fade ax-srow-fade--l';
+        r.className = 'ax-srow-fade ax-srow-fade--r';
+        /* sit the fades exactly over the scroller, not the whole host */
+        [l, r].forEach(function(f){
+          f.style.top = box.offsetTop + 'px';
+          f.style.height = box.offsetHeight + 'px';
+          f.style.bottom = 'auto';
+          host.appendChild(f);
+        });
+        var paint = function(){
+          var max = box.scrollWidth - box.clientWidth;
+          l.classList.toggle('on', box.scrollLeft > 4);
+          r.classList.toggle('on', box.scrollLeft < max - 4);
+        };
+        box.addEventListener('scroll', paint);
+        addEventListener('resize', paint);
+        paint();
+      }
+    }
+  }
+
+  /* The pager graphic: a wide, short vector sitting at the bottom of the row. */
+  function pagerOf(box){
+    var br = box.getBoundingClientRect();
+    var best = null;
+    [].slice.call(box.querySelectorAll('img.g-vec')).forEach(function(img){
+      var r = img.getBoundingClientRect();
+      if (!r.width || r.width < br.width * 0.5) return;
+      if (r.height > 60 || r.width / r.height < 20) return;      /* long and thin */
+      if (r.top - br.top < br.height * 0.6) return;              /* near the bottom */
+      if (!best || r.top > best.getBoundingClientRect().top) best = img;
+    });
+    return best;
+  }
+
+  function buildPager(box, img){
+    if (img.dataset.axSrp) return;
+    img.dataset.axSrp = '1';
+    img.classList.add('ax-srp-art');
+    var host = img.parentElement;
+    if (!host) return;
+    if (getComputedStyle(host).position === 'static') host.style.position = 'relative';
+
+    var VB = 1728, VH = 40;                    /* the export's own viewBox */
+    var wrap = document.createElement('div');
+    wrap.className = 'ax-srp';
+    function place(){
+      wrap.style.left = img.style.left; wrap.style.top = img.style.top;
+      wrap.style.width = img.style.width; wrap.style.height = img.style.height;
+    }
+    place();
+    host.insertBefore(wrap, img.nextSibling);
+
+    var pct = function(v){ return (v / VB * 100) + '%'; };
+    var vpct = function(v){ return (v / VH * 100) + '%'; };
+
+    function mkBtn(x0, x1, label){
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'ax-srp__btn'; b.setAttribute('aria-label', label);
+      b.style.left = pct(x0); b.style.width = pct(x1 - x0);
+      b.style.top = '0'; b.style.height = '100%';
+      wrap.appendChild(b);
+      return b;
+    }
+    var prev = mkBtn(1640, 1682, 'Previous');
+    var next = mkBtn(1686, 1728, 'Next');
+
+    function step(){ return box.clientWidth * 0.9; }
+    function maxScroll(){ return box.scrollWidth - box.clientWidth; }
+
+    function render(){
+      var max = maxScroll();
+      prev.disabled = box.scrollLeft <= 4;
+      next.disabled = box.scrollLeft >= max - 4;
+      /* Figma draws the pager INSIDE the row it controls, so once that row became a
+         real scroller the arrows and dots slid away with the cards -- scroll to the
+         end and the controls were off-screen. Counter-translate them by exactly the
+         scroll offset so they hold their designed position while the cards move
+         under them. Paint-level only: no re-parenting (moving a row element out of
+         its track lays out but never paints), and the pager is position:absolute so
+         a transform cannot reflow the row. */
+      var t = 'translateX(' + box.scrollLeft + 'px)';
+      wrap.style.transform = t;
+      img.style.transform = t;
+    }
+
+    prev.addEventListener('click', function(){
+      box.scrollBy({ left: -step(), behavior: REDUCED ? 'auto' : 'smooth' }); });
+    next.addEventListener('click', function(){
+      box.scrollBy({ left: step(), behavior: REDUCED ? 'auto' : 'smooth' }); });
+    box.addEventListener('scroll', render, { passive: true });
+    addEventListener('resize', function(){ place(); render(); });
+    render();
+  }
+
+  function scan(){
+    var boxes = [].slice.call(document.querySelectorAll('.g-clip'));
+    boxes.forEach(function(b){
+      if (b.closest('header') || b.closest('footer') || b.closest('.ax-footer')) return;
+      var cw = b.clientWidth;
+      if (!cw || b.scrollWidth <= cw * MIN_OVERFLOW) return;
+      /* only rows: a tall clipped block is a masked graphic, not a carousel */
+      if (b.clientHeight > cw) return;
+      /* it must actually hold several sibling blocks, not one wide image */
+      var kids = [].slice.call(b.children).filter(function(k){ return k.offsetWidth; });
+      if (kids.length < 3) return;
+      /* leave anything another enhancer already drives */
+      if (b.querySelector('.ax-mq,.ax-recog__win,.ax-carm') || b.classList.contains('ax-carm')) return;
+      arm(b);
+      var pg = pagerOf(b);
+      if (pg) buildPager(b, pg);
+    });
+  }
+
+  function init(){ scan(); addEventListener('resize', function(){ setTimeout(scan, 200); }); }
+  /* lazily: the .ax-mob block is not guaranteed to precede this script */
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
 })();
 </script>
 
