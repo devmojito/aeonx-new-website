@@ -16,7 +16,16 @@
 .ax-pt-cta{position:absolute;display:flex;align-items:center;justify-content:center;
   border-radius:0.8333vw;background-color:rgb(223,63,23);color:rgb(255,255,255);
   font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:0.8333vw;
-  letter-spacing:0;white-space:nowrap;cursor:default}
+  letter-spacing:0;white-space:nowrap;cursor:default;text-decoration:none}
+/* Six of the twelve products now have a page on this site, so their button is a
+   link rather than the notice it replaced. The other panels are screenshots with
+   no button in the design, so the panel itself carries the link: a real anchor,
+   not a click handler, so the site search index and crawlers find the page. */
+a.ax-pt-cta[href]{cursor:pointer;transition:background-color .2s ease}
+a.ax-pt-cta[href]:hover,a.ax-pt-cta[href]:focus-visible{background-color:rgb(21,24,30)}
+.ax-pt-go{position:absolute;left:0;top:0;width:100%;height:100%;display:block;
+  cursor:pointer;border-radius:0.4167vw}
+.ax-pt-go:focus-visible{outline:2px solid #df3f17;outline-offset:2px}
 @media (prefers-reduced-motion:reduce){
   .ax-pt-box,.ax-pt-lbl,.ax-pt-panel{transition:none}
 }
@@ -49,7 +58,11 @@
    an image fill, so swapping the fill alone left all five showing the same empty
    room. Those three get `art`, `artBox` and `cta`, and the lockups are exported from
    the design as SVG. Mobile bakes the same composition into one image per variant and
-   needs none of this; its only gap is Setu Edge, which still borrows Jarvis's. */
+   needs none of this; its only gap is Setu Edge, which still borrows Jarvis's.
+
+   Those five, and CRM 360, now have a page on this site, so the button reads Learn
+   more and goes there, and the screenshot panels that have a page carry a full-panel
+   link. PAGES below is the whole of that wiring. */
 (function () {
   var SPEC = {
     desktop: {
@@ -148,6 +161,18 @@
     }
   };
 
+  /* Products with a page of their own. Applied by label rather than typed into the
+     two tables above, which are generated from the component set and get regenerated
+     whenever the designer adds a screenshot. */
+  var PAGES = {
+    'CRM 360': '/products/crm-360/',   'Setu Move': '/products/setu-move/',
+    'QuiC': '/products/quic/',         'Jarvis': '/products/jarvis/',
+    'Data Setu.ai': '/products/datasetu-ai/', 'Setu Edge': '/products/setuedge/'
+  };
+  ['desktop', 'mobile'].forEach(function (k) {
+    SPEC[k].panes.forEach(function (p) { p.href = PAGES[p.label] || null; });
+  });
+
   var ACTIVE_BORDER = 'rgb(223, 63, 23)', IDLE_BORDER = 'rgb(213, 218, 226)';
   var ACTIVE_TEXT = 'rgb(35, 39, 46)', IDLE_TEXT = 'rgb(82, 96, 119)';
 
@@ -219,12 +244,28 @@
        switch: a fresh <img> per click re-decodes the SVG and flickers. Coordinates
        come straight out of Figma, relative to the panel image's own rectangle, in
        the same 1920-based vw the rest of the page is laid out in. */
-    var art = null, cta = null;
+    var art = null, cta = null, go = null;
     function place(el, box) {
       el.style.left = box[0] + 'vw'; el.style.top = box[1] + 'vw';
       el.style.width = box[2] + 'vw'; el.style.height = box[3] + 'vw';
     }
     function dressPanel(p) {
+      /* A screenshot panel has no button in the design, so the whole panel is the
+         link. Mobile composes every variant as one image, so this is the only route
+         there. */
+      if (p.href && !p.cta) {
+        if (!go) {
+          go = document.createElement('a');
+          go.className = 'ax-pt-go';
+          go.setAttribute('data-ax-owned', '1');
+          panel.appendChild(go);
+        }
+        go.setAttribute('href', p.href);
+        go.setAttribute('aria-label', p.label);
+        go.hidden = false;
+      } else if (go) {
+        go.hidden = true;
+      }
       if (!p.art) {
         if (art) art.hidden = true;
         if (cta) cta.hidden = true;
@@ -238,15 +279,16 @@
         panel.appendChild(art);
       }
       if (!cta) {
-        cta = document.createElement('div');
+        cta = document.createElement('a');
         cta.className = 'ax-pt-cta';
-        /* Not a control: it announces that there is nothing to click yet. Marked as
-           owned so the dead-button sweep leaves it the colour Figma gave it. */
+        /* Marked as owned so the dead-button sweep leaves it the colour Figma gave
+           it. Without an href it is not a control, and says so. */
         cta.setAttribute('data-ax-owned', '1');
         panel.appendChild(cta);
       }
       if (art.getAttribute('src') !== p.art) art.setAttribute('src', p.art);
-      cta.textContent = 'Coming Soon';
+      if (p.href) { cta.setAttribute('href', p.href); } else { cta.removeAttribute('href'); }
+      cta.textContent = p.href ? 'Learn more' : 'Coming Soon';
       place(art, p.artBox);
       place(cta, p.cta);
       art.hidden = false; cta.hidden = false;
