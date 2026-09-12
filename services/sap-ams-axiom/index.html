@@ -5392,45 +5392,6 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 
-<style id="ax-amsicon-css">
-/* "Four characteristics." -- card 1 ("Outcome-led") is a stray in the Figma source:
-   its icon plate is a 120px square parked to the RIGHT of the copy and vertically
-   centred, while cards 2-4 use a 44px plate at the card's top-left. _gen.py
-   reproduces the source faithfully, so the outlier is upstream, not a generator bug.
-   Cards 2-4 are the intent: that 120px plate is the only one of its kind on the whole
-   canvas (13 other icon plates are all 44px), and the MOBILE frame of this very
-   section gives all four cards the small top-left plate, "Outcome-led" included.
-   Card 1's box sits at left:15.6250vw top:70.3125vw, and its siblings place their
-   plate at card corner + 1.6667vw -> 17.2917 / 71.9792, matching card 3's left and
-   card 2's top exactly. */
-main.ax-page .g-b.g-clip:has(> img.g-vec[src$="4613-9605.svg"]){
-  left:17.2917vw!important; top:71.9792vw!important;
-  width:2.2917vw!important; height:2.2917vw!important;
-  border-radius:0.4167vw!important;
-}
-main.ax-page img.g-vec[src$="4613-9605.svg"]{
-  left:0.2083vw!important; top:0.2083vw!important;   /* same inset as cards 2-4 */
-}
-/* The icon RASTER kept the stray card's 120px size after the plate was resized to
-   44px, so it overflowed the plate on every side. All four of these icons are
-   1254x1254 images with OPAQUE BLACK corners -- what makes them read as rounded
-   tiles is the plate's own border-radius clipping them, which only works while the
-   image matches the plate. Unclipped, card 1 showed a black square sitting over the
-   heading. */
-main.ax-page .g-img[style*="7a11b88cbd"]{
-  width:2.2917vw!important; height:2.2917vw!important;
-}
-
-/* The same stray card also sets its heading and copy 2.7083vw (52px) higher than
-   its rowmate, because in the source they were centred against that tall 120px
-   plate on the right. With the plate moved to the card's top-left, the heading ran
-   straight under it -- "Outcome-led" came out with the icon sitting on the word.
-   Drop both lines to card 2's tops: 73.2292 -> 75.9375 and 76.5625 -> 79.2708,
-   which is exactly the row-1 baseline (cards 3 and 4 already share theirs). */
-main.ax-page .g-t[style*="left:17.2917vw"][style*="top:73.2292vw"]{top:75.9375vw!important}
-main.ax-page .g-t[style*="left:17.2917vw"][style*="top:76.5625vw"]{top:79.2708vw!important}
-</style>
-
 <style id="ax-pixarrow-css">
 /* ---- THE PIXEL ARROW CUE ----
    Six pages carry a column of three pixel-art arrows pointing down, sitting between
@@ -7488,6 +7449,45 @@ main.ax-page .g-t[style*="left:17.2917vw"][style*="top:76.5625vw"]{top:79.2708vw
     window.__axfxR=setTimeout(function(){ centerLabels(); spaceArrows(); },200); });
 })();
 </script>
+
+<style id="ax-amsicon-css">
+/* "Four characteristics." -- card 1 ("Outcome-led") is a stray in the Figma source:
+   its icon plate is a 120px square parked to the RIGHT of the copy and vertically
+   centred, while cards 2-4 use a 44px plate at the card's top-left. _gen.py
+   reproduces the source faithfully, so the outlier is upstream, not a generator bug.
+   Cards 2-4 are the intent: that 120px plate is the only one of its kind on the whole
+   canvas (13 other icon plates are all 44px), and the MOBILE frame of this very
+   section gives all four cards the small top-left plate, "Outcome-led" included.
+   Card 1's box sits at left:15.6250vw top:70.3125vw, and its siblings place their
+   plate at card corner + 1.6667vw -> 17.2917 / 71.9792, matching card 3's left and
+   card 2's top exactly. */
+main.ax-page .g-b.g-clip:has(> img.g-vec[src$="4613-9605.svg"]){
+  left:17.2917vw!important; top:71.9792vw!important;
+  width:2.2917vw!important; height:2.2917vw!important;
+  border-radius:0.4167vw!important;
+}
+main.ax-page img.g-vec[src$="4613-9605.svg"]{
+  left:0.2083vw!important; top:0.2083vw!important;   /* same inset as cards 2-4 */
+}
+/* The icon RASTER kept the stray card's 120px size after the plate was resized to
+   44px, so it overflowed the plate on every side. All four of these icons are
+   1254x1254 images with OPAQUE BLACK corners -- what makes them read as rounded
+   tiles is the plate's own border-radius clipping them, which only works while the
+   image matches the plate. Unclipped, card 1 showed a black square sitting over the
+   heading. */
+main.ax-page .g-img[style*="7a11b88cbd"]{
+  width:2.2917vw!important; height:2.2917vw!important;
+}
+
+/* The same stray card also sets its heading and copy 2.7083vw (52px) higher than
+   its rowmate, because in the source they were centred against that tall 120px
+   plate on the right. With the plate moved to the card's top-left, the heading ran
+   straight under it -- "Outcome-led" came out with the icon sitting on the word.
+   Drop both lines to card 2's tops: 73.2292 -> 75.9375 and 76.5625 -> 79.2708,
+   which is exactly the row-1 baseline (cards 3 and 4 already share theirs). */
+main.ax-page .g-t[style*="left:17.2917vw"][style*="top:73.2292vw"]{top:75.9375vw!important}
+main.ax-page .g-t[style*="left:17.2917vw"][style*="top:76.5625vw"]{top:79.2708vw!important}
+</style>
 
 </body>
 </html>

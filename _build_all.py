@@ -146,6 +146,11 @@ import subprocess, sys as _sys
 V2_PAGES = [
     ('7038:43639', 'alliances/anthropic/index.html', 'Anthropic Alliance \u2014 AeonX Digital'),
     ('7052:23906', 'products/crm-360/index.html',    'CRM 360 \u2014 AeonX Digital'),
+    ('7068:53822', 'products/setu-move/index.html',  'Setu Move \u2014 AeonX Digital'),
+    ('7080:57235', 'products/quic/index.html',       'QuiC \u2014 AeonX Digital'),
+    ('7094:21251', 'products/jarvis/index.html',     'Jarvis \u2014 AeonX Digital'),
+    ('7094:24434', 'products/datasetu-ai/index.html','DataSetu.ai \u2014 AeonX Digital'),
+    ('7095:27544', 'products/setuedge/index.html',   'SetuEdge \u2014 AeonX Digital'),
 ]
 print('\nbuilding Light V2 sub-pages (_genv2.py)...')
 for _nid, _out, _title in V2_PAGES:

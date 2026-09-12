@@ -677,6 +677,8 @@ def ink_bounds(n):
     return box
 
 
+PAGE = {}
+
 def render_box(n, ox, oy):
     """Placement box for an exported asset. Figma normally crops SVG/PNG exports to
     the node's render bounds (post-clip/effects), so that is the default. But a node
@@ -732,6 +734,30 @@ def render_box(n, ox, oy):
             # strokes pile on top of each other. Place the export at its true size,
             # anchored to whichever edges were NOT clipped, and let the page's own
             # overflow:hidden reproduce Figma's crop.
+            # The export can also be bigger than the render bounds on BOTH axes,
+            # which the inward test below never sees: a graphic that runs off the
+            # page frame is cropped by it, so Figma reports bounds that stop at the
+            # frame edge while the SVG still carries the whole drawing. The CRM 360
+            # hero blueprint exports 1859x1577 into bounds of 1146x1319 and was
+            # drawn at 62% -- visibly smaller than the design, with the strokes
+            # piled up. Anchor to the edge that was NOT cropped and let .ax-page's
+            # overflow:hidden take the rest off, which is what Figma draws.
+            P = PAGE.get('bb')
+            if (P and dim[0] > rb['width'] + 1.5 and dim[1] > rb['height'] + 1.5):
+                e = 0.6
+                lcut = abs(rb['x'] - P['x']) <= e
+                rcut = abs((rb['x'] + rb['width']) - (P['x'] + P['width'])) <= e
+                tcut = abs(rb['y'] - P['y']) <= e
+                bcut = abs((rb['y'] + rb['height']) - (P['y'] + P['height'])) <= e
+                # Only when BOTH axes say which edge survived. Art that runs off
+                # the frame on both sides of an axis (the mobile alliances and
+                # AXIOM backdrops span the whole 430 and overflow each way) says
+                # nothing about where its middle sits, and guessing an edge there
+                # slid them across the page.
+                if (lcut != rcut) and (tcut != bcut):
+                    x = rb['x'] + rb['width'] - dim[0] if lcut else rb['x']
+                    y = rb['y'] + rb['height'] - dim[1] if tcut else rb['y']
+                    return x - ox, y - oy, dim[0], dim[1]
             lclip = rb['x'] > bb['x'] + 0.5
             tclip = rb['y'] > bb['y'] + 0.5
             if lclip or tclip:
@@ -1142,6 +1168,7 @@ def mask_image_css(mask):
 def build_body(node):
     bb = node['absoluteBoundingBox']
     ox, oy = bb['x'], bb['y']
+    PAGE['bb'] = bb
     HDG['maxfs'] = 0.0
     HDG['h1_used'] = False
     scan_fontsizes(node)
