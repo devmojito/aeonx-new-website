@@ -337,6 +337,7 @@ def main():
     # and structured data here too, or a legal rebuild would put the shared one back.
     import subprocess, sys
     subprocess.run([sys.executable, '_seo.py'], check=False)
+    subprocess.run([sys.executable, '_a11y.py'], check=False)
 
 
 if __name__ == '__main__':

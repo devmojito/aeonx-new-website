@@ -828,7 +828,11 @@ def emit_vec_asset(n, left, top, w, h):
     # Pages carry 60+ vector exports; deferring the off-screen ones cuts the
     # first-paint request burst without touching layout (width/height come from
     # the inline style, so nothing reflows when they arrive).
-    lazy = '' if top < 60 else ' loading="lazy" decoding="async"'
+    # On the phone layout the first screen is ~930px of a 430-wide frame, and lazy
+    # loading anything in it held back the homepage's largest paint to 4.7s: a lazy
+    # image is not fetched until layout has run. Desktop keeps the old threshold.
+    first_screen = 930 if FACTOR > 100 / 1000 else 60
+    lazy = '' if top < first_screen else ' loading="lazy" decoding="async"'
     return (f'<img class="g-vec" src="/assets/vec/{fn}.svg" data-vec="{nid}"'
             f'{lazy} alt="" role="presentation" aria-hidden="true" style="{style}">')
 

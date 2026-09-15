@@ -135,7 +135,7 @@
       var tTop = tabs[0].T;
       pill = box.filter(function(b){
         return /g-b/.test(b.el.className) && Math.abs(b.T - tTop) < 20 &&
-               getComputedStyle(b.el).backgroundColor === 'rgb(223, 63, 23)' && b.W < W * 0.5;
+               /^rgb\((223, 63, 23|207, 59, 21)\)$/.test(getComputedStyle(b.el).backgroundColor) && b.W < W * 0.5;
       })[0] || null;
       if (pill) { pillL0 = pill.L; pill.el.style.transition = 'transform .3s ease, width .3s ease'; }
     })();

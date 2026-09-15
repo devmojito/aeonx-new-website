@@ -45,7 +45,9 @@
 
     tiles.forEach(function(t){
       t.classList.add('ax-sm-tile');
-      t.setAttribute('tabindex', '0');
+      /* Not focusable: the tiles are decorative images hidden from screen readers and
+         lead nowhere, so a tab stop on them was an unnamed stop that did nothing. The
+         hover highlight is a pointer nicety. */
       function on(){
         row.classList.add('ax-sm-hot');
         tiles.forEach(function(o){ o.classList.toggle('ax-sm-on', o === t); });

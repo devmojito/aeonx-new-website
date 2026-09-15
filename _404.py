@@ -36,6 +36,8 @@ def main():
     io.open('404.html', 'w', encoding='utf-8').write(s)
     shutil.rmtree('404')
     print('wrote 404.html (%d bytes)' % len(s))
+    import subprocess, sys
+    subprocess.run([sys.executable, '_a11y.py'], check=False)
 
 
 if __name__ == '__main__':

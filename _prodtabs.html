@@ -235,7 +235,7 @@ a.ax-pt-cta[href]:hover,a.ax-pt-cta[href]:focus-visible{background-color:rgb(21,
          the old ones wholesale rather than trying to override each. */
       panel.style.cssText = panel.style.cssText.replace(
         /background-size:[^;]*;?|background-position:[^;]*;?|background-repeat:[^;]*;?/g, '');
-      panel.style.backgroundImage = 'url(/assets/gen/' + p.ref + '.png)';
+      panel.style.backgroundImage = 'url(/assets/gen/' + p.ref + '.webp)';
       panel.style.cssText += ';' + p.sizing;
       dressPanel(p);
     }
@@ -320,7 +320,7 @@ a.ax-pt-cta[href]:hover,a.ax-pt-cta[href]:focus-visible{background-color:rgb(21,
         panel.style.opacity = '1';
       };
       img.onload = img.onerror = function () { ready = true; swap(); };
-      img.src = '/assets/gen/' + spec.panes[i].ref + '.png';
+      img.src = '/assets/gen/' + spec.panes[i].ref + '.webp';
 
       panel.style.opacity = '0';
       setTimeout(function () { faded = true; swap(); }, 150);

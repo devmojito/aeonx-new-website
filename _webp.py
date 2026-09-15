@@ -25,6 +25,10 @@ def referenced():
             continue
         s = io.open(f, encoding='utf-8', errors='ignore').read()
         refs.update(re.findall(r'/assets/gen/([A-Za-z0-9._-]+)\.png', s))
+    # The product-tab panels are only named in _prodtabs.html's tables and swapped in
+    # at runtime, so no page source carries their paths. Without them here eleven of
+    # the twelve had no WebP, and the homepage downloaded a PNG on top of its WebP.
+    refs.update(re.findall(r"ref: '([0-9a-f]{40})'", io.open('_prodtabs.html', encoding='utf-8').read()))
     return sorted(refs)
 
 

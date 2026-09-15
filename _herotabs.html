@@ -62,7 +62,9 @@
     ]
   };
 
-  var ACTIVE = 'rgb(223, 63, 23)', IDLE = 'rgb(134, 149, 170)';
+  /* Label colours on the #eceef2 tab plate. Figma's orange and slate read 3.7:1 and
+     2.6:1 there; these are the nearest shades that reach 4.5:1. */
+  var ACTIVE = '#c23714', IDLE = '#58677d';
   var GAP = 8 / 20;            /* icon-to-label gap, as a fraction of the icon width */
 
   function txt(e) { return (e.textContent || '').replace(/\s+/g, ' ').trim(); }
@@ -388,7 +390,16 @@
   }
 
   function wire(W) {
-    if (W.strip) W.strip.setAttribute('role', 'tablist');
+    /* The labels are not children of the strip in the generated markup, so role="tablist"
+       alone left every tab without its required parent. aria-owns makes the strip their
+       parent in the accessibility tree without moving anything in the pixel-locked DOM. */
+    if (W.strip) {
+      W.strip.setAttribute('role', 'tablist');
+      W.strip.setAttribute('aria-owns', W.labels.map(function (el, i) {
+        if (!el.id) el.id = 'ax-ht-' + Math.random().toString(36).slice(2, 8) + '-' + i;
+        return el.id;
+      }).join(' '));
+    }
     W.labels.forEach(function (el) {
       /* _uifx.html's CTA pass turns any short label inside a painted pill into a
          role="link" pointing at "#". These are tabs, so take them back. */

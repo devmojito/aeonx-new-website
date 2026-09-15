@@ -63,23 +63,8 @@ package-lock.json
 __pycache__/
 *.pem
 
-# ---- generated: assets/gen PNG allowlist ----
-# 345 of the 357 PNGs in assets/gen are dead weight: _webp.py re-encoded them and
-# repointed every page at the .webp twin. Rather than list the dead ones, drop all
-# PNGs there and re-include only the 12 still requested. The list is built from the
-# built pages PLUS the product-tab panels, which are only ever referenced from
-# _prodtabs.html at runtime and so appear in no page source.
-# Regenerate after a _webp.py run, a rebuild, or a _prodtabs.html regeneration.
+# ---- assets/gen PNGs ----
+# Every fill the site uses has a WebP twin that _webp.py repoints the pages at,
+# including the product-tab panels, which _prodtabs.html now asks for as .webp.
+# The PNGs are build inputs only.
 assets/gen/*.png
-!assets/gen/055a6847a0cb6e745984e1a704db491809493a01.png
-!assets/gen/0ccfb371b06ba329344ddc992cf1ae382c8e04a1.png
-!assets/gen/1747adadc621799435cb0199e2362493ede4a712.png
-!assets/gen/2714267af9e02b4b2ebcea0c1790f496f03e7899.png
-!assets/gen/52e0c2a51736b95c964d9fed3772f646f8c94219.png
-!assets/gen/59aaccb6d152a67424f6bd4fbf46df577bdd9ff5.png
-!assets/gen/5fd0e3417a71ad9ce0ea61b32d9cd17bdce414ca.png
-!assets/gen/7f4ebb15712b6e8306e590a80755af65f4e5b1e8.png
-!assets/gen/94d8ee820081df4a95384f2b45e4c0892d857aa0.png
-!assets/gen/a18023954288f9a1fc4834dd71f70970453a9ea3.png
-!assets/gen/e35ee9e51c72f197dcd30547c51270218a80b07b.png
-!assets/gen/ee4434788170addd06348da234f893d00dafa364.png

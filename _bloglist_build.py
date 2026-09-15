@@ -12,6 +12,7 @@ the footer, which follows content.
 Regenerate with:  python3 _bloglist_build.py && python3 _postbuild.py
 """
 import io, json, re, html
+from _blogthumbs import thumb_url
 
 DATA = '_blogdata.json'
 OUT = '_bloglist.html'
@@ -46,7 +47,7 @@ def main():
             't': title,
             'c': LABEL.get(p['category'], p['category'].replace('-', ' ').title()),
             'd': d,
-            'i': p['thumb'] or LOGO,
+            'i': thumb_url(p['thumb']) or LOGO,   # card-sized copy, see _blogthumbs.py
             'ph': 0 if p['thumb'] else 1,
             'a': p['author'].replace('-', ' ').title(),
             'ts': '%s%s%s' % (p['year'], p['month'], p['day']),
@@ -207,8 +208,15 @@ FRAGMENT = r'''<style id="ax-bloglist-css">
   function wire(el,url){
     if(!el) return;
     el.classList.add('ax-bl-hit');
-    el.setAttribute('tabindex','0');
-    el.setAttribute('role','link');
+    /* One link per card for keyboards and screen readers: the image, named by the
+       post title. The title heading still opens the post on click, but a role="link"
+       on an <h2> is not allowed, and the image used to be focusable while marked
+       aria-hidden, so a screen reader landed on something it had been told to skip. */
+    if(!/^H[1-6]$/.test(el.tagName)){
+      el.setAttribute('tabindex','0');
+      el.setAttribute('role','link');
+      el.removeAttribute('aria-hidden');
+    }
     if(el.__axgo){ el.__axgo.url=url; return; }
     var box={url:url};
     el.__axgo=box;
@@ -305,7 +313,7 @@ FRAGMENT = r'''<style id="ax-bloglist-css">
 
     function fillCard(c,p){
       c.els.forEach(function(e){ e.style.visibility=p?'':'hidden'; });
-      [c.img.el,c.title.el].forEach(function(e){ if(p) e.setAttribute('tabindex','0'); else e.removeAttribute('tabindex'); });
+      if(p) c.img.el.setAttribute('tabindex','0'); else c.img.el.removeAttribute('tabindex');
       if(!p) return;
       var st=(c.img.el.getAttribute('style')||'').replace(/background-image:[^;]*;?/,'');
       c.img.el.setAttribute('style', st+';background-image:url("'+p.i+'")');
@@ -434,6 +442,7 @@ FRAGMENT = r'''<style id="ax-bloglist-css">
         el.classList.add('ax-bl-arrow',a[3]);
         el.setAttribute('role','button'); el.setAttribute('tabindex','0');
         el.setAttribute('aria-label',a[2]);
+        el.removeAttribute('aria-hidden');   /* the export marks every vector decorative; this one is a control */
         var step=function(){ if(el.getAttribute('aria-disabled')!=='true') go(state.page+a[1],true); };
         el.addEventListener('click',step);
         el.addEventListener('keydown',function(e){

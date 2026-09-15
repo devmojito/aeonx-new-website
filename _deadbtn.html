@@ -122,6 +122,23 @@
       if (el.closest('.ax-mm,.ax-mm2')) return;      /* handled as a menu entry above */
       unafford(el);
     });
+
+    /* 5. Controls with no name. The linkifiers put role="link" or "button" on the
+          painted pill, but in the generated markup the label is often a sibling
+          drawn on top of the pill rather than inside it, so a screen reader announced
+          an unnamed control. Name it after the text that sits within its box. */
+    [].forEach.call(document.querySelectorAll('[role="link"],[role="button"]'), function (el) {
+      if (el.getAttribute('aria-label') || (el.textContent || '').trim()) return;
+      var r = el.getBoundingClientRect();
+      if (!r.width || !r.height) return;
+      var scope = el.parentElement || document;
+      var label = [].filter.call(scope.querySelectorAll('.g-t'), function (t) {
+        var q = t.getBoundingClientRect();
+        return q.width && (t.textContent || '').trim() &&
+               q.left >= r.left - 4 && q.right <= r.right + 4 && q.top >= r.top - 6 && q.bottom <= r.bottom + 6;
+      })[0];
+      if (label) el.setAttribute('aria-label', label.textContent.replace(/\s+/g, ' ').trim());
+    });
   }
 
   /* The linkifiers run on load and again at 140/200/400ms, so this runs after the

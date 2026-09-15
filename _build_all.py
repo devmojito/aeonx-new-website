@@ -185,5 +185,7 @@ subprocess.run([_sys.executable, '_herosap.py'], check=False)
 # slice of a generated page -- so run `python3 _legal.py` if this names them.
 print('per-page descriptions and structured data (_seo.py)...')
 subprocess.run([_sys.executable, '_seo.py'], check=False)
+print('text contrast (_a11y.py)...')
+subprocess.run([_sys.executable, '_a11y.py'], check=False)
 print('checking for duplicate navbars (_navcheck.py)...')
 subprocess.run([_sys.executable, '_navcheck.py'], check=False)
