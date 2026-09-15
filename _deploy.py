@@ -72,15 +72,23 @@ def main():
     # name and get overwritten in place): a day. `sync` only touches changed files, so
     # --all re-uploads the lot once to put headers on files that predate this.
     verb = 'cp --recursive' if '--all' in sys.argv else 'sync --delete'
+    # The CLI on the instance guesses .webp as binary/octet-stream, so WebP gets its
+    # own passes with the type stated. A re-upload once shipped all 385 that way.
     groups = [
         ('--exclude "*" --include "*.html" --include "*.xml" --include "*.txt"',
-         'public, max-age=0, s-maxage=86400, must-revalidate'),
-        ('--exclude "*" --include "assets/gen/*"', 'public, max-age=31536000, immutable'),
-        ('--exclude "*.html" --exclude "*.xml" --exclude "*.txt" --exclude "assets/gen/*"',
-         'public, max-age=86400'),
+         'public, max-age=0, s-maxage=86400, must-revalidate', None),
+        ('--exclude "*" --include "assets/gen/*" --exclude "*.webp"',
+         'public, max-age=31536000, immutable', None),
+        ('--exclude "*" --include "assets/gen/*.webp"',
+         'public, max-age=31536000, immutable', 'image/webp'),
+        ('--exclude "*" --include "*.webp" --exclude "assets/gen/*"',
+         'public, max-age=86400', 'image/webp'),
+        ('--exclude "*.html" --exclude "*.xml" --exclude "*.txt" --exclude "assets/gen/*" --exclude "*.webp"',
+         'public, max-age=86400', None),
     ]
-    passes = ' && '.join('aws s3 %s . %s %s --cache-control "%s" --only-show-errors' % (verb, BUCKET, f, cc)
-                         for f, cc in groups)
+    passes = ' && '.join('aws s3 %s . %s %s --cache-control "%s"%s --only-show-errors'
+                         % (verb, BUCKET, f, cc, (' --content-type %s' % ct) if ct else '')
+                         for f, cc, ct in groups)
     if '--all' in sys.argv:          # cp never deletes, so clear stale files first
         passes = 'aws s3 sync . %s --delete --only-show-errors && %s' % (BUCKET, passes)
     remote = ('cd ~/aeonx-site && %s && echo S3_OK && '

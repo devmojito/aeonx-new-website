@@ -68,10 +68,13 @@
   /* The photo is a background-image sized by the export; only the ref changes, so the
      url is swapped in place and whatever sizing Figma wrote is left alone. .webp is
      what _webp.py repoints every fill to, and the .png is the fallback for a page
-     served before that ran. */
+     served before that ran. The test allows quotes: once anything has touched
+     el.style the browser re-serialises the attribute as url("..."), the old
+     /\.webp\)/ stopped matching, and every photo after the first asked for the
+     .png, which the deploy no longer ships. */
   function setPhoto(el, ref){
     var s = el.getAttribute('style') || '';
-    var ext = /\.webp\)/.test(s) ? 'webp' : 'png';
+    var ext = /\.webp["']?\)/.test(s) ? 'webp' : 'png';
     el.setAttribute('style', s.replace(/url\([^)]*\)/, 'url(/assets/gen/' + ref + '.' + ext + ')'));
     el.setAttribute('data-ref', ref);
   }

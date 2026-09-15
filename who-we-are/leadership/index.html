@@ -7651,6 +7651,17 @@ a.ax-pt-cta[href]:hover,a.ax-pt-cta[href]:focus-visible{background-color:rgb(21,
 })();
 </script>
 
+<style id="ax-leadscroll-css">
+/* Leadership page only: hide the two roster scrollbars. _scrollrow.html already
+   makes these rows drag-scrollable (pointer drag + arrow keys), so the visible
+   bar is redundant here. Scoped to this page via the fragment being page-scoped in
+   _postbuild.py -- the bars stay everywhere else, where drag is less discoverable.
+   Keyboard access is unaffected: the row keeps tabindex/role/aria-label and its
+   arrow-key handler from _scrollrow, so this is a purely visual change. */
+.ax-srow{scrollbar-width:none;-ms-overflow-style:none}
+.ax-srow::-webkit-scrollbar{height:0;width:0;display:none}
+</style>
+
 <style id="ax-ltabs-css">
 /* Leadership department tabs ("PRACTICE & PROGRAMME" / "SALES & GROWTH").
    Both rosters are authored in Figma, as the two variants of the "Tab Switch"
@@ -7721,10 +7732,13 @@ a.ax-pt-cta[href]:hover,a.ax-pt-cta[href]:focus-visible{background-color:rgb(21,
   /* The photo is a background-image sized by the export; only the ref changes, so the
      url is swapped in place and whatever sizing Figma wrote is left alone. .webp is
      what _webp.py repoints every fill to, and the .png is the fallback for a page
-     served before that ran. */
+     served before that ran. The test allows quotes: once anything has touched
+     el.style the browser re-serialises the attribute as url("..."), the old
+     /\.webp\)/ stopped matching, and every photo after the first asked for the
+     .png, which the deploy no longer ships. */
   function setPhoto(el, ref){
     var s = el.getAttribute('style') || '';
-    var ext = /\.webp\)/.test(s) ? 'webp' : 'png';
+    var ext = /\.webp["']?\)/.test(s) ? 'webp' : 'png';
     el.setAttribute('style', s.replace(/url\([^)]*\)/, 'url(/assets/gen/' + ref + '.' + ext + ')'));
     el.setAttribute('data-ref', ref);
   }
@@ -7943,17 +7957,6 @@ a.ax-pt-cta[href]:hover,a.ax-pt-cta[href]:focus-visible{background-color:rgb(21,
   addEventListener('load', function(){ setTimeout(init, 300); });
 })();
 </script>
-
-<style id="ax-leadscroll-css">
-/* Leadership page only: hide the two roster scrollbars. _scrollrow.html already
-   makes these rows drag-scrollable (pointer drag + arrow keys), so the visible
-   bar is redundant here. Scoped to this page via the fragment being page-scoped in
-   _postbuild.py -- the bars stay everywhere else, where drag is less discoverable.
-   Keyboard access is unaffected: the row keeps tabindex/role/aria-label and its
-   arrow-key handler from _scrollrow, so this is a purely visual change. */
-.ax-srow{scrollbar-width:none;-ms-overflow-style:none}
-.ax-srow::-webkit-scrollbar{height:0;width:0;display:none}
-</style>
 
 </body>
 </html>
