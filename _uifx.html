@@ -554,6 +554,7 @@
         body:JSON.stringify({ email:v, source_page:location.pathname })
       }).then(function(r){
         if(!r.ok) throw new Error(r.status);
+        if(window.axTrack) window.axTrack('sign_up', { method: 'newsletter' });  /* no-op without consent */
         say('Thanks \u2014 you are on the list.');
       }).catch(offerMail);
     }

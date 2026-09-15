@@ -38,6 +38,7 @@ UIFX = open(os.path.join(_HERE, '_uifx.html'), encoding='utf-8').read()
 ANNC = open(os.path.join(_HERE, '_annc.html'), encoding='utf-8').read()
 MOBFX = open(os.path.join(_HERE, '_mobfx.html'), encoding='utf-8').read()
 COOKIE = open(os.path.join(_HERE, '_cookie.html'), encoding='utf-8').read()
+GA4 = open(os.path.join(_HERE, '_ga4.html'), encoding='utf-8').read()
 HEROTABS = open(os.path.join(_HERE, '_herotabs.html'), encoding='utf-8').read()
 PRODTABS = open(os.path.join(_HERE, '_prodtabs.html'), encoding='utf-8').read()
 TESTICARDS = open(os.path.join(_HERE, '_testicards.html'), encoding='utf-8').read()
@@ -61,6 +62,7 @@ GLOBAL_FRAGMENTS = [
     ('ax-ctawash-css', '_ctawash.html'),
     ('ax-stathov-css', '_stathov.html'),
     ('ax-cookie-css', '_cookie.html'),
+    ('ax-ga4-css', '_ga4.html'),
     ('ax-herotabs-css', '_herotabs.html'),
     ('ax-prodtabs-css', '_prodtabs.html'),
     ('ax-testicards-css', '_testicards.html'),
@@ -250,6 +252,10 @@ def main():
         if 'ax-cookie-css' not in s and '</body>' in s:
             s = s.replace('</body>', COOKIE + '\n</body>', 1)
             stats['cookie'] = stats.get('cookie', 0) + 1
+        # After the cookie banner, whose consent gate this loads through.
+        if 'ax-ga4-css' not in s and '</body>' in s:
+            s = s.replace('</body>', GA4 + '\n</body>', 1)
+            stats['ga4'] = stats.get('ga4', 0) + 1
         # CURSOR RING RETIRED 2026-08-05. The accent ring that trailed the pointer
         # (44px, brand orange, translucent fill when over anything clickable) was
         # reported as "colour overflowing out of the button" — over a CTA it sits

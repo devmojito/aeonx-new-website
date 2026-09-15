@@ -292,6 +292,11 @@ select.ax-cf-code{left:0!important;top:0!important;height:100%!important;cursor:
         body: JSON.stringify(payload)
       }).then(function(r){
         if (r.ok){
+          /* Reported only once the enquiry is saved. Not generate_lead: the GA4 tag's own
+             settings already send that on every form submit, together with the Google Ads
+             "Contact Us" conversion, so a second one would count each lead twice. No-op
+             until the visitor accepts cookies. */
+          if (window.axTrack) window.axTrack('enquiry_sent', { form_type: payload.kind });
           form.reset();
           say('Thank you — we have your enquiry and will be in touch shortly.', 8000);
           return;

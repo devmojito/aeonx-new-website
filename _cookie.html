@@ -45,22 +45,23 @@
 </style>
 <script>
 /* ---- COOKIE CONSENT ----
-   What this site actually stores today, checked rather than assumed:
+   What this site stores, checked rather than assumed:
      - csrftoken  : set by Django on the contact form and the admin. Strictly
                     necessary; without it the form cannot post.
      - sessionid  : set only after an admin logs in at /manage/. Strictly necessary.
-     - ax-cookie-consent : this banner's own choice, in localStorage.
-   There is no analytics, tag manager, pixel or third-party tracker anywhere in the
-   build. So "Decline" is not being quietly ignored: there is currently nothing
-   non-essential to switch off, and the honest thing is to say so in the copy rather
-   than imply a choice that does nothing.
+     - _ga, _ga_* : Google Analytics 4 (_ga4.html). Set ONLY after Accept.
+     - ax-cookie-consent-v2 : this banner's own choice, in localStorage.
 
-   The gate is still real for the future. Anything non-essential added later must be
-   loaded through window.axConsent.onGranted(fn), which fires immediately if consent
-   was already given and never fires if it was declined. That keeps the decision in
-   one place instead of scattered across whichever script gets added next. */
+   Anything non-essential must be loaded through window.axConsent.onGranted(fn),
+   which fires immediately if consent was already given and never fires if it was
+   declined. That keeps the decision in one place instead of scattered across
+   whichever script gets added next.
+
+   The key moved to -v2 when analytics arrived (15 Sep 2026). Everyone who had
+   answered was answering a banner that said the site used no analytics cookies, so
+   that answer cannot stand for Google Analytics, and the banner asks once more. */
 (function () {
-  var KEY = 'ax-cookie-consent';
+  var KEY = 'ax-cookie-consent-v2';
   var granted = null, waiting = [];
 
   function read() {
@@ -95,9 +96,10 @@
     bar.setAttribute('aria-label', 'Cookie notice');
     bar.innerHTML =
       '<div class="ax-ck__in">' +
-        '<p class="ax-ck__tx"><b>Cookies on aeonx.digital.</b> We use only the cookies ' +
-        'needed to make the contact form and the admin work. We do not use advertising ' +
-        'or analytics cookies. Read our <a href="/cookie-policy/">Cookie Policy</a>.</p>' +
+        '<p class="ax-ck__tx"><b>Cookies on aeonx.digital.</b> We use essential cookies ' +
+        'to make the contact form and the admin work. With your permission we also use ' +
+        'Google Analytics cookies to see how the site is used. We do not use advertising ' +
+        'cookies. Read our <a href="/cookie-policy/">Cookie Policy</a>.</p>' +
         '<div class="ax-ck__bt">' +
           '<button type="button" class="ax-ck__b ax-ck__b--n" data-ck="declined">Decline</button>' +
           '<button type="button" class="ax-ck__b ax-ck__b--y" data-ck="granted">Accept</button>' +

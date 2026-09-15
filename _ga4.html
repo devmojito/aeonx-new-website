@@ -1,0 +1,49 @@
+<style id="ax-ga4-css">
+/* Nothing to style. This block exists so _postbuild.py has a sentinel to test for. */
+</style>
+<script>
+/* ---- GOOGLE ANALYTICS 4 ----
+   Property "Aeonx Digital Solutionx - GA4", web stream 3787999343.
+
+   Loaded only after the visitor accepts cookies, through the gate the cookie banner
+   exposes (window.axConsent.onGranted): it fires straight away for someone who has
+   already accepted, when they click Accept otherwise, and never for Decline. Nothing is
+   requested from Google before that, so the banner's promise holds.
+
+   The stream's enhanced measurement covers page views, scrolling, clicks out to the
+   product sites and PDF downloads. Both forms post in the background with fetch, which
+   it cannot see, so their success handlers report through window.axTrack. That is a
+   no-op until consent, which lets them call it without knowing whether GA is loaded. */
+(function () {
+  var ID = 'G-44M772EFHR';
+  window.axTrack = window.axTrack || function () {};
+
+  function load() {
+    if (window.__axGa4) return;
+    window.__axGa4 = true;
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = function () { window.dataLayer.push(arguments); };
+    /* Analytics only. The banner promises no advertising cookies, and without these
+       GA4 also pinged Google's ad audiences endpoint. */
+    window.gtag('consent', 'default', {
+      analytics_storage: 'granted', ad_storage: 'denied',
+      ad_user_data: 'denied', ad_personalization: 'denied'
+    });
+    window.gtag('js', new Date());
+    window.gtag('config', ID, { allow_google_signals: false, allow_ad_personalization_signals: false });
+    var s = document.createElement('script');
+    s.async = true;
+    s.src = 'https://www.googletagmanager.com/gtag/js?id=' + ID;
+    document.head.appendChild(s);
+    window.axTrack = function (name, params) { window.gtag('event', name, params || {}); };
+  }
+
+  function arm() {
+    if (window.axConsent) { window.axConsent.onGranted(load); return true; }
+    return false;
+  }
+  /* The cookie fragment is injected before this one, so the gate normally exists
+     already. Wait for the document rather than depend on that order. */
+  if (!arm()) document.addEventListener('DOMContentLoaded', arm);
+})();
+</script>
