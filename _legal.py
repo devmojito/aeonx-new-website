@@ -259,7 +259,7 @@ def sitemap_xml():
         if 'index.html' not in files:
             continue
         rel = dirpath.lstrip('./')
-        if rel.startswith(('assets', '.git', 'node_modules')):
+        if rel.startswith(('assets', '.git', 'node_modules', 'backend')):
             continue
         head = io.open(os.path.join(dirpath, 'index.html'), encoding='utf-8').read(4000)
         if 'http-equiv="refresh"' in head:               # alias stub, not a page
@@ -297,7 +297,7 @@ def build(slug, title, doc, tpl):
 
     body = ('<div class="ax-legal-hero">%s</div>\n'
             '<div class="ax-legal-mhero"><div class="ax-legal-mhero__eb">%s</div>'
-            '<h1 class="ax-legal-mhero__h1">%s</h1>'
+            '<div class="ax-legal-mhero__h1" role="heading" aria-level="1">%s</div>'
             '<p class="ax-legal-mhero__sub">%s</p></div>\n'
             '<section class="ax-legal"><div class="ax-legal__in">%s</div></section>'
             % (hero(doc['eyebrow'], doc['title'], doc['subtitle'], tpl),
@@ -333,6 +333,10 @@ def main():
                 '<a href="/sitemap.xml">/sitemap.xml</a>.',
     }, tpl)
     sitemap_xml()
+    # These pages are rebuilt outside _build_all.py, so they take their description
+    # and structured data here too, or a legal rebuild would put the shared one back.
+    import subprocess, sys
+    subprocess.run([sys.executable, '_seo.py'], check=False)
 
 
 if __name__ == '__main__':

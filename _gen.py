@@ -487,11 +487,25 @@ def box_style(n, left, top, w, h):
             style0 += f"opacity:{op};"
         style0 += blur_css(n)
         name = (n.get('name') or '').strip()
+        # Figma numbers a duplicated layer "Quic 2", "crm-360-mark 2"; the number is
+        # the designer's copy counter, not part of what the picture shows.
+        name = re.sub(r'\s+\d+$', '', name).strip()
         low = name.lower()
-        generic = (not name) or low.startswith(('rectangle', 'image', 'img', 'imgi_',
+        # A layer name is only a usable description when a person wrote one. The
+        # defaults Figma and our own exports leave behind were being read out by
+        # screen readers and indexed: 505 of 732 image labels across the site were
+        # things like "4 8", "4 10" and "Container". Those images are decorative.
+        generic = ((not name) or low.startswith(('rectangle', 'image', 'img', 'imgi_',
                     'ellipse', 'vector', 'frame', 'group', 'mask', 'bg', 'background',
-                    'gradient', 'shape', 'union', 'subtract', 'clip'))
-        a11y = ' role="presentation" aria-hidden="true"' if generic else f' role="img" aria-label="{esc(name)}"'
+                    'gradient', 'shape', 'union', 'subtract', 'clip', 'container', 'div',
+                    'section', 'link', 'button', 'icon', 'photo', 'picture', 'download',
+                    'unsplash', 'screenshot', 'placeholder', 'noise', 'texture', 'pattern',
+                    'grid', 'lines', 'blur', 'overlay', 'layer', 'untitled', 'pexels',
+                    'shutterstock', 'freepik', 'adobestock'))
+                   or re.fullmatch(r'[\d\s._:-]+', name) is not None
+                   or re.search(r'\d{6,}', name) is not None)
+        label = re.sub(r'[_-]+', ' ', name)
+        a11y = ' role="presentation" aria-hidden="true"' if generic else f' role="img" aria-label="{esc(label)}"'
         return ('g-img', f' data-ref="{imgref}"{a11y}', style0)
     bg = solid_fill(fills) or gradient_fill(fills, w, h)
     style = f"position:absolute;left:{vw(left)};top:{vw(top)};width:{vw(w)};height:{vw(h)};"

@@ -39,7 +39,11 @@ def is_public(url):
 
 # Images on the retired WordPress host. Verified 404 there already, and the
 # host disappears at cutover, so they can never resolve again.
-DEAD_HOST = re.compile(r'^https?://(?:www\.)?aeonx\.digital/')
+# Only WordPress's own upload paths, which lived under /blog/wp-content/ on the old
+# site. Since the cutover aeonx.digital also serves this site and its storage
+# (blog/, documents/), and matching the bare host marked every migrated image as
+# dead the moment storage moved onto the domain.
+DEAD_HOST = re.compile(r'^https?://(?:www\.)?aeonx\.digital/(?:blog/)?wp-(?:content|includes)/')
 
 
 def dead_in(body):

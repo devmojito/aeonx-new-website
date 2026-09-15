@@ -45,6 +45,10 @@ legacy_pdfs_urls.txt
 AeonX-Deployment-Architecture.pdf
 MISSING_DOCUMENTS.txt
 CLAUDE.md
+HANDOVER.md
+
+# CloudFront settings prepared for AeonX to apply, not site content
+infra/
 
 # Client product reels: 1080p masters, ~150-200MB each. The 720p encodes that
 # actually ship live are in assets/video/ (singular) and are NOT ignored.

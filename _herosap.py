@@ -47,6 +47,8 @@ def main():
 
     _gen.FACTOR = 100.0 / 430.0
     body, h, _ = _gen.build_body(node)
+    # Inside the phone block, so the same one-<h1> rule as _mobile.py applies.
+    body = re.sub(r'<h1(\s)', r'<div role="heading" aria-level="1"\1', body).replace('</h1>', '</div>')
 
     top = _gen.vw(HERO_TOP_PX)
     frag = ('<!-- ==== HERO SAP VARIANT (Figma 6452:39408) ==== -->\n'

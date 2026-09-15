@@ -104,6 +104,12 @@ def main():
         node = _gen.find(MOB, fid)
         _gen.bake(node)   # ring/glow art CSS cannot reproduce -- see _gen.BAKE_NODES
         body, h, _ = _gen.build_body(node)
+        # One <h1> per document. The desktop layout already carries the page's h1,
+        # and this block repeats the same headline for phones, so crawlers counted two
+        # on 34 pages. Here it stays a level-one heading to assistive tech, which only
+        # ever sees the layout that is displayed, without being a second <h1> tag.
+        body = re.sub(r'<h1(\s)', r'<div role="heading" aria-level="1"\1', body)
+        body = body.replace('</h1>', '</div>')
         mob = (f'<div class="ax-mob"><main class="ax-page" '
                f'style="position:relative;height:{_gen.vw(h)}">\n{body}\n</main></div>')
         path = out or (route if route.endswith('.html') else route + '/index.html')

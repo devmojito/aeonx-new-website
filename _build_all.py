@@ -18,7 +18,7 @@ PAGES = [
     ("4361:5048",  "services/grow-with-sap", "GROW with SAP — AeonX Digital"),
     ("4371:6774",  "services/sap-ams-axiom", "SAP AMS by AXIOM — AeonX Digital"),
     ("4369:1717",  "services/aws", "Amazon Web Services — AeonX Digital"),
-    ("4371:7616",  "services/google-cloud", "Google Cloud Partner — AeonX Digital"),
+    ("4371:7616",  "services/google-cloud", "Google Cloud Services — AeonX Digital"),
     ("4371:11553", "services/multi-cloud-cms", "Multi-Cloud CMS — AeonX Digital"),
 
     ("4750:4504",  "products", "All Products — AeonX Digital"),
@@ -183,5 +183,7 @@ subprocess.run([_sys.executable, '_herosap.py'], check=False)
 # separate ways and each time it was the client who noticed, so it is checked here
 # on every build. The legal pages are NOT rebuilt by this script -- they copy a
 # slice of a generated page -- so run `python3 _legal.py` if this names them.
+print('per-page descriptions and structured data (_seo.py)...')
+subprocess.run([_sys.executable, '_seo.py'], check=False)
 print('checking for duplicate navbars (_navcheck.py)...')
 subprocess.run([_sys.executable, '_navcheck.py'], check=False)

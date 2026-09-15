@@ -79,9 +79,16 @@ def clean_body(html, broken):
     for b in broken:
         s = re.sub(r'<img[^>]+src="%s"[^>]*>' % re.escape(b), '', s)
         s = re.sub(r'<img[^>]+src="%s"[^>]*>' % re.escape(b.replace('https://www.aeonx.digital', '')), '', s)
+    # Hotlinked from third parties in the WordPress originals, and gone: blogs.sap.com
+    # refuses them to other sites (403) and the Google-hosted ones were deleted (404).
+    # A broken-image box helps nobody, so they are dropped like the dead ones above.
+    s = re.sub(r'<img[^>]+src="https?://(?:blogs\.sap\.com/wp-content|lh\d\.googleusercontent\.com)/[^"]*"[^>]*>', '', s)
     s = s.replace('src="//', 'src="https://')
     s = re.sub(r'src="/wp-content', 'src="https://www.aeonx.digital/wp-content', s)
     s = re.sub(r'href="/wp-content', 'href="https://www.aeonx.digital/wp-content', s)
+    # The page already has the post title as its <h1>; headings authored as h1
+    # inside the WordPress body become section headings under it.
+    s = re.sub(r'<h1(\s|>)', r'<h2\1', s).replace('</h1>', '</h2>')
     # collapse the runs of empty divs Divi leaves behind
     for _ in range(3):
         s = re.sub(r'<div[^>]*>\s*</div>', '', s)
