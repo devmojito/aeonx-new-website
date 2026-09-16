@@ -86,6 +86,12 @@ def main():
                         % (si, name, active[0] if active else 0,
                            panel['absoluteBoundingBox']['height'] * _gen.FACTOR,
                            v['absoluteBoundingBox']['height'] * _gen.FACTOR, body))
+    # The deploy ships only the .webp copies of assets/gen, and _webp.py repoints
+    # built pages, not this fragment, so a --refresh brought the .png paths back and
+    # the screenshot panels went blank (403) on the live site.
+    tpls = [re.sub(r'(/assets/gen/[0-9a-f]+)\.png',
+                   lambda m: m.group(1) + ('.webp' if os.path.exists(m.group(1)[1:] + '.webp') else '.png'), t)
+            for t in tpls]
     s = io.open(OUT, encoding='utf-8').read()
     s = re.sub(r'(</style>\n).*?(<script>)', lambda m: m.group(1) + '\n'.join(tpls) + '\n' + m.group(2),
                s, count=1, flags=re.S)
