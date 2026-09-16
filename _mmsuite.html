@@ -106,8 +106,10 @@
       '/assets/gen/mm-icon-05.svg',  '/assets/gen/mm-icon-06.webp',
       '/assets/gen/mm-icon-07.svg',  '/assets/gen/mm-icon-08.svg',
       '/assets/gen/mm-icon-09.webp', '/assets/gen/mm-icon-10.webp',
-      '/assets/gen/mm-icon-11.svg',  '/assets/gen/mm-icon-12.svg'
+      '/assets/gen/mm-icon-11.svg',  '/assets/gen/mm-icon-12-setuedge.svg'
   ];
+  /* Tile 12 was re-exported when Setu Edge got its new mark; assets/gen is served
+     immutable for a year, so a changed file needs a new name to reach anyone. */
   function build() {
     var n = 0;
     [].forEach.call(document.querySelectorAll('img.ax-mm2__feat-img'), function (img) {
