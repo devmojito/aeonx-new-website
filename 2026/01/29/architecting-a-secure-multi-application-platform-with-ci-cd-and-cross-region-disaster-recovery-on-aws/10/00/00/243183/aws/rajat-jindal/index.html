@@ -7415,14 +7415,14 @@ a.ax-pt-cta[href]:hover,a.ax-pt-cta[href]:focus-visible{background-color:rgb(21,
       ['LogystiX', null], ['SetuMove', null], ['CRM 360', null], ['QUIC', null]
     ],
     'Services': [
-      ['SAP', '6958-20885'], ['AWS', '7080-57211'],
-      ['GCP', '6958-20889'], ['ANTHROPIC', '6958-20891'],
-      ['Multi Cloud CMS', '6958-21014'], ['AI & DATA', '6958-21020'],
+      ['SAP', '7146-46485'], ['AWS', '7146-46489'],
+      ['GCP', '7146-46499'], ['ANTHROPIC', '7146-46503'],
+      ['Multi Cloud CMS', '7146-46507', 24], ['AI & DATA', '7146-46515', 33],
       null, null
     ],
     'AI Agents': [
-      ['JARVIS', '6956-63466'], ['AEONXIQ', '6956-63469'],
-      ['DATASETU.AI', '6956-63472'], ['SETUEDGE', '7038-45320']
+      ['JARVIS', '7146-46548'], ['AEONXIQ', '7146-46553'],
+      ['DATASETU.AI', '7146-46558'], ['SETUEDGE', '7146-46568']
     ]
   };
 
@@ -7743,8 +7743,15 @@ a.ax-pt-cta[href]:hover,a.ax-pt-cta[href]:focus-visible{background-color:rgb(21,
       var pairW = iw + gap + lw;
       var iconL = s.box.l + (s.box.w - pairW) / 2;
       if (s.icon && s.iconBox) {
-        setvw(s.icon, 'left', iconL);
-        setvw(s.icon, 'top', top + (s.box.h - s.iconBox.h) / 2);
+        /* A third entry is the art's drawn size in Figma px against the 20px icon box:
+           two Services marks paint past their box, and shrinking them into it made
+           them read smaller than the design. Centred on the box either way. */
+        var sc = item[2] ? item[2] / 20 : 1;
+        var w = s.iconBox.w * sc, h = s.iconBox.h * sc;
+        setvw(s.icon, 'left', iconL - (w - s.iconBox.w) / 2);
+        setvw(s.icon, 'top', top + (s.box.h - h) / 2);
+        setvw(s.icon, 'width', w);
+        setvw(s.icon, 'height', h);
       }
       setvw(s.label, 'left', iconL + iw + gap);
       setvw(s.label, 'width', lw);
