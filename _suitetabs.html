@@ -8,7 +8,18 @@
 .ax-st-go:hover>.g-b{box-shadow:inset 0 0 0 100vw rgba(0,0,0,.16)}
 .ax-st-go:focus-visible{outline:none}
 .ax-st-go:focus-visible>.g-b{outline:2px solid #df3f17;outline-offset:2px}
-@media (prefers-reduced-motion:reduce){.ax-st-fade,.ax-st-go>.g-b{transition:none}}
+/* Panels with no screenshot in the design (Figma leaves a grey box) are composed the
+   way the homepage product tabs compose theirs: the shared illustrated backdrop, the
+   product's logo and a Learn more button to the product. */
+.ax-st-bg{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;
+  background:url(/assets/gen/5fd0e3417a71ad9ce0ea61b32d9cd17bdce414ca.webp) center/cover no-repeat}
+.ax-st-art{position:absolute;object-fit:contain;pointer-events:none;user-select:none}
+.ax-st-cta{position:absolute;display:flex;align-items:center;justify-content:center;
+  border-radius:0.8333vw;background-color:rgb(223,63,23);color:rgb(255,255,255);
+  font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:0.8333vw;white-space:nowrap;
+  text-decoration:none;cursor:pointer;transition:background-color .2s ease}
+.ax-st-cta:hover,.ax-st-cta:focus-visible{background-color:rgb(21,24,30)}
+@media (prefers-reduced-motion:reduce){.ax-st-fade,.ax-st-go>.g-b,.ax-st-cta{transition:none}}
 </style>
 <template class="ax-st-v" data-set="0" data-name="supplierx" data-tab="0" data-ph="32.0833" data-ch="41.7708">
 <div data-t><div class="g-t" style="position:absolute;left:1.4921vw;top:0.5208vw;width:3.6979vw;height:1.2500vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:0.8333vw;line-height:1.2500vw;color:rgb(223,63,23);text-align:center;white-space:nowrap;">SupplierX</div>
@@ -529,6 +540,57 @@
     wrap(btn);
   }
 
+  /* Logo per product for the composed panels: the homepage product tabs' lockups where
+     they exist, otherwise the product's own mark. [src, width / height] */
+  var ART = {
+    orderx: ['/assets/gen/8c5b7ed3f14c88fdf9ede7afee31eb0cc4190f51.webp', 1200 / 364],
+    manufex: ['/assets/vec/7036-37965.svg', 1],
+    crm360: ['/assets/gen/99c43e8329c311d83e019afba68fb8914ec28d08.webp', 1],
+    aeonxiq: ['/assets/gen/261011cd380ff677e9627a3faa33b218e91375c3.webp', 140 / 149],
+    setumove: ['/assets/vec/6890-7191.svg', 496 / 126],
+    quic: ['/assets/vec/6890-7433.svg', 320 / 126],
+    jarvis: ['/assets/vec/6970-27176.svg', 1],
+    datasetu: ['/assets/vec/6890-7467.svg', 518 / 126],
+    setuedge: ['/assets/vec/7041-29844.svg', 1]
+  };
+  var BG = '/assets/gen/5fd0e3417a71ad9ce0ea61b32d9cd17bdce414ca.webp';
+  function place(el, l, t, w, h) {
+    el.style.left = l.toFixed(4) + 'vw'; el.style.top = t.toFixed(4) + 'vw';
+    el.style.width = w.toFixed(4) + 'vw'; el.style.height = h.toFixed(4) + 'vw';
+  }
+  /* The picture block is the wide clipped box on the panel's right. Sizes are the
+     homepage's: a 126px-tall logo, a 17px gap, a 207x56 button, centred as a group. */
+  function compose(p, name, href) {
+    var block = kids(p, '.g-b.g-clip').filter(function (b) { return n(b, 'width') > 40; })[0];
+    if (!block || block.querySelector('.g-img') || !ART[name]) return;
+    var BW = n(block, 'width'), BH = n(block, 'height');
+    var lh = 6.5625, lw = lh * ART[name][1], gap = 0.8854, cw = 10.7812, ch = 2.9167;
+    var top = (BH - (lh + gap + ch)) / 2;
+    var bg = document.createElement('div');
+    bg.className = 'ax-st-bg';
+    var img = document.createElement('img');
+    img.className = 'ax-st-art';
+    img.alt = '';
+    img.setAttribute('aria-hidden', 'true');
+    img.src = ART[name][0];
+    place(img, (BW - lw) / 2, top, lw, lh);
+    block.appendChild(bg);
+    block.appendChild(img);
+    if (!href) return;
+    var a = document.createElement('a');
+    a.className = 'ax-st-cta';
+    a.href = href;
+    a.dataset.cta = '1';
+    a.dataset.axTo = href;
+    a.dataset.axOwned = '1';
+    if (/^https?:/.test(href)) { a.target = '_blank'; a.rel = 'noopener'; }
+    var sp = document.createElement('span');     /* keeps _uifx.html from recasing it */
+    sp.textContent = 'Learn more';
+    a.appendChild(sp);
+    place(a, (BW - cw) / 2, top + lh + gap, cw, ch);
+    block.appendChild(a);
+  }
+
   function wire(tpls) {
     tpls.sort(function (a, b) { return a.dataset.tab - b.dataset.tab; });
     var W = find(tpls);
@@ -542,7 +604,13 @@
         [].slice.call(t.children).forEach(function (k) { if (k !== live) t.removeChild(k); });
         [].forEach.call(src[j].children, function (k) {
           if (k.classList.contains('g-t')) live.setAttribute('style', k.getAttribute('style'));
-          else t.appendChild(k.cloneNode(true));
+          else {
+            var c = k.cloneNode(true);
+            /* Figma draws the active marker as a 16px stub at the tab's left edge;
+               it runs the full width of the tab here. */
+            if (n(c, 'height') < 0.3) { c.style.left = '0vw'; c.style.width = n(t, 'width') + 'vw'; }
+            t.appendChild(c);
+          }
         });
         t.setAttribute('aria-selected', j === i ? 'true' : 'false');
         t.tabIndex = j === i ? 0 : -1;
@@ -558,6 +626,7 @@
       if (W.card) W.card.style.height = t.dataset.ch + 'vw';
       W.panel.setAttribute('aria-labelledby', W.tabs[i].id);
       dress(W.panel, ROUTES[t.dataset.name]);
+      compose(W.panel, t.dataset.name, ROUTES[t.dataset.name]);
     }
     function select(i, animate) {
       if (i === cur) return;
@@ -567,6 +636,7 @@
       if (!animate || REDUCED) { paintPanel(i); return; }
       /* Hold the fade until the screenshots have decoded, or the panel flashes empty. */
       var urls = (tpls[i].innerHTML.match(/url\(([^)"']+)\)/g) || []).map(function (u) { return u.slice(4, -1); });
+      if (ART[tpls[i].dataset.name]) urls.push(BG, ART[tpls[i].dataset.name][0]);
       var pending = urls.length, faded = false, shown = false;
       function show() {
         if (shown || mine !== token) return;
