@@ -804,7 +804,7 @@ document.addEventListener('DOMContentLoaded',function(){
    so four of the six cards were dead. */
 'explore sap':'/services/','explore aws':'/services/aws/','explore gcp':'/services/google-cloud/',
 'explore anthropic':'/alliances/anthropic/','explore multi-cloud cms':'/services/multi-cloud-cms/',
-'explore ai & data':'/products/','see jarvis':'/products/jarvis/',
+'explore ai & data':'/services/ai-data/','see jarvis':'/products/jarvis/',
 /* Each product ships its own site, the same destinations the Products menu uses.
    These CTAs used to land on /products/axiom/, which is the platform page, not the
    product being explored. AeonX.IQ has no site of its own, so it keeps the platform
@@ -6690,936 +6690,6 @@ document.addEventListener("DOMContentLoaded",function(){
 })();
 </script>
 
-<style id="ax-recogfx-css">
-/* RECOGNITIONS ("Earned, not bought.") client-logo row -> continuous right-to-left
-   marquee. Figma ships six white cards with a brand mark on each and NO row wrapper,
-   and the strip (64.58vw on desktop) is narrower than the viewport, so the clipped
-   window and the repeat are built here: the card+logo pairs are copied into the window
-   and the whole set is repeated at the CARD PITCH (6 x card stride), which is what
-   makes the wrap invisible -- the seam gap is the same 1.04vw that sits between any
-   two cards. The baked row itself is then hidden in place. */
-.ax-recog__win{position:absolute;overflow:hidden}
-.ax-recog__track{position:absolute;left:0;top:0;width:0;height:0;will-change:transform}
-/* _mobfx.html's marquee() bails on any member carrying .ax-carm ("already owned by a
-   carousel"); that is how this row is claimed from it, since it only ever picked up 4
-   of the 6 logos and left the six white cards standing still. .ax-carm also ships a
-   bare transition:transform, which would drop the scroll-reveal's opacity transition
-   on those six -- restore it (two classes, so it wins on specificity, not on order). */
-.ax-recog__pause{position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;
-  overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;background:#fff;
-  color:#23272E;font:inherit;cursor:pointer}
-.ax-recog__pause:focus-visible{position:static;width:auto;height:auto;margin:0;
-  padding:0.3vw 0.6vw;clip:auto;clip-path:none;overflow:visible;z-index:5;
-  outline:0.1042vw solid #cf3b15;border-radius:0.2vw}
-.ax-recog__item.ax-carm{transition:opacity .7s cubic-bezier(.22,.61,.36,1),transform .7s cubic-bezier(.22,.61,.36,1)}
-@media (prefers-reduced-motion:reduce){.ax-recog__track{transform:none!important}}
-</style>
-<script>
-/* ---- RECOGNITIONS LOGO MARQUEE ---- */
-(function(){
-  var REFS = [
-    'c0802d56987353256ffafeae2a33e63a0b7e7667',
-    'ccd1d63087fa9a4757a653bb2b061b5ec4711f64',
-    '06cd2f7d70f9773233ef229ad325a8fdcfe41d22',
-    'db429dafe9531041d50b09052018c7880870da69',
-    'ec4e870ac8e2fa9c57fb6b3c0da99033e12cc759',
-    '8d29eb071421987237b78c06a8b1dc37f2419bbc'
-  ];
-  /* All six Figma layers are named "Ashapura" (designer copy-paste) and _gen.py turns
-     the layer name into aria-label, so five of the six were wrong. These names are read
-     off the artwork itself. REFS[3] is a circled DT/ID monogram beside the word "Cem",
-     not identifiable with confidence, so it deliberately keeps the label it ships with
-     rather than getting a guess. */
-  var LABEL = {};
-  LABEL[REFS[0]] = 'Ashapura Group of Industries';
-  LABEL[REFS[1]] = 'Ambuja Neotia';
-  LABEL[REFS[2]] = 'Raymond';
-  /* REFS[3] renders a circled monogram + the word "Cem" + "Commitment, Reliability &
-     Quality". The brand could not be identified with confidence, and the label it ships
-     with ("Ashapura") names the WRONG company -- a knowingly-false name is worse for a
-     screen-reader user than a generic one, so it gets a neutral truthful label until the
-     designer confirms the brand. */
-  LABEL[REFS[3]] = 'Client logo';
-  LABEL[REFS[4]] = 'Sunder Biscuits & Namkeen';
-  LABEL[REFS[5]] = 'Khanna Paper';
-
-  var SEC = 30;      /* one full pitch per 30s -- same cadence as the home-page marquee */
-  var REDUCED = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  /* the six logos, in design order, or null if this page does not carry the row */
-  function logosIn(scope){
-    var out = [], i, e;
-    for (i = 0; i < REFS.length; i++){
-      e = scope.querySelector('.g-img[data-ref="' + REFS[i] + '"]');
-      if (!e) return null;
-      out.push(e);
-    }
-    return out;
-  }
-
-  /* Claim the row from _mobfx.html. Its start() resolves the DOM at DOMContentLoaded
-     and its listener is registered earlier in the document, so it runs first -- hence
-     this runs at PARSE time, while _mobfx is still only a listener. Belt and braces:
-     the baked row is display:none once the marquee is built, so even if _mobfx did get
-     hold of these six it would only be translating hidden boxes. */
-  function claim(){
-    var mob = document.querySelector('.ax-mob');
-    var g = mob && logosIn(mob);
-    if (!g) return false;
-    for (var i = 0; i < g.length; i++){
-      g[i].classList.add('ax-carm');
-      g[i].classList.add('ax-recog__item');
-    }
-    return true;
-  }
-  /* D1 fix: the .ax-mob block is NOT guaranteed to be in the document when this script
-     parses -- _mobile.py has moved it before now, and that ordering change silently killed
-     every mobile enhancer once already. Claiming at DOMContentLoaded is too late (_mobfx
-     is injected earlier, so its listener runs first), so watch for the block instead and
-     claim it the moment it appears, which is still during parsing. */
-  if (!claim()) {
-    var mo = new MutationObserver(function(){ if (claim()) mo.disconnect(); });
-    mo.observe(document.documentElement, { childList: true, subtree: true });
-    document.addEventListener('DOMContentLoaded', function(){ mo.disconnect(); });
-  }
-
-  function labels(scope){
-    var g = scope && logosIn(scope);
-    if (!g) return;
-    for (var i = 0; i < g.length; i++){
-      var lb = LABEL[g[i].getAttribute('data-ref')];
-      if (lb) g[i].setAttribute('aria-label', lb);
-    }
-  }
-
-  function num(el, k){ return parseFloat(el.style[k]); }
-
-  function build(scope){
-    if (scope.querySelector('.ax-recog__win')) return;     /* idempotent */
-    var logos = logosIn(scope), i;
-    if (!logos) return;
-    var host = logos[0].parentElement;
-
-    /* Card = the .g-b immediately before each logo (Figma emits card,logo,card,logo).
-       Copying them as a pair is what keeps a mark from drifting off its white card. */
-    var cards = [];
-    for (i = 0; i < logos.length; i++){
-      if (logos[i].parentElement !== host) return;
-      var c = logos[i].previousElementSibling;
-      if (!c || !/(^|\s)g-b(\s|$)/.test(c.className || '')) return;
-      cards.push(c);
-    }
-
-    var all = [], L = [], top = 1e9, bot = -1e9;
-    for (i = 0; i < cards.length; i++){ all.push(cards[i]); all.push(logos[i]); }
-    for (i = 0; i < all.length; i++){
-      var t = num(all[i], 'top'), h = num(all[i], 'height');
-      if (t !== t || h !== h) return;                      /* NaN: not the vw layout */
-      if (t < top) top = t;
-      if (t + h > bot) bot = t + h;
-    }
-    for (i = 0; i < cards.length; i++) L.push(num(cards[i], 'left'));
-    var stride = L[1] - L[0];
-    if (!(stride > 0)) return;
-    for (i = 2; i < L.length; i++) if (Math.abs(L[i] - L[i-1] - stride) > 0.01) return;
-    var pitch = stride * L.length;
-    var span = (L[L.length-1] + num(cards[cards.length-1], 'width')) - L[0];
-
-    var win = document.createElement('div');
-    win.className = 'ax-recog__win';
-    /* width:100% == the row's own coordinate origin: on desktop the clipping ancestor
-       is main.ax-page, on mobile the section .g-clip -- both 100vw wide. */
-    win.style.cssText = 'left:0;top:' + top + 'vw;width:100%;height:' + (bot - top) + 'vw;';
-    var track = document.createElement('div');
-    track.className = 'ax-recog__track';
-    win.appendChild(track);
-    /* directly after the baked row, so the strip keeps the row's paint order */
-    host.insertBefore(win, logos[logos.length-1].nextSibling);
-
-    /* Enough repeats to cover the 100vw window at every phase of the wrap: one set to
-       the left so there is no empty flank at rest, and sets to the right until the
-       strip still reaches x=100 after a full pitch of travel. */
-    var kmin = 0, kmax = 0, k;
-    while (L[0] + kmin * pitch > 0) kmin--;
-    while (L[0] + span + kmax * pitch < 100 + pitch) kmax++;
-    for (k = kmin; k <= kmax; k++){
-      for (i = 0; i < all.length; i++){
-        /* Copies, not the originals: a node MOVED out of main.ax-page into the track
-           lays out and hit-tests correctly but never repaints (reproduced in headless
-           Chromium: a moved card given background:#00f stayed invisible while a clone
-           of it at the same coordinates painted). Cloning sidesteps it, and leaves the
-           baked row's own reveal/observer state untouched. */
-        var d = all[i].cloneNode(true);
-        d.removeAttribute('id');
-        d.classList.add('ax-recog__item');
-        /* the scroll-reveal has already tagged the originals opacity:0 pending an
-           intersection; a copy carrying .ax-rv without .ax-in would never be seen */
-        d.classList.remove('ax-rv'); d.classList.remove('ax-rvo'); d.classList.remove('ax-in');
-        d.style.left = (num(all[i], 'left') + k * pitch) + 'vw';
-        d.style.top = (num(all[i], 'top') - top) + 'vw';
-        /* one row for a screen reader: the set that sits where Figma put it keeps the
-           role/label, every repeat is decorative */
-        if (k !== 0) d.setAttribute('aria-hidden', 'true');
-        track.appendChild(d);
-      }
-    }
-    for (i = 0; i < all.length; i++) all[i].style.display = 'none';   /* replaced */
-
-    /* rAF rather than a keyframe: hover has to pause it mid-flight, and translating in
-       vw keeps the wrap correct across a resize. */
-    var x = 0, last = 0, raf = 0, vis = false, hover = false, stopped = false;
-    function paint(){ track.style.transform = 'translateX(' + x + 'vw)'; }
-    function frame(t){
-      raf = 0;
-      if (!vis) return;                                    /* off-screen: stop the loop */
-      raf = requestAnimationFrame(frame);
-      if (!last){ last = t; return; }
-      var dt = t - last; last = t;
-      if (hover || stopped) return;
-      x -= dt * pitch / (SEC * 1000);
-      if (x <= -pitch) x += pitch;
-      paint();
-    }
-    if ('IntersectionObserver' in window){
-      new IntersectionObserver(function(es){
-        vis = es[es.length-1].isIntersecting;
-        last = 0;
-        if (vis && !raf) raf = requestAnimationFrame(frame);
-      }, { threshold: 0 }).observe(win);
-    } else {
-      vis = true; raf = requestAnimationFrame(frame);
-    }
-    /* pause so the logos can actually be read */
-    win.addEventListener('mouseenter', function(){ hover = true; });
-    win.addEventListener('mouseleave', function(){ hover = false; });
-    /* WCAG 2.2.2: content that moves for more than five seconds needs a pause mechanism,
-       and mouseenter is mouse-only. Figma authors no control here and the layout is
-       pixel-locked, so the control is screen-reader/keyboard-only: it takes no space and
-       is invisible until focused, which changes nothing visually but makes stopping the
-       motion reachable without a pointer. */
-    var btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'ax-recog__pause';
-    btn.setAttribute('aria-pressed', 'false');
-    btn.textContent = 'Pause the scrolling client logos';
-    btn.addEventListener('click', function(){
-      stopped = !stopped;
-      last = 0;
-      btn.setAttribute('aria-pressed', stopped ? 'true' : 'false');
-      btn.textContent = (stopped ? 'Resume' : 'Pause') + ' the scrolling client logos';
-      if (!stopped && vis && !raf) raf = requestAnimationFrame(frame);
-    });
-    win.parentNode.insertBefore(btn, win);
-    /* keyboard focus anywhere in the band pauses too, same as hover */
-    win.addEventListener('focusin', function(){ hover = true; });
-    win.addEventListener('focusout', function(){ hover = false; last = 0; });
-  }
-
-  function init(){
-    /* resolve lazily: the .ax-mob block is not guaranteed to precede this script */
-    var d = document.querySelector('main.ax-page');
-    if (d && d.closest && d.closest('.ax-mob')) d = null;  /* that one IS the mobile row */
-    var m = document.querySelector('.ax-mob');
-    labels(d); labels(m);                                  /* the wrong labels get fixed
-                                                              even when motion is off */
-    if (REDUCED) return;
-    if ((innerWidth || 1024) > 768) { if (d) build(d); }
-    else { if (m) build(m); }
-  }
-
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-  else init();
-  addEventListener('resize', init);                        /* build() is idempotent */
-})();
-</script>
-
-<style id="ax-gallery-css">
-/* ---- OFFICE GALLERY DIALOG (Figma 6386:33167) ----------------------------
-   The expand control in the "OFFICE GALLERY" section opens the designer's full
-   gallery frame: 1184x2207, clipped, scrolled vertically. 1184px of a 1920px
-   design is 61.6667vw, so the flattened frame's own vw coordinates are correct
-   inside a box of that width and nothing has to be rescaled. */
-.ax-gal-trigger{cursor:pointer;pointer-events:auto;border-radius:0.25vw;
-  transition:transform .2s ease,filter .2s ease}
-.ax-gal-trigger:hover,.ax-gal-trigger:focus-visible{transform:scale(1.08);
-  filter:drop-shadow(0 0 0.35vw rgba(223,63,23,.5))}
-.ax-gal-trigger:focus-visible{outline:0.1042vw solid #cf3b15;outline-offset:0.2vw}
-
-html.ax-gal-open,html.ax-gal-open body{overflow:hidden}
-.ax-gal{position:fixed;inset:0;z-index:2000;display:flex;align-items:center;
-  justify-content:center;padding:2rem;background:rgba(21,24,30,.48);
-  opacity:0;visibility:hidden;pointer-events:none;
-  transition:opacity .24s ease,visibility 0s linear .24s}
-.ax-gal.is-open{opacity:1;visibility:visible;pointer-events:auto;
-  transition:opacity .24s ease,visibility 0s}
-.ax-gal__vp{position:relative;width:61.6667vw;max-width:calc(100vw - 4rem);
-  height:114.9422vw;max-height:calc(100vh - 4rem);
-  border-radius:1rem;overflow:hidden;background:rgb(236,238,242);
-  box-shadow:0 1.5rem 4rem rgba(0,0,0,.28);
-  opacity:0;transform:translateY(.75rem) scale(.985);
-  transition:opacity .24s ease,transform .24s cubic-bezier(.22,.61,.36,1)}
-.ax-gal.is-open .ax-gal__vp{opacity:1;transform:none}
-.ax-gal__scroll{height:100%;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain}
-.ax-gal__doc{position:relative;width:61.6667vw;height:114.9422vw}
-/* Figma parks the close control inside the scrolling frame; it stays put here so
-   the pointer never has to scroll 2200px back up to reach it. */
-.ax-gal__x{position:absolute;top:1.1458vw;right:1.1458vw;z-index:1;
-  width:2.0833vw;height:2.0833vw;min-width:34px;min-height:34px;
-  display:flex;align-items:center;justify-content:center;
-  border:0;border-radius:0.3rem;background:#fff0e7;color:#c23714;
-  font:700 1.25rem/1 'Nunito Sans',sans-serif;cursor:pointer;
-  box-shadow:0 0.25rem 0.75rem rgba(21,24,30,.08);
-  transition:background-color .18s ease,color .18s ease}
-/* ax-hv-selfon: the sitewide hover engine paints its own button treatment and
-   would otherwise leave the glyph invisible on the orange wash. */
-.ax-gal .ax-gal__x:hover,.ax-gal .ax-gal__x:focus-visible,
-.ax-gal .ax-gal__x.ax-hv-selfon{background:#cf3b15!important;color:#fff!important}
-.ax-gal__x:focus-visible{outline:2px solid #15181e;outline-offset:3px}
-@media(max-width:1024px){
-  .ax-gal{padding:.5rem}
-  .ax-gal__vp{width:100%;max-width:none;height:calc(100vh - 1rem);max-height:none;
-    border-radius:.75rem}
-  .ax-gal__x{top:.75rem;right:.75rem}
-}
-@media(prefers-reduced-motion:reduce){
-  .ax-gal-trigger,.ax-gal,.ax-gal__vp,.ax-gal__x{transition:none}
-}
-</style>
-<div class="ax-gal" id="ax-gal" role="dialog" aria-modal="true" aria-label="AeonX office gallery" aria-hidden="true">
- <div class="ax-gal__vp">
-  <div class="ax-gal__scroll">
-   <div class="ax-gal__doc">
-<div class="g-b" style="position:absolute;left:3.7500vw;top:3.6458vw;width:54.1667vw;height:107.6506vw;background-color:rgb(255,255,255);"></div>
-<div class="g-img" data-ref="9c8f55fdf15bd26dc3a8691339dc7dcf944a43d1" role="presentation" aria-hidden="true" style="position:absolute;left:3.7500vw;top:3.6458vw;width:31.2500vw;height:12.6562vw;background-image:url(/assets/gen/9c8f55fdf15bd26dc3a8691339dc7dcf944a43d1.webp);background-size:cover;background-position:center;background-repeat:no-repeat;"></div>
-<div class="g-img" data-ref="d3bf661b76a8a0b331dd42a68d16467379a423fe" role="presentation" aria-hidden="true" style="position:absolute;left:35.8333vw;top:3.6458vw;width:22.0833vw;height:12.6562vw;background-image:url(/assets/gen/d3bf661b76a8a0b331dd42a68d16467379a423fe.webp);background-size:cover;background-position:center;background-repeat:no-repeat;"></div>
-<div class="g-b g-clip" data-ax-srow="1" style="position:absolute;left:3.7500vw;top:16.3021vw;width:31.0938vw;height:31.0938vw;background-color:rgb(255,255,255);border-radius:0.3125vw;overflow:hidden;">
-<div class="g-b" style="position:absolute;left:-63.5389vw;top:-13.7840vw;width:114.2207vw;height:136.2195vw;background:radial-gradient(ellipse 50.0% 50.0% at 50.0% 50.0%, rgb(41,93,160) 23.6%, rgba(41,93,160,0.000) 100.0%);filter:blur(0.5208vw);"></div>
-<div class="g-b" style="position:absolute;left:-29.8521vw;top:7.0127vw;width:63.1213vw;height:66.3088vw;background:radial-gradient(ellipse 50.0% 50.0% at 50.0% 50.0%, rgb(41,93,160) 0.0%, rgba(41,93,160,0.000) 100.0%);filter:blur(0.5208vw);"></div>
-<div class="g-b" style="position:absolute;left:17.3111vw;top:-1.2303vw;width:76.7288vw;height:72.8781vw;background:radial-gradient(ellipse 50.0% 50.0% at 50.0% 50.0%, rgb(255,97,24) 27.4%, rgba(255,97,24,0.000) 100.0%);filter:blur(0.5208vw);"></div>
-<div class="g-b" style="position:absolute;left:31.4759vw;top:8.9896vw;width:48.0068vw;height:42.4239vw;background-color:#cf3b15;filter:blur(0.5208vw);"></div>
-<div class="g-img" data-ref="0ce9887449329352f8f94f6a0e5651b1b5077deb" role="presentation" aria-hidden="true" style="position:absolute;left:1.1458vw;top:1.4062vw;width:28.6979vw;height:28.2812vw;background-image:url(/assets/gen/0ce9887449329352f8f94f6a0e5651b1b5077deb.webp);background-size:37.5909vw 28.2812vw;background-position:-4.0298vw 0.0000vw;background-repeat:no-repeat;border-radius:0.4167vw;box-shadow:0.0000vw 1.3034vw 2.4138vw rgba(50,50,93,0.120),inset 0.0000vw -0.0966vw 0.2414vw rgba(10,37,64,0.220);"></div>
-</div>
-<div class="g-b g-clip" data-ax-srow="1" style="position:absolute;left:35.6942vw;top:16.3021vw;width:22.2396vw;height:15.1562vw;background-color:rgb(255,255,255);border-radius:0.3125vw;overflow:hidden;">
-<div class="g-b" style="position:absolute;left:-95.4660vw;top:-13.7665vw;width:114.2207vw;height:136.2195vw;background:radial-gradient(ellipse 50.0% 50.0% at 50.0% 50.0%, rgb(102,94,253) 23.6%, rgba(102,94,253,0.000) 100.0%);filter:blur(0.5208vw);"></div>
-<div class="g-b" style="position:absolute;left:-61.7791vw;top:7.0302vw;width:63.1213vw;height:66.3088vw;background:radial-gradient(ellipse 50.0% 50.0% at 50.0% 50.0%, rgb(102,94,253) 0.0%, rgba(102,94,253,0.000) 100.0%);filter:blur(0.5208vw);"></div>
-<div class="g-b" style="position:absolute;left:-14.6160vw;top:-1.2128vw;width:76.7288vw;height:72.8781vw;background:radial-gradient(ellipse 50.0% 50.0% at 50.0% 50.0%, rgb(255,97,24) 27.4%, rgba(255,97,24,0.000) 100.0%);filter:blur(0.5208vw);"></div>
-<div class="g-b" style="position:absolute;left:9.2882vw;top:9.0071vw;width:48.0068vw;height:42.4239vw;background:radial-gradient(ellipse 50.0% 50.0% at 50.0% 50.0%, #cf3b15 0.0%, rgba(255,97,24,0.000) 100.0%);filter:blur(0.5208vw);"></div>
-<div class="g-img" data-ref="7fb7d71511ef33e76d9678974ef95853026f01ff" role="presentation" aria-hidden="true" style="position:absolute;left:1.4840vw;top:1.5365vw;width:19.2708vw;height:12.0833vw;background-image:url(/assets/gen/7fb7d71511ef33e76d9678974ef95853026f01ff.webp);background-size:19.2708vw 25.6944vw;background-position:-0.0000vw -4.5139vw;background-repeat:no-repeat;"></div>
-</div>
-<div class="g-b g-clip" data-ax-srow="1" style="position:absolute;left:35.6942vw;top:32.2738vw;width:22.2396vw;height:15.1562vw;background-color:rgb(255,255,255);border-radius:0.3125vw;overflow:hidden;">
-<div class="g-b" style="position:absolute;left:-95.4660vw;top:-29.7386vw;width:114.2207vw;height:136.2195vw;background:radial-gradient(ellipse 50.0% 50.0% at 50.0% 50.0%, rgb(41,93,160) 23.6%, rgba(41,93,160,0.000) 100.0%);filter:blur(0.5208vw);"></div>
-<div class="g-b" style="position:absolute;left:-61.7791vw;top:-8.9419vw;width:63.1213vw;height:66.3088vw;background:radial-gradient(ellipse 50.0% 50.0% at 50.0% 50.0%, rgb(41,93,160) 0.0%, rgba(41,93,160,0.000) 100.0%);filter:blur(0.5208vw);"></div>
-<div class="g-b" style="position:absolute;left:-14.6160vw;top:-17.1849vw;width:76.7288vw;height:72.8781vw;background:radial-gradient(ellipse 50.0% 50.0% at 50.0% 50.0%, #cf3b15 27.4%, rgba(255,97,24,0.000) 100.0%);filter:blur(0.5208vw);"></div>
-<div class="g-b" style="position:absolute;left:9.2882vw;top:-6.9650vw;width:48.0068vw;height:42.4239vw;background:radial-gradient(ellipse 50.0% 50.0% at 50.0% 50.0%, #cf3b15 0.0%, rgba(255,97,24,0.000) 100.0%);filter:blur(0.5208vw);"></div>
-<div class="g-img" data-ref="7855c9ad0910d2eaa1efa5bb9493721dd654a37e" role="presentation" aria-hidden="true" style="position:absolute;left:1.2500vw;top:1.6663vw;width:19.7396vw;height:11.8229vw;background-image:url(/assets/gen/7855c9ad0910d2eaa1efa5bb9493721dd654a37e.webp);background-size:19.7396vw 26.3194vw;background-position:-0.0000vw -6.5712vw;background-repeat:no-repeat;"></div>
-</div>
-<div class="g-img" data-ref="1f2b9ef9cb595ce0d3b13d0a706d04bf24188a3b" role="presentation" aria-hidden="true" style="position:absolute;left:3.7500vw;top:49.2826vw;width:17.5000vw;height:25.0521vw;background-image:url(/assets/gen/1f2b9ef9cb595ce0d3b13d0a706d04bf24188a3b.webp);background-size:cover;background-position:center;background-repeat:no-repeat;border-radius:0.3125vw;"></div>
-<div class="g-img" data-ref="9d780ab653180fe5066890ad23f66f6c2c5bdd86" role="presentation" aria-hidden="true" style="position:absolute;left:22.0833vw;top:49.2826vw;width:17.5000vw;height:25.0521vw;background-image:url(/assets/gen/9d780ab653180fe5066890ad23f66f6c2c5bdd86.webp);background-size:cover;background-position:center;background-repeat:no-repeat;border-radius:0.3125vw;"></div>
-<div class="g-img" data-ref="d846529cf567dd55f5583ace4e9333011c732eb4" role="presentation" aria-hidden="true" style="position:absolute;left:40.4167vw;top:49.2826vw;width:17.5000vw;height:25.0521vw;background-image:url(/assets/gen/d846529cf567dd55f5583ace4e9333011c732eb4.webp);background-size:37.5735vw 25.0521vw;background-position:-12.5889vw -0.0000vw;background-repeat:no-repeat;border-radius:0.3125vw;"></div>
-<div class="g-b g-clip" data-ax-srow="1" style="position:absolute;left:3.7500vw;top:76.2443vw;width:54.1667vw;height:0.0521vw;background-color:rgb(236,238,242);overflow:hidden;">
-</div>
-<div class="g-img" data-ref="b39d5df22dc48d59464ae888d6ee4fb2c007b5fe" role="presentation" aria-hidden="true" style="position:absolute;left:3.7500vw;top:78.1714vw;width:26.2500vw;height:12.8646vw;background-image:url(/assets/gen/b39d5df22dc48d59464ae888d6ee4fb2c007b5fe.webp);background-size:cover;background-position:center;background-repeat:no-repeat;"></div>
-<div class="g-img" data-ref="0c9b229b924bb466a747c4d811bdb74bbddbf7fe" role="img" aria-label="Q" style="position:absolute;left:31.6667vw;top:78.1714vw;width:26.2500vw;height:12.8646vw;background-image:url(/assets/gen/0c9b229b924bb466a747c4d811bdb74bbddbf7fe.webp);background-size:cover;background-position:center;background-repeat:no-repeat;"></div>
-<div class="g-img" data-ref="e90d05e9fbdcdebdec51d706b710cba7ba4c203f" role="presentation" aria-hidden="true" style="position:absolute;left:3.7500vw;top:92.9110vw;width:19.2708vw;height:16.4583vw;background-image:url(/assets/gen/e90d05e9fbdcdebdec51d706b710cba7ba4c203f.webp);background-size:cover;background-position:center;background-repeat:no-repeat;border-radius:0.3125vw;"></div>
-<div class="g-img" data-ref="b4282af68662e3ba7b9defe89d21d050d4d50659" role="presentation" aria-hidden="true" style="position:absolute;left:23.8542vw;top:92.9110vw;width:34.0625vw;height:16.4583vw;background-image:url(/assets/gen/b4282af68662e3ba7b9defe89d21d050d4d50659.webp);background-size:cover;background-position:center;background-repeat:no-repeat;border-radius:0.3125vw;"></div>
-<div class="g-b g-clip" data-ax-srow="1" style="position:absolute;left:3.7500vw;top:111.2443vw;width:54.1667vw;height:0.0521vw;background-color:rgb(236,238,242);overflow:hidden;">
-</div>
-   </div>
-  </div>
-  <button class="ax-gal__x" type="button" data-ax-owned="1" aria-label="Close the office gallery">&times;</button>
- </div>
-</div>
-<script>
-/* ---- OFFICE GALLERY DIALOG ----
-   The trigger is Figma's own expand glyph, which ships as a decorative <img>; it
-   is promoted to a real button here rather than in the generated page, because
-   that page is rewritten by every _build_all.py run. Resolves its DOM lazily --
-   fragment order is not guaranteed. */
-(function(){
-  function start(){
-    var dlg=document.getElementById('ax-gal');
-    var trig=document.querySelector('[data-vec="6018:28358"]');
-    if(!dlg||!trig) return;
-    var vp=dlg.querySelector('.ax-gal__scroll');
-    var x=dlg.querySelector('.ax-gal__x');
-    var last=null;
-
-    trig.classList.add('ax-gal-trigger');
-    trig.setAttribute('role','button');
-    trig.setAttribute('tabindex','0');
-    trig.setAttribute('aria-haspopup','dialog');
-    trig.setAttribute('aria-controls','ax-gal');
-    trig.setAttribute('alt','Open the office gallery');
-    trig.removeAttribute('aria-hidden');
-    /* the generated art sits under later siblings in the same stacking context */
-    trig.style.zIndex='20';
-
-    function open(on){
-      dlg.classList.toggle('is-open',on);
-      dlg.setAttribute('aria-hidden',on?'false':'true');
-      document.documentElement.classList.toggle('ax-gal-open',on);
-      if(on){ last=document.activeElement; vp.scrollTop=0; x.focus(); }
-      /* a mouse click does not always leave focus on the trigger, so <body> can be
-         what was active on open -- returning focus there would drop the reader at
-         the top of the page instead of back at the control they used */
-      else { (last&&last!==document.body?last:trig).focus(); }
-    }
-    trig.addEventListener('click',function(){ open(true); });
-    trig.addEventListener('keydown',function(e){
-      if(e.key==='Enter'||e.key===' '){ e.preventDefault(); open(true); }
-    });
-    x.addEventListener('click',function(){ open(false); });
-    dlg.addEventListener('mousedown',function(e){ if(e.target===dlg) open(false); });
-    document.addEventListener('keydown',function(e){
-      if(!dlg.classList.contains('is-open')) return;
-      if(e.key==='Escape'){ e.preventDefault(); open(false); return; }
-      /* the close button is the only focusable thing in here -- keep Tab inside */
-      if(e.key==='Tab'){ e.preventDefault(); x.focus(); }
-    });
-  }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',start);
-  else start();
-})();
-</script>
-<style id="ax-herotabs-css">
-/* 300ms / EASE_OUT is not a guess: every `Tab` node in the component set carries
-   transitionDuration 300 and transitionEasing EASE_OUT, which is what Figma would
-   have played on the prototype's variant swap. EASE_OUT is cubic-bezier(0,0,.58,1). */
-:root{--ax-ht-t:.3s cubic-bezier(0,0,.58,1)}
-.ax-ht-tab{cursor:pointer;-webkit-user-select:none;user-select:none}
-.ax-ht-tab:focus-visible{outline:2px solid #cf3b15;outline-offset:2px;border-radius:3px}
-/* Added only after the first paint, so the page does not animate itself on load. */
-.ax-ht-anim{transition:left var(--ax-ht-t),top var(--ax-ht-t),width var(--ax-ht-t),
-            height var(--ax-ht-t),color var(--ax-ht-t)}
-.ax-ht-grid{transition:top var(--ax-ht-t),height var(--ax-ht-t),opacity .15s linear}
-@media (prefers-reduced-motion:reduce){
-  .ax-ht-anim,.ax-ht-grid{transition:none}
-}
-</style>
-<script>
-/* ---- HERO SEARCH-TYPE TABS (Products / AI Agents / Services) ----
-
-   In Figma this widget is a COMPONENT_SET with three variants and the tab click is a
-   prototype variant swap, so only the default "Products" state survives the export.
-   This restores the other two at runtime by re-labelling the one exported grid.
-
-   EVERY NUMBER HERE IS READ OFF THE DOM. The previous version carried a table of
-   Figma pixel values harvested from Component 226, and when the designer switched the
-   hero to Component 227 the tile grew 158 -> 208px while the table did not. The scale
-   factor was derived as `tileWidth / spec.tileW`, so it came out 31.6% too large and
-   every coordinate the fragment wrote was wrong -- on FIRST PAINT, not just on click.
-   That is what put the icons on top of their labels and pushed "Services" out of its
-   own tab strip. A layout table that has to be re-harvested by hand whenever the
-   design is resized is the bug, so there isn't one any more: the exported Products
-   state is already correct, and it is the only measurement needed.
-
-   What genuinely differs per variant is CONTENT, not geometry: which labels, which
-   icons, and how many tiles. That is all that is listed below.
-
-   The grid is FLAT in the export -- plate, icon, label, plate, icon, label, ... as
-   siblings of the grid container, not nested per tile. Raster icons emit as a
-   `.g-b.g-clip` div and vector icons as `img.g-vec`, so an icon is NOT identifiable
-   by tag or class alone: the plates are picked out by being the widest boxes, and
-   each plate then claims the icon and label sitting inside its own rectangle. */
-(function () {
-  var TABS = ['Products', 'AI Agents', 'Services'];
-
-  /* Per variant: the tile labels in slot order, each with the asset that draws its
-     icon. `null` keeps whatever the export already put in that slot, which is what
-     Products wants. A `null` ENTRY is a deliberately blank tile: Figma's Services
-     variant keeps two empty cells in the second row so the card is not half-drawn. */
-  var VARIANTS = {
-    'Products': [
-      ['SupplierX', null], ['OrderX', null], ['Xpense', null], ['ManufeX', null],
-      ['LogystiX', null], ['SetuMove', null], ['CRM 360', null], ['QUIC', null]
-    ],
-    'Services': [
-      ['SAP', '6958-20885'], ['AWS', '7080-57211'],
-      ['GCP', '6958-20889'], ['ANTHROPIC', '6958-20891'],
-      ['Multi Cloud CMS', '6958-21014'], ['AI & DATA', '6958-21020'],
-      null, null
-    ],
-    'AI Agents': [
-      ['JARVIS', '6956-63466'], ['AEONXIQ', '6956-63469'],
-      ['DATASETU.AI', '6956-63472'], ['SETUEDGE', '7038-45320']
-    ]
-  };
-
-  /* Where each tile goes. Keyed by label, because a slot shows a different tile in
-     each variant: the chrome's CTA pass bound the Products labels once at load, so
-     after a tab switch "ANTHROPIC" still went wherever "CRM 360" did. The tiles are
-     routed here instead, against whatever the slot currently shows. */
-  var ROUTES = {
-    'SupplierX': 'https://supplierx.cloud/', 'OrderX': 'https://orderx.cloud/',
-    'Xpense': 'https://x-pense.cloud/', 'ManufeX': 'https://manufex.cloud/',
-    'LogystiX': 'https://logystix.cloud/', 'SetuMove': '/products/setu-move/',
-    'CRM 360': '/products/crm-360/', 'QUIC': '/products/quic/',
-    'SAP': '/services/', 'AWS': '/services/aws/', 'GCP': '/services/google-cloud/',
-    'ANTHROPIC': '/alliances/anthropic/', 'Multi Cloud CMS': '/services/multi-cloud-cms/',
-    'AI & DATA': '/products/',
-    'JARVIS': '/products/jarvis/', 'AEONXIQ': 'https://aeonxiq.ai/',
-    'DATASETU.AI': '/products/datasetu-ai/', 'SETUEDGE': '/products/setuedge/'
-  };
-
-  /* Label colours on the #eceef2 tab plate. Figma's orange and slate read 3.7:1 and
-     2.6:1 there; these are the nearest shades that reach 4.5:1. */
-  var ACTIVE = '#c23714', IDLE = '#58677d';
-  var GAP = 8 / 20;            /* icon-to-label gap, as a fraction of the icon width */
-
-  function txt(e) { return (e.textContent || '').replace(/\s+/g, ' ').trim(); }
-
-  /* Captured synchronously at parse time, which is BEFORE _uifx.html's
-     DOMContentLoaded pass re-centres anything it considers a control. Those are the
-     rects Figma exported and the ones the tabs have to keep; read them later and the
-     nudge is already baked in (measured: 1.7px on Products and AI Agents). */
-  function stash() {
-    [].forEach.call(document.querySelectorAll('.g-t'), function (e) {
-      if (TABS.indexOf((e.textContent || '').replace(/\s+/g, ' ').trim()) < 0) return;
-      /* Only a real trio. The words "Products" and "Services" also appear as ordinary
-         copy elsewhere on the page, and tagging those gave them a tab's pointer
-         cursor for no reason. */
-      var p = e.parentElement;
-      if (!p) return;
-      var trio = [].filter.call(p.children, function (c) {
-        return c.classList && c.classList.contains('g-t') &&
-               TABS.indexOf((c.textContent || '').replace(/\s+/g, ' ').trim()) > -1;
-      });
-      if (trio.length !== 3) return;
-      if (!e.getAttribute('data-ax-ht0')) {
-        e.setAttribute('data-ax-ht0', (e.style.left || '') + '|' + (e.style.width || ''));
-      }
-      /* Claim them here, at parse time, so _uifx.html's own DOMContentLoaded pass can
-         tell a tab from a CTA pill before it starts moving labels around. */
-      e.classList.add('ax-ht-tab');
-    });
-  }
-  stash();
-  function vw(el, p) { return parseFloat((el.style[p] || '').replace('vw', '')) || 0; }
-  function setvw(el, p, n) { el.style[p] = n.toFixed(4) + 'vw'; }
-
-  /* The widget: three sibling .g-t labels reading the tab names. Matched on the label
-     trio rather than a class, because _gen.py derives class names from Figma layer
-     names and every one of them here is "Container". */
-  function findWidgets() {
-    var out = [];
-    [].forEach.call(document.querySelectorAll('.g-t'), function (e) {
-      if (txt(e) !== TABS[0]) return;
-      var p = e.parentElement;
-      if (!p) return;
-      var kids = [].filter.call(p.children, function (c) {
-        return c.classList.contains('g-t') && TABS.indexOf(txt(c)) > -1;
-      });
-      if (kids.length === 3) out.push({ wrap: p, labels: kids });
-    });
-    return out;
-  }
-
-  function inside(box, o) {
-    return box.l <= o.l + 0.05 && box.r >= o.r - 0.05 &&
-           box.t <= o.t + 0.05 && box.b >= o.b - 0.05;
-  }
-  function boxOf(el) {
-    var l = vw(el, 'left'), t = vw(el, 'top'), w = vw(el, 'width'), h = vw(el, 'height');
-    return { l: l, t: t, w: w, h: h, r: l + w, b: t + h };
-  }
-
-  function build(w) {
-    var wrap = w.wrap, labels = w.labels;
-    var boxes = [].filter.call(wrap.children, function (c) {
-      return c.classList.contains('g-b');
-    });
-    var lb = labels.map(boxOf);
-    var bounds = {
-      l: Math.min.apply(null, lb.map(function (b) { return b.l; })),
-      r: Math.max.apply(null, lb.map(function (b) { return b.r; })),
-      t: Math.min.apply(null, lb.map(function (b) { return b.t; })),
-      b: Math.max.apply(null, lb.map(function (b) { return b.b; }))
-    };
-
-    /* The strip is the painted box behind all three labels; the pill is the smaller
-       one behind only the active tab. Both are flat siblings, so geometry finds them. */
-    var strip = null, pill = null;
-    boxes.forEach(function (e) {
-      var b = boxOf(e);
-      if (b.t > bounds.b || b.b < bounds.t) return;
-      if (b.l <= bounds.l + 0.05 && b.r >= bounds.r - 0.05) {
-        if (!strip || b.w < boxOf(strip).w) strip = e;
-      } else if (b.l <= lb[0].l + 0.05 && b.r >= lb[0].r - 0.05) {
-        pill = e;
-      }
-    });
-
-    /* The card below the tabs, and inside it the grid container holding the tiles. */
-    var inner = null;
-    boxes.forEach(function (e) {
-      if (boxOf(e).t < bounds.b) return;
-      var g = e.querySelector(':scope > .g-b.g-clip');
-      if (g && g.querySelectorAll(':scope > .g-t').length >= 4) inner = e;
-    });
-    if (!inner) return null;
-    var gridBox = inner.querySelector(':scope > .g-b.g-clip');
-
-    var ir = boxOf(inner), outer = null;
-    boxes.forEach(function (e) {
-      if (e === inner) return;
-      var b = boxOf(e);
-      if (b.l <= ir.l + 0.05 && b.r >= ir.r - 0.05 &&
-          b.t <= ir.t + 0.05 && b.b >= ir.b - 0.05) {
-        if (!outer || boxOf(outer).h > b.h) outer = e;
-      }
-    });
-
-    /* Plates are the widest boxes in the grid. A raster icon is also a `.g-b`, which
-       is exactly what the old version mistook for a tile. */
-    var gk = [].slice.call(gridBox.children);
-    var gb = gk.filter(function (c) { return c.classList.contains('g-b'); });
-    if (!gb.length) return null;
-    var maxW = Math.max.apply(null, gb.map(function (c) { return boxOf(c).w; }));
-    var plates = gb.filter(function (c) { return boxOf(c).w >= maxW - 0.01; });
-    if (plates.length < 2) return null;
-
-    /* Each plate claims the icon and label drawn inside its own rectangle. */
-    var slots = plates.map(function (p) {
-      var pb = boxOf(p), icon = null, label = null;
-      gk.forEach(function (c) {
-        if (c === p) return;
-        var b = boxOf(c);
-        if (!inside(pb, b)) return;
-        if (c.classList.contains('g-t')) label = c;
-        else if (!icon) icon = c;
-      });
-      /* A vector icon exports as a bare <img>, but a raster one exports as a
-         clipping wrapper with a .g-img inside it. Claiming the wrapper and
-         setting a background on it looks like it works and does nothing: the
-         child still paints the ORIGINAL product's artwork on top, so AeonX.IQ
-         and Data Setu.ai wore whichever raster the Products row had in that
-         slot. Descend to the element that actually paints. */
-      var paint = icon;
-      while (paint && paint.tagName !== 'IMG') {
-        var inner = paint.querySelector('img, .g-img');
-        if (!inner) break;
-        paint = inner;
-      }
-      return { plate: p, icon: icon, paint: paint, label: label, box: pb,
-               icon0: paint ? (paint.tagName === 'IMG' ? paint.getAttribute('src')
-                                                       : paint.style.backgroundImage) : null,
-               /* The raster's own background-size/position frame a specific
-                  bitmap; an SVG dropped into them would be cropped by the same
-                  numbers. Keep them to restore, and paint swapped art contained
-                  and centred instead. */
-               bgSize0: paint ? paint.style.backgroundSize : null,
-               bgPos0: paint ? paint.style.backgroundPosition : null,
-               labelBox: label ? boxOf(label) : null,
-               iconBox: icon ? boxOf(icon) : null };
-    });
-    slots.sort(function (a, b) { return (a.box.t - b.box.t) || (a.box.l - b.box.l); });
-
-    /* Column and row pitch straight off the exported plates. */
-    var lefts = [], tops = [];
-    slots.forEach(function (s) {
-      if (lefts.indexOf(s.box.l) < 0) lefts.push(s.box.l);
-      if (tops.indexOf(s.box.t) < 0) tops.push(s.box.t);
-    });
-    lefts.sort(function (a, b) { return a - b; });
-    tops.sort(function (a, b) { return a - b; });
-    var cols = lefts.length;
-    var rowPitch = tops.length > 1 ? tops[1] - tops[0] : slots[0].box.h;
-    var gridB = boxOf(gridBox);
-    var inset = tops[0] - 0;                    /* plate top is already grid-relative */
-
-    /* The tab labels' own exported rects, captured before anything moves them:
-       _uifx.html re-centres what it considers a control, and role="tab" makes these
-       controls, so they have to be re-asserted on every paint. */
-    var tabRects = labels.map(function (e) {
-      var raw = e.getAttribute('data-ax-ht0'), b = boxOf(e);
-      if (!raw) return b;
-      var p = raw.split('|');
-      var l = parseFloat((p[0] || '').replace('vw', ''));
-      var w = parseFloat((p[1] || '').replace('vw', ''));
-      if (isNaN(l) || isNaN(w)) return b;
-      return { l: l, t: b.t, w: w, h: b.h, r: l + w, b: b.b };
-    });
-    var pillPad = null;
-    if (pill) {
-      var pb2 = boxOf(pill), a0 = tabRects[0];
-      pillPad = { l: a0.l - pb2.l, w: pb2.w - a0.w, t: pb2.t };
-    }
-
-    return { wrap: wrap, labels: labels, tabRects: tabRects, strip: strip, pill: pill,
-             pillPad: pillPad, inner: inner, outer: outer, gridBox: gridBox,
-             gridBox0: gridB, slots: slots, cols: cols, rowPitch: rowPitch,
-             inset: inset, innerH0: ir.h, outerH0: outer ? boxOf(outer).h : 0,
-             current: TABS[0] };
-  }
-
-  function applyChrome(W, name) {
-    W.labels.forEach(function (el, i) {
-      var on = txt(el) === name, r = W.tabRects[i];
-      el.style.color = on ? ACTIVE : IDLE;
-      el.style.fontWeight = on ? '600' : '400';
-      el.setAttribute('aria-selected', on ? 'true' : 'false');
-      el.tabIndex = on ? 0 : -1;
-      /* Put the label back exactly where Figma drew it. */
-      setvw(el, 'left', r.l);
-      setvw(el, 'width', r.w);
-      el.style.textAlign = 'center';
-    });
-
-    if (W.pill && W.pillPad) {
-      var ai = 0;
-      W.labels.forEach(function (el, i) { if (txt(el) === name) ai = i; });
-      var r = W.tabRects[ai];
-      setvw(W.pill, 'left', r.l - W.pillPad.l);
-      setvw(W.pill, 'width', r.w + W.pillPad.w);
-      setvw(W.pill, 'top', W.pillPad.t);
-    }
-
-    /* One row instead of two: the grid keeps its inset and re-centres in the card,
-       which is what Figma's own Agents variant does (grid 32/68 against 10/112). */
-    var items = VARIANTS[name] || [];
-    var rows = Math.ceil(items.length / W.cols) || 1;
-    var h = W.inset * 2 + rows * W.rowPitch;
-    setvw(W.gridBox, 'height', h);
-    setvw(W.gridBox, 'top', W.gridBox0.t + (W.gridBox0.h - h) / 2);
-  }
-
-  function applyGrid(W, name) {
-    applySlots(W, name);
-    label(W);
-  }
-
-  function applySlots(W, name) {
-    var items = VARIANTS[name] || [];
-    W.slots.forEach(function (s, i) {
-      var item = items[i];
-      var used = i < items.length;
-      s.plate.style.display = used ? '' : 'none';
-      if (!used) {
-        if (s.icon) s.icon.style.display = 'none';
-        if (s.label) s.label.style.display = 'none';
-        return;
-      }
-      /* A null entry is a drawn but empty cell: keep the plate, drop its contents. */
-      if (!item) {
-        if (s.icon) s.icon.style.display = 'none';
-        if (s.label) s.label.style.display = 'none';
-        return;
-      }
-      var row = (i / W.cols) | 0, col = i % W.cols;
-      var top = W.inset + row * W.rowPitch;
-      setvw(s.plate, 'top', top);
-
-      if (s.label) {
-        s.label.style.display = '';
-        s.label.textContent = item[0];
-      }
-      if (s.icon) {
-        s.icon.style.display = '';
-        /* Positioned on the claimed element, painted on the one that actually
-           draws: for a raster tile those are a clipping wrapper and the .g-img
-           inside it, and setting a background on the wrapper alone left the
-           child painting the old product's artwork straight over the top. */
-        if (item[1]) {
-          var url = '/assets/vec/' + item[1] + '.svg';
-          if (s.paint.tagName === 'IMG') s.paint.setAttribute('src', url);
-          else {
-            s.paint.style.backgroundImage = 'url(' + url + ')';
-            s.paint.style.backgroundSize = 'contain';
-            s.paint.style.backgroundPosition = 'center';
-            s.paint.style.backgroundRepeat = 'no-repeat';
-          }
-        } else if (s.icon0) {
-          if (s.paint.tagName === 'IMG') s.paint.setAttribute('src', s.icon0);
-          else {
-            s.paint.style.backgroundImage = s.icon0;
-            s.paint.style.backgroundSize = s.bgSize0 || '';
-            s.paint.style.backgroundPosition = s.bgPos0 || '';
-          }
-        }
-      }
-
-      /* Figma centres the icon+label PAIR in the tile, with a fixed gap. Measuring
-         the label rather than assuming a width keeps every name centred, which a
-         fixed full-tile-width box does not: that is what tore the icons off their
-         labels before. */
-      if (!s.label) return;
-      var iw = s.iconBox ? s.iconBox.w : 0;
-      var gap = iw * GAP;
-      var lw = s.labelBox.w;
-      if (item[0] !== s.label.dataset.axFor) {
-        var prevW = s.label.style.width, prevWs = s.label.style.whiteSpace;
-        s.label.style.width = 'auto';
-        s.label.style.whiteSpace = 'nowrap';
-        var px = s.label.getBoundingClientRect().width;
-        s.label.style.width = prevW;
-        s.label.style.whiteSpace = prevWs;
-        if (px && innerWidth) lw = px * 100 / innerWidth;
-        s.label.dataset.axFor = item[0];
-        s.label.dataset.axW = lw;
-      } else if (s.label.dataset.axW) {
-        lw = parseFloat(s.label.dataset.axW);
-      }
-      var pairW = iw + gap + lw;
-      var iconL = s.box.l + (s.box.w - pairW) / 2;
-      if (s.icon && s.iconBox) {
-        setvw(s.icon, 'left', iconL);
-        setvw(s.icon, 'top', top + (s.box.h - s.iconBox.h) / 2);
-      }
-      setvw(s.label, 'left', iconL + iw + gap);
-      setvw(s.label, 'width', lw);
-      setvw(s.label, 'top', top + (s.box.h - s.labelBox.h) / 2);
-      s.label.style.textAlign = 'left';
-    });
-  }
-
-  var REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)');
-
-  function paint(W, name, animate) {
-    if (!VARIANTS[name]) return;
-    W.current = name;
-    W.token = (W.token || 0) + 1;
-    var token = W.token;
-    applyChrome(W, name);
-    if (!animate || (REDUCED && REDUCED.matches)) {
-      W.gridBox.style.opacity = '';
-      applyGrid(W, name);
-      return;
-    }
-    W.gridBox.style.opacity = '0';
-    setTimeout(function () {
-      if (W.token !== token) return;
-      applyGrid(W, name);
-      W.gridBox.style.opacity = '1';
-    }, 150);
-  }
-
-  function wire(W) {
-    /* The labels are not children of the strip in the generated markup, so role="tablist"
-       alone left every tab without its required parent. aria-owns makes the strip their
-       parent in the accessibility tree without moving anything in the pixel-locked DOM. */
-    if (W.strip) {
-      W.strip.setAttribute('role', 'tablist');
-      W.strip.setAttribute('aria-owns', W.labels.map(function (el, i) {
-        if (!el.id) el.id = 'ax-ht-' + Math.random().toString(36).slice(2, 8) + '-' + i;
-        return el.id;
-      }).join(' '));
-    }
-    W.labels.forEach(function (el) {
-      /* _uifx.html's CTA pass turns any short label inside a painted pill into a
-         role="link" pointing at "#". These are tabs, so take them back. */
-      el.classList.add('ax-ht-tab');
-      el.setAttribute('role', 'tab');
-      el.removeAttribute('data-cta');
-      if (el.getAttribute('href') === '#') el.removeAttribute('href');
-      var go = function (e) {
-        e.preventDefault(); e.stopPropagation();
-        paint(W, txt(el), true); el.focus();
-      };
-      el.addEventListener('click', go, true);
-      el.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter' || e.key === ' ') return go(e);
-        var d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
-        if (!d) return;
-        e.preventDefault();
-        var order = W.labels.map(txt);
-        var i = (order.indexOf(W.current) + d + order.length) % order.length;
-        paint(W, order[i], true);
-        W.labels[i].focus();
-      });
-    });
-    [W.gridBox, W.inner, W.outer].forEach(function (e) {
-      if (e) e.classList.add('ax-ht-grid');
-    });
-    wireTiles(W);
-    /* The exported state IS the Products state and it is already correct, so the
-       first paint only sets colours and ARIA -- it must not move anything. */
-    applyChrome(W, TABS[0]);
-    /* _uifx.html also runs a pass on `load`, and its handler was registered first but
-       finishes after ours, so it re-centres the tabs out from under the first paint.
-       Re-assert once it has settled; the values are identical, so nothing visibly
-       moves except the 1.7px it had nudged. */
-    setTimeout(function () { applyChrome(W, W.current); }, 60);
-    setTimeout(function () {
-      applyChrome(W, W.current);
-      W.labels.forEach(function (e) { e.classList.add('ax-ht-anim'); });
-      if (W.pill) W.pill.classList.add('ax-ht-anim');
-    }, 400);
-    /* One more, late. The chrome's own passes are spread across DOMContentLoaded,
-       load and a reveal observer, and which of them lands last varies with how much
-       of the page is cached; measured 3px of drift on "AI Agents" when one of them
-       won the race. Writing the same values again costs nothing and settles it. */
-    setTimeout(function () { applyChrome(W, W.current); }, 1400);
-  }
-
-  function tileAt(W, x, y) {
-    for (var i = 0; i < W.slots.length; i++) {
-      var s = W.slots[i];
-      if (s.plate.style.display === 'none') continue;
-      var r = s.plate.getBoundingClientRect();
-      if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return s;
-    }
-    return null;
-  }
-  function open(s) {
-    var name = s.label && s.label.style.display !== 'none' ? txt(s.label) : '';
-    var href = ROUTES[name];
-    if (!href) return;
-    if (/^https?:/.test(href)) window.open(href, '_blank', 'noopener');
-    else location.href = href;
-  }
-  function wireTiles(W) {
-    W.slots.forEach(function (s) {
-      [s.plate, s.icon, s.label].forEach(function (e) {
-        if (!e) return;
-        /* Undo the chrome's load-time binding (see ROUTES). Its listener stays on
-           the label, so the capture handler below stops the click before it. */
-        e.removeAttribute('data-cta');
-        e.removeAttribute('role');
-        e.removeAttribute('tabindex');
-        e.style.cursor = 'pointer';
-        /* Claimed, so _deadbtn.html's sweep does not grey the tiles out as
-           unwired pills (it did on desktop, where _hover.html skins them). */
-        e.setAttribute('data-ax-owned', '1');
-        if (e.dataset.axDead) {
-          delete e.dataset.axDead;
-          e.classList.remove('ax-dead');
-          e.removeAttribute('aria-disabled');
-        }
-      });
-      s.plate.setAttribute('role', 'link');
-      s.plate.tabIndex = 0;
-      s.plate.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); open(s); }
-      }, true);
-    });
-    W.gridBox.addEventListener('click', function (e) {
-      var s = tileAt(W, e.clientX, e.clientY);
-      if (!s) return;
-      e.preventDefault(); e.stopPropagation();
-      open(s);
-    }, true);
-    label(W);
-  }
-  /* Screen readers get the tile's current name on the plate that takes focus. */
-  function label(W) {
-    W.slots.forEach(function (s) {
-      var on = s.plate.style.display !== 'none' && s.label && s.label.style.display !== 'none';
-      if (on) { s.plate.setAttribute('aria-label', txt(s.label)); s.plate.tabIndex = 0; }
-      else { s.plate.removeAttribute('aria-label'); s.plate.tabIndex = -1; }
-    });
-  }
-
-  function run() {
-    findWidgets().forEach(function (w) {
-      var W = build(w);
-      if (W) wire(W);
-    });
-  }
-  if (document.readyState === 'complete') setTimeout(run, 0);
-  else addEventListener('load', function () { setTimeout(run, 0); });
-})();
-</script>
-
 <style id="ax-prodtabs-css">
 /* 300ms / EASE_OUT again: every `Tab` node in both Container (Products) sets carries
    transitionDuration 300 and transitionEasing EASE_OUT. */
@@ -8269,6 +7339,936 @@ a.ax-pt-cta[href]:hover,a.ax-pt-cta[href]:focus-visible{background-color:rgb(21,
   } else {
     build();
   }
+})();
+</script>
+
+<style id="ax-recogfx-css">
+/* RECOGNITIONS ("Earned, not bought.") client-logo row -> continuous right-to-left
+   marquee. Figma ships six white cards with a brand mark on each and NO row wrapper,
+   and the strip (64.58vw on desktop) is narrower than the viewport, so the clipped
+   window and the repeat are built here: the card+logo pairs are copied into the window
+   and the whole set is repeated at the CARD PITCH (6 x card stride), which is what
+   makes the wrap invisible -- the seam gap is the same 1.04vw that sits between any
+   two cards. The baked row itself is then hidden in place. */
+.ax-recog__win{position:absolute;overflow:hidden}
+.ax-recog__track{position:absolute;left:0;top:0;width:0;height:0;will-change:transform}
+/* _mobfx.html's marquee() bails on any member carrying .ax-carm ("already owned by a
+   carousel"); that is how this row is claimed from it, since it only ever picked up 4
+   of the 6 logos and left the six white cards standing still. .ax-carm also ships a
+   bare transition:transform, which would drop the scroll-reveal's opacity transition
+   on those six -- restore it (two classes, so it wins on specificity, not on order). */
+.ax-recog__pause{position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;
+  overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;background:#fff;
+  color:#23272E;font:inherit;cursor:pointer}
+.ax-recog__pause:focus-visible{position:static;width:auto;height:auto;margin:0;
+  padding:0.3vw 0.6vw;clip:auto;clip-path:none;overflow:visible;z-index:5;
+  outline:0.1042vw solid #cf3b15;border-radius:0.2vw}
+.ax-recog__item.ax-carm{transition:opacity .7s cubic-bezier(.22,.61,.36,1),transform .7s cubic-bezier(.22,.61,.36,1)}
+@media (prefers-reduced-motion:reduce){.ax-recog__track{transform:none!important}}
+</style>
+<script>
+/* ---- RECOGNITIONS LOGO MARQUEE ---- */
+(function(){
+  var REFS = [
+    'c0802d56987353256ffafeae2a33e63a0b7e7667',
+    'ccd1d63087fa9a4757a653bb2b061b5ec4711f64',
+    '06cd2f7d70f9773233ef229ad325a8fdcfe41d22',
+    'db429dafe9531041d50b09052018c7880870da69',
+    'ec4e870ac8e2fa9c57fb6b3c0da99033e12cc759',
+    '8d29eb071421987237b78c06a8b1dc37f2419bbc'
+  ];
+  /* All six Figma layers are named "Ashapura" (designer copy-paste) and _gen.py turns
+     the layer name into aria-label, so five of the six were wrong. These names are read
+     off the artwork itself. REFS[3] is a circled DT/ID monogram beside the word "Cem",
+     not identifiable with confidence, so it deliberately keeps the label it ships with
+     rather than getting a guess. */
+  var LABEL = {};
+  LABEL[REFS[0]] = 'Ashapura Group of Industries';
+  LABEL[REFS[1]] = 'Ambuja Neotia';
+  LABEL[REFS[2]] = 'Raymond';
+  /* REFS[3] renders a circled monogram + the word "Cem" + "Commitment, Reliability &
+     Quality". The brand could not be identified with confidence, and the label it ships
+     with ("Ashapura") names the WRONG company -- a knowingly-false name is worse for a
+     screen-reader user than a generic one, so it gets a neutral truthful label until the
+     designer confirms the brand. */
+  LABEL[REFS[3]] = 'Client logo';
+  LABEL[REFS[4]] = 'Sunder Biscuits & Namkeen';
+  LABEL[REFS[5]] = 'Khanna Paper';
+
+  var SEC = 30;      /* one full pitch per 30s -- same cadence as the home-page marquee */
+  var REDUCED = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* the six logos, in design order, or null if this page does not carry the row */
+  function logosIn(scope){
+    var out = [], i, e;
+    for (i = 0; i < REFS.length; i++){
+      e = scope.querySelector('.g-img[data-ref="' + REFS[i] + '"]');
+      if (!e) return null;
+      out.push(e);
+    }
+    return out;
+  }
+
+  /* Claim the row from _mobfx.html. Its start() resolves the DOM at DOMContentLoaded
+     and its listener is registered earlier in the document, so it runs first -- hence
+     this runs at PARSE time, while _mobfx is still only a listener. Belt and braces:
+     the baked row is display:none once the marquee is built, so even if _mobfx did get
+     hold of these six it would only be translating hidden boxes. */
+  function claim(){
+    var mob = document.querySelector('.ax-mob');
+    var g = mob && logosIn(mob);
+    if (!g) return false;
+    for (var i = 0; i < g.length; i++){
+      g[i].classList.add('ax-carm');
+      g[i].classList.add('ax-recog__item');
+    }
+    return true;
+  }
+  /* D1 fix: the .ax-mob block is NOT guaranteed to be in the document when this script
+     parses -- _mobile.py has moved it before now, and that ordering change silently killed
+     every mobile enhancer once already. Claiming at DOMContentLoaded is too late (_mobfx
+     is injected earlier, so its listener runs first), so watch for the block instead and
+     claim it the moment it appears, which is still during parsing. */
+  if (!claim()) {
+    var mo = new MutationObserver(function(){ if (claim()) mo.disconnect(); });
+    mo.observe(document.documentElement, { childList: true, subtree: true });
+    document.addEventListener('DOMContentLoaded', function(){ mo.disconnect(); });
+  }
+
+  function labels(scope){
+    var g = scope && logosIn(scope);
+    if (!g) return;
+    for (var i = 0; i < g.length; i++){
+      var lb = LABEL[g[i].getAttribute('data-ref')];
+      if (lb) g[i].setAttribute('aria-label', lb);
+    }
+  }
+
+  function num(el, k){ return parseFloat(el.style[k]); }
+
+  function build(scope){
+    if (scope.querySelector('.ax-recog__win')) return;     /* idempotent */
+    var logos = logosIn(scope), i;
+    if (!logos) return;
+    var host = logos[0].parentElement;
+
+    /* Card = the .g-b immediately before each logo (Figma emits card,logo,card,logo).
+       Copying them as a pair is what keeps a mark from drifting off its white card. */
+    var cards = [];
+    for (i = 0; i < logos.length; i++){
+      if (logos[i].parentElement !== host) return;
+      var c = logos[i].previousElementSibling;
+      if (!c || !/(^|\s)g-b(\s|$)/.test(c.className || '')) return;
+      cards.push(c);
+    }
+
+    var all = [], L = [], top = 1e9, bot = -1e9;
+    for (i = 0; i < cards.length; i++){ all.push(cards[i]); all.push(logos[i]); }
+    for (i = 0; i < all.length; i++){
+      var t = num(all[i], 'top'), h = num(all[i], 'height');
+      if (t !== t || h !== h) return;                      /* NaN: not the vw layout */
+      if (t < top) top = t;
+      if (t + h > bot) bot = t + h;
+    }
+    for (i = 0; i < cards.length; i++) L.push(num(cards[i], 'left'));
+    var stride = L[1] - L[0];
+    if (!(stride > 0)) return;
+    for (i = 2; i < L.length; i++) if (Math.abs(L[i] - L[i-1] - stride) > 0.01) return;
+    var pitch = stride * L.length;
+    var span = (L[L.length-1] + num(cards[cards.length-1], 'width')) - L[0];
+
+    var win = document.createElement('div');
+    win.className = 'ax-recog__win';
+    /* width:100% == the row's own coordinate origin: on desktop the clipping ancestor
+       is main.ax-page, on mobile the section .g-clip -- both 100vw wide. */
+    win.style.cssText = 'left:0;top:' + top + 'vw;width:100%;height:' + (bot - top) + 'vw;';
+    var track = document.createElement('div');
+    track.className = 'ax-recog__track';
+    win.appendChild(track);
+    /* directly after the baked row, so the strip keeps the row's paint order */
+    host.insertBefore(win, logos[logos.length-1].nextSibling);
+
+    /* Enough repeats to cover the 100vw window at every phase of the wrap: one set to
+       the left so there is no empty flank at rest, and sets to the right until the
+       strip still reaches x=100 after a full pitch of travel. */
+    var kmin = 0, kmax = 0, k;
+    while (L[0] + kmin * pitch > 0) kmin--;
+    while (L[0] + span + kmax * pitch < 100 + pitch) kmax++;
+    for (k = kmin; k <= kmax; k++){
+      for (i = 0; i < all.length; i++){
+        /* Copies, not the originals: a node MOVED out of main.ax-page into the track
+           lays out and hit-tests correctly but never repaints (reproduced in headless
+           Chromium: a moved card given background:#00f stayed invisible while a clone
+           of it at the same coordinates painted). Cloning sidesteps it, and leaves the
+           baked row's own reveal/observer state untouched. */
+        var d = all[i].cloneNode(true);
+        d.removeAttribute('id');
+        d.classList.add('ax-recog__item');
+        /* the scroll-reveal has already tagged the originals opacity:0 pending an
+           intersection; a copy carrying .ax-rv without .ax-in would never be seen */
+        d.classList.remove('ax-rv'); d.classList.remove('ax-rvo'); d.classList.remove('ax-in');
+        d.style.left = (num(all[i], 'left') + k * pitch) + 'vw';
+        d.style.top = (num(all[i], 'top') - top) + 'vw';
+        /* one row for a screen reader: the set that sits where Figma put it keeps the
+           role/label, every repeat is decorative */
+        if (k !== 0) d.setAttribute('aria-hidden', 'true');
+        track.appendChild(d);
+      }
+    }
+    for (i = 0; i < all.length; i++) all[i].style.display = 'none';   /* replaced */
+
+    /* rAF rather than a keyframe: hover has to pause it mid-flight, and translating in
+       vw keeps the wrap correct across a resize. */
+    var x = 0, last = 0, raf = 0, vis = false, hover = false, stopped = false;
+    function paint(){ track.style.transform = 'translateX(' + x + 'vw)'; }
+    function frame(t){
+      raf = 0;
+      if (!vis) return;                                    /* off-screen: stop the loop */
+      raf = requestAnimationFrame(frame);
+      if (!last){ last = t; return; }
+      var dt = t - last; last = t;
+      if (hover || stopped) return;
+      x -= dt * pitch / (SEC * 1000);
+      if (x <= -pitch) x += pitch;
+      paint();
+    }
+    if ('IntersectionObserver' in window){
+      new IntersectionObserver(function(es){
+        vis = es[es.length-1].isIntersecting;
+        last = 0;
+        if (vis && !raf) raf = requestAnimationFrame(frame);
+      }, { threshold: 0 }).observe(win);
+    } else {
+      vis = true; raf = requestAnimationFrame(frame);
+    }
+    /* pause so the logos can actually be read */
+    win.addEventListener('mouseenter', function(){ hover = true; });
+    win.addEventListener('mouseleave', function(){ hover = false; });
+    /* WCAG 2.2.2: content that moves for more than five seconds needs a pause mechanism,
+       and mouseenter is mouse-only. Figma authors no control here and the layout is
+       pixel-locked, so the control is screen-reader/keyboard-only: it takes no space and
+       is invisible until focused, which changes nothing visually but makes stopping the
+       motion reachable without a pointer. */
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'ax-recog__pause';
+    btn.setAttribute('aria-pressed', 'false');
+    btn.textContent = 'Pause the scrolling client logos';
+    btn.addEventListener('click', function(){
+      stopped = !stopped;
+      last = 0;
+      btn.setAttribute('aria-pressed', stopped ? 'true' : 'false');
+      btn.textContent = (stopped ? 'Resume' : 'Pause') + ' the scrolling client logos';
+      if (!stopped && vis && !raf) raf = requestAnimationFrame(frame);
+    });
+    win.parentNode.insertBefore(btn, win);
+    /* keyboard focus anywhere in the band pauses too, same as hover */
+    win.addEventListener('focusin', function(){ hover = true; });
+    win.addEventListener('focusout', function(){ hover = false; last = 0; });
+  }
+
+  function init(){
+    /* resolve lazily: the .ax-mob block is not guaranteed to precede this script */
+    var d = document.querySelector('main.ax-page');
+    if (d && d.closest && d.closest('.ax-mob')) d = null;  /* that one IS the mobile row */
+    var m = document.querySelector('.ax-mob');
+    labels(d); labels(m);                                  /* the wrong labels get fixed
+                                                              even when motion is off */
+    if (REDUCED) return;
+    if ((innerWidth || 1024) > 768) { if (d) build(d); }
+    else { if (m) build(m); }
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+  addEventListener('resize', init);                        /* build() is idempotent */
+})();
+</script>
+
+<style id="ax-gallery-css">
+/* ---- OFFICE GALLERY DIALOG (Figma 6386:33167) ----------------------------
+   The expand control in the "OFFICE GALLERY" section opens the designer's full
+   gallery frame: 1184x2207, clipped, scrolled vertically. 1184px of a 1920px
+   design is 61.6667vw, so the flattened frame's own vw coordinates are correct
+   inside a box of that width and nothing has to be rescaled. */
+.ax-gal-trigger{cursor:pointer;pointer-events:auto;border-radius:0.25vw;
+  transition:transform .2s ease,filter .2s ease}
+.ax-gal-trigger:hover,.ax-gal-trigger:focus-visible{transform:scale(1.08);
+  filter:drop-shadow(0 0 0.35vw rgba(223,63,23,.5))}
+.ax-gal-trigger:focus-visible{outline:0.1042vw solid #cf3b15;outline-offset:0.2vw}
+
+html.ax-gal-open,html.ax-gal-open body{overflow:hidden}
+.ax-gal{position:fixed;inset:0;z-index:2000;display:flex;align-items:center;
+  justify-content:center;padding:2rem;background:rgba(21,24,30,.48);
+  opacity:0;visibility:hidden;pointer-events:none;
+  transition:opacity .24s ease,visibility 0s linear .24s}
+.ax-gal.is-open{opacity:1;visibility:visible;pointer-events:auto;
+  transition:opacity .24s ease,visibility 0s}
+.ax-gal__vp{position:relative;width:61.6667vw;max-width:calc(100vw - 4rem);
+  height:114.9422vw;max-height:calc(100vh - 4rem);
+  border-radius:1rem;overflow:hidden;background:rgb(236,238,242);
+  box-shadow:0 1.5rem 4rem rgba(0,0,0,.28);
+  opacity:0;transform:translateY(.75rem) scale(.985);
+  transition:opacity .24s ease,transform .24s cubic-bezier(.22,.61,.36,1)}
+.ax-gal.is-open .ax-gal__vp{opacity:1;transform:none}
+.ax-gal__scroll{height:100%;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain}
+.ax-gal__doc{position:relative;width:61.6667vw;height:114.9422vw}
+/* Figma parks the close control inside the scrolling frame; it stays put here so
+   the pointer never has to scroll 2200px back up to reach it. */
+.ax-gal__x{position:absolute;top:1.1458vw;right:1.1458vw;z-index:1;
+  width:2.0833vw;height:2.0833vw;min-width:34px;min-height:34px;
+  display:flex;align-items:center;justify-content:center;
+  border:0;border-radius:0.3rem;background:#fff0e7;color:#c23714;
+  font:700 1.25rem/1 'Nunito Sans',sans-serif;cursor:pointer;
+  box-shadow:0 0.25rem 0.75rem rgba(21,24,30,.08);
+  transition:background-color .18s ease,color .18s ease}
+/* ax-hv-selfon: the sitewide hover engine paints its own button treatment and
+   would otherwise leave the glyph invisible on the orange wash. */
+.ax-gal .ax-gal__x:hover,.ax-gal .ax-gal__x:focus-visible,
+.ax-gal .ax-gal__x.ax-hv-selfon{background:#cf3b15!important;color:#fff!important}
+.ax-gal__x:focus-visible{outline:2px solid #15181e;outline-offset:3px}
+@media(max-width:1024px){
+  .ax-gal{padding:.5rem}
+  .ax-gal__vp{width:100%;max-width:none;height:calc(100vh - 1rem);max-height:none;
+    border-radius:.75rem}
+  .ax-gal__x{top:.75rem;right:.75rem}
+}
+@media(prefers-reduced-motion:reduce){
+  .ax-gal-trigger,.ax-gal,.ax-gal__vp,.ax-gal__x{transition:none}
+}
+</style>
+<div class="ax-gal" id="ax-gal" role="dialog" aria-modal="true" aria-label="AeonX office gallery" aria-hidden="true">
+ <div class="ax-gal__vp">
+  <div class="ax-gal__scroll">
+   <div class="ax-gal__doc">
+<div class="g-b" style="position:absolute;left:3.7500vw;top:3.6458vw;width:54.1667vw;height:107.6506vw;background-color:rgb(255,255,255);"></div>
+<div class="g-img" data-ref="9c8f55fdf15bd26dc3a8691339dc7dcf944a43d1" role="presentation" aria-hidden="true" style="position:absolute;left:3.7500vw;top:3.6458vw;width:31.2500vw;height:12.6562vw;background-image:url(/assets/gen/9c8f55fdf15bd26dc3a8691339dc7dcf944a43d1.webp);background-size:cover;background-position:center;background-repeat:no-repeat;"></div>
+<div class="g-img" data-ref="d3bf661b76a8a0b331dd42a68d16467379a423fe" role="presentation" aria-hidden="true" style="position:absolute;left:35.8333vw;top:3.6458vw;width:22.0833vw;height:12.6562vw;background-image:url(/assets/gen/d3bf661b76a8a0b331dd42a68d16467379a423fe.webp);background-size:cover;background-position:center;background-repeat:no-repeat;"></div>
+<div class="g-b g-clip" data-ax-srow="1" style="position:absolute;left:3.7500vw;top:16.3021vw;width:31.0938vw;height:31.0938vw;background-color:rgb(255,255,255);border-radius:0.3125vw;overflow:hidden;">
+<div class="g-b" style="position:absolute;left:-63.5389vw;top:-13.7840vw;width:114.2207vw;height:136.2195vw;background:radial-gradient(ellipse 50.0% 50.0% at 50.0% 50.0%, rgb(41,93,160) 23.6%, rgba(41,93,160,0.000) 100.0%);filter:blur(0.5208vw);"></div>
+<div class="g-b" style="position:absolute;left:-29.8521vw;top:7.0127vw;width:63.1213vw;height:66.3088vw;background:radial-gradient(ellipse 50.0% 50.0% at 50.0% 50.0%, rgb(41,93,160) 0.0%, rgba(41,93,160,0.000) 100.0%);filter:blur(0.5208vw);"></div>
+<div class="g-b" style="position:absolute;left:17.3111vw;top:-1.2303vw;width:76.7288vw;height:72.8781vw;background:radial-gradient(ellipse 50.0% 50.0% at 50.0% 50.0%, rgb(255,97,24) 27.4%, rgba(255,97,24,0.000) 100.0%);filter:blur(0.5208vw);"></div>
+<div class="g-b" style="position:absolute;left:31.4759vw;top:8.9896vw;width:48.0068vw;height:42.4239vw;background-color:#cf3b15;filter:blur(0.5208vw);"></div>
+<div class="g-img" data-ref="0ce9887449329352f8f94f6a0e5651b1b5077deb" role="presentation" aria-hidden="true" style="position:absolute;left:1.1458vw;top:1.4062vw;width:28.6979vw;height:28.2812vw;background-image:url(/assets/gen/0ce9887449329352f8f94f6a0e5651b1b5077deb.webp);background-size:37.5909vw 28.2812vw;background-position:-4.0298vw 0.0000vw;background-repeat:no-repeat;border-radius:0.4167vw;box-shadow:0.0000vw 1.3034vw 2.4138vw rgba(50,50,93,0.120),inset 0.0000vw -0.0966vw 0.2414vw rgba(10,37,64,0.220);"></div>
+</div>
+<div class="g-b g-clip" data-ax-srow="1" style="position:absolute;left:35.6942vw;top:16.3021vw;width:22.2396vw;height:15.1562vw;background-color:rgb(255,255,255);border-radius:0.3125vw;overflow:hidden;">
+<div class="g-b" style="position:absolute;left:-95.4660vw;top:-13.7665vw;width:114.2207vw;height:136.2195vw;background:radial-gradient(ellipse 50.0% 50.0% at 50.0% 50.0%, rgb(102,94,253) 23.6%, rgba(102,94,253,0.000) 100.0%);filter:blur(0.5208vw);"></div>
+<div class="g-b" style="position:absolute;left:-61.7791vw;top:7.0302vw;width:63.1213vw;height:66.3088vw;background:radial-gradient(ellipse 50.0% 50.0% at 50.0% 50.0%, rgb(102,94,253) 0.0%, rgba(102,94,253,0.000) 100.0%);filter:blur(0.5208vw);"></div>
+<div class="g-b" style="position:absolute;left:-14.6160vw;top:-1.2128vw;width:76.7288vw;height:72.8781vw;background:radial-gradient(ellipse 50.0% 50.0% at 50.0% 50.0%, rgb(255,97,24) 27.4%, rgba(255,97,24,0.000) 100.0%);filter:blur(0.5208vw);"></div>
+<div class="g-b" style="position:absolute;left:9.2882vw;top:9.0071vw;width:48.0068vw;height:42.4239vw;background:radial-gradient(ellipse 50.0% 50.0% at 50.0% 50.0%, #cf3b15 0.0%, rgba(255,97,24,0.000) 100.0%);filter:blur(0.5208vw);"></div>
+<div class="g-img" data-ref="7fb7d71511ef33e76d9678974ef95853026f01ff" role="presentation" aria-hidden="true" style="position:absolute;left:1.4840vw;top:1.5365vw;width:19.2708vw;height:12.0833vw;background-image:url(/assets/gen/7fb7d71511ef33e76d9678974ef95853026f01ff.webp);background-size:19.2708vw 25.6944vw;background-position:-0.0000vw -4.5139vw;background-repeat:no-repeat;"></div>
+</div>
+<div class="g-b g-clip" data-ax-srow="1" style="position:absolute;left:35.6942vw;top:32.2738vw;width:22.2396vw;height:15.1562vw;background-color:rgb(255,255,255);border-radius:0.3125vw;overflow:hidden;">
+<div class="g-b" style="position:absolute;left:-95.4660vw;top:-29.7386vw;width:114.2207vw;height:136.2195vw;background:radial-gradient(ellipse 50.0% 50.0% at 50.0% 50.0%, rgb(41,93,160) 23.6%, rgba(41,93,160,0.000) 100.0%);filter:blur(0.5208vw);"></div>
+<div class="g-b" style="position:absolute;left:-61.7791vw;top:-8.9419vw;width:63.1213vw;height:66.3088vw;background:radial-gradient(ellipse 50.0% 50.0% at 50.0% 50.0%, rgb(41,93,160) 0.0%, rgba(41,93,160,0.000) 100.0%);filter:blur(0.5208vw);"></div>
+<div class="g-b" style="position:absolute;left:-14.6160vw;top:-17.1849vw;width:76.7288vw;height:72.8781vw;background:radial-gradient(ellipse 50.0% 50.0% at 50.0% 50.0%, #cf3b15 27.4%, rgba(255,97,24,0.000) 100.0%);filter:blur(0.5208vw);"></div>
+<div class="g-b" style="position:absolute;left:9.2882vw;top:-6.9650vw;width:48.0068vw;height:42.4239vw;background:radial-gradient(ellipse 50.0% 50.0% at 50.0% 50.0%, #cf3b15 0.0%, rgba(255,97,24,0.000) 100.0%);filter:blur(0.5208vw);"></div>
+<div class="g-img" data-ref="7855c9ad0910d2eaa1efa5bb9493721dd654a37e" role="presentation" aria-hidden="true" style="position:absolute;left:1.2500vw;top:1.6663vw;width:19.7396vw;height:11.8229vw;background-image:url(/assets/gen/7855c9ad0910d2eaa1efa5bb9493721dd654a37e.webp);background-size:19.7396vw 26.3194vw;background-position:-0.0000vw -6.5712vw;background-repeat:no-repeat;"></div>
+</div>
+<div class="g-img" data-ref="1f2b9ef9cb595ce0d3b13d0a706d04bf24188a3b" role="presentation" aria-hidden="true" style="position:absolute;left:3.7500vw;top:49.2826vw;width:17.5000vw;height:25.0521vw;background-image:url(/assets/gen/1f2b9ef9cb595ce0d3b13d0a706d04bf24188a3b.webp);background-size:cover;background-position:center;background-repeat:no-repeat;border-radius:0.3125vw;"></div>
+<div class="g-img" data-ref="9d780ab653180fe5066890ad23f66f6c2c5bdd86" role="presentation" aria-hidden="true" style="position:absolute;left:22.0833vw;top:49.2826vw;width:17.5000vw;height:25.0521vw;background-image:url(/assets/gen/9d780ab653180fe5066890ad23f66f6c2c5bdd86.webp);background-size:cover;background-position:center;background-repeat:no-repeat;border-radius:0.3125vw;"></div>
+<div class="g-img" data-ref="d846529cf567dd55f5583ace4e9333011c732eb4" role="presentation" aria-hidden="true" style="position:absolute;left:40.4167vw;top:49.2826vw;width:17.5000vw;height:25.0521vw;background-image:url(/assets/gen/d846529cf567dd55f5583ace4e9333011c732eb4.webp);background-size:37.5735vw 25.0521vw;background-position:-12.5889vw -0.0000vw;background-repeat:no-repeat;border-radius:0.3125vw;"></div>
+<div class="g-b g-clip" data-ax-srow="1" style="position:absolute;left:3.7500vw;top:76.2443vw;width:54.1667vw;height:0.0521vw;background-color:rgb(236,238,242);overflow:hidden;">
+</div>
+<div class="g-img" data-ref="b39d5df22dc48d59464ae888d6ee4fb2c007b5fe" role="presentation" aria-hidden="true" style="position:absolute;left:3.7500vw;top:78.1714vw;width:26.2500vw;height:12.8646vw;background-image:url(/assets/gen/b39d5df22dc48d59464ae888d6ee4fb2c007b5fe.webp);background-size:cover;background-position:center;background-repeat:no-repeat;"></div>
+<div class="g-img" data-ref="0c9b229b924bb466a747c4d811bdb74bbddbf7fe" role="img" aria-label="Q" style="position:absolute;left:31.6667vw;top:78.1714vw;width:26.2500vw;height:12.8646vw;background-image:url(/assets/gen/0c9b229b924bb466a747c4d811bdb74bbddbf7fe.webp);background-size:cover;background-position:center;background-repeat:no-repeat;"></div>
+<div class="g-img" data-ref="e90d05e9fbdcdebdec51d706b710cba7ba4c203f" role="presentation" aria-hidden="true" style="position:absolute;left:3.7500vw;top:92.9110vw;width:19.2708vw;height:16.4583vw;background-image:url(/assets/gen/e90d05e9fbdcdebdec51d706b710cba7ba4c203f.webp);background-size:cover;background-position:center;background-repeat:no-repeat;border-radius:0.3125vw;"></div>
+<div class="g-img" data-ref="b4282af68662e3ba7b9defe89d21d050d4d50659" role="presentation" aria-hidden="true" style="position:absolute;left:23.8542vw;top:92.9110vw;width:34.0625vw;height:16.4583vw;background-image:url(/assets/gen/b4282af68662e3ba7b9defe89d21d050d4d50659.webp);background-size:cover;background-position:center;background-repeat:no-repeat;border-radius:0.3125vw;"></div>
+<div class="g-b g-clip" data-ax-srow="1" style="position:absolute;left:3.7500vw;top:111.2443vw;width:54.1667vw;height:0.0521vw;background-color:rgb(236,238,242);overflow:hidden;">
+</div>
+   </div>
+  </div>
+  <button class="ax-gal__x" type="button" data-ax-owned="1" aria-label="Close the office gallery">&times;</button>
+ </div>
+</div>
+<script>
+/* ---- OFFICE GALLERY DIALOG ----
+   The trigger is Figma's own expand glyph, which ships as a decorative <img>; it
+   is promoted to a real button here rather than in the generated page, because
+   that page is rewritten by every _build_all.py run. Resolves its DOM lazily --
+   fragment order is not guaranteed. */
+(function(){
+  function start(){
+    var dlg=document.getElementById('ax-gal');
+    var trig=document.querySelector('[data-vec="6018:28358"]');
+    if(!dlg||!trig) return;
+    var vp=dlg.querySelector('.ax-gal__scroll');
+    var x=dlg.querySelector('.ax-gal__x');
+    var last=null;
+
+    trig.classList.add('ax-gal-trigger');
+    trig.setAttribute('role','button');
+    trig.setAttribute('tabindex','0');
+    trig.setAttribute('aria-haspopup','dialog');
+    trig.setAttribute('aria-controls','ax-gal');
+    trig.setAttribute('alt','Open the office gallery');
+    trig.removeAttribute('aria-hidden');
+    /* the generated art sits under later siblings in the same stacking context */
+    trig.style.zIndex='20';
+
+    function open(on){
+      dlg.classList.toggle('is-open',on);
+      dlg.setAttribute('aria-hidden',on?'false':'true');
+      document.documentElement.classList.toggle('ax-gal-open',on);
+      if(on){ last=document.activeElement; vp.scrollTop=0; x.focus(); }
+      /* a mouse click does not always leave focus on the trigger, so <body> can be
+         what was active on open -- returning focus there would drop the reader at
+         the top of the page instead of back at the control they used */
+      else { (last&&last!==document.body?last:trig).focus(); }
+    }
+    trig.addEventListener('click',function(){ open(true); });
+    trig.addEventListener('keydown',function(e){
+      if(e.key==='Enter'||e.key===' '){ e.preventDefault(); open(true); }
+    });
+    x.addEventListener('click',function(){ open(false); });
+    dlg.addEventListener('mousedown',function(e){ if(e.target===dlg) open(false); });
+    document.addEventListener('keydown',function(e){
+      if(!dlg.classList.contains('is-open')) return;
+      if(e.key==='Escape'){ e.preventDefault(); open(false); return; }
+      /* the close button is the only focusable thing in here -- keep Tab inside */
+      if(e.key==='Tab'){ e.preventDefault(); x.focus(); }
+    });
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',start);
+  else start();
+})();
+</script>
+<style id="ax-herotabs-css">
+/* 300ms / EASE_OUT is not a guess: every `Tab` node in the component set carries
+   transitionDuration 300 and transitionEasing EASE_OUT, which is what Figma would
+   have played on the prototype's variant swap. EASE_OUT is cubic-bezier(0,0,.58,1). */
+:root{--ax-ht-t:.3s cubic-bezier(0,0,.58,1)}
+.ax-ht-tab{cursor:pointer;-webkit-user-select:none;user-select:none}
+.ax-ht-tab:focus-visible{outline:2px solid #cf3b15;outline-offset:2px;border-radius:3px}
+/* Added only after the first paint, so the page does not animate itself on load. */
+.ax-ht-anim{transition:left var(--ax-ht-t),top var(--ax-ht-t),width var(--ax-ht-t),
+            height var(--ax-ht-t),color var(--ax-ht-t)}
+.ax-ht-grid{transition:top var(--ax-ht-t),height var(--ax-ht-t),opacity .15s linear}
+@media (prefers-reduced-motion:reduce){
+  .ax-ht-anim,.ax-ht-grid{transition:none}
+}
+</style>
+<script>
+/* ---- HERO SEARCH-TYPE TABS (Products / AI Agents / Services) ----
+
+   In Figma this widget is a COMPONENT_SET with three variants and the tab click is a
+   prototype variant swap, so only the default "Products" state survives the export.
+   This restores the other two at runtime by re-labelling the one exported grid.
+
+   EVERY NUMBER HERE IS READ OFF THE DOM. The previous version carried a table of
+   Figma pixel values harvested from Component 226, and when the designer switched the
+   hero to Component 227 the tile grew 158 -> 208px while the table did not. The scale
+   factor was derived as `tileWidth / spec.tileW`, so it came out 31.6% too large and
+   every coordinate the fragment wrote was wrong -- on FIRST PAINT, not just on click.
+   That is what put the icons on top of their labels and pushed "Services" out of its
+   own tab strip. A layout table that has to be re-harvested by hand whenever the
+   design is resized is the bug, so there isn't one any more: the exported Products
+   state is already correct, and it is the only measurement needed.
+
+   What genuinely differs per variant is CONTENT, not geometry: which labels, which
+   icons, and how many tiles. That is all that is listed below.
+
+   The grid is FLAT in the export -- plate, icon, label, plate, icon, label, ... as
+   siblings of the grid container, not nested per tile. Raster icons emit as a
+   `.g-b.g-clip` div and vector icons as `img.g-vec`, so an icon is NOT identifiable
+   by tag or class alone: the plates are picked out by being the widest boxes, and
+   each plate then claims the icon and label sitting inside its own rectangle. */
+(function () {
+  var TABS = ['Products', 'AI Agents', 'Services'];
+
+  /* Per variant: the tile labels in slot order, each with the asset that draws its
+     icon. `null` keeps whatever the export already put in that slot, which is what
+     Products wants. A `null` ENTRY is a deliberately blank tile: Figma's Services
+     variant keeps two empty cells in the second row so the card is not half-drawn. */
+  var VARIANTS = {
+    'Products': [
+      ['SupplierX', null], ['OrderX', null], ['Xpense', null], ['ManufeX', null],
+      ['LogystiX', null], ['SetuMove', null], ['CRM 360', null], ['QUIC', null]
+    ],
+    'Services': [
+      ['SAP', '6958-20885'], ['AWS', '7080-57211'],
+      ['GCP', '6958-20889'], ['ANTHROPIC', '6958-20891'],
+      ['Multi Cloud CMS', '6958-21014'], ['AI & DATA', '6958-21020'],
+      null, null
+    ],
+    'AI Agents': [
+      ['JARVIS', '6956-63466'], ['AEONXIQ', '6956-63469'],
+      ['DATASETU.AI', '6956-63472'], ['SETUEDGE', '7038-45320']
+    ]
+  };
+
+  /* Where each tile goes. Keyed by label, because a slot shows a different tile in
+     each variant: the chrome's CTA pass bound the Products labels once at load, so
+     after a tab switch "ANTHROPIC" still went wherever "CRM 360" did. The tiles are
+     routed here instead, against whatever the slot currently shows. */
+  var ROUTES = {
+    'SupplierX': 'https://supplierx.cloud/', 'OrderX': 'https://orderx.cloud/',
+    'Xpense': 'https://x-pense.cloud/', 'ManufeX': 'https://manufex.cloud/',
+    'LogystiX': 'https://logystix.cloud/', 'SetuMove': '/products/setu-move/',
+    'CRM 360': '/products/crm-360/', 'QUIC': '/products/quic/',
+    'SAP': '/services/', 'AWS': '/services/aws/', 'GCP': '/services/google-cloud/',
+    'ANTHROPIC': '/alliances/anthropic/', 'Multi Cloud CMS': '/services/multi-cloud-cms/',
+    'AI & DATA': '/services/ai-data/',
+    'JARVIS': '/products/jarvis/', 'AEONXIQ': 'https://aeonxiq.ai/',
+    'DATASETU.AI': '/products/datasetu-ai/', 'SETUEDGE': '/products/setuedge/'
+  };
+
+  /* Label colours on the #eceef2 tab plate. Figma's orange and slate read 3.7:1 and
+     2.6:1 there; these are the nearest shades that reach 4.5:1. */
+  var ACTIVE = '#c23714', IDLE = '#58677d';
+  var GAP = 8 / 20;            /* icon-to-label gap, as a fraction of the icon width */
+
+  function txt(e) { return (e.textContent || '').replace(/\s+/g, ' ').trim(); }
+
+  /* Captured synchronously at parse time, which is BEFORE _uifx.html's
+     DOMContentLoaded pass re-centres anything it considers a control. Those are the
+     rects Figma exported and the ones the tabs have to keep; read them later and the
+     nudge is already baked in (measured: 1.7px on Products and AI Agents). */
+  function stash() {
+    [].forEach.call(document.querySelectorAll('.g-t'), function (e) {
+      if (TABS.indexOf((e.textContent || '').replace(/\s+/g, ' ').trim()) < 0) return;
+      /* Only a real trio. The words "Products" and "Services" also appear as ordinary
+         copy elsewhere on the page, and tagging those gave them a tab's pointer
+         cursor for no reason. */
+      var p = e.parentElement;
+      if (!p) return;
+      var trio = [].filter.call(p.children, function (c) {
+        return c.classList && c.classList.contains('g-t') &&
+               TABS.indexOf((c.textContent || '').replace(/\s+/g, ' ').trim()) > -1;
+      });
+      if (trio.length !== 3) return;
+      if (!e.getAttribute('data-ax-ht0')) {
+        e.setAttribute('data-ax-ht0', (e.style.left || '') + '|' + (e.style.width || ''));
+      }
+      /* Claim them here, at parse time, so _uifx.html's own DOMContentLoaded pass can
+         tell a tab from a CTA pill before it starts moving labels around. */
+      e.classList.add('ax-ht-tab');
+    });
+  }
+  stash();
+  function vw(el, p) { return parseFloat((el.style[p] || '').replace('vw', '')) || 0; }
+  function setvw(el, p, n) { el.style[p] = n.toFixed(4) + 'vw'; }
+
+  /* The widget: three sibling .g-t labels reading the tab names. Matched on the label
+     trio rather than a class, because _gen.py derives class names from Figma layer
+     names and every one of them here is "Container". */
+  function findWidgets() {
+    var out = [];
+    [].forEach.call(document.querySelectorAll('.g-t'), function (e) {
+      if (txt(e) !== TABS[0]) return;
+      var p = e.parentElement;
+      if (!p) return;
+      var kids = [].filter.call(p.children, function (c) {
+        return c.classList.contains('g-t') && TABS.indexOf(txt(c)) > -1;
+      });
+      if (kids.length === 3) out.push({ wrap: p, labels: kids });
+    });
+    return out;
+  }
+
+  function inside(box, o) {
+    return box.l <= o.l + 0.05 && box.r >= o.r - 0.05 &&
+           box.t <= o.t + 0.05 && box.b >= o.b - 0.05;
+  }
+  function boxOf(el) {
+    var l = vw(el, 'left'), t = vw(el, 'top'), w = vw(el, 'width'), h = vw(el, 'height');
+    return { l: l, t: t, w: w, h: h, r: l + w, b: t + h };
+  }
+
+  function build(w) {
+    var wrap = w.wrap, labels = w.labels;
+    var boxes = [].filter.call(wrap.children, function (c) {
+      return c.classList.contains('g-b');
+    });
+    var lb = labels.map(boxOf);
+    var bounds = {
+      l: Math.min.apply(null, lb.map(function (b) { return b.l; })),
+      r: Math.max.apply(null, lb.map(function (b) { return b.r; })),
+      t: Math.min.apply(null, lb.map(function (b) { return b.t; })),
+      b: Math.max.apply(null, lb.map(function (b) { return b.b; }))
+    };
+
+    /* The strip is the painted box behind all three labels; the pill is the smaller
+       one behind only the active tab. Both are flat siblings, so geometry finds them. */
+    var strip = null, pill = null;
+    boxes.forEach(function (e) {
+      var b = boxOf(e);
+      if (b.t > bounds.b || b.b < bounds.t) return;
+      if (b.l <= bounds.l + 0.05 && b.r >= bounds.r - 0.05) {
+        if (!strip || b.w < boxOf(strip).w) strip = e;
+      } else if (b.l <= lb[0].l + 0.05 && b.r >= lb[0].r - 0.05) {
+        pill = e;
+      }
+    });
+
+    /* The card below the tabs, and inside it the grid container holding the tiles. */
+    var inner = null;
+    boxes.forEach(function (e) {
+      if (boxOf(e).t < bounds.b) return;
+      var g = e.querySelector(':scope > .g-b.g-clip');
+      if (g && g.querySelectorAll(':scope > .g-t').length >= 4) inner = e;
+    });
+    if (!inner) return null;
+    var gridBox = inner.querySelector(':scope > .g-b.g-clip');
+
+    var ir = boxOf(inner), outer = null;
+    boxes.forEach(function (e) {
+      if (e === inner) return;
+      var b = boxOf(e);
+      if (b.l <= ir.l + 0.05 && b.r >= ir.r - 0.05 &&
+          b.t <= ir.t + 0.05 && b.b >= ir.b - 0.05) {
+        if (!outer || boxOf(outer).h > b.h) outer = e;
+      }
+    });
+
+    /* Plates are the widest boxes in the grid. A raster icon is also a `.g-b`, which
+       is exactly what the old version mistook for a tile. */
+    var gk = [].slice.call(gridBox.children);
+    var gb = gk.filter(function (c) { return c.classList.contains('g-b'); });
+    if (!gb.length) return null;
+    var maxW = Math.max.apply(null, gb.map(function (c) { return boxOf(c).w; }));
+    var plates = gb.filter(function (c) { return boxOf(c).w >= maxW - 0.01; });
+    if (plates.length < 2) return null;
+
+    /* Each plate claims the icon and label drawn inside its own rectangle. */
+    var slots = plates.map(function (p) {
+      var pb = boxOf(p), icon = null, label = null;
+      gk.forEach(function (c) {
+        if (c === p) return;
+        var b = boxOf(c);
+        if (!inside(pb, b)) return;
+        if (c.classList.contains('g-t')) label = c;
+        else if (!icon) icon = c;
+      });
+      /* A vector icon exports as a bare <img>, but a raster one exports as a
+         clipping wrapper with a .g-img inside it. Claiming the wrapper and
+         setting a background on it looks like it works and does nothing: the
+         child still paints the ORIGINAL product's artwork on top, so AeonX.IQ
+         and Data Setu.ai wore whichever raster the Products row had in that
+         slot. Descend to the element that actually paints. */
+      var paint = icon;
+      while (paint && paint.tagName !== 'IMG') {
+        var inner = paint.querySelector('img, .g-img');
+        if (!inner) break;
+        paint = inner;
+      }
+      return { plate: p, icon: icon, paint: paint, label: label, box: pb,
+               icon0: paint ? (paint.tagName === 'IMG' ? paint.getAttribute('src')
+                                                       : paint.style.backgroundImage) : null,
+               /* The raster's own background-size/position frame a specific
+                  bitmap; an SVG dropped into them would be cropped by the same
+                  numbers. Keep them to restore, and paint swapped art contained
+                  and centred instead. */
+               bgSize0: paint ? paint.style.backgroundSize : null,
+               bgPos0: paint ? paint.style.backgroundPosition : null,
+               labelBox: label ? boxOf(label) : null,
+               iconBox: icon ? boxOf(icon) : null };
+    });
+    slots.sort(function (a, b) { return (a.box.t - b.box.t) || (a.box.l - b.box.l); });
+
+    /* Column and row pitch straight off the exported plates. */
+    var lefts = [], tops = [];
+    slots.forEach(function (s) {
+      if (lefts.indexOf(s.box.l) < 0) lefts.push(s.box.l);
+      if (tops.indexOf(s.box.t) < 0) tops.push(s.box.t);
+    });
+    lefts.sort(function (a, b) { return a - b; });
+    tops.sort(function (a, b) { return a - b; });
+    var cols = lefts.length;
+    var rowPitch = tops.length > 1 ? tops[1] - tops[0] : slots[0].box.h;
+    var gridB = boxOf(gridBox);
+    var inset = tops[0] - 0;                    /* plate top is already grid-relative */
+
+    /* The tab labels' own exported rects, captured before anything moves them:
+       _uifx.html re-centres what it considers a control, and role="tab" makes these
+       controls, so they have to be re-asserted on every paint. */
+    var tabRects = labels.map(function (e) {
+      var raw = e.getAttribute('data-ax-ht0'), b = boxOf(e);
+      if (!raw) return b;
+      var p = raw.split('|');
+      var l = parseFloat((p[0] || '').replace('vw', ''));
+      var w = parseFloat((p[1] || '').replace('vw', ''));
+      if (isNaN(l) || isNaN(w)) return b;
+      return { l: l, t: b.t, w: w, h: b.h, r: l + w, b: b.b };
+    });
+    var pillPad = null;
+    if (pill) {
+      var pb2 = boxOf(pill), a0 = tabRects[0];
+      pillPad = { l: a0.l - pb2.l, w: pb2.w - a0.w, t: pb2.t };
+    }
+
+    return { wrap: wrap, labels: labels, tabRects: tabRects, strip: strip, pill: pill,
+             pillPad: pillPad, inner: inner, outer: outer, gridBox: gridBox,
+             gridBox0: gridB, slots: slots, cols: cols, rowPitch: rowPitch,
+             inset: inset, innerH0: ir.h, outerH0: outer ? boxOf(outer).h : 0,
+             current: TABS[0] };
+  }
+
+  function applyChrome(W, name) {
+    W.labels.forEach(function (el, i) {
+      var on = txt(el) === name, r = W.tabRects[i];
+      el.style.color = on ? ACTIVE : IDLE;
+      el.style.fontWeight = on ? '600' : '400';
+      el.setAttribute('aria-selected', on ? 'true' : 'false');
+      el.tabIndex = on ? 0 : -1;
+      /* Put the label back exactly where Figma drew it. */
+      setvw(el, 'left', r.l);
+      setvw(el, 'width', r.w);
+      el.style.textAlign = 'center';
+    });
+
+    if (W.pill && W.pillPad) {
+      var ai = 0;
+      W.labels.forEach(function (el, i) { if (txt(el) === name) ai = i; });
+      var r = W.tabRects[ai];
+      setvw(W.pill, 'left', r.l - W.pillPad.l);
+      setvw(W.pill, 'width', r.w + W.pillPad.w);
+      setvw(W.pill, 'top', W.pillPad.t);
+    }
+
+    /* One row instead of two: the grid keeps its inset and re-centres in the card,
+       which is what Figma's own Agents variant does (grid 32/68 against 10/112). */
+    var items = VARIANTS[name] || [];
+    var rows = Math.ceil(items.length / W.cols) || 1;
+    var h = W.inset * 2 + rows * W.rowPitch;
+    setvw(W.gridBox, 'height', h);
+    setvw(W.gridBox, 'top', W.gridBox0.t + (W.gridBox0.h - h) / 2);
+  }
+
+  function applyGrid(W, name) {
+    applySlots(W, name);
+    label(W);
+  }
+
+  function applySlots(W, name) {
+    var items = VARIANTS[name] || [];
+    W.slots.forEach(function (s, i) {
+      var item = items[i];
+      var used = i < items.length;
+      s.plate.style.display = used ? '' : 'none';
+      if (!used) {
+        if (s.icon) s.icon.style.display = 'none';
+        if (s.label) s.label.style.display = 'none';
+        return;
+      }
+      /* A null entry is a drawn but empty cell: keep the plate, drop its contents. */
+      if (!item) {
+        if (s.icon) s.icon.style.display = 'none';
+        if (s.label) s.label.style.display = 'none';
+        return;
+      }
+      var row = (i / W.cols) | 0, col = i % W.cols;
+      var top = W.inset + row * W.rowPitch;
+      setvw(s.plate, 'top', top);
+
+      if (s.label) {
+        s.label.style.display = '';
+        s.label.textContent = item[0];
+      }
+      if (s.icon) {
+        s.icon.style.display = '';
+        /* Positioned on the claimed element, painted on the one that actually
+           draws: for a raster tile those are a clipping wrapper and the .g-img
+           inside it, and setting a background on the wrapper alone left the
+           child painting the old product's artwork straight over the top. */
+        if (item[1]) {
+          var url = '/assets/vec/' + item[1] + '.svg';
+          if (s.paint.tagName === 'IMG') s.paint.setAttribute('src', url);
+          else {
+            s.paint.style.backgroundImage = 'url(' + url + ')';
+            s.paint.style.backgroundSize = 'contain';
+            s.paint.style.backgroundPosition = 'center';
+            s.paint.style.backgroundRepeat = 'no-repeat';
+          }
+        } else if (s.icon0) {
+          if (s.paint.tagName === 'IMG') s.paint.setAttribute('src', s.icon0);
+          else {
+            s.paint.style.backgroundImage = s.icon0;
+            s.paint.style.backgroundSize = s.bgSize0 || '';
+            s.paint.style.backgroundPosition = s.bgPos0 || '';
+          }
+        }
+      }
+
+      /* Figma centres the icon+label PAIR in the tile, with a fixed gap. Measuring
+         the label rather than assuming a width keeps every name centred, which a
+         fixed full-tile-width box does not: that is what tore the icons off their
+         labels before. */
+      if (!s.label) return;
+      var iw = s.iconBox ? s.iconBox.w : 0;
+      var gap = iw * GAP;
+      var lw = s.labelBox.w;
+      if (item[0] !== s.label.dataset.axFor) {
+        var prevW = s.label.style.width, prevWs = s.label.style.whiteSpace;
+        s.label.style.width = 'auto';
+        s.label.style.whiteSpace = 'nowrap';
+        var px = s.label.getBoundingClientRect().width;
+        s.label.style.width = prevW;
+        s.label.style.whiteSpace = prevWs;
+        if (px && innerWidth) lw = px * 100 / innerWidth;
+        s.label.dataset.axFor = item[0];
+        s.label.dataset.axW = lw;
+      } else if (s.label.dataset.axW) {
+        lw = parseFloat(s.label.dataset.axW);
+      }
+      var pairW = iw + gap + lw;
+      var iconL = s.box.l + (s.box.w - pairW) / 2;
+      if (s.icon && s.iconBox) {
+        setvw(s.icon, 'left', iconL);
+        setvw(s.icon, 'top', top + (s.box.h - s.iconBox.h) / 2);
+      }
+      setvw(s.label, 'left', iconL + iw + gap);
+      setvw(s.label, 'width', lw);
+      setvw(s.label, 'top', top + (s.box.h - s.labelBox.h) / 2);
+      s.label.style.textAlign = 'left';
+    });
+  }
+
+  var REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)');
+
+  function paint(W, name, animate) {
+    if (!VARIANTS[name]) return;
+    W.current = name;
+    W.token = (W.token || 0) + 1;
+    var token = W.token;
+    applyChrome(W, name);
+    if (!animate || (REDUCED && REDUCED.matches)) {
+      W.gridBox.style.opacity = '';
+      applyGrid(W, name);
+      return;
+    }
+    W.gridBox.style.opacity = '0';
+    setTimeout(function () {
+      if (W.token !== token) return;
+      applyGrid(W, name);
+      W.gridBox.style.opacity = '1';
+    }, 150);
+  }
+
+  function wire(W) {
+    /* The labels are not children of the strip in the generated markup, so role="tablist"
+       alone left every tab without its required parent. aria-owns makes the strip their
+       parent in the accessibility tree without moving anything in the pixel-locked DOM. */
+    if (W.strip) {
+      W.strip.setAttribute('role', 'tablist');
+      W.strip.setAttribute('aria-owns', W.labels.map(function (el, i) {
+        if (!el.id) el.id = 'ax-ht-' + Math.random().toString(36).slice(2, 8) + '-' + i;
+        return el.id;
+      }).join(' '));
+    }
+    W.labels.forEach(function (el) {
+      /* _uifx.html's CTA pass turns any short label inside a painted pill into a
+         role="link" pointing at "#". These are tabs, so take them back. */
+      el.classList.add('ax-ht-tab');
+      el.setAttribute('role', 'tab');
+      el.removeAttribute('data-cta');
+      if (el.getAttribute('href') === '#') el.removeAttribute('href');
+      var go = function (e) {
+        e.preventDefault(); e.stopPropagation();
+        paint(W, txt(el), true); el.focus();
+      };
+      el.addEventListener('click', go, true);
+      el.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') return go(e);
+        var d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+        if (!d) return;
+        e.preventDefault();
+        var order = W.labels.map(txt);
+        var i = (order.indexOf(W.current) + d + order.length) % order.length;
+        paint(W, order[i], true);
+        W.labels[i].focus();
+      });
+    });
+    [W.gridBox, W.inner, W.outer].forEach(function (e) {
+      if (e) e.classList.add('ax-ht-grid');
+    });
+    wireTiles(W);
+    /* The exported state IS the Products state and it is already correct, so the
+       first paint only sets colours and ARIA -- it must not move anything. */
+    applyChrome(W, TABS[0]);
+    /* _uifx.html also runs a pass on `load`, and its handler was registered first but
+       finishes after ours, so it re-centres the tabs out from under the first paint.
+       Re-assert once it has settled; the values are identical, so nothing visibly
+       moves except the 1.7px it had nudged. */
+    setTimeout(function () { applyChrome(W, W.current); }, 60);
+    setTimeout(function () {
+      applyChrome(W, W.current);
+      W.labels.forEach(function (e) { e.classList.add('ax-ht-anim'); });
+      if (W.pill) W.pill.classList.add('ax-ht-anim');
+    }, 400);
+    /* One more, late. The chrome's own passes are spread across DOMContentLoaded,
+       load and a reveal observer, and which of them lands last varies with how much
+       of the page is cached; measured 3px of drift on "AI Agents" when one of them
+       won the race. Writing the same values again costs nothing and settles it. */
+    setTimeout(function () { applyChrome(W, W.current); }, 1400);
+  }
+
+  function tileAt(W, x, y) {
+    for (var i = 0; i < W.slots.length; i++) {
+      var s = W.slots[i];
+      if (s.plate.style.display === 'none') continue;
+      var r = s.plate.getBoundingClientRect();
+      if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return s;
+    }
+    return null;
+  }
+  function open(s) {
+    var name = s.label && s.label.style.display !== 'none' ? txt(s.label) : '';
+    var href = ROUTES[name];
+    if (!href) return;
+    if (/^https?:/.test(href)) window.open(href, '_blank', 'noopener');
+    else location.href = href;
+  }
+  function wireTiles(W) {
+    W.slots.forEach(function (s) {
+      [s.plate, s.icon, s.label].forEach(function (e) {
+        if (!e) return;
+        /* Undo the chrome's load-time binding (see ROUTES). Its listener stays on
+           the label, so the capture handler below stops the click before it. */
+        e.removeAttribute('data-cta');
+        e.removeAttribute('role');
+        e.removeAttribute('tabindex');
+        e.style.cursor = 'pointer';
+        /* Claimed, so _deadbtn.html's sweep does not grey the tiles out as
+           unwired pills (it did on desktop, where _hover.html skins them). */
+        e.setAttribute('data-ax-owned', '1');
+        if (e.dataset.axDead) {
+          delete e.dataset.axDead;
+          e.classList.remove('ax-dead');
+          e.removeAttribute('aria-disabled');
+        }
+      });
+      s.plate.setAttribute('role', 'link');
+      s.plate.tabIndex = 0;
+      s.plate.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); open(s); }
+      }, true);
+    });
+    W.gridBox.addEventListener('click', function (e) {
+      var s = tileAt(W, e.clientX, e.clientY);
+      if (!s) return;
+      e.preventDefault(); e.stopPropagation();
+      open(s);
+    }, true);
+    label(W);
+  }
+  /* Screen readers get the tile's current name on the plate that takes focus. */
+  function label(W) {
+    W.slots.forEach(function (s) {
+      var on = s.plate.style.display !== 'none' && s.label && s.label.style.display !== 'none';
+      if (on) { s.plate.setAttribute('aria-label', txt(s.label)); s.plate.tabIndex = 0; }
+      else { s.plate.removeAttribute('aria-label'); s.plate.tabIndex = -1; }
+    });
+  }
+
+  function run() {
+    findWidgets().forEach(function (w) {
+      var W = build(w);
+      if (W) wire(W);
+    });
+  }
+  if (document.readyState === 'complete') setTimeout(run, 0);
+  else addEventListener('load', function () { setTimeout(run, 0); });
 })();
 </script>
 

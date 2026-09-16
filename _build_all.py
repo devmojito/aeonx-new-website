@@ -151,6 +151,7 @@ V2_PAGES = [
     ('7094:21251', 'products/jarvis/index.html',     'Jarvis \u2014 AeonX Digital'),
     ('7094:24434', 'products/datasetu-ai/index.html','DataSetu.ai \u2014 AeonX Digital'),
     ('7095:27544', 'products/setuedge/index.html',   'SetuEdge \u2014 AeonX Digital'),
+    ('7142:19985', 'services/ai-data/index.html',    'AI & Data Services \u2014 AeonX Digital'),
 ]
 print('\nbuilding Light V2 sub-pages (_genv2.py)...')
 for _nid, _out, _title in V2_PAGES:

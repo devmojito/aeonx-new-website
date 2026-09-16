@@ -61,6 +61,7 @@ def main():
         'What we do/Products/CRM360': 'products/crm-360',
         'What we do/Products/SetuMove': 'products/setu-move',
         'What we do/Products/Quic': 'products/quic',
+        'Home/AI & Data': 'services/ai-data',
         'What we do/Products/Jarvis': 'products/jarvis',
         'What we do/Products/Datasetu.ai': 'products/datasetu-ai',
         'What we do/Products/SetuEdge': 'products/setuedge',
