@@ -62,6 +62,14 @@ Behaviour added on top of the design (filters, carousels, forms, the announcemen
 lives in the `_*.html` fragments, which `_postbuild.py` adds to every build. Change those
 files, never a generated page, or the next build undoes the change.
 
+Tabbed widgets are the exception to "Figma exports it": Figma only exports a component's
+default state. The homepage hero tabs (`_herotabs.html`), the homepage product tabs
+(`_prodtabs.html`) and the Suite tabs on /products/ (`_suitetabs.html`) rebuild the other
+states at runtime. If the designer changes those variants, regenerate the Suite tabs with
+`python3 _suitetabs.py` and then `python3 _postbuild.py --refresh _suitetabs.html`; the other
+two list their labels, icons and links near the top of the file. The phone menu is built in
+`_chrome.html` (search for `ax-mnav`), with its links in the `MENU` list there.
+
 ### Deploying
 
 `python3 _deploy.py` uploads only the public site. What counts as public is set by

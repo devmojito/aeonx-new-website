@@ -190,6 +190,10 @@ def sitemap_sections():
     """Generated from _build_all.PAGES, so it can never drift from what is built."""
     src = io.open('_build_all.py', encoding='utf-8').read()
     pages = re.findall(r'\("(\d+:\d+)",\s*"([^"]+)",\s*"([^"]+?)(?: — AeonX Digital)?"\)', src)
+    # V2_PAGES (the Light V2 canvas, /products/ among them) is single-quoted, with the
+    # dash written as an escape and the path ending in index.html.
+    pages += [(n, p, t.split(' \\u2014 ')[0]) for n, p, t in re.findall(
+        r"\('(\d+:\d+)',\s*'([^']+)/index\.html',\s*'([^']+)'\)", src)]
     groups = [
         ('Company', 'who-we-are'), ('What we do', 'services'), ('Products', 'products'),
         ('Industries', 'industries'), ('Alliances', 'alliances'),
@@ -198,6 +202,7 @@ def sitemap_sections():
     cols = []
     for label, prefix in groups:
         links = [(t, '/%s/' % p) for _, p, t in pages if p.startswith(prefix)]
+        links.sort(key=lambda l: l[1] != '/%s/' % prefix)     # the section's own index first
         if prefix == 'who-we-are':
             links.append(('Contact Us', '/contact-us/'))
         if links:
@@ -226,7 +231,8 @@ def post_links():
     """Built blog / case-study pages, read off disk so the list cannot go stale."""
     out = []
     for dirpath, _dirs, files in os.walk('.'):
-        rel = dirpath.lstrip('./')
+        _dirs[:] = [d for d in _dirs if not d.startswith('.')]
+        rel = os.path.relpath(dirpath, '.').replace(os.sep, '/').strip('.')
         if 'index.html' not in files or not re.match(r'^(19|20)\d\d/', rel):
             continue
         s = io.open(os.path.join(dirpath, 'index.html'), encoding='utf-8').read(4000)
@@ -256,9 +262,12 @@ def sitemap_xml():
     base = 'https://aeonx.digital'
     urls = []
     for dirpath, _dirs, files in os.walk('.'):
+        # Hidden folders are tooling (a stray .claude/worktrees checkout put a second
+        # copy of every page in here), and lstrip('./') turned '.claude' into 'claude'.
+        _dirs[:] = [d for d in _dirs if not d.startswith('.')]
         if 'index.html' not in files:
             continue
-        rel = dirpath.lstrip('./')
+        rel = os.path.relpath(dirpath, '.').replace(os.sep, '/').strip('.')
         if rel.startswith(('assets', '.git', 'node_modules', 'backend')):
             continue
         head = io.open(os.path.join(dirpath, 'index.html'), encoding='utf-8').read(4000)

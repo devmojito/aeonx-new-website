@@ -51,15 +51,31 @@
       ['LogystiX', null], ['SetuMove', null], ['CRM 360', null], ['QUIC', null]
     ],
     'Services': [
-      ['SAP', '6958-20885'], ['AWS', '6958-20887'],
+      ['SAP', '6958-20885'], ['AWS', '7080-57211'],
       ['GCP', '6958-20889'], ['ANTHROPIC', '6958-20891'],
       ['Multi Cloud CMS', '6958-21014'], ['AI & DATA', '6958-21020'],
       null, null
     ],
     'AI Agents': [
       ['JARVIS', '6956-63466'], ['AEONXIQ', '6956-63469'],
-      ['DATASETU.AI', '6956-63472'], ['SETUEDGE', '6962-4244']
+      ['DATASETU.AI', '6956-63472'], ['SETUEDGE', '7038-45320']
     ]
+  };
+
+  /* Where each tile goes. Keyed by label, because a slot shows a different tile in
+     each variant: the chrome's CTA pass bound the Products labels once at load, so
+     after a tab switch "ANTHROPIC" still went wherever "CRM 360" did. The tiles are
+     routed here instead, against whatever the slot currently shows. */
+  var ROUTES = {
+    'SupplierX': 'https://supplierx.cloud/', 'OrderX': 'https://orderx.cloud/',
+    'Xpense': 'https://x-pense.cloud/', 'ManufeX': 'https://manufex.cloud/',
+    'LogystiX': 'https://logystix.cloud/', 'SetuMove': '/products/setu-move/',
+    'CRM 360': '/products/crm-360/', 'QUIC': '/products/quic/',
+    'SAP': '/services/', 'AWS': '/services/aws/', 'GCP': '/services/google-cloud/',
+    'ANTHROPIC': '/alliances/anthropic/', 'Multi Cloud CMS': '/services/multi-cloud-cms/',
+    'AI & DATA': '/products/',
+    'JARVIS': '/products/jarvis/', 'AEONXIQ': 'https://aeonxiq.ai/',
+    'DATASETU.AI': '/products/datasetu-ai/', 'SETUEDGE': '/products/setuedge/'
   };
 
   /* Label colours on the #eceef2 tab plate. Figma's orange and slate read 3.7:1 and
@@ -285,6 +301,11 @@
   }
 
   function applyGrid(W, name) {
+    applySlots(W, name);
+    label(W);
+  }
+
+  function applySlots(W, name) {
     var items = VARIANTS[name] || [];
     W.slots.forEach(function (s, i) {
       var item = items[i];
@@ -426,6 +447,7 @@
     [W.gridBox, W.inner, W.outer].forEach(function (e) {
       if (e) e.classList.add('ax-ht-grid');
     });
+    wireTiles(W);
     /* The exported state IS the Products state and it is already correct, so the
        first paint only sets colours and ARIA -- it must not move anything. */
     applyChrome(W, TABS[0]);
@@ -444,6 +466,64 @@
        of the page is cached; measured 3px of drift on "AI Agents" when one of them
        won the race. Writing the same values again costs nothing and settles it. */
     setTimeout(function () { applyChrome(W, W.current); }, 1400);
+  }
+
+  function tileAt(W, x, y) {
+    for (var i = 0; i < W.slots.length; i++) {
+      var s = W.slots[i];
+      if (s.plate.style.display === 'none') continue;
+      var r = s.plate.getBoundingClientRect();
+      if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return s;
+    }
+    return null;
+  }
+  function open(s) {
+    var name = s.label && s.label.style.display !== 'none' ? txt(s.label) : '';
+    var href = ROUTES[name];
+    if (!href) return;
+    if (/^https?:/.test(href)) window.open(href, '_blank', 'noopener');
+    else location.href = href;
+  }
+  function wireTiles(W) {
+    W.slots.forEach(function (s) {
+      [s.plate, s.icon, s.label].forEach(function (e) {
+        if (!e) return;
+        /* Undo the chrome's load-time binding (see ROUTES). Its listener stays on
+           the label, so the capture handler below stops the click before it. */
+        e.removeAttribute('data-cta');
+        e.removeAttribute('role');
+        e.removeAttribute('tabindex');
+        e.style.cursor = 'pointer';
+        /* Claimed, so _deadbtn.html's sweep does not grey the tiles out as
+           unwired pills (it did on desktop, where _hover.html skins them). */
+        e.setAttribute('data-ax-owned', '1');
+        if (e.dataset.axDead) {
+          delete e.dataset.axDead;
+          e.classList.remove('ax-dead');
+          e.removeAttribute('aria-disabled');
+        }
+      });
+      s.plate.setAttribute('role', 'link');
+      s.plate.tabIndex = 0;
+      s.plate.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); open(s); }
+      }, true);
+    });
+    W.gridBox.addEventListener('click', function (e) {
+      var s = tileAt(W, e.clientX, e.clientY);
+      if (!s) return;
+      e.preventDefault(); e.stopPropagation();
+      open(s);
+    }, true);
+    label(W);
+  }
+  /* Screen readers get the tile's current name on the plate that takes focus. */
+  function label(W) {
+    W.slots.forEach(function (s) {
+      var on = s.plate.style.display !== 'none' && s.label && s.label.style.display !== 'none';
+      if (on) { s.plate.setAttribute('aria-label', txt(s.label)); s.plate.tabIndex = 0; }
+      else { s.plate.removeAttribute('aria-label'); s.plate.tabIndex = -1; }
+    });
   }
 
   function run() {

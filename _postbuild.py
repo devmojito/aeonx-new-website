@@ -97,7 +97,8 @@ SCOPED = [
     ('industries/energy-fertiliser-oil-gas/index.html','ax-gearspin-css', '_gearspin.html'),
     ('who-we-are/leadership/index.html', 'ax-ltabs-css', '_leadtabs.html'),
     ('who-we-are/leadership/index.html', 'ax-leadscroll-css', '_leadscroll.html'),
-    ('products/index.html',              'ax-suitemap-css', '_suitemap.html'),
+    ('index.html',                       'ax-homecta-css',  '_homecta.html'),
+    ('products/index.html',              'ax-suitetabs-css', '_suitetabs.html'),
     ('services/google-cloud/index.html', 'ax-gchero-css',   '_gchero.html'),
     ('insights/blog/index.html',        'ax-bloglist-css', '_bloglist.html'),
     ('services/sap-ams-axiom/index.html', 'ax-amsicon-css', '_amsicon.html'),
@@ -329,7 +330,9 @@ def main():
             s = s.replace('</body>', PRE_JS + '\n</body>', 1)
             stats['preload'] += 1
         for sfx, sent, frag, fn in SCOPED:
-            if not f.replace(os.sep, '/').endswith(sfx):
+            # Whole path, not a suffix: 'index.html' alone is the homepage, and a
+            # suffix match handed its fragment to every page on the site.
+            if f.replace(os.sep, '/') != sfx:
                 continue
             if refresh and (not only or sent in only or fn in only):
                 s, cut = strip_fragment(s, sent)

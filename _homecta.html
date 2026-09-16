@@ -1,0 +1,53 @@
+<style id="ax-homecta-css">
+.ax-hc{cursor:pointer}
+.ax-hc:focus-visible{outline:2px solid #c23714;outline-offset:2px;border-radius:3px}
+</style>
+<script>
+/* ---- HOMEPAGE "EXPLORE" PILLS ----
+   Twenty pills on the homepage read just "Explore", so the chrome's label-to-route
+   table cannot place them (it deliberately skips the bare word). Where each goes
+   depends on its card: the industry blueprint cards open their industry page, and
+   the customer outcome cards open the case studies. The industry heading always
+   sits two or three labels before its pill in document order, on both layouts;
+   the outcome cards have no industry heading within that reach. */
+(function () {
+  var IND = [
+    ['manufacturing & industrial', '/industries/manufacturing/'],
+    ['textiles & apparel', '/industries/textiles-apparel/'],
+    ['fmcg, food', '/industries/fmcg-distribution/'],
+    ['energy, fertilizer', '/industries/energy-fertiliser-oil-gas/'],
+    ['metals & engineering', '/industries/metals-engineering/'],
+    ['automotive, aerospace', '/industries/automotive-aerospace/']
+  ];
+  function txt(e) { return (e.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase(); }
+  function link(el, href) {
+    el.classList.add('ax-hc');
+    el.setAttribute('role', 'link');
+    el.setAttribute('tabindex', '0');
+    el.dataset.cta = '1';
+    el.dataset.axTo = href;
+    var go = function (e) { e.preventDefault(); e.stopPropagation(); location.href = href; };
+    el.addEventListener('click', go);
+    el.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') go(e); });
+  }
+  function run() {
+    var all = [].slice.call(document.querySelectorAll('.g-t'));
+    all.forEach(function (t, i) {
+      if (txt(t) !== 'explore' || t.dataset.cta) return;
+      var href = '/insights/';
+      for (var k = 1; k <= 3 && i - k >= 0; k++) {
+        var h = txt(all[i - k]);
+        IND.forEach(function (p) { if (h.indexOf(p[0]) === 0) href = p[1]; });
+      }
+      /* The desktop industry pill is the painted box wrapping its label; make the
+         whole pill the target, not just the word. */
+      var p = t.parentElement;
+      var pill = p && p.classList.contains('g-b') && p.children.length === 1 ? p : null;
+      link(pill || t, href);
+      if (pill) { t.dataset.cta = '1'; t.style.pointerEvents = 'none'; }
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
+  else run();
+})();
+</script>

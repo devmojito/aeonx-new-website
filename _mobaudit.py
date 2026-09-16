@@ -65,6 +65,7 @@ def frame_map():
         'What we do/Alliances/SAP': 'alliances/sap-gold-partner',
         'What we do/Alliances/Partners Hub/Sap on AWS': 'alliances/partners-hub/sap-on-aws',
         'What we do/Alliances/Partners Hub/Sap on AWS/CKHB': None,
+        'What we do/All products': 'products',
         'Investor/Financial Highlights': 'investor-relations',
         'Investor/Shareholding pattern.': 'investor-relations/shareholding-pattern',
     }

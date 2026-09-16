@@ -21,7 +21,6 @@ PAGES = [
     ("4371:7616",  "services/google-cloud", "Google Cloud Services — AeonX Digital"),
     ("4371:11553", "services/multi-cloud-cms", "Multi-Cloud CMS — AeonX Digital"),
 
-    ("4750:4504",  "products", "All Products — AeonX Digital"),
     ("4393:2919",  "products/axiom", "AXIOM AI Platform — AeonX Digital"),
 
     ("4376:2040",  "industries/manufacturing", "Manufacturing — AeonX Digital"),
@@ -145,6 +144,7 @@ import subprocess, sys as _sys
 # frame and hero variant passes, which the block below already runs by hand.
 V2_PAGES = [
     ('7038:43639', 'alliances/anthropic/index.html', 'Anthropic Alliance \u2014 AeonX Digital'),
+    ('6719:68364', 'products/index.html',           'All Products \u2014 AeonX Digital'),
     ('7052:23906', 'products/crm-360/index.html',    'CRM 360 \u2014 AeonX Digital'),
     ('7068:53822', 'products/setu-move/index.html',  'Setu Move \u2014 AeonX Digital'),
     ('7080:57235', 'products/quic/index.html',       'QuiC \u2014 AeonX Digital'),
