@@ -2,6 +2,10 @@
 /* sticky mobile header: the bar is one exported SVG, so it is translated rather
    than re-parented -- nothing else in the flat sheet moves */
 .ax-mstick{will-change:transform;z-index:900}
+/* Hero glow: Figma burns this blurred gradient into the page and it barely shows
+   (a faint peach wash). A browser burns it into the blurred red ellipse under it
+   instead and it came out as a solid red-orange blob on eight phone heroes. */
+.ax-mob [style*="mix-blend-mode:color-burn"]{mix-blend-mode:normal!important;opacity:.1!important}
 /* Mobile-only enhancements. The .ax-mob layout is a flat stack of absolutely
    positioned Figma nodes, so carousels are just cards sitting side by side off the
    screen edge with no scroller and no working controls -- the dots and arrows are
@@ -68,7 +72,14 @@
         if (b.T - prevT > 40) { cur = []; groups.push(cur); }
         cur.push(b); prevT = b.T;
       });
+      var bands = [];
       groups.forEach(function(items){
+        /* The copy blocks INSIDE a row of cards are a row of their own here, and on
+           the AXIOM page they became a second, 4-dot carousel stacked on the 6-card
+           one, sharing its pager. A row that starts inside a row already taken is
+           part of it. */
+        var t0 = items[0].T;
+        if (bands.some(function(bd){ return t0 > bd[0] && t0 < bd[1]; })) return;
         var g = items.slice().sort(function(a, b){ return a.L - b.L; });
         /* de-dupe the stacked frame+fill pairs that share a left */
         var cols = [];
@@ -95,6 +106,7 @@
         /* whichever column sits at the left edge now is the baked-visible slide */
         var startIdx = 0, best = Infinity;
         cols.forEach(function(c, n){ if (Math.abs(c) < best) { best = Math.abs(c); startIdx = n; } });
+        bands.push([t0, t0 + Math.max.apply(null, items.map(function(b){ return b.H; }))]);
         build(g[0], cols, stride, startIdx, box, W, trimmed);
       });
     });

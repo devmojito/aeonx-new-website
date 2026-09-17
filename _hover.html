@@ -946,7 +946,7 @@
     var ctas = document.querySelectorAll('[data-cta],[data-axcta]');
     for (var i = 0; i < ctas.length; i++){
       var el = ctas[i];
-      if (el.closest('.ax-mob')) continue;
+      var mob = !!el.closest('.ax-mob');
       var r = el.getBoundingClientRect();
       if (!r.width || !r.height) continue;
       /* hit-testing is viewport-bound, hence the re-run on scroll below */
@@ -963,6 +963,11 @@
         if (isChrome(top)) break;                  /* fixed header/footer: leave alone */
         if (hasControls(top)) break;               /* form card etc: peeling kills its fields */
         if (top === document.body || top === document.documentElement) break;
+        /* Phone layouts: only bare art layers (an <img>, an empty box) get peeled.
+           A phone section is full of swipe tracks and tappable cards whose own
+           handlers must keep receiving touches. The SAP AMS hero's ribbon image sat
+           over both hero buttons. */
+        if (mob && top.children.length) break;
         top.style.pointerEvents = 'none';
       }
     }
