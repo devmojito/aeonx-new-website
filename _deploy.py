@@ -91,9 +91,14 @@ def main():
                          for f, cc, ct in groups)
     if '--all' in sys.argv:          # cp never deletes, so clear stale files first
         passes = 'aws s3 sync . %s --delete --only-show-errors && %s' % (BUCKET, passes)
+    # Wait for the invalidation to finish before reporting success: on 17 Sep a
+    # browser kept getting the previous build (CloudFront's compressed copy) after a
+    # deploy that had printed S3_OK, and a fix read as "not deployed".
     remote = ('cd ~/aeonx-site && %s && echo S3_OK && '
-              'aws cloudfront create-invalidation --distribution-id %s --paths "/*" '
-              '--query Invalidation.Id --output text') % (passes, DIST)
+              'ID=$(aws cloudfront create-invalidation --distribution-id %s --paths "/*" '
+              '--query Invalidation.Id --output text) && echo "INVALIDATION $ID" && '
+              'aws cloudfront wait invalidation-completed --distribution-id %s --id "$ID" && '
+              'echo CDN_CLEARED') % (passes, DIST, DIST)
     run(['ssh', '-i', KEY, '-o', 'StrictHostKeyChecking=no', HOST, remote])
 
 
