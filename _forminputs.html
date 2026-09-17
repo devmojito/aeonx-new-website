@@ -25,7 +25,7 @@ select.ax-cf-code{left:0!important;top:0!important;height:100%!important;cursor:
    The popup is fixed-position and lives on <body>: the field sits inside two clipped
    Figma boxes, and anything positioned within them is cut off at their edge. */
 .ax-cc-native{opacity:0;pointer-events:none}
-.ax-cc-btn{display:flex;align-items:center;cursor:pointer;white-space:nowrap;
+.ax-cc-btn{display:flex;align-items:center;cursor:pointer;white-space:nowrap;box-sizing:border-box;
   left:0!important;top:0!important;height:100%!important;background:transparent}
 .ax-cc-pop{position:fixed;z-index:2147483001;max-height:13.5vw;overflow-y:auto;overflow-x:hidden;
   background:#fff;border:1px solid rgb(213,218,226);border-radius:0.42vw;
@@ -415,6 +415,10 @@ select.ax-cf-code{left:0!important;top:0!important;height:100%!important;cursor:
     btn.className = 'ax-cf-in ax-cc-btn';
     btn.setAttribute('style', sel.getAttribute('style') || '');
     btn.classList.remove('ax-cc-native');
+    /* The chip is pinned to the field's left edge (left:0 below), so the designed
+       inset -- where Figma's flag sat -- becomes padding, or "IND (+91)" touches
+       the border. */
+    if (sel.style.left && parseFloat(sel.style.left) > 0) btn.style.paddingLeft = sel.style.left;
     btn.setAttribute('role', 'combobox');
     btn.setAttribute('aria-expanded', 'false');
     btn.setAttribute('aria-label', 'Country code');

@@ -31,6 +31,15 @@
 .ax-inv-input{position:absolute;left:0;top:0;width:100%;height:100%;border:0;outline:none;
   background:transparent;padding:0;font-family:'Nunito Sans',sans-serif;color:rgb(35,39,46)}
 .ax-inv-empty{position:absolute;font-family:'Nunito Sans',sans-serif;color:rgb(134,149,170)}
+/* Phone browser: the tab and chip rows scroll sideways, the list scrolls down. */
+.ax-invm-x{position:absolute;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;
+  scrollbar-width:none;overscroll-behavior-x:contain}
+.ax-invm-x::-webkit-scrollbar{display:none}
+.ax-invm-tab,.ax-invm-chip{cursor:pointer}
+.ax-invm-tab *,.ax-invm-chip *{pointer-events:none}
+.ax-invm-list{overflow-y:auto!important;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.ax-invm-doc{position:absolute;left:0;width:100%;cursor:pointer}
+.ax-invm-doc.is-gone{cursor:default;opacity:.55}
 @media (prefers-reduced-motion:reduce){.ax-inv-row,.ax-inv-cat{transition:none}}
 </style>
 <script>
@@ -687,7 +696,241 @@
     addEventListener('hashchange', fromHash);
   }
 
+  /* ---- PHONE BROWSER ----
+     The phone design draws the browser as a static picture: three tab pills in a row
+     (the third cut off by the screen), a search pill, year chips and two sample rows.
+     Nothing in it responds. This rebuilds each part from the design's own elements:
+     one tab per category in the library, on a row that scrolls sideways; the chips
+     for the years that category holds; and the list, grouped by financial year the
+     way the design groups its sample, in a box that scrolls. */
+  function fyOfDoc(d){
+    var t=/\b(20\d\d)\s*[-–]\s*(\d{2})\b/.exec(d.t||'');
+    if(t) return 'FY '+t[1]+'-'+t[2];
+    var m=/^([A-Za-z]{3})\s+(\d{4})$/.exec((d.d||'').trim());
+    if(!m) return '';
+    var mon=['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'].indexOf(m[1].toLowerCase())+1;
+    var y=parseInt(m[2],10); if(!mon||!y) return '';
+    var st=mon>=4?y:y-1;
+    return 'FY '+st+'-'+String(st+1).slice(2);
+  }
+  function hasBg(el){ return /background-color/.test(el.getAttribute('style')||''); }
+  function buildMobile(searchLbl){
+    var sec=searchLbl.parentElement;
+    for(var up=0; up<6 && sec && sec.children.length<12; up++) sec=sec.parentElement;
+    if(!sec||sec.children.length<12) return;
+    var kids=[].slice.call(sec.children);
+    var K=kids.map(function(k){ return {el:k,b:box(k),t:txt(k),isB:/g-b/.test(k.className||''),isT:/g-t/.test(k.className||'')}; })
+      .filter(function(o){ return o.b; });
+    /* tab band: everything above the search band */
+    var sb=boxIn(searchLbl,sec); if(!sb) return;
+    var band=K.filter(function(o){ return o.b.t<sb.t-2; });
+    var strip=band.filter(function(o){ return o.isB&&o.b.w>80; })[0];
+    var plates=band.filter(function(o){ return o.isB&&o.b.h>8&&o.b.w<70; });
+    var labelsIn=function(p,pred){ return band.filter(function(o){ return o!==p&&o.b.l>=p.b.l-0.1&&o.b.l<p.b.r&&pred(o); }); };
+    var units=plates.map(function(p){
+      return {p:p,
+        lab:labelsIn(p,function(o){ return o.isT&&!/^\d+$/.test(o.t); })[0],
+        bp:labelsIn(p,function(o){ return o.isB&&o.b.h<8; })[0],
+        bl:labelsIn(p,function(o){ return o.isT&&/^\d+$/.test(o.t); })[0]};
+    }).filter(function(u){ return u.lab&&u.bp&&u.bl; });
+    var on=units.filter(function(u){ return hasBg(u.p.el); })[0];
+    var off=units.filter(function(u){ return !hasBg(u.p.el); })[0];
+    if(!on||!off||!strip) return;
+    var ds=datasetFor(units.map(function(u){ return u.lab.t; }));
+    if(!ds) return;
+    /* chips: the row between the search pill and the list */
+    var chipB=K.filter(function(o){ return o.isB&&o.b.t>sb.b&&o.b.t<sb.b+6&&o.b.h<10&&o.b.w<40; });
+    var chipOn=chipB.filter(function(o){ return hasBg(o.el); })[0];
+    var chipOff=chipB.filter(function(o){ return !hasBg(o.el); })[0];
+    var chipLab=function(c){ return K.filter(function(o){ return o.isT&&o.b.l>=c.b.l&&o.b.l<c.b.r&&Math.abs(o.b.t-c.b.t)<3; })[0]; };
+    /* some pages draw no year chips at all */
+    var hasChips=!!(chipOn&&chipOff);
+    var chipOnL=hasChips&&chipLab(chipOn), chipOffL=hasChips&&chipLab(chipOff);
+    if(hasChips&&(!chipOnL||!chipOffL)) return;
+    var listTop=hasChips?chipOn.b.b-1:sb.b;
+    var list=K.filter(function(o){ return o.isB&&o.el.classList.contains('g-clip')&&o.b.t>listTop&&o.b.h>30; })[0];
+    if(!list) return;
+    var footer=K.filter(function(o){ return o.isT&&/documents?$/i.test(o.t); })[0];
+    /* list templates, in the list's own coordinates */
+    var LK=[].slice.call(list.el.children).map(function(k){ return {el:k,b:box(k),t:txt(k)}; }).filter(function(o){ return o.b; });
+    var hPlate=LK.filter(function(o){ return /g-b/.test(o.el.className)&&hasBg(o.el)&&o.b.w>80; })[0];
+    var hLab=LK.filter(function(o){ return /^FY\s/.test(o.t); })[0];
+    var tLab=LK.filter(function(o){ return /g-t/.test(o.el.className)&&o.t.length>14; })[0];
+    var dLab=LK.filter(function(o){ return /^[A-Za-z]{3}\s+\d{4}$/.test(o.t); })[0];
+    if(!hPlate||!hLab||!tLab||!dLab) return;
+    var HEAD=hPlate.b.h, DOC=(function(){
+      var nxt=LK.filter(function(o){ return o!==hPlate&&/g-b/.test(o.el.className)&&hasBg(o.el)&&o.b.w>80&&o.b.t>hPlate.b.t; })
+        .sort(function(a,b){ return a.b.t-b.b.t; })[0];
+      return nxt?(nxt.b.t-hPlate.b.t-HEAD):12.6;
+    })();
+    var vwpx=window.innerWidth/100;
+    function clone(o,l,t,w){
+      var c=o.el.cloneNode(true);
+      c.classList.remove('ax-rv','ax-in');
+      c.style.display='';
+      setv(c,'left',l); setv(c,'top',t);
+      if(w!=null) setv(c,'width',w);
+      return c;
+    }
+    function widthOf(el,text){
+      var m=el.cloneNode(false);
+      m.textContent=text; m.style.width='auto'; m.style.visibility='hidden'; m.style.whiteSpace='nowrap';
+      /* measured inside the section: the phone layout hides anything else on <body> */
+      sec.appendChild(m); var w=m.getBoundingClientRect().width/vwpx; m.remove();
+      return w;
+    }
+
+    /* remove the design's static parts; keep the strip plate and the chips' band */
+    units.forEach(function(u){ [u.p,u.lab,u.bp,u.bl].forEach(function(o){ o.el.remove(); }); });
+    if(hasChips) chipB.forEach(function(c){ var l=chipLab(c); c.el.remove(); if(l) l.el.remove(); });
+    LK.forEach(function(o){ o.el.remove(); });
+
+    var tabs=document.createElement('div');
+    tabs.className='ax-invm-x'; tabs.setAttribute('role','tablist');
+    setv(tabs,'left',strip.b.l); setv(tabs,'top',strip.b.t); setv(tabs,'width',strip.b.w); setv(tabs,'height',on.p.b.h);
+    sec.appendChild(tabs);
+    var chips=null;
+    if(hasChips){
+      chips=document.createElement('div');
+      chips.className='ax-invm-x';
+      setv(chips,'left',chipOn.b.l); setv(chips,'top',chipOn.b.t);
+      setv(chips,'width',list.b.r-chipOn.b.l-(chipOn.b.l-list.b.l)); setv(chips,'height',chipOn.b.h);
+      sec.appendChild(chips);
+    }
+    list.el.classList.add('ax-invm-list');
+
+    /* search: a real input where the design has the word */
+    var input=document.createElement('input');
+    input.type='search'; input.className='ax-inv-input'; input.placeholder=searchLbl.textContent.trim();
+    input.setAttribute('aria-label','Search documents');
+    input.style.fontSize=getComputedStyle(searchLbl).fontSize;
+    searchLbl.textContent=''; searchLbl.appendChild(input);
+
+    var cat=0, year='', query='';
+    /* the tab offsets inside a unit, from the design's own first tab */
+    var P=on.p.b, gapLB=on.bp.b.l-on.lab.b.r, padL=on.lab.b.l-P.l, padR=P.r-on.bp.b.r;
+    var pitchGap=off.p.b.l-P.r;
+    function paintTabs(){
+      tabs.innerHTML='';
+      var x=0;
+      ds.cats.forEach(function(c,i){
+        var u=i===cat?on:off;
+        var lw=widthOf(u.lab.el,c.c)+0.4;
+        var w=padL+lw+gapLB+u.bp.b.w+padR;
+        var g=document.createElement('div');
+        g.className='ax-invm-tab'; g.setAttribute('role','tab');
+        g.setAttribute('aria-selected',i===cat?'true':'false'); g.tabIndex=0;
+        g.style.cssText='position:absolute;top:0;height:100%';
+        setv(g,'left',x); setv(g,'width',w);
+        g.appendChild(clone(u.p,0,u.p.b.t-P.t,w));
+        var lab=clone(u.lab,padL,u.lab.b.t-P.t,lw);
+        lab.textContent=c.c; lab.style.whiteSpace='nowrap'; g.appendChild(lab);
+        g.appendChild(clone(u.bp,padL+lw+gapLB,u.bp.b.t-P.t));
+        var bl=clone(u.bl,padL+lw+gapLB+(u.bl.b.l-u.bp.b.l),u.bl.b.t-P.t);
+        bl.textContent=String(c.docs.length); g.appendChild(bl);
+        var pick=function(){ cat=i; year=''; paint(); };
+        g.addEventListener('click',pick);
+        g.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); pick(); } });
+        tabs.appendChild(g);
+        if(i===cat) setTimeout(function(){
+          var gl=g.offsetLeft, gr=gl+g.offsetWidth;
+          if(gl<tabs.scrollLeft||gr>tabs.scrollLeft+tabs.clientWidth) tabs.scrollTo({left:Math.max(0,gl-8),behavior:'smooth'});
+        },0);
+        x+=w+pitchGap;
+      });
+    }
+    function paintChips(docs){
+      if(!chips) return;
+      chips.innerHTML='';
+      var ys=[]; docs.forEach(function(d){ var f=fyOfDoc(d); if(f&&ys.indexOf(f)<0) ys.push(f); });
+      ys.sort().reverse();
+      var gap=chipOff.b.l-chipOn.b.r, x=0;
+      [''].concat(ys).forEach(function(yv){
+        var active=yv===year, c=active?chipOn:chipOff, cl=active?chipOnL:chipOffL;
+        var text=yv||'All', inset=cl.b.l-c.b.l;
+        var lw=widthOf(cl.el,text)+0.4, w=lw+inset*2;
+        var g=document.createElement('div');
+        g.className='ax-invm-chip'; g.setAttribute('role','button'); g.tabIndex=0;
+        g.setAttribute('aria-pressed',active?'true':'false');
+        g.style.cssText='position:absolute;top:0;height:100%';
+        setv(g,'left',x); setv(g,'width',w);
+        g.appendChild(clone(c,0,0,w));
+        var l=clone(cl,inset,cl.b.t-c.b.t,lw); l.textContent=text; g.appendChild(l);
+        var pick=function(){ year=yv; paint(); };
+        g.addEventListener('click',pick);
+        g.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); pick(); } });
+        chips.appendChild(g);
+        x+=w+gap;
+      });
+    }
+    function paintList(docs){
+      list.el.innerHTML='';
+      var groups={}, order=[];
+      docs.forEach(function(d){ var f=fyOfDoc(d)||'Other'; if(!groups[f]){ groups[f]=[]; order.push(f); } groups[f].push(d); });
+      order.sort(function(a,b){ return a==='Other'?1:b==='Other'?-1:(a<b?1:a>b?-1:0); });
+      var y=0;
+      order.forEach(function(f){
+        list.el.appendChild(clone(hPlate,hPlate.b.l,y));
+        list.el.appendChild(clone(hLab,hLab.b.l,y+(hLab.b.t-hPlate.b.t))).textContent=f;
+        y+=HEAD;
+        groups[f].forEach(function(d){
+          var row=document.createElement('div');
+          row.className='ax-invm-doc'+(d.gone?' is-gone':'');
+          row.style.top=y+'vw'; row.style.height=DOC+'vw';
+          var tt=clone(tLab,tLab.b.l,tLab.b.t-hPlate.b.t-HEAD,list.b.w-tLab.b.l*2);
+          tt.textContent=fixT(d.t); tt.style.whiteSpace='nowrap'; tt.style.overflow='hidden'; tt.style.textOverflow='ellipsis';
+          row.appendChild(tt);
+          row.appendChild(clone(dLab,dLab.b.l,dLab.b.t-hPlate.b.t-HEAD)).textContent=d.d||'';
+          if(!d.gone){
+            row.setAttribute('role','link'); row.tabIndex=0; row.dataset.axTo=d.u;
+            row.setAttribute('aria-label',fixT(d.t)+(d.d?(', '+d.d):'')+', PDF');
+            var open=function(){ window.open(d.u,'_blank','noopener'); };
+            row.addEventListener('click',open);
+            row.addEventListener('keydown',function(e){ if(e.key==='Enter'){ e.preventDefault(); open(); } });
+          }
+          list.el.appendChild(row);
+          y+=DOC;
+        });
+      });
+      if(!docs.length){
+        var e=document.createElement('div'); e.className='ax-inv-empty';
+        setv(e,'left',tLab.b.l); setv(e,'top',2);
+        e.style.fontSize=getComputedStyle(tLab.el).fontSize;
+        e.textContent=query?'No documents match that search.':'No documents in this category yet.';
+        list.el.appendChild(e);
+      }
+      /* a spacer so the last row can scroll clear of the box edge */
+      var sp=document.createElement('div'); sp.style.cssText='position:absolute;left:0;width:1px;height:1px';
+      sp.style.top=(y+2)+'vw'; list.el.appendChild(sp);
+      list.el.scrollTop=0;
+      if(footer) footer.el.textContent=docs.length+(docs.length===1?' document':' documents');
+    }
+    function fixT(t){ return (t||'').replace(/\bALONWITH\b/g,'ALONG WITH'); }
+    function paint(){
+      var all=ds.cats[cat].docs;
+      var docs=all.filter(function(d){
+        if(year&&fyOfDoc(d)!==year) return false;
+        return !query||d.t.toLowerCase().indexOf(query)>-1;
+      });
+      paintTabs(); paintChips(all); paintList(docs);
+    }
+    input.addEventListener('input',function(){ query=input.value.trim().toLowerCase(); paint(); input.focus(); });
+    /* #financial-information and friends pick the tab, as they do on desktop */
+    function fromHash(){
+      var h=norm(decodeURIComponent(location.hash.slice(1)));
+      if(!h) return;
+      ds.cats.forEach(function(c,i){ if(norm(c.c)===h||norm(c.c).replace(/ /g,'')===h.replace(/ /g,'')) { cat=i; year=''; } });
+    }
+    fromHash(); paint();
+    addEventListener('hashchange',function(){ fromHash(); paint(); });
+  }
+
   function init(){
+    [].slice.call(document.querySelectorAll('.ax-mob .g-t')).forEach(function(e){
+      if(!/^search$/i.test(txt(e))||e.dataset.axInvM) return;
+      e.dataset.axInvM='1';
+      try{ buildMobile(e); }catch(err){ if(window.console) console.warn('invdocs mobile',err); }
+    });
     [].slice.call(document.querySelectorAll('main.ax-page .g-t')).forEach(function(e){
       if(!/^search$/i.test(txt(e))) return;
       if(e.dataset.axInv) return;
