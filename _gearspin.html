@@ -11,13 +11,27 @@ img.g-vec[src*="6131-22640"],
 img.g-vec[src*="6138-25615"],
 img.g-vec[src*="6138-25921"],
 img.g-vec[src*="6138-26092"],
-img.g-vec[src*="6138-26187"]{animation:ax-gear-cw 80s linear infinite}
+img.g-vec[src*="6138-26187"],
+/* phone layouts: the top-left gear of each hero */
+img.g-vec[src*="5637-71213"],
+img.g-vec[src*="6149-17583"],
+img.g-vec[src*="6149-17938"],
+img.g-vec[src*="6149-17966"],
+img.g-vec[src*="6149-18047"],
+img.g-vec[src*="6149-18136"]{animation:ax-gear-cw 80s linear infinite}
 img.g-vec[src*="4690-13425"],
 img.g-vec[src*="6138-25456"],
 img.g-vec[src*="6138-25767"],
 img.g-vec[src*="6138-25985"],
 img.g-vec[src*="6138-26117"],
-img.g-vec[src*="6138-26173"]{animation:ax-gear-ccw 104s linear infinite}
+img.g-vec[src*="6138-26173"],
+/* phone layouts: the bottom-right gear */
+img.g-vec[src*="5637-71214"],
+img.g-vec[src*="6149-17721"],
+img.g-vec[src*="6149-17927"],
+img.g-vec[src*="6149-17949"],
+img.g-vec[src*="6149-17983"],
+img.g-vec[src*="6149-18111"]{animation:ax-gear-ccw 104s linear infinite}
 /* Animate the standalone `rotate` property, NOT `transform`: the scroll-reveal
    fragment leaves `transform:translateY(0)` on revealed hero elements, and a
    keyframe to transform:rotate(360deg) against that base has MISMATCHED transform
@@ -29,6 +43,7 @@ img.g-vec[src*="6138-26173"]{animation:ax-gear-ccw 104s linear infinite}
 @keyframes ax-gear-ccw{from{rotate:0turn}to{rotate:-1turn}}
 @media (prefers-reduced-motion:reduce){
   img.g-vec[src*="4690-134"],img.g-vec[src*="6131-22640"],img.g-vec[src*="6138-25"],
-  img.g-vec[src*="6138-26"]{animation:none}
+  img.g-vec[src*="6138-26"],img.g-vec[src*="5637-7121"],img.g-vec[src*="6149-17"],
+  img.g-vec[src*="6149-18"]{animation:none}
 }
 </style>

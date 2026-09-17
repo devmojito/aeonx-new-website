@@ -72,6 +72,17 @@
         /* de-dupe the stacked frame+fill pairs that share a left */
         var cols = [];
         g.forEach(function(b){ if (!cols.length || Math.abs(b.L - cols[cols.length-1]) > 8) cols.push(b.L); });
+        /* A full-width backdrop behind the cards reads as a first "column" a few px
+           left of the real first card, and that sliver of a stride failed the pitch
+           test below, so the RISE "Signature proof" row never became a carousel.
+           Drop leading columns that are off the pitch the rest of the row keeps. */
+        var trimmed = false;
+        while (cols.length > 2 && cols[1] - cols[0] < W * 0.4 &&
+               Math.abs((cols[2] - cols[1]) - (cols[cols.length-1] - cols[cols.length-2])) < 8) {
+          var drop = cols.shift();
+          g = g.filter(function(b){ return Math.abs(b.L - drop) > 8; });
+          trimmed = true;
+        }
         if (cols.length < 2) return;
         /* Wider than the screen = a carousel. Figma bakes some rows with the ACTIVE
            card at x~0 and the rest off to the LEFT (negative), so testing only for
@@ -83,7 +94,7 @@
         /* whichever column sits at the left edge now is the baked-visible slide */
         var startIdx = 0, best = Infinity;
         cols.forEach(function(c, n){ if (Math.abs(c) < best) { best = Math.abs(c); startIdx = n; } });
-        build(g[0], cols, stride, startIdx, box, W);
+        build(g[0], cols, stride, startIdx, box, W, trimmed);
       });
     });
 
@@ -91,7 +102,7 @@
     marquee(box, W);
   }
 
-  function build(first, cols, stride, startIdx, box, W){
+  function build(first, cols, stride, startIdx, box, W, trimmed){
     var count = cols.length;
     var home = cols[startIdx];           /* the x of the visible slot */
     var top = first.T, bottom = first.T + first.H;
@@ -103,6 +114,10 @@
       return (b.el.tagName === 'IMG' || /g-img/.test(b.el.className)) &&
              b.T > bottom - 40 && b.T < bottom + 140 && b.W > W * 0.8 && b.L < W;
     }).sort(function(a, b){ return Math.abs(a.T - bottom) - Math.abs(b.T - bottom); })[0];
+    /* A row found only after dropping its backdrop column is taken on only when it
+       has pager art to drive: the culture photo strip has none and belongs to the
+       marquee, which it would otherwise lose to this. */
+    if (trimmed && !ctrl) return;
 
     /* Tab row: a line of labels above the band with the SAME number of entries as
        there are columns, plus a solid brand-orange pill marking the active one. */
