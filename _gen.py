@@ -693,6 +693,49 @@ def ink_bounds(n):
 
 PAGE = {}
 
+def blur_union(n):
+    """(x, y, w, h) of n's leaf geometry, each leaf grown by the layer blur on it and
+    its ancestors up to n. None when nothing in the subtree is blurred, since then
+    this says nothing the render bounds do not."""
+    boxes, blurred = [], [False]
+    def walk(m, r):
+        if m.get('visible') is False:
+            return
+        own = sum(e.get('radius', 0) for e in m.get('effects', [])
+                  if e.get('type') == 'LAYER_BLUR' and e.get('visible', True))
+        if own:
+            blurred[0] = True
+        r += own
+        kids = m.get('children') or []
+        if kids:
+            for c in kids:
+                walk(c, r)
+            return
+        b = m.get('absoluteBoundingBox')
+        if not b:
+            return
+        x0, y0, x1, y1 = b['x'], b['y'], b['x'] + b['width'], b['y'] + b['height']
+        arc = m.get('arcData') if m.get('type') == 'ELLIPSE' else None
+        if arc:
+            # A partial ellipse still reports the whole ellipse's box; the drawn
+            # part is only the swept arc (plus the centre for a pie).
+            a0, a1 = arc.get('startingAngle', 0), arc.get('endingAngle', 0)
+            if abs(a1 - a0) < 2 * math.pi - 1e-3:
+                cx, cy, rx, ry = (x0 + x1) / 2, (y0 + y1) / 2, (x1 - x0) / 2, (y1 - y0) / 2
+                pts = [(cx + rx * math.cos(a0 + (a1 - a0) * i / 360),
+                        cy + ry * math.sin(a0 + (a1 - a0) * i / 360)) for i in range(361)]
+                if not arc.get('innerRadius'):
+                    pts.append((cx, cy))
+                x0, x1 = min(p[0] for p in pts), max(p[0] for p in pts)
+                y0, y1 = min(p[1] for p in pts), max(p[1] for p in pts)
+        boxes.append((x0 - r, y0 - r, x1 + r, y1 + r))
+    walk(n, 0)
+    if not blurred[0] or not boxes:
+        return None
+    x0 = min(b[0] for b in boxes); y0 = min(b[1] for b in boxes)
+    x1 = max(b[2] for b in boxes); y1 = max(b[3] for b in boxes)
+    return x0, y0, x1 - x0, y1 - y0
+
 def render_box(n, ox, oy):
     """Placement box for an exported asset. Figma normally crops SVG/PNG exports to
     the node's render bounds (post-clip/effects), so that is the default. But a node
@@ -756,6 +799,17 @@ def render_box(n, ox, oy):
             # drawn at 62% -- visibly smaller than the design, with the strokes
             # piled up. Anchor to the edge that was NOT cropped and let .ax-page's
             # overflow:hidden take the rest off, which is what Figma draws.
+            # Blurred art: the export is the geometry grown by each layer's blur
+            # radius, which Figma reports on the layers themselves. When that union
+            # is exactly the file's size it IS the file's position, whatever the
+            # clipping did to the render bounds. The phone RISE page's orange
+            # backdrop is clipped on all four sides by its section, so the
+            # uncropped-edge anchoring below had nothing to go on and pinned the
+            # file's right edge to the screen edge: its white blurred rim painted a
+            # fade down the whole right side of the page.
+            u = blur_union(n)
+            if u and abs(u[2] - dim[0]) <= 1.5 and abs(u[3] - dim[1]) <= 1.5:
+                return u[0] - ox, u[1] - oy, dim[0], dim[1]
             P = PAGE.get('bb')
             if (P and dim[0] > rb['width'] + 1.5 and dim[1] > rb['height'] + 1.5):
                 e = 0.6
