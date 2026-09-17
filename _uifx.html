@@ -113,6 +113,14 @@
       COPY_FIX.forEach(function(f){ t=t.replace(f[0],f[1]); });
       if(t!==o) e.textContent=t;
     });
+    /* The footer's Services list says "GCP", like the nav. Only that list: the
+       "Google Cloud Partner" badge line and page copy keep the full name. The phone
+       footer is flat Figma text, so its entry is the one right after "AWS". */
+    [].slice.call(document.querySelectorAll('section.ax-footer a,.ax-mob .g-t')).forEach(function(e){
+      if(e.children.length||e.textContent.trim()!=='Google Cloud') return;
+      var p=e.previousElementSibling;
+      if(e.tagName==='A'||(p&&p.textContent.trim()==='AWS')) e.textContent='GCP';
+    });
   }
 
   /* ---------- 0b. LATIN PLACEHOLDER ----------
