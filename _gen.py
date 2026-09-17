@@ -736,7 +736,27 @@ def blur_union(n):
     x1 = max(b[2] for b in boxes); y1 = max(b[3] for b in boxes)
     return x0, y0, x1 - x0, y1 - y0
 
+# Offset of an export from its layout box, per repeated design element, learnt from
+# copies Figma reports render bounds for. See render_box().
+_REPEAT_OFFSET = {}
+
 def render_box(n, ox, oy):
+    """Wrapper: repeated elements Figma leaves without render bounds (the phone
+    carousel cards past the first on /services/multi-cloud-cms/, whose corner logo
+    sits off-canvas) take the offset their visible twin was placed with. Falling back
+    to the bare layout box put those logos 44px left of where the first card has it."""
+    bb = n['absoluteBoundingBox']
+    dim = svg_intrinsic(n['id'])
+    key = (n.get('name'), round(bb['width'], 1), round(bb['height'], 1), dim)
+    if not n.get('absoluteRenderBounds') and dim and key in _REPEAT_OFFSET:
+        dx, dy = _REPEAT_OFFSET[key]
+        return bb['x'] + dx - ox, bb['y'] + dy - oy, dim[0], dim[1]
+    l, t, w, h = _render_box(n, ox, oy)
+    if n.get('absoluteRenderBounds') and dim:
+        _REPEAT_OFFSET.setdefault(key, (l + ox - bb['x'], t + oy - bb['y']))
+    return l, t, w, h
+
+def _render_box(n, ox, oy):
     """Placement box for an exported asset. Figma normally crops SVG/PNG exports to
     the node's render bounds (post-clip/effects), so that is the default. But a node
     clipped by an ancestor still exports at FULL geometry size — dropping that into
