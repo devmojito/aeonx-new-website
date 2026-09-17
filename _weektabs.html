@@ -1,0 +1,98 @@
+<style id="ax-weektabs-css">
+.ax-wk-tab{cursor:pointer;transition:background-color .25s ease,color .25s ease}
+.ax-wk-tab:focus-visible{outline:2px solid #c23714;outline-offset:2px}
+.ax-wk-fade{transition:opacity .25s ease}
+@media (prefers-reduced-motion:reduce){.ax-wk-tab,.ax-wk-fade{transition:none}}
+</style>
+<script>
+/* ---- GROW WITH SAP (phone): WEEK 1 / WEEK 6 ----
+   The "Industry packs" card is an instance of component set 5673:21718, and the tab
+   click is a variant swap, so only the Week 1 state exported. Week 6 (5673:21716)
+   differs in three things: the pill colours swap, a "skips 5 weeks ->" line appears
+   44px under the pill row (11px / 18px, semibold, the eyebrow's orange), and the
+   caption reads "Pre-configured - skip straight to customizing". The module grid is
+   the same in both. */
+(function () {
+  var CAP = {
+    1: 'Starting from scratch - 9 modules to configure',
+    6: 'Pre-configured - skip straight to customizing'
+  };
+  var PX = 100 / 430;                      /* design px -> vw on the phone frame */
+  function txt(e) { return (e.textContent || '').replace(/\s+/g, ' ').trim(); }
+  function n(e, k) { return parseFloat(e.style[k]) || 0; }
+  function holds(p, t) {
+    return n(p, 'left') <= n(t, 'left') + 0.05 && n(p, 'left') + n(p, 'width') >= n(t, 'left') + n(t, 'width') - 0.05 &&
+           n(p, 'top') <= n(t, 'top') + 0.05 && n(p, 'top') + n(p, 'height') >= n(t, 'top') + n(t, 'height') - 0.05;
+  }
+  function run() {
+    var mob = document.querySelector('.ax-mob');
+    if (!mob) return;
+    var labels = [].slice.call(mob.querySelectorAll('.g-t'));
+    var t1 = labels.filter(function (e) { return txt(e) === 'Week 1'; })[0];
+    var t6 = labels.filter(function (e) { return txt(e) === 'Week 6'; })[0];
+    var cap = labels.filter(function (e) { return txt(e).indexOf(CAP[1].slice(0, 20)) === 0; })[0];
+    if (!t1 || !t6 || !cap || t1.parentElement !== t6.parentElement) return;
+    var eyebrow = labels.filter(function (e) { return txt(e) === 'INDUSTRY PACKS' && e.parentElement === t1.parentElement; })[0];
+    var plates = [].filter.call(t1.parentElement.children, function (e) { return /g-b/.test(e.className); });
+    function plateOf(t) {
+      return plates.filter(function (p) { return holds(p, t); })
+        .sort(function (a, b) { return n(a, 'width') - n(b, 'width'); })[0];
+    }
+    var p1 = plateOf(t1), p6 = plateOf(t6);
+    var row = plates.filter(function (p) { return holds(p, t1) && holds(p, t6); })
+      .sort(function (a, b) { return n(a, 'width') - n(b, 'width'); })[0];
+    if (!p1 || !p6 || !row || p1 === p6) return;
+    var ON = { bg: p1.style.backgroundColor, fg: t1.style.color };
+    var OFF = { bg: p6.style.backgroundColor, fg: t6.style.color };
+
+    var badge = t6.cloneNode(false);
+    badge.textContent = 'skips 5 weeks →';
+    badge.className = 'g-t ax-wk-fade';
+    badge.style.left = n(row, 'left') + 'vw';
+    badge.style.top = (n(row, 'top') + 44 * PX) + 'vw';
+    badge.style.width = n(row, 'width') + 'vw';
+    badge.style.height = (18 * PX) + 'vw';
+    badge.style.fontSize = (11 * PX) + 'vw';
+    badge.style.lineHeight = (18 * PX) + 'vw';
+    badge.style.fontWeight = '600';
+    badge.style.textAlign = 'center';
+    badge.style.color = eyebrow ? getComputedStyle(eyebrow).color : '#c23714';
+    badge.style.opacity = '0';
+    badge.setAttribute('aria-hidden', 'true');
+    t1.parentElement.appendChild(badge);
+    cap.classList.add('ax-wk-fade');
+    cap.setAttribute('aria-live', 'polite');
+
+    var tabs = [[p1, t1, 1], [p6, t6, 6]];
+    row.setAttribute('role', 'tablist');
+    function set(w) {
+      tabs.forEach(function (x) {
+        var on = x[2] === w, look = on ? ON : OFF;
+        x[0].style.backgroundColor = look.bg;
+        x[1].style.color = look.fg;
+        x[0].setAttribute('aria-selected', on ? 'true' : 'false');
+        x[0].tabIndex = on ? 0 : -1;
+      });
+      badge.style.opacity = w === 6 ? '1' : '0';
+      cap.textContent = CAP[w];
+    }
+    tabs.forEach(function (x) {
+      var p = x[0], t = x[1];
+      p.classList.add('ax-wk-tab'); t.classList.add('ax-wk-tab');
+      p.setAttribute('role', 'tab');
+      p.setAttribute('aria-label', txt(t));
+      p.dataset.axOwned = '1'; t.dataset.axOwned = '1';
+      t.style.pointerEvents = 'none';     /* the plate under it takes the tap */
+      var go = function (e) { e.preventDefault(); e.stopPropagation(); set(x[2]); };
+      p.addEventListener('click', go, true);
+      p.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') go(e);
+        if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { set(x[2] === 1 ? 6 : 1); tabs[x[2] === 1 ? 1 : 0][0].focus(); }
+      });
+    });
+    set(1);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
+  else run();
+})();
+</script>

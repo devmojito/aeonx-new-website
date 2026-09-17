@@ -98,6 +98,7 @@ SCOPED = [
     ('who-we-are/leadership/index.html', 'ax-ltabs-css', '_leadtabs.html'),
     ('who-we-are/leadership/index.html', 'ax-leadscroll-css', '_leadscroll.html'),
     ('index.html',                       'ax-homecta-css',  '_homecta.html'),
+    ('services/grow-with-sap/index.html', 'ax-weektabs-css', '_weektabs.html'),
     ('products/index.html',              'ax-suitetabs-css', '_suitetabs.html'),
     ('services/google-cloud/index.html', 'ax-gchero-css',   '_gchero.html'),
     ('insights/blog/index.html',        'ax-bloglist-css', '_bloglist.html'),
