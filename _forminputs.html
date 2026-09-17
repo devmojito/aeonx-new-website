@@ -450,6 +450,9 @@ select.ax-cf-code{left:0!important;top:0!important;height:100%!important;cursor:
       var r = btn.getBoundingClientRect();
       pop.style.left = Math.round(r.left) + 'px';
       pop.style.minWidth = Math.round(r.width) + 'px';
+      /* The list lives on <body>, so it inherited the page default and read twice
+         the size of the field. Use the field's own type size. */
+      pop.style.fontSize = getComputedStyle(btn).fontSize;
       /* below by default, above when there is not room for it there */
       var below = window.innerHeight - r.bottom;
       pop.style.top = ''; pop.style.bottom = '';
