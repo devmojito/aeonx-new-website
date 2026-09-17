@@ -14,10 +14,11 @@
 .ax-carh:disabled{opacity:.35;cursor:default}
 /* live dots, drawn over the baked pill so the active step actually moves */
 .ax-cardots{position:absolute;z-index:41;display:flex;align-items:center;
-  justify-content:center;gap:6px;background:#FEF5EE;border-radius:999px;pointer-events:none}
-.ax-cardots i{display:block;width:6px;height:6px;border-radius:999px;background:#ECEEF2;
+  justify-content:center;gap:1.8605vw;background:#FEF5EE;border-radius:0.9302vw;
+  box-shadow:inset 0 0 0 0.186vw #ECEEF2;pointer-events:none}
+.ax-cardots i{display:block;width:1.8605vw;height:1.8605vw;border-radius:999px;background:rgba(223,63,23,.2);
   transition:width .3s ease,background-color .3s ease}
-.ax-cardots i.on{width:22px;background:#DF3F17}
+.ax-cardots i.on{width:7.4419vw;background:#DF3F17}
 @media (min-width:769px){.ax-carh,.ax-cardots{display:none}}
 </style>
 <script>
@@ -238,8 +239,12 @@
 
     var prev, next, dots;
     if (ctrl) {
-      /* fractions measured from the control artwork's own ~431x40 viewBox */
-      var vb = 431;
+      /* Positions in the control artwork's own units. Figma lays the bar out
+         space-between, so the arrows hang off its RIGHT edge: measured 16.6 in and
+         40 wide with an 8 gap, on both the 431 and the newer 398 wide exports.
+         Reading the width off the bar's own aspect keeps them on the drawn buttons either way
+         (the fixed 431 put them 32px right of the art on the 398 bar). */
+      var vb = ctrl.H ? Math.round(ctrl.W / ctrl.H * 40 * 10) / 10 : 431;   /* every bar is 40 tall */
       var mk = function(x0, x1, lbl){
         var b = document.createElement('button');
         b.className = 'ax-carh'; b.type = 'button';
@@ -250,18 +255,24 @@
         b.style.height = ctrl.H + 'px';
         page.appendChild(b); return b;
       };
-      prev = mk(326.4, 366.4, 'Previous');
-      next = mk(374.4, 414.4, 'Next');
+      prev = mk(vb - 104.6, vb - 64.6, 'Previous');
+      next = mk(vb - 56.6, vb - 16.6, 'Next');
       prev.addEventListener('click', function(){ takeover(); go(i - 1); });
       next.addEventListener('click', function(){ takeover(); go(i + 1); });
 
       /* the live dots cannot paint over the baked art, so cut the art's own dots out */
-      if (ctrl.el) ctrl.el.classList.add('ax-carart');
+      if (ctrl.el) {
+        ctrl.el.classList.add('ax-carart');
+        /* The art bakes in its own pill, sized for however many dots Figma drew.
+           Show only its arrows; the live pill below is the one that counts. */
+        ctrl.el.style.clipPath = 'inset(0 0 0 ' + ((vb - 106) / vb * 100).toFixed(2) + '%)';
+      }
       dots = document.createElement('div');
       dots.className = 'ax-cardots';
       dots.style.left = (ctrl.L + ctrl.W * 16 / vb) + 'px';
       dots.style.top = ctrl.T + 'px';
-      dots.style.width = (ctrl.W * (153.6 - 16) / vb) + 'px';
+      /* Figma's pill: 12.8 padding each side, a 32 active dot, 8 dots on a 16 pitch */
+      dots.style.width = (ctrl.W * (57.6 + 16 * (count - 1)) / vb) + 'px';
       dots.style.height = ctrl.H + 'px';
       for (var d = 0; d < count; d++) dots.appendChild(document.createElement('i'));
       page.appendChild(dots);
