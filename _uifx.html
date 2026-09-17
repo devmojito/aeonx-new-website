@@ -752,6 +752,14 @@
       if(t.length>34 && pill.getBoundingClientRect().height > 2.5*(document.documentElement.clientWidth||1920)/100) return;
       if(seen.has(pill)) return; seen.add(pill);
       var pr=pill.getBoundingClientRect();
+      /* A pill with a trailing arrow is laid out as label + arrow by spaceArrows();
+         centring the label alone afterwards undid that on every pass ("All Case
+         Studies" sat 16px right with its arrow in the pill's edge). */
+      var arrowed=[].slice.call(document.querySelectorAll('.ax-hv-arrow,img.g-vec')).some(function(a){
+        var q=a.getBoundingClientRect();
+        if(!q.width||q.width>40||q.height>40) return false;
+        return q.left>=pr.left-4&&q.right<=pr.right+4&&q.top>=pr.top-6&&q.bottom<=pr.bottom+6; });
+      if(arrowed) return;
       var rng=document.createRange(); rng.selectNodeContents(l);
       var ir=rng.getBoundingClientRect();
       if(!ir.width||!pr.width) return;
@@ -793,9 +801,13 @@
       if(pill.closest('.ax-mob')||pill.closest('[data-ax-laid]')) return;
       var pr=pill.getBoundingClientRect(); if(!pr.width) return;
       var lab=pill.querySelector('.g-t'); if(!lab||!txt(lab)) return;
-      /* an arrow inside the pill means the pair is positioned as a group */
-      var hasArrow=[].slice.call(document.querySelectorAll('.ax-hv-arrow')).some(function(a){
+      /* an arrow inside the pill means the pair is positioned as a group. Figma's own
+         trailing icons (a small img.g-vec, e.g. the arrow_circle_right on "All Case
+         Studies") count too: centring the label alone pushed it 16px right and the
+         arrow into the pill's edge, where the design has 18px / 20px padding. */
+      var hasArrow=[].slice.call(document.querySelectorAll('.ax-hv-arrow,img.g-vec')).some(function(a){
         var q=a.getBoundingClientRect();
+        if(a.tagName==='IMG'&&(q.width>40||q.height>40)) return false;
         return q.width&&q.left>=pr.left-4&&q.right<=pr.right+4&&q.top>=pr.top-6&&q.bottom<=pr.bottom+6; });
       if(hasArrow) return;
       var rng=document.createRange(); rng.selectNodeContents(lab);
