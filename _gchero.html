@@ -19,4 +19,76 @@ main.ax-page .g-vec[data-vec="5069:5380"]{
 @media (prefers-reduced-motion:reduce){
   main.ax-page .g-vec[data-vec="5069:5380"]{animation:none}
 }
+/* The hero's curved grid is one raster on both layouts. Its horizontal rules are
+   redrawn live (see the script) over a copy of the raster with them removed, so
+   they can flow down the field while the curved verticals stay put. */
+.ax-gc-flow{position:absolute;pointer-events:none;overflow:visible}
 </style>
+<script>
+/* ---- GOOGLE CLOUD HERO: FLOWING GRID ----
+   assets/gen/gc-grid-verticals.webp is the hero raster (a8fba2fa...) with its 20
+   horizontal rules painted out. Y and T are those rules' centres and thicknesses in
+   the raster's own 2882x2048 pixels, measured off the file. Each rule travels to the
+   next rule's position and takes on its thickness, so the field keeps the drawn
+   spacing (wide at the top, tight at the bottom) at every moment, and after one
+   step the picture is the original again: a seamless loop. */
+(function () {
+  var REF = 'a8fba2fa4d51beeb59caf8ae2ed6643d0d8cd3af';
+  var Y = [63, 191.5, 394, 572, 728.5, 865, 985, 1089, 1179.5, 1258.5, 1328.5, 1389.5,
+           1457.5, 1528.5, 1596.5, 1668.5, 1753.5, 1823.5, 1902, 1986.5];
+  var T = [3, 6, 5, 5, 4, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2];
+  var STEP = 3.5;                         /* seconds per rule-to-rule move */
+  if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  function at(a, s) {
+    var n = a.length;
+    if (s <= 0) return a[0] + (a[0] - a[1]) * -s;
+    if (s >= n - 1) return a[n - 1] + (a[n - 1] - a[n - 2]) * (s - n + 1);
+    var i = Math.floor(s), f = s - i;
+    return a[i] * (1 - f) + a[i + 1] * f;
+  }
+  var NS = 'http://www.w3.org/2000/svg';
+  function wire(img) {
+    var svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('class', 'ax-gc-flow');
+    svg.setAttribute('viewBox', '0 0 2882 2048');
+    svg.setAttribute('preserveAspectRatio', 'none');
+    svg.setAttribute('aria-hidden', 'true');
+    ['left', 'top', 'width', 'height', 'opacity'].forEach(function (k) { svg.style[k] = img.style[k]; });
+    var rules = [];
+    for (var k = 0; k <= Y.length; k++) {
+      var r = document.createElementNS(NS, 'rect');
+      r.setAttribute('x', '0'); r.setAttribute('width', '2882');
+      r.setAttribute('fill', 'rgb(179,179,179)');
+      svg.appendChild(r); rules.push(r);
+    }
+    img.style.backgroundImage = 'url(/assets/gen/gc-grid-verticals.webp)';
+    img.parentNode.insertBefore(svg, img.nextSibling);
+    var run = false, raf = 0, t0 = 0, phase = 0;
+    function paint() {
+      rules.forEach(function (r, k) {
+        var s = k - 1 + phase, h = at(T, s);
+        r.setAttribute('y', (at(Y, s) - h / 2).toFixed(2));
+        r.setAttribute('height', h.toFixed(2));
+      });
+    }
+    function frame(t) {
+      if (!run) { raf = 0; return; }
+      if (!t0) t0 = t - phase * STEP * 1000;
+      phase = ((t - t0) / (STEP * 1000)) % 1;
+      paint();
+      raf = requestAnimationFrame(frame);
+    }
+    paint();                                /* the resting state, before any frame */
+    new IntersectionObserver(function (es) {
+      var vis = es[0].isIntersecting;
+      if (vis && !run) { run = true; t0 = 0; raf = requestAnimationFrame(frame); }
+      else if (!vis) run = false;
+    }).observe(svg);
+  }
+  function start() {
+    [].forEach.call(document.querySelectorAll('.g-img[data-ref="' + REF + '"]'), wire);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+  else start();
+})();
+</script>
