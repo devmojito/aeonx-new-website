@@ -47,7 +47,18 @@
       if (pill) { t.dataset.cta = '1'; t.style.pointerEvents = 'none'; }
     });
   }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
-  else run();
+  /* "Agents that work while you sleep" cards: Figma sets two of the four captions as
+     single lines that exactly fill their 318px box. Below 1920 wide, and in Firefox,
+     the text draws a little wider than Figma's, so a no-wrap line ran into the card's
+     right edge. Letting them wrap keeps the same right padding as the other two. */
+  function captions() {
+    [].forEach.call(document.querySelectorAll('.g-t'), function (t) {
+      if (/^(Shipped across eight products|Autonomy set per customer)/.test((t.textContent || '').trim()))
+        t.style.whiteSpace = 'pre-wrap';
+    });
+  }
+  function start() { run(); captions(); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+  else start();
 })();
 </script>
