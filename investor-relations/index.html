@@ -8366,7 +8366,7 @@ a.ax-pt-cta[href]:hover,a.ax-pt-cta[href]:focus-visible{background-color:rgb(21,
       });
     })();
 
-    var CHIP=null;
+    var CHIP=null, curWant=[];
     if(chips.length>=2){
       /* Figma draws chip one selected and the rest idle, so the whole selected look
          lives on "All": peach ground, red rule, red label. Only the rule and the
@@ -8408,6 +8408,11 @@ a.ax-pt-cta[href]:hover,a.ax-pt-cta[href]:focus-visible{background-color:rgb(21,
       });
       seen.sort().reverse();
       var want=[''].concat(seen);            /* '' is the All chip */
+      /* The click handlers are wired once, so they must read the CURRENT list: a
+         handler holding the first call's list mapped "FY 2026-27" to whatever year
+         sat at that position when it was wired, and the chip flipped between All
+         and FY 2025-26. */
+      curWant=want;
       ensureChips(want.length);
       var vwpx=window.innerWidth/100, x=CHIP.left;
       chips.forEach(function(c,i){
@@ -8444,10 +8449,10 @@ a.ax-pt-cta[href]:hover,a.ax-pt-cta[href]:focus-visible{background-color:rgb(21,
         if(!c.wired){
           c.wired=1;
           var hit=function(e){
-            var w2=want[chips.indexOf(c)];
+            var w2=curWant[chips.indexOf(c)];
             if(w2===undefined) return;
             e.preventDefault(); e.stopPropagation();
-            year=(w2===year&&w2)?'':w2;
+            year=w2;                            /* "All" is the way back, not a second click */
             buildChips(); render();
           };
           c.plate.addEventListener('click',hit,true);
