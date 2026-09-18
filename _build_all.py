@@ -152,6 +152,10 @@ V2_PAGES = [
     ('7094:24434', 'products/datasetu-ai/index.html','DataSetu.ai \u2014 AeonX Digital'),
     ('7095:27544', 'products/setuedge/index.html',   'SetuEdge \u2014 AeonX Digital'),
     ('7142:19985', 'services/ai-data/index.html',    'AI & Data Services \u2014 AeonX Digital'),
+    ('7175:22422', 'insights/events/index.html',     'Events \u2014 AeonX Digital'),
+    # Event detail: Figma drew this one as the template for every event page.
+    ('7178:28681', 'insights/events/the-future-of-public-sector-transformation/index.html',
+     'The Future of Public Sector Transformation \u2014 AeonX Digital'),
 ]
 print('\nbuilding Light V2 sub-pages (_genv2.py)...')
 for _nid, _out, _title in V2_PAGES:

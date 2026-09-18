@@ -44,5 +44,7 @@
   "cookie-policy/": "The cookies aeonx.digital uses, why it uses them, and how to manage them.",
   "terms-and-conditions/": "The terms and conditions for using the AeonX Digital website.",
   "sitemap/": "Every page on the AeonX Digital website, grouped by section.",
-  "services/ai-data/": "AI delivered as an engagement, not a licence: AeonXIQ, DataSetu and SetuEdge run on your data, your SAP estate and your governance, with autonomy earned and usage metered."
+  "services/ai-data/": "AI delivered as an engagement, not a licence: AeonXIQ, DataSetu and SetuEdge run on your data, your SAP estate and your governance, with autonomy earned and usage metered.",
+  "insights/events/": "Upcoming and past AeonX Digital events on SAP, cloud, SaaS and AI. Find your next event or revisit a previous one.",
+  "insights/events/the-future-of-public-sector-transformation/": "An evening with Crayon, AWS and AeonX Digital on cloud migration, SAP S/4HANA transformation and AI-led innovation. 25 September 2026, Hotel Pride Elite, Gandhinagar."
 }
