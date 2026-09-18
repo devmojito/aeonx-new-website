@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Blog — AeonX Digital</title>
+<title>The Agent Evaluation Gap: Why Most Enterprises Can&#x27;t Tell If Their AI Agents Actually Work — AeonX Digital</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:opsz,wght@6..12,400;6..12,500;6..12,600;6..12,700;6..12,800;6..12,900&family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;700&family=Public+Sans:wght@400&display=swap');
 :root{
@@ -117,18 +117,18 @@ img{border:0}
 .ax-search__results a:hover,.ax-search__results a.is-active{background:#f4f6f9;color:#c23714}
 .ax-search__empty{padding:22px;color:#8a94a3;font:400 15px 'Nunito Sans',sans-serif;text-align:center}
 </style>
-<meta name="description" content="Field notes from SAP, cloud and AI delivery. Long-form writing from the AeonX Digital engineering and product teams.">
+<meta name="description" content="In my presales engagements over the past year, a pattern keeps repeating.">
 <meta name="theme-color" content="#cf3b15">
 
 
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="AeonX Digital">
-<meta property="og:title" content="Blog — AeonX Digital">
-<meta property="og:description" content="Field notes from SAP, cloud and AI delivery. Long-form writing from the AeonX Digital engineering and product teams.">
+<meta property="og:title" content="AeonX Digital">
+<meta property="og:description" content="In my presales engagements over the past year, a pattern keeps repeating.">
 <meta property="og:image" content="https://aeonx.digital/assets/og-cover.png">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Blog — AeonX Digital">
-<meta name="twitter:description" content="Field notes from SAP, cloud and AI delivery. Long-form writing from the AeonX Digital engineering and product teams.">
+<meta name="twitter:title" content="AeonX Digital">
+<meta name="twitter:description" content="In my presales engagements over the past year, a pattern keeps repeating.">
 <meta name="twitter:image" content="https://aeonx.digital/assets/og-cover.png">
 <style id="ax-mm2-css">.ax-mm{background:transparent!important;box-shadow:none!important;padding:0.6vw 4.9vw 1vw!important}.ax-mm.is-open{display:block!important}.ax-mm2__panel{background:#fff;border:1px solid #F0EAE4;border-radius:1vw;box-shadow:0 1.5vw 4vw rgba(35,39,46,.16);padding:1.25vw;height:32.3958vw;box-sizing:border-box;display:flex;flex-direction:column}.ax-mm2{display:flex;gap:1.25vw;align-items:flex-start;height:29.8958vw;flex:0 0 auto}/* Figma lays the menu on a fixed 320px column pitch: every card is 296 wide with a
    24px gutter, so 4 cards + 3 gutters = 1256 and the row measures 1255. flex:1
@@ -389,9 +389,45 @@ html.ax-pre-off #ax-pre{opacity:0;transform:translateY(-2vw);pointer-events:none
 })();
 </script>
 
-<link rel="canonical" href="https://aeonx.digital/insights/blog/">
-<meta property="og:url" content="https://aeonx.digital/insights/blog/">
-<style id="ax-mob-css">.ax-mob{display:none}@media(max-width:768px){body>*:not(.ax-mob):not(.ax-mnav){display:none!important}.ax-mob{display:block!important}}</style><script type="application/ld+json" id="ax-ld">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://aeonx.digital/#org","name":"AeonX Digital Technology Limited","alternateName":"AeonX Digital","url":"https://aeonx.digital/","logo":"https://aeonx.digital/assets/aeonx-logo.svg","sameAs":["https://x.com/AeonXDigital","https://www.linkedin.com/company/aeonx-digital/","https://www.youtube.com/channel/UCiB9FZmN6-uiK-Y3cHO_bTA","https://www.instagram.com/aeonx.digital/"],"address":{"@type":"PostalAddress","streetAddress":"278, Jeevan Udyog Building, DN Road, Fort","addressLocality":"Mumbai","postalCode":"400001","addressCountry":"IN"},"contactPoint":[{"@type":"ContactPoint","contactType":"sales","telephone":"+91 93219 87561","email":"sales@aeonx.digital"}]},{"@type":"WebSite","@id":"https://aeonx.digital/#website","url":"https://aeonx.digital/","name":"AeonX Digital","publisher":{"@id":"https://aeonx.digital/#org"}},{"@type":"BreadcrumbList","@id":"https://aeonx.digital/insights/blog/#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://aeonx.digital/"},{"@type":"ListItem","position":2,"name":"Insights","item":"https://aeonx.digital/insights/"},{"@type":"ListItem","position":3,"name":"Blog","item":"https://aeonx.digital/insights/blog/"}]},{"@type":"WebPage","@id":"https://aeonx.digital/insights/blog/#webpage","url":"https://aeonx.digital/insights/blog/","name":"Blog","description":"Field notes from SAP, cloud and AI delivery. Long-form writing from the AeonX Digital engineering and product teams.","isPartOf":{"@id":"https://aeonx.digital/#website"},"inLanguage":"en-IN","breadcrumb":{"@id":"https://aeonx.digital/insights/blog/#breadcrumb"}}]}</script>
+
+<style id="ax-post-css">
+/* Long-form article column. The site's generated pages are absolutely
+   positioned in vw; prose cannot be, so this is deliberately normal flow. Type
+   scale and colours mirror the Figma design so it still reads as one site. */
+main.ax-post{position:relative;max-width:100vw;overflow-x:hidden;background:#fff;
+  padding:9.5vw 0 5vw}
+.ax-post__wrap{max-width:46rem;margin:0 auto;padding:0 1.5rem;
+  font-family:'Nunito Sans',sans-serif;color:rgb(35,39,46)}
+.ax-post__eyebrow{font-size:.75rem;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:#c23714;margin-bottom:.75rem}
+.ax-post__title{font-size:clamp(1.9rem,3.4vw,3rem);font-weight:700;line-height:1.15;
+  margin:0 0 1rem}
+.ax-post__meta{font-size:.95rem;color:rgb(82,96,119);margin-bottom:2rem}
+.ax-post__hero{width:100%;height:auto;border-radius:.75rem;margin:0 0 2.25rem;
+  box-shadow:0 .4rem 1.6rem rgba(35,39,46,.12)}
+.ax-post__hero--ph{background:#F6F7F9;padding:3rem;object-fit:contain;max-height:18rem}
+.ax-post__body{font-size:1.05rem;line-height:1.75;color:#2b3442}
+.ax-post__body h2{font-size:1.6rem;font-weight:700;color:rgb(35,39,46);margin:2.4rem 0 .8rem}
+.ax-post__body h3{font-size:1.25rem;font-weight:700;color:rgb(35,39,46);margin:1.8rem 0 .6rem}
+.ax-post__body p{margin:0 0 1.1rem}
+.ax-post__body ul,.ax-post__body ol{margin:0 0 1.2rem;padding-left:1.4rem}
+.ax-post__body li{margin-bottom:.45rem}
+.ax-post__body a{color:#c23714;text-decoration:underline}
+.ax-post__body img{max-width:100%;height:auto;border-radius:.5rem;margin:1.2rem 0}
+.ax-post__body pre{background:#1e1e2e;color:#cdd6f4;padding:1rem 1.2rem;border-radius:.5rem;
+  overflow-x:auto;font-size:.85rem;line-height:1.5;border-left:4px solid #f38ba8}
+.ax-post__body code{font-family:'Courier New',monospace}
+.ax-post__body table{width:100%;border-collapse:collapse;margin:1.2rem 0;font-size:.95rem;
+  display:block;overflow-x:auto}
+.ax-post__body th{background:#1e1e2e;color:#cdd6f4;padding:.6rem .9rem;text-align:left}
+.ax-post__body td{padding:.6rem .9rem;border:1px solid #e0e0e0}
+.ax-post__back{display:inline-block;margin-top:3rem;font-weight:600;color:#c23714;
+  text-decoration:none}
+.ax-post__back:hover{text-decoration:underline}
+@media (max-width:1024px){main.ax-post{padding:22vw 0 8vw}}
+</style>
+<link rel="canonical" href="https://aeonx.digital/2026/07/23/the-agent-evaluation-gap-why-most-enterprises-cant-tell-if-their-ai-agents-actually-work/">
+<script type="application/ld+json" id="ax-ld">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://aeonx.digital/#org","name":"AeonX Digital Technology Limited","alternateName":"AeonX Digital","url":"https://aeonx.digital/","logo":"https://aeonx.digital/assets/aeonx-logo.svg","sameAs":["https://x.com/AeonXDigital","https://www.linkedin.com/company/aeonx-digital/","https://www.youtube.com/channel/UCiB9FZmN6-uiK-Y3cHO_bTA","https://www.instagram.com/aeonx.digital/"],"address":{"@type":"PostalAddress","streetAddress":"278, Jeevan Udyog Building, DN Road, Fort","addressLocality":"Mumbai","postalCode":"400001","addressCountry":"IN"},"contactPoint":[{"@type":"ContactPoint","contactType":"sales","telephone":"+91 93219 87561","email":"sales@aeonx.digital"}]},{"@type":"WebSite","@id":"https://aeonx.digital/#website","url":"https://aeonx.digital/","name":"AeonX Digital","publisher":{"@id":"https://aeonx.digital/#org"}},{"@type":"BreadcrumbList","@id":"https://aeonx.digital/2026/07/23/the-agent-evaluation-gap-why-most-enterprises-cant-tell-if-their-ai-agents-actually-work/#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://aeonx.digital/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://aeonx.digital/insights/blog/"},{"@type":"ListItem","position":3,"name":"The Agent Evaluation Gap: Why Most Enterprises Can't Tell If Their AI Agents Actually Work","item":"https://aeonx.digital/2026/07/23/the-agent-evaluation-gap-why-most-enterprises-cant-tell-if-their-ai-agents-actually-work/"}]},{"@type":"WebPage","@id":"https://aeonx.digital/2026/07/23/the-agent-evaluation-gap-why-most-enterprises-cant-tell-if-their-ai-agents-actually-work/#webpage","url":"https://aeonx.digital/2026/07/23/the-agent-evaluation-gap-why-most-enterprises-cant-tell-if-their-ai-agents-actually-work/","name":"The Agent Evaluation Gap: Why Most Enterprises Can't Tell If Their AI Agents Actually Work","description":"In my presales engagements over the past year, a pattern keeps repeating.","isPartOf":{"@id":"https://aeonx.digital/#website"},"inLanguage":"en-IN","breadcrumb":{"@id":"https://aeonx.digital/2026/07/23/the-agent-evaluation-gap-why-most-enterprises-cant-tell-if-their-ai-agents-actually-work/#breadcrumb"}},{"@type":"BlogPosting","@id":"https://aeonx.digital/2026/07/23/the-agent-evaluation-gap-why-most-enterprises-cant-tell-if-their-ai-agents-actually-work/#article","headline":"The Agent Evaluation Gap: Why Most Enterprises Can't Tell If Their AI Agents Actually Work","datePublished":"2026-07-23","mainEntityOfPage":{"@id":"https://aeonx.digital/2026/07/23/the-agent-evaluation-gap-why-most-enterprises-cant-tell-if-their-ai-agents-actually-work/#webpage"},"publisher":{"@id":"https://aeonx.digital/#org"},"description":"In my presales engagements over the past year, a pattern keeps repeating.","author":{"@type":"Person","name":"Rajat Jindal"},"image":"https://aeonx.digital/blog/2026/791aa13dae12-blog13-architecture-diagram.png"}]}</script>
 </head>
 <body>
 <div id="ax-pre" aria-hidden="true"><b>Loading&hellip;</b><div id="ax-pre-cluster"></div><div id="ax-pre-num"></div><div id="ax-pre-credit">AeonX&nbsp;&bull;&nbsp;Digital</div></div>
@@ -426,189 +462,265 @@ html.ax-pre-off #ax-pre{opacity:0;transform:translateY(-2vw);pointer-events:none
 <div class="ax-mm" id="ax-mm-insights" data-menu="insights" aria-label="Insights menu"><div class="ax-mm2__panel"><div class="ax-mm2"><div class="ax-mm2__cols"><div class="ax-mm2__card"><img class="ax-mm2__img" src="/assets/gen/dde0bd87341bd425bcb8274c1f88a96a49a82cb3.webp" alt=""><div class="ax-mm2__ttl">Customer outcomes<span>&rsaquo;</span></div><div class="ax-mm2__lns"><a class="ax-mm2__ln" href="/insights">Case Studies<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 17L17 7M9 7h8v8" stroke="#5B6B85" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a><a class="ax-mm2__ln" href="/insights/trust-security">Trust &amp; Security<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 17L17 7M9 7h8v8" stroke="#5B6B85" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a></div></div><div class="ax-mm2__card"><img class="ax-mm2__img" src="/assets/gen/e0c26137b03048255d3f0b6952d6ab760d005bed.webp" alt=""><div class="ax-mm2__ttl">Editorial<span>&rsaquo;</span></div><div class="ax-mm2__lns"><a class="ax-mm2__ln" href="/insights/blog">Blog<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 17L17 7M9 7h8v8" stroke="#5B6B85" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a><a class="ax-mm2__ln" href="/insights/newsletter">Newsletter<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 17L17 7M9 7h8v8" stroke="#5B6B85" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a><a class="ax-mm2__ln" href="/insights/events">Events<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 17L17 7M9 7h8v8" stroke="#5B6B85" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a></div></div></div><aside class="ax-mm2__rail"><div class="ax-mm2__feat"><div class="ax-mm2__feat-hd"><div class="ax-mm2__feat-ttl">Explore</div><div class="ax-mm2__feat-sub">Our SaaS Products suite.</div><a class="ax-mm2__feat-btn" href="/products/">See Suite</a></div><img class="ax-mm2__feat-img" src="/assets/gen/mm-explore-suite.webp" alt=""></div></aside></div></div></div>
 <div class="ax-mm" id="ax-mm-investor" data-menu="investor" aria-label="Investor menu"><div class="ax-mm2__panel"><div class="ax-mm2"><div class="ax-mm2__cols"><div class="ax-mm2__card"><img class="ax-mm2__img" src="/assets/gen/e0c26137b03048255d3f0b6952d6ab760d005bed.webp" alt=""><div class="ax-mm2__ttl">Disclosures<span>&rsaquo;</span></div><div class="ax-mm2__lns"><a class="ax-mm2__ln" href="/investor-relations">Investor Relations<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 17L17 7M9 7h8v8" stroke="#5B6B85" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a><a class="ax-mm2__ln" href="/investor-relations/#annual-report">Annual Reports<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 17L17 7M9 7h8v8" stroke="#5B6B85" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a><a class="ax-mm2__ln" href="/investor-relations/#financial-information">Quarterly Results<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 17L17 7M9 7h8v8" stroke="#5B6B85" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a><a class="ax-mm2__ln" href="/investor-relations/#financial-information">BSE Disclosures<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 17L17 7M9 7h8v8" stroke="#5B6B85" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a></div></div><div class="ax-mm2__card"><img class="ax-mm2__img" src="/assets/gen/b5b9da59730e7914826af208f81f24b05d22a10e.webp" alt=""><div class="ax-mm2__ttl">Governance<span>&rsaquo;</span></div><div class="ax-mm2__lns"><a class="ax-mm2__ln" href="/who-we-are/leadership">Board of Directors<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 17L17 7M9 7h8v8" stroke="#5B6B85" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a><a class="ax-mm2__ln" href="/investor-relations/shareholding-pattern">Shareholding Pattern<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 17L17 7M9 7h8v8" stroke="#5B6B85" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a><a class="ax-mm2__ln" href="/contact-us/">Investor Grievances<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 17L17 7M9 7h8v8" stroke="#5B6B85" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a></div></div></div><aside class="ax-mm2__rail"><div class="ax-mm2__feat"><div class="ax-mm2__feat-hd"><div class="ax-mm2__feat-ttl">Explore</div><div class="ax-mm2__feat-sub">Our SaaS Products suite.</div><a class="ax-mm2__feat-btn" href="/products/">See Suite</a></div><img class="ax-mm2__feat-img" src="/assets/gen/mm-explore-suite.webp" alt=""></div></aside></div></div></div>
 </header>
-<main class="ax-page" style="height:203.6979vw">
-<div class="g-b" style="position:absolute;left:0.0000vw;top:137.9688vw;width:100.0000vw;height:21.4583vw;background-color:rgb(255,255,255);box-sizing:border-box;border-bottom:0.0521vw solid rgb(236,238,242);"></div>
-<img class="g-vec" src="/assets/vec/5323-13288.svg" data-vec="5323:13288" loading="lazy" decoding="async" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:0.0000vw;top:137.9688vw;width:100.0000vw;height:21.4583vw;">
-<img class="g-vec" src="/assets/vec/5323-13302.svg" data-vec="5323:13302" loading="lazy" decoding="async" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:12.5000vw;top:148.5156vw;width:75.0000vw;height:10.9375vw;">
-<div class="g-b g-clip" style="position:absolute;left:12.5000vw;top:137.9688vw;width:75.0000vw;height:21.4583vw;overflow:hidden;">
-<div class="g-b" style="position:absolute;left:0.0000vw;top:0.0000vw;width:75.0000vw;height:21.4583vw;background-color:rgba(255,255,255,0.060);backdrop-filter:blur(2.6042vw);-webkit-backdrop-filter:blur(2.6042vw);"></div>
+<main class="ax-post">
+<div class="ax-post__wrap">
+<div class="ax-post__eyebrow">AWS</div>
+<h1 class="ax-post__title">The Agent Evaluation Gap: Why Most Enterprises Can&#x27;t Tell If Their AI Agents Actually Work</h1>
+<div class="ax-post__meta">July 23, 2026 &middot; Rajat Jindal</div>
+<img class="ax-post__hero" src="https://aeonx.digital/blog/2026/791aa13dae12-blog13-architecture-diagram.png" alt="The Agent Evaluation Gap: Why Most Enterprises Can&#x27;t Tell If Their AI Agents Actually Work">
+<div class="ax-post__body">
+<h2 style="margin-top: 32px; margin-bottom: 12px; padding-bottom: 6px; color: #02103E; font-size: 24px; font-weight: 700;" id="the-question-that-ends-the-demo">The Question That Ends the Demo</h2>
+<p style="line-height: 1.7; margin-bottom: 8px;">In my presales engagements over the past year, a pattern keeps repeating. A team proudly shows me an AI agent they have built — a customer-support agent, an internal knowledge assistant, a claims-triage agent. The demo always works. Then I ask one question: <em>"How do you know it's still working today?"</em></p>
+<p style="line-height: 1.7; margin-bottom: 8px;">The room usually goes quiet.</p>
+<p style="line-height: 1.7; margin-bottom: 8px;">This is the agent evaluation gap, and I now consider it the single most under-invested part of enterprise agentic AI. Enterprises have learned to <em>build</em> agents in weeks. What most of them still cannot do is answer, with evidence, whether the agent is accurate this week versus last week, whether a prompt change made things better or worse, or how often the agent quietly gives a confident-but-wrong answer. They ship on vibes — a handful of manual test prompts before launch — and then fly blind in production.</p>
+<p style="line-height: 1.7; margin-bottom: 8px;">This blog is not a case study. It is the argument I make to technology leaders about why evaluation is the real work of production agentic AI, and the reference framework I walk them through for closing the gap on AWS. The numbers used are illustrative — representative of what teams typically encounter — not measurements from a specific deployment. The architecture, code patterns, and failure modes are real engineering, drawn from how these systems actually behave.</p>
+<h2 style="margin-top: 32px; margin-bottom: 12px; padding-bottom: 6px; color: #02103E; font-size: 24px; font-weight: 700;" id="why-the-gap-exists-building-is-easy-proving-is-hard">Why the Gap Exists: Building Is Easy, Proving Is Hard</h2>
+<p style="line-height: 1.7; margin-bottom: 8px;">The reason so many enterprises land in this gap is structural, not lazy. Three forces push it:</p>
+<p style="line-height: 1.7; margin-bottom: 8px;"><strong>1. The demo bias.</strong> An agent that answers ten hand-picked questions convincingly <em>feels</em> done. Demos reward fluency, and modern models are extremely fluent — even when wrong. The gap between "sounds right in a demo" and "is right across ten thousand real questions" is invisible until production makes it visible, usually through an escalation.</p>
+<p style="line-height: 1.7; margin-bottom: 8px;"><strong>2. Free-text has no obvious pass/fail.</strong> Traditional software has deterministic tests: given input X, assert output Y. An agent's answer is free text — there is no single correct string. So teams either skip automated testing entirely or fall back to a human eyeballing a few answers before each release. Neither scales, and neither is continuous.</p>
+<p style="line-height: 1.7; margin-bottom: 8px;"><strong>3. Evaluation feels like overhead.</strong> Under delivery pressure, teams spend ~90% of their effort on building the agent and almost nothing on knowing whether it keeps working. That ratio is exactly backwards for anything customer-facing or regulated, where an unmeasured agent is an unmanaged liability — but the cost of that imbalance only shows up later.</p>
+<p style="line-height: 1.7; margin-bottom: 8px;">The consequence is a set of questions enterprises routinely cannot answer:</p>
+<ul style="margin: 8px 0; padding-left: 24px;">
+<li style="margin-bottom: 4px; line-height: 1.6;">What is our agent's accuracy on the questions that matter most (pricing, charges, policy, eligibility)?</li>
+<li style="margin-bottom: 4px; line-height: 1.6;">If we tweak a prompt to fix one wrong answer, did we silently break three others?</li>
+<li style="margin-bottom: 4px; line-height: 1.6;">How often does the agent give a confident wrong answer, and would we catch it before a customer does?</li>
+<li style="margin-bottom: 4px; line-height: 1.6;">Can we <em>demonstrate</em> the accuracy of automated responses to a compliance or risk reviewer?</li>
+</ul>
+<p style="line-height: 1.7; margin-bottom: 8px;">If those questions make a technical leader uncomfortable, that discomfort is the gap.</p>
+<h2 style="margin-top: 32px; margin-bottom: 12px; padding-bottom: 6px; color: #02103E; font-size: 24px; font-weight: 700;" id="the-framework-three-layers-that-actually-close-the-gap">The Framework: Three Layers That Actually Close the Gap</h2>
+<p style="line-height: 1.7; margin-bottom: 8px;">The approach I recommend — and the one I walk customers through on AWS — is not a single tool. It is three complementary layers, each covering the others' blind spots.</p>
+<h3 style="margin-top: 20px; margin-bottom: 8px; color: #02103E; font-size: 18px; font-weight: 700;" id="layer-1-a-golden-dataset-owned-by-the-business">Layer 1: A Golden Dataset Owned by the Business</h3>
+<p style="line-height: 1.7; margin-bottom: 8px;">A curated, versioned set of representative questions with <strong>approved reference answers</strong>, owned by the people who know what "correct" means — support quality and compliance, not just engineers. Stored in S3, version-controlled, and treated as a first-class asset. Every model or prompt change is scored against the <em>same</em> dataset, which is what turns "did this change help or hurt?" from an argument into a number.</p>
+<h3 style="margin-top: 20px; margin-bottom: 8px; color: #02103E; font-size: 18px; font-weight: 700;" id="layer-2-llm-as-a-judge-for-scaled-grading">Layer 2: LLM-as-a-Judge for Scaled Grading</h3>
+<p style="line-height: 1.7; margin-bottom: 8px;">A separate, dedicated model (distinct from the agent's own model) grades each answer against the reference answer on defined criteria — factual correctness, completeness, policy compliance, appropriate deferral — returning a structured score with a rationale. This scales grading from "a human eyeballs 20 answers" to "hundreds of answers scored in minutes," with far more consistency than rotating human reviewers.</p>
+<h3 style="margin-top: 20px; margin-bottom: 8px; color: #02103E; font-size: 18px; font-weight: 700;" id="layer-3-deterministic-checks-for-what-you-must-never-trust-a-model-to-judge">Layer 3: Deterministic Checks for What You Must Never Trust a Model To Judge</h3>
+<p style="line-height: 1.7; margin-bottom: 8px;">For anything factual or numeric, a model's opinion is not good enough. Hard-coded assertions handle these: does any rupee figure in the answer exist in the source-of-truth policy table? Does the answer leak PII? Does it stay within approved topics? These catch the exact failure class LLM judges are worst at — the fluent, confident, wrong answer.</p>
+<p style="line-height: 1.7; margin-bottom: 8px;"><strong>Why all three, and why in this order:</strong></p>
+<ul style="margin: 8px 0; padding-left: 24px;">
+<li style="margin-bottom: 4px; line-height: 1.6;">LLM-as-a-judge scales grading, but is biased toward fluency — it can be fooled by a confident wrong answer.</li>
+<li style="margin-bottom: 4px; line-height: 1.6;">Deterministic checks catch what the judge misses, but only for things you can express as a rule.</li>
+<li style="margin-bottom: 4px; line-height: 1.6;">The golden dataset is what makes any of it a <em>regression</em> system — without a stable, versioned baseline, you are measuring against a moving target.</li>
+<li style="margin-bottom: 4px; line-height: 1.6;">The judge must not be the agent's own model — a model grading its own homework is not evaluation.</li>
+</ul>
+<h2 style="margin-top: 32px; margin-bottom: 12px; padding-bottom: 6px; color: #02103E; font-size: 24px; font-weight: 700;" id="reference-architecture-on-aws">Reference Architecture on AWS</h2>
+<p style="line-height: 1.7; margin-bottom: 8px;">Here is the reference architecture I use to illustrate the framework. It runs in two modes: <strong>offline</strong> (against the golden dataset, on every prompt/model change, wired into CI/CD) and <strong>online</strong> (sampling live production traffic on a schedule).</p>
+<img decoding="async" src="https://aeonx.digital/blog/inline/f7900cf0fd44-blog13-architecture-diagram.png" alt="Agent Evaluation Reference Architecture on AWS" style="width:100%;max-width:100%;height:auto;margin:12px 0;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,0.12);" loading="lazy" />
+<h3 style="margin-top: 20px; margin-bottom: 8px; color: #02103E; font-size: 18px; font-weight: 700;" id="the-llm-as-a-judge-scoring-prompt">The LLM-as-a-Judge Scoring Prompt</h3>
+<p style="line-height: 1.7; margin-bottom: 8px;">The judge does not get a vague "is this good?" instruction. It gets a rubric, the reference answer, and a required structured output. This is what makes scoring consistent and auditable.</p>
+<pre style="background-color: #1e1e2e; color: #cdd6f4; padding: 16px 20px; border-radius: 8px; overflow-x: auto; font-family: Courier New, Courier, monospace; font-size: 13px; line-height: 1.5; margin: 12px 0; border-left: 4px solid #f38ba8; display: block; white-space: pre; word-wrap: break-word;"><code># Lambda: LLM-as-a-judge scoring against a reference answer
+import boto3
+import json
+
+bedrock = boto3.client(&quot;bedrock-runtime&quot;, region_name=&quot;ap-south-1&quot;)
+
+# Fast, low-cost model for bounded rubric grading against a reference answer.
+# A stronger model can be swapped in for harder domains; keep judge != agent model.
+JUDGE_MODEL_ID = &quot;anthropic.claude-3-5-haiku-20241022-v1:0&quot;
+
+JUDGE_RUBRIC = &quot;&quot;&quot;You are an impartial evaluator of a financial-services support agent.
+You are given a customer QUESTION, the agent&#x27;s ANSWER, and an approved REFERENCE_ANSWER.
+
+Score the ANSWER on each dimension from 0-1 (1 = fully meets):
+- factual_correctness: Does the answer match the facts in the reference? Any fabricated
+  number, charge, or policy detail scores 0 on this dimension regardless of fluency.
+- completeness: Does it cover the key points in the reference the customer needs?
+- policy_compliance: Does it avoid giving advice/commitments outside approved policy?
+- appropriate_uncertainty: If the reference indicates the agent should defer to a human
+  or ask for account details, does the answer do so instead of guessing?
+
+Return ONLY valid JSON:
+{&quot;factual_correctness&quot;: &lt;0-1&gt;, &quot;completeness&quot;: &lt;0-1&gt;, &quot;policy_compliance&quot;: &lt;0-1&gt;,
+ &quot;appropriate_uncertainty&quot;: &lt;0-1&gt;, &quot;overall_pass&quot;: &lt;true|false&gt;, &quot;rationale&quot;: &quot;&lt;one sentence&gt;&quot;}
+Set overall_pass=false if factual_correctness &lt; 1.0. Fluent wrong answers must fail.&quot;&quot;&quot;
+
+
+def judge_answer(question: str, agent_answer: str, reference_answer: str) -&gt; dict:
+    prompt = (
+        f&quot;{JUDGE_RUBRIC}\n\n&quot;
+        f&quot;QUESTION:\n{question}\n\n&quot;
+        f&quot;ANSWER:\n{agent_answer}\n\n&quot;
+        f&quot;REFERENCE_ANSWER:\n{reference_answer}\n&quot;
+    )
+
+    response = bedrock.invoke_model(
+        modelId=JUDGE_MODEL_ID,
+        body=json.dumps({
+            &quot;anthropic_version&quot;: &quot;bedrock-2023-05-31&quot;,
+            &quot;max_tokens&quot;: 512,
+            &quot;temperature&quot;: 0,  # deterministic judging
+            &quot;messages&quot;: [{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: prompt}],
+        }),
+    )
+
+    body = json.loads(response[&quot;body&quot;].read())
+    verdict_text = body[&quot;content&quot;][0][&quot;text&quot;]
+    return json.loads(verdict_text)</code></pre>
+<h3 style="margin-top: 20px; margin-bottom: 8px; color: #02103E; font-size: 18px; font-weight: 700;" id="the-deterministic-safety-net">The Deterministic Safety Net</h3>
+<pre style="background-color: #1e1e2e; color: #cdd6f4; padding: 16px 20px; border-radius: 8px; overflow-x: auto; font-family: Courier New, Courier, monospace; font-size: 13px; line-height: 1.5; margin: 12px 0; border-left: 4px solid #f38ba8; display: block; white-space: pre; word-wrap: break-word;"><code># Lambda: deterministic checks that run alongside the LLM judge
+import re
+
+def deterministic_checks(agent_answer: str, policy_charges: dict,
+                         approved_topics: list) -&gt; dict:
+    &quot;&quot;&quot;Hard assertions. These catch fluent-but-wrong answers the judge may miss.&quot;&quot;&quot;
+    results = {}
+
+    # 1. PII leakage: agent must never echo a full account number or PAN
+    pan_pattern = r&quot;\b[A-Z]{5}[0-9]{4}[A-Z]\b&quot;
+    acct_pattern = r&quot;\b\d{11,16}\b&quot;
+    results[&quot;no_pii_leak&quot;] = not (
+        re.search(pan_pattern, agent_answer) or re.search(acct_pattern, agent_answer)
+    )
+
+    # 2. Charge grounding: any rupee figure quoted must exist in the policy table
+    quoted_amounts = re.findall(r&quot;₹\s?([\d,]+(?:\.\d{1,2})?)&quot;, agent_answer)
+    valid_amounts = {str(v) for v in policy_charges.values()}
+    results[&quot;charges_grounded&quot;] = all(
+        amt.replace(&quot;,&quot;, &quot;&quot;) in {v.replace(&quot;,&quot;, &quot;&quot;) for v in valid_amounts}
+        for amt in quoted_amounts
+    ) if quoted_amounts else True
+
+    # 3. Topic scope: answer must stay within approved servicing topics
+    results[&quot;in_scope&quot;] = any(topic in agent_answer.lower() for topic in approved_topics) \
+        or &quot;connect you with a representative&quot; in agent_answer.lower()
+
+    results[&quot;all_passed&quot;] = all(results.values())
+    return results</code></pre>
+<h3 style="margin-top: 20px; margin-bottom: 8px; color: #02103E; font-size: 18px; font-weight: 700;" id="the-ci-gate">The CI Gate</h3>
+<pre style="background-color: #1e1e2e; color: #cdd6f4; padding: 16px 20px; border-radius: 8px; overflow-x: auto; font-family: Courier New, Courier, monospace; font-size: 13px; line-height: 1.5; margin: 12px 0; border-left: 4px solid #f38ba8; display: block; white-space: pre; word-wrap: break-word;"><code># .github/workflows/agent-eval.yml (excerpt)
+name: Agent Evaluation Gate
+on:
+  pull_request:
+    paths: [&quot;agent/prompts/**&quot;, &quot;agent/config/**&quot;]
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run offline evaluation against golden dataset
+        run: |
+          aws stepfunctions start-sync-execution \
+            --state-machine-arn &quot;${{ secrets.EVAL_SM_ARN }}&quot; \
+            --input &#x27;{&quot;mode&quot;:&quot;offline&quot;,&quot;dataset&quot;:&quot;golden/v7.jsonl&quot;}&#x27; \
+            &gt; result.json
+      - name: Enforce quality threshold
+        run: |
+          PASS_RATE=$(jq &#x27;.output | fromjson | .pass_rate&#x27; result.json)
+          echo &quot;Pass rate: $PASS_RATE&quot;
+          # Block merge if pass rate drops below 0.90
+          awk &quot;BEGIN {exit !($PASS_RATE &gt;= 0.90)}&quot;</code></pre>
+<h2 style="margin-top: 32px; margin-bottom: 12px; padding-bottom: 6px; color: #02103E; font-size: 24px; font-weight: 700;" id="what-to-measure-and-what-good-looks-like">What to Measure, and What "Good" Looks Like</h2>
+<p style="line-height: 1.7; margin-bottom: 8px;">Once the harness is running, the value is that vague confidence becomes concrete metrics. The figures below are <strong>illustrative targets</strong> — the kind of numbers I encourage teams to aim for and track — not results from a specific deployment. Your real baselines will differ, and the point of the harness is precisely that you measure your own.</p>
+<table style="width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px;">
+<thead>
+<tr>
+<th style="background-color: #1e1e2e; color: #cdd6f4; padding: 10px 14px; text-align: left; border: 1px solid #45475a; font-weight: 600;">Metric</th>
+<th style="background-color: #1e1e2e; color: #cdd6f4; padding: 10px 14px; text-align: left; border: 1px solid #45475a; font-weight: 600;">What it tells you</th>
+<th style="background-color: #1e1e2e; color: #cdd6f4; padding: 10px 14px; text-align: left; border: 1px solid #45475a; font-weight: 600;">Illustrative target</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="padding: 10px 14px; border: 1px solid #e0e0e0;">Accuracy on high-stakes questions (charges, eligibility, policy)</td>
+<td style="padding: 10px 14px; border: 1px solid #e0e0e0;">The number compliance actually cares about</td>
+<td style="padding: 10px 14px; border: 1px solid #e0e0e0;">Track weekly; aim for a rising trend toward the low-to-mid 90s%</td>
+</tr>
+<tr>
+<td style="padding: 10px 14px; border: 1px solid #e0e0e0;">Wrong-but-confident answers caught before the customer</td>
+<td style="padding: 10px 14px; border: 1px solid #e0e0e0;">Whether online sampling is doing its job</td>
+<td style="padding: 10px 14px; border: 1px solid #e0e0e0;">The higher the better; the goal is to catch them internally, not via escalations</td>
+</tr>
+<tr>
+<td style="padding: 10px 14px; border: 1px solid #e0e0e0;">Regressions caught pre-merge</td>
+<td style="padding: 10px 14px; border: 1px solid #e0e0e0;">Whether the CI gate is protecting you</td>
+<td style="padding: 10px 14px; border: 1px solid #e0e0e0;">Every regression caught at a pull request is one that never reached production</td>
+</tr>
+<tr>
+<td style="padding: 10px 14px; border: 1px solid #e0e0e0;">Judge–human agreement (on an audited sample)</td>
+<td style="padding: 10px 14px; border: 1px solid #e0e0e0;">Whether you can trust the judge's scores</td>
+<td style="padding: 10px 14px; border: 1px solid #e0e0e0;">Validate periodically; if it drifts, revisit the rubric</td>
+</tr>
+<tr>
+<td style="padding: 10px 14px; border: 1px solid #e0e0e0;">Time to run a full evaluation</td>
+<td style="padding: 10px 14px; border: 1px solid #e0e0e0;">Whether evaluation is fast enough to be continuous</td>
+<td style="padding: 10px 14px; border: 1px solid #e0e0e0;">Minutes, not hours — otherwise teams skip it under pressure</td>
+</tr>
+</tbody>
+</table>
+<p style="line-height: 1.7; margin-bottom: 8px;">The mindset shift I push for: stop asking "is the agent good?" (unanswerable) and start asking "what is the agent's measured accuracy on the 200 questions that matter most, and is that number going up or down this week?" (answerable, and actionable).</p>
+<h2 style="margin-top: 32px; margin-bottom: 12px; padding-bottom: 6px; color: #02103E; font-size: 24px; font-weight: 700;" id="what-this-costs-evaluation-should-be-a-small-fraction-of-the-agent">What This Costs: Evaluation Should Be a Small Fraction of the Agent</h2>
+<p style="line-height: 1.7; margin-bottom: 8px;">A common objection is that evaluation doubles your AI bill. It should not. Evaluation is bounded, structured scoring — not open-ended generation — so it belongs on a fast, low-cost model. Here is representative sizing based on current AWS pricing, for a harness scoring roughly ~10,000–12,000 answers per month (offline runs on every change plus a modest daily online sample).</p>
+<p style="line-height: 1.7; margin-bottom: 8px;">Each scoring is small: ~1,500 input tokens (rubric + question + agent answer + reference answer) and ~150 output tokens (the JSON verdict) — on the order of 17–18M input and ~1.75M output tokens per month at that volume.</p>
+<table style="width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px;">
+<thead>
+<tr>
+<th style="background-color: #1e1e2e; color: #cdd6f4; padding: 10px 14px; text-align: left; border: 1px solid #45475a; font-weight: 600;">Component</th>
+<th style="background-color: #1e1e2e; color: #cdd6f4; padding: 10px 14px; text-align: left; border: 1px solid #45475a; font-weight: 600;">Representative Monthly Cost</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="padding: 10px 14px; border: 1px solid #e0e0e0;">Bedrock judge inference (Claude 3.5 Haiku, ~17.5M in / 1.75M out tokens)</td>
+<td style="padding: 10px 14px; border: 1px solid #e0e0e0;">₹2,600 ($31)</td>
+</tr>
+<tr>
+<td style="padding: 10px 14px; border: 1px solid #e0e0e0;">Step Functions + Lambda (orchestration + deterministic checks)</td>
+<td style="padding: 10px 14px; border: 1px solid #e0e0e0;">₹1,400 ($17)</td>
+</tr>
+<tr>
+<td style="padding: 10px 14px; border: 1px solid #e0e0e0;">S3 (datasets, versioned reports) + CloudWatch metrics</td>
+<td style="padding: 10px 14px; border: 1px solid #e0e0e0;">₹1,200 ($14)</td>
+</tr>
+<tr>
+<td style="padding: 10px 14px; border: 1px solid #e0e0e0;">QuickSight (compliance dashboard, ~3 authors, annual commitment)</td>
+<td style="padding: 10px 14px; border: 1px solid #e0e0e0;">₹4,600 ($55)</td>
+</tr>
+<tr>
+<td style="padding: 10px 14px; border: 1px solid #e0e0e0;">Amazon Comprehend (PII redaction on sampled transcripts)</td>
+<td style="padding: 10px 14px; border: 1px solid #e0e0e0;">₹1,200 ($14)</td>
+</tr>
+<tr>
+<td style="padding: 10px 14px; border: 1px solid #e0e0e0;"><strong>Representative total</strong></td>
+<td style="padding: 10px 14px; border: 1px solid #e0e0e0;"><strong>≈ ₹11,000/month (~$131)</strong></td>
+</tr>
+</tbody>
+</table>
+<p style="line-height: 1.7; margin-bottom: 8px;">The important property is not the absolute number — it scales with how much traffic you sample — but the ratio: a well-designed evaluation harness typically lands well under 10% of the production agent's own inference cost. That is a modest premium for knowing, with evidence, that the agent works. Budget the judge line as a function of volume sampled, not a fixed figure: raise sampling from ~150/day to ~1,000/day and the judge cost grows proportionally.</p>
+<h2 style="margin-top: 32px; margin-bottom: 12px; padding-bottom: 6px; color: #02103E; font-size: 24px; font-weight: 700;" id="the-failure-modes-every-evaluation-system-hits">The Failure Modes Every Evaluation System Hits</h2>
+<p style="line-height: 1.7; margin-bottom: 8px;">These are the recurring ways evaluation harnesses go wrong. They are patterns I flag to teams up front, because most hit at least one of them.</p>
+<h3 style="margin-top: 20px; margin-bottom: 8px; color: #02103E; font-size: 18px; font-weight: 700;" id="failure-mode-1-the-judge-rewards-confident-fluent-wrong-answers">Failure Mode 1: The Judge Rewards Confident, Fluent, Wrong Answers</h3>
+<p style="line-height: 1.7; margin-bottom: 8px;"><strong>The pattern:</strong> A holistic "is this a good answer?" rubric produces a high pass rate, while deterministic checks fail a meaningful share of the <em>same</em> answers. The judge and reality disagree, because LLM judges have a well-documented bias toward fluency and length — a confident, professional-sounding wrong answer scores high.</p>
+<p style="line-height: 1.7; margin-bottom: 8px;"><strong>The fix:</strong> Make <code style="background-color: #f4f4f6; color: #c0285a; padding: 1px 5px; border-radius: 4px; font-family: Courier New, Courier, monospace; font-size: 0.92em;">factual_correctness</code> a separate, gating dimension; hard-code "any fabricated number forces overall_pass=false"; set judge <code style="background-color: #f4f4f6; color: #c0285a; padding: 1px 5px; border-radius: 4px; font-family: Courier New, Courier, monospace; font-size: 0.92em;">temperature=0</code>. Critically, never trust the judge alone for anything numeric — let a deterministic check against a source-of-truth table be the authority on factual accuracy, and let the judge handle the softer dimensions (completeness, tone, appropriate deferral). This is the single most important design decision in the whole harness.</p>
+<h3 style="margin-top: 20px; margin-bottom: 8px; color: #02103E; font-size: 18px; font-weight: 700;" id="failure-mode-2-the-golden-dataset-goes-stale-and-misses-real-failures">Failure Mode 2: The Golden Dataset Goes Stale and Misses Real Failures</h3>
+<p style="line-height: 1.7; margin-bottom: 8px;"><strong>The pattern:</strong> The offline pass rate looks healthy while live traffic surfaces failures the offline suite never catches. The agent is "passing the exam" but failing in the field — because the golden dataset reflects the clean questions engineers <em>imagined</em> users ask, not the messy, compound questions real users actually ask.</p>
+<p style="line-height: 1.7; margin-bottom: 8px;"><strong>The fix:</strong> Build a feedback loop. Every online failure a human confirms as a genuine miss gets anonymised, given an approved reference answer, and promoted into the golden dataset. Over time the offline suite becomes a growing museum of every real way the agent has failed, so no fixed regression can silently return. A golden dataset should grow from real failures, not imagination.</p>
+<h3 style="margin-top: 20px; margin-bottom: 8px; color: #02103E; font-size: 18px; font-weight: 700;" id="failure-mode-3-the-evaluation-pipeline-becomes-an-unmanaged-pii-store">Failure Mode 3: The Evaluation Pipeline Becomes an Unmanaged PII Store</h3>
+<p style="line-height: 1.7; margin-bottom: 8px;"><strong>The pattern:</strong> Teams put PII controls on the agent's <em>outputs</em> but overlook that the evaluation pipeline itself now handles raw customer conversations as <em>input</em> data. Sampled live transcripts — names, account numbers, PAN — end up written to an evaluation bucket and sent to the judge model in the clear. The evaluation system has quietly become a new place PII lives.</p>
+<p style="line-height: 1.7; margin-bottom: 8px;"><strong>The fix:</strong> Put redaction (e.g., Amazon Comprehend PII detection) at the very front of the online path — before any transcript is stored or sent to the judge — replacing identifiers with typed placeholders while preserving the structure needed to evaluate. Add a strict bucket policy, short lifecycle expiry on evaluation data, and least-privilege IAM scoped to redacted objects. An evaluation system is a data system; it inherits every governance obligation of the thing it evaluates.</p>
+<h2 style="margin-top: 32px; margin-bottom: 12px; padding-bottom: 6px; color: #02103E; font-size: 24px; font-weight: 700;" id="a-presales-perspective-evaluation-is-what-sells-the-next-three-agents">A Presales Perspective: Evaluation Is What Sells the Next Three Agents</h2>
+<p style="line-height: 1.7; margin-bottom: 8px;">In my presales engagements, the conversation about AI agents has shifted over the past year. Eighteen months ago the question was "can we build one?" Today most enterprises can. The question that now stalls deals is different: <em>"How do we govern these at scale without a room full of people manually checking outputs?"</em></p>
+<p style="line-height: 1.7; margin-bottom: 8px;">Evaluation is the answer, and it is chronically under-invested. The reframe that lands with leaders is moving evaluation from "QA overhead that slows shipping" to "the capability that lets you scale safely." In a regulated business the logic is decisive: the moment you can <em>prove</em> one agent's accuracy with a weekly report, compliance can flip from blocking new agents to sponsoring them — because the same harness evaluates all of them. Evaluation becomes the platform, not the chore.</p>
+<p style="line-height: 1.7; margin-bottom: 8px;">The moment that shifts the conversation is never the LLM-as-a-judge architecture. It is the opening question: <em>"How do you know your agent is still working today?"</em> Watching a technical leader realise they cannot answer that — for a system already talking to customers — is the moment evaluation stops being optional. The follow-up is always: "How do we retrofit this onto the agents we already shipped?" That question is the entire agentic-AI-operations roadmap in one sentence.</p>
+<h2 style="margin-top: 32px; margin-bottom: 12px; padding-bottom: 6px; color: #02103E; font-size: 24px; font-weight: 700;" id="lessons-for-technology-leaders">Lessons for Technology Leaders</h2>
+<ul style="margin: 8px 0; padding-left: 24px;">
+<li style="margin-bottom: 4px; line-height: 1.6;"><strong>If you can't measure it, you're not operating it — you're hoping</strong> — An agent in production without automated evaluation is not a managed system. It is a demo that happens to be exposed to customers.</li>
+<li style="margin-bottom: 4px; line-height: 1.6;"><strong>LLM-as-a-judge scales grading, but never let it judge numbers</strong> — Use the model for soft, subjective dimensions where it is genuinely good. For anything factual or numeric, use a deterministic check against a source of truth. Fluent wrong answers are the failure mode that hurts most, and judges are biased to reward them.</li>
+<li style="margin-bottom: 4px; line-height: 1.6;"><strong>Your golden dataset should be a museum of real failures, not imagined ones</strong> — The dataset engineers write reflects the questions they wish users asked. The valuable dataset grows from the messy, real failures caught in production. Build the feedback loop.</li>
+<li style="margin-bottom: 4px; line-height: 1.6;"><strong>The evaluation system is a data system</strong> — It inherits every governance obligation of the thing it evaluates. If your agent handles PII, so does your evaluation pipeline — plan redaction, retention, and access control from day one.</li>
+<li style="margin-bottom: 4px; line-height: 1.6;"><strong>Evaluation is what makes scaling safe, not what slows it down</strong> — In a regulated business it is the thing that lets compliance say yes to the next three agents. Measurement is the accelerant, not the brake.</li>
+</ul>
+<h2 style="margin-top: 32px; margin-bottom: 12px; padding-bottom: 6px; color: #02103E; font-size: 24px; font-weight: 700;" id="conclusion">Conclusion</h2>
+<p style="line-height: 1.7; margin-bottom: 8px;">The hard part of enterprise agentic AI is no longer building the agent — it is proving, continuously and with evidence, that the agent works. Most enterprises have crossed the building threshold and stalled at the proving one. That gap is where wrong answers hide, where regressions ship silently, and where compliance questions go unanswered.</p>
+<p style="line-height: 1.7; margin-bottom: 8px;">Closing it does not require a smarter agent. It requires the ability to answer one question — <em>"How do you know it's working today?"</em> — with a number instead of a shrug. A golden dataset owned by the business, an LLM judge that scales grading, and deterministic checks that guard the facts. That is a few weeks of engineering and a cost that lands well under 10% of the agent it protects.</p>
+<p style="line-height: 1.7; margin-bottom: 8px;">An agent you cannot evaluate is an agent you cannot trust, scale, or govern. Building the evaluation harness is not the unglamorous chore that comes after the real work. In production agentic AI, it <em>is</em> the real work.</p>
+<hr style="border: none; border-top: 1px solid #ddd; margin: 40px 0 20px 0;" />
+<p style="line-height: 1.7; margin-bottom: 8px;"><strong>About the Author</strong></p>
+<p style="line-height: 1.7; margin-bottom: 8px;">Rajat Jindal is VP – Presales at AeonX Digital Technology Limited, where he architects winning cloud strategies for enterprise customers and translates modernization into measurable business value. He is a strong advocate of AWS, committed to sharing thought leadership that helps technology leaders make faster, better-informed decisions.</p>
 </div>
-<div class="g-b" style="position:absolute;left:12.5000vw;top:137.9688vw;width:75.0000vw;height:21.4583vw;box-sizing:border-box;border-right:0.0521vw solid rgb(236,238,242);border-left:0.0521vw solid rgb(236,238,242);"></div>
-<h2 class="g-t" style="position:absolute;left:14.4010vw;top:140.7552vw;width:44.0104vw;height:15.8854vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:3.3333vw;line-height:3.7500vw;color:rgb(35,39,46);text-align:left;white-space:pre-wrap;">Want the long version?</h2>
-<div class="g-t" style="position:absolute;left:65.8854vw;top:141.6146vw;width:19.7396vw;height:2.9167vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:0.9375vw;line-height:1.4583vw;color:rgb(82,96,119);text-align:left;white-space:pre-wrap;">Subscribe to the newsletter for monthly long-form from the team.</div>
-<div class="g-b g-clip" style="position:absolute;left:66.1198vw;top:152.0573vw;width:11.4583vw;height:2.5000vw;background-color:#cf3b15;border-radius:0.4167vw;overflow:hidden;">
-<div class="g-t" style="position:absolute;left:3.8542vw;top:0.7292vw;width:3.7500vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:0.7292vw;line-height:1.0417vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">Newsletter</div>
+<a class="ax-post__back" href="/insights/blog/">&larr; All insights</a>
 </div>
-<div class="g-b g-clip" style="position:absolute;left:78.2031vw;top:152.0573vw;width:7.1875vw;height:2.5000vw;background-color:rgb(255,255,255);border-radius:0.4167vw;box-sizing:border-box;border:0.0521vw solid rgb(213,218,226);overflow:hidden;">
-<div class="g-t" style="position:absolute;left:1.4062vw;top:0.7292vw;width:4.3750vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:0.7292vw;line-height:1.0417vw;color:rgb(58,67,82);text-align:center;white-space:nowrap;">Case Studies</div>
-</div>
-<div class="g-b" style="position:absolute;left:-0.2604vw;top:22.7083vw;width:100.0000vw;height:115.2604vw;background-color:rgb(255,255,255);"></div>
-<div class="g-b" style="position:absolute;left:-0.2604vw;top:22.7083vw;width:100.0000vw;height:9.2188vw;box-sizing:border-box;border-bottom:0.0521vw solid rgb(236,238,242);"></div>
-<div class="g-t" style="position:absolute;left:15.1042vw;top:26.8750vw;width:8.0729vw;height:3.7500vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:3.7500vw;line-height:3.7500vw;color:#c23714;text-align:left;white-space:nowrap;">Blog</div>
-<div class="g-b" style="position:absolute;left:64.0625vw;top:27.6562vw;width:20.3125vw;height:2.1875vw;background-color:rgb(246,247,249);border-radius:0.2083vw;box-sizing:border-box;border:0.0521vw solid rgb(236,238,242);"></div>
-<img class="g-vec" src="/assets/vec/5342-28100.svg" data-vec="5342:28100" loading="lazy" decoding="async" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:64.5312vw;top:28.3333vw;width:0.8333vw;height:0.8333vw;">
-<div class="g-t" style="position:absolute;left:65.6771vw;top:28.1250vw;width:3.2292vw;height:1.2500vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:1.0417vw;line-height:1.2500vw;color:#c23714;text-align:center;white-space:nowrap;">Search</div>
-<div class="g-b" style="position:absolute;left:80.6771vw;top:27.9688vw;width:1.5625vw;height:1.5625vw;background-color:#cf3b15;border-radius:0.1042vw;"></div>
-<div class="g-t" style="position:absolute;left:81.0238vw;top:28.1250vw;width:0.8854vw;height:1.2500vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:1.0417vw;line-height:1.2500vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">⌘</div>
-<div class="g-b" style="position:absolute;left:82.3438vw;top:27.9688vw;width:1.5625vw;height:1.5625vw;background-color:#cf3b15;border-radius:0.1042vw;"></div>
-<div class="g-t" style="position:absolute;left:82.7865vw;top:28.1250vw;width:0.6771vw;height:1.2500vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:1.0417vw;line-height:1.2500vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">K</div>
-<div class="g-b" style="position:absolute;left:13.6979vw;top:31.7708vw;width:0.3646vw;height:0.3646vw;background-color:rgb(134,149,170);box-sizing:border-box;border:0.0521vw solid rgb(236,238,242);"></div>
-<div class="g-b" style="position:absolute;left:85.4167vw;top:31.7188vw;width:0.3646vw;height:0.3646vw;background-color:rgb(134,149,170);box-sizing:border-box;border:0.0521vw solid rgb(236,238,242);"></div>
-<div class="g-b" style="position:absolute;left:-0.2604vw;top:31.9271vw;width:100.0000vw;height:43.3333vw;box-sizing:border-box;border-bottom:0.0521vw solid rgb(236,238,242);"></div>
-<div class="g-b" style="position:absolute;left:13.8542vw;top:31.9271vw;width:71.7708vw;height:43.2812vw;box-sizing:border-box;border-right:0.0521vw solid rgb(236,238,242);border-left:0.0521vw solid rgb(236,238,242);"></div>
-<div class="g-b" style="position:absolute;left:13.6979vw;top:75.0521vw;width:0.3646vw;height:0.3646vw;background-color:rgb(134,149,170);box-sizing:border-box;border:0.0521vw solid rgb(236,238,242);"></div>
-<div class="g-b" style="position:absolute;left:85.4167vw;top:75.0521vw;width:0.3646vw;height:0.3646vw;background-color:rgb(134,149,170);box-sizing:border-box;border:0.0521vw solid rgb(236,238,242);"></div>
-<div class="g-b g-clip" style="position:absolute;left:15.1562vw;top:33.1771vw;width:33.3333vw;height:18.7500vw;overflow:hidden;">
-<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:33.3333vw;height:18.7500vw;box-sizing:border-box;border:0.0521vw solid rgb(246,247,249);overflow:hidden;">
-<div class="g-img g-clip" data-ref="ece298d0ec2c16f10310d45724b276a6035cb503" role="presentation" aria-hidden="true" style="position:absolute;left:0.0521vw;top:0.0521vw;width:33.2292vw;height:18.6458vw;background-image:url(/assets/gen/ece298d0ec2c16f10310d45724b276a6035cb503.webp);background-size:cover;background-position:center;background-repeat:no-repeat;overflow:hidden;">
-</div>
-</div>
-</div>
-<div class="g-b" style="position:absolute;left:15.1562vw;top:53.1771vw;width:5.9896vw;height:1.2500vw;background-color:#cf3b15;border-radius:0.1042vw;"></div>
-<div class="g-t" style="position:absolute;left:16.0156vw;top:53.2812vw;width:4.2708vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:0.7292vw;line-height:1.0417vw;color:rgb(255,255,255);text-align:left;white-space:nowrap;">Enterprise AI</div>
-<div class="g-t" style="position:absolute;left:15.1562vw;top:55.0521vw;width:30.9896vw;height:2.2917vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:1.8750vw;line-height:2.2917vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Making sense of the AI control plane</div>
-<div class="g-img g-clip" data-ref="ece298d0ec2c16f10310d45724b276a6035cb503" role="presentation" aria-hidden="true" style="position:absolute;left:15.1562vw;top:59.5312vw;width:1.4583vw;height:1.4583vw;background-image:url(/assets/gen/ece298d0ec2c16f10310d45724b276a6035cb503.webp);background-size:cover;background-position:center;background-repeat:no-repeat;border-radius:0.2083vw;overflow:hidden;">
-</div>
-<div class="g-t" style="position:absolute;left:16.9271vw;top:59.6354vw;width:5.2083vw;height:1.2500vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:1.0417vw;line-height:1.2500vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">John Nolan</div>
-<div class="g-t" style="position:absolute;left:41.6667vw;top:59.6354vw;width:6.8229vw;height:1.2500vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:1.0417vw;line-height:1.2500vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">April 24, 2026</div>
-<div class="g-b" style="position:absolute;left:49.7396vw;top:31.9271vw;width:35.8333vw;height:43.2812vw;box-sizing:border-box;border-left:0.0521vw solid rgb(236,238,242);"></div>
-<div class="g-b" style="position:absolute;left:49.7917vw;top:31.9271vw;width:35.7812vw;height:10.8333vw;box-sizing:border-box;border-bottom:0.0521vw solid rgb(236,238,242);"></div>
-<div class="g-b g-clip" style="position:absolute;left:50.9375vw;top:33.0729vw;width:16.1198vw;height:8.4896vw;overflow:hidden;">
-<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:16.1198vw;height:8.4896vw;box-sizing:border-box;border:0.0521vw solid rgb(246,247,249);overflow:hidden;">
-<div class="g-img g-clip" data-ref="ece298d0ec2c16f10310d45724b276a6035cb503" role="presentation" aria-hidden="true" style="position:absolute;left:0.0521vw;top:0.0521vw;width:16.0156vw;height:8.3854vw;background-image:url(/assets/gen/ece298d0ec2c16f10310d45724b276a6035cb503.webp);background-size:cover;background-position:center;background-repeat:no-repeat;overflow:hidden;">
-</div>
-</div>
-</div>
-<div class="g-b" style="position:absolute;left:68.3073vw;top:33.0729vw;width:5.3646vw;height:1.3021vw;background-color:rgb(246,247,249);"></div>
-<div class="g-b" style="position:absolute;left:68.3073vw;top:33.0729vw;width:5.3646vw;height:1.3021vw;background-color:#cf3b15;"></div>
-<div class="g-t" style="position:absolute;left:68.5677vw;top:33.1771vw;width:4.8958vw;height:1.1458vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:0.6771vw;line-height:1.1458vw;color:rgb(255,255,255);text-align:left;white-space:nowrap;">ENTERPRISE AI</div>
-<div class="g-b g-clip" style="position:absolute;left:68.3073vw;top:35.0000vw;width:16.1198vw;height:3.8346vw;overflow:hidden;">
-<div class="g-t" style="position:absolute;left:0.0000vw;top:0.0000vw;width:16.1458vw;height:7.5000vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:1.2500vw;line-height:1.8750vw;color:rgb(35,39,46);text-align:left;white-space:pre-wrap;">Security first, capability second: Building virtual employees enterprises can actually trust</div>
-</div>
-<div class="g-b" style="position:absolute;left:49.7917vw;top:42.7604vw;width:35.7812vw;height:10.8333vw;box-sizing:border-box;border-bottom:0.0521vw solid rgb(236,238,242);"></div>
-<div class="g-b g-clip" style="position:absolute;left:50.9375vw;top:43.9062vw;width:16.1198vw;height:8.4896vw;overflow:hidden;">
-<div class="g-img g-clip" data-ref="ece298d0ec2c16f10310d45724b276a6035cb503" role="presentation" aria-hidden="true" style="position:absolute;left:0.0000vw;top:0.0000vw;width:16.1198vw;height:8.4896vw;background-image:url(/assets/gen/ece298d0ec2c16f10310d45724b276a6035cb503.webp);background-size:cover;background-position:center;background-repeat:no-repeat;overflow:hidden;">
-</div>
-</div>
-<div class="g-b" style="position:absolute;left:68.3073vw;top:43.9062vw;width:3.8542vw;height:1.2500vw;background-color:#cf3b15;"></div>
-<div class="g-t" style="position:absolute;left:68.5938vw;top:43.9583vw;width:3.2812vw;height:1.1458vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:0.6771vw;line-height:1.1458vw;color:rgb(255,255,255);text-align:left;white-space:nowrap;">PRODUCT</div>
-<div class="g-b g-clip" style="position:absolute;left:68.3073vw;top:45.7812vw;width:16.1198vw;height:3.8346vw;overflow:hidden;">
-<div class="g-t" style="position:absolute;left:0.0000vw;top:0.0000vw;width:16.1458vw;height:3.7500vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:1.2500vw;line-height:1.8750vw;color:rgb(35,39,46);text-align:left;white-space:pre-wrap;">MCP authorization: Roll out AI to every team, safely</div>
-</div>
-<div class="g-b" style="position:absolute;left:49.7917vw;top:53.5938vw;width:35.7812vw;height:10.8333vw;box-sizing:border-box;border-bottom:0.0521vw solid rgb(236,238,242);"></div>
-<div class="g-b g-clip" style="position:absolute;left:50.9375vw;top:54.7396vw;width:16.1198vw;height:8.4896vw;overflow:hidden;">
-<div class="g-img g-clip" data-ref="ece298d0ec2c16f10310d45724b276a6035cb503" role="presentation" aria-hidden="true" style="position:absolute;left:0.0000vw;top:0.0000vw;width:16.1198vw;height:8.4896vw;background-image:url(/assets/gen/ece298d0ec2c16f10310d45724b276a6035cb503.webp);background-size:cover;background-position:center;background-repeat:no-repeat;overflow:hidden;">
-</div>
-</div>
-<div class="g-b" style="position:absolute;left:68.3073vw;top:54.7396vw;width:5.9375vw;height:1.2500vw;background-color:#cf3b15;"></div>
-<div class="g-t" style="position:absolute;left:68.8281vw;top:54.7917vw;width:4.8958vw;height:1.1458vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:0.6771vw;line-height:1.1458vw;color:rgb(255,255,255);text-align:left;white-space:nowrap;">ENTERPRISE AI</div>
-<div class="g-b g-clip" style="position:absolute;left:68.3073vw;top:56.6146vw;width:16.1198vw;height:3.8346vw;overflow:hidden;">
-<div class="g-t" style="position:absolute;left:0.0000vw;top:0.0000vw;width:16.1458vw;height:3.7500vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:1.2500vw;line-height:1.8750vw;color:rgb(35,39,46);text-align:left;white-space:pre-wrap;">We were wrong about the hard problem</div>
-</div>
-<div class="g-b g-clip" style="position:absolute;left:50.9375vw;top:65.5729vw;width:16.1198vw;height:8.4896vw;overflow:hidden;">
-<div class="g-img g-clip" data-ref="ece298d0ec2c16f10310d45724b276a6035cb503" role="presentation" aria-hidden="true" style="position:absolute;left:0.0000vw;top:0.0000vw;width:16.1198vw;height:8.4896vw;background-image:url(/assets/gen/ece298d0ec2c16f10310d45724b276a6035cb503.webp);background-size:cover;background-position:center;background-repeat:no-repeat;overflow:hidden;">
-</div>
-</div>
-<div class="g-b" style="position:absolute;left:68.3073vw;top:65.5729vw;width:3.3333vw;height:1.2500vw;background-color:#cf3b15;"></div>
-<div class="g-t" style="position:absolute;left:68.8281vw;top:65.6250vw;width:2.2917vw;height:1.1458vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:0.6771vw;line-height:1.1458vw;color:rgb(255,255,255);text-align:left;white-space:nowrap;">OTHER</div>
-<div class="g-b g-clip" style="position:absolute;left:68.3073vw;top:67.4479vw;width:16.1198vw;height:3.8346vw;overflow:hidden;">
-<div class="g-t" style="position:absolute;left:0.0000vw;top:0.0000vw;width:16.1458vw;height:3.7500vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:1.2500vw;line-height:1.8750vw;color:rgb(35,39,46);text-align:left;white-space:pre-wrap;">AEONX is SOC 2 Type II and ISO 27001 certified</div>
-</div>
-<div class="g-b" style="position:absolute;left:-0.2604vw;top:75.2604vw;width:100.0000vw;height:5.4688vw;box-sizing:border-box;border-bottom:0.0521vw solid rgb(236,238,242);"></div>
-<div class="g-b" style="position:absolute;left:13.8542vw;top:75.2604vw;width:71.7708vw;height:5.4167vw;box-sizing:border-box;border-right:0.0521vw solid rgb(236,238,242);border-left:0.0521vw solid rgb(236,238,242);"></div>
-<div class="g-t" style="position:absolute;left:15.7812vw;top:76.9271vw;width:13.5938vw;height:1.8750vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:1.4583vw;line-height:1.8750vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Browse by category:</div>
-<div class="g-b g-clip" style="position:absolute;left:54.0625vw;top:76.9271vw;width:31.5104vw;height:2.0833vw;overflow:hidden;">
-<div class="g-b" style="position:absolute;left:1.2500vw;top:0.2604vw;width:2.6562vw;height:1.5625vw;background-color:#cf3b15;box-shadow:inset 0.0000vw -0.1042vw 0.0521vw rgba(0,0,0,0.050),inset 0.0000vw 0.1042vw 0.0521vw rgb(147,38,25);"></div>
-<div class="g-t" style="position:absolute;left:2.0833vw;top:0.5208vw;width:0.9896vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:0.7292vw;line-height:1.0417vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">All</div>
-<div class="g-b" style="position:absolute;left:4.2188vw;top:0.2604vw;width:5.4167vw;height:1.5625vw;box-sizing:border-box;border:0.0521vw solid rgb(236,238,242);"></div>
-<div class="g-t" style="position:absolute;left:5.1042vw;top:0.4167vw;width:3.6458vw;height:1.2500vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:1.0417vw;line-height:1.2500vw;color:rgb(82,96,119);text-align:center;white-space:nowrap;">Product</div>
-<div class="g-b" style="position:absolute;left:9.9479vw;top:0.2604vw;width:7.8646vw;height:1.5625vw;box-sizing:border-box;border:0.0521vw solid rgb(236,238,242);"></div>
-<div class="g-t" style="position:absolute;left:10.8333vw;top:0.4167vw;width:6.0938vw;height:1.2500vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:1.0417vw;line-height:1.2500vw;color:rgb(82,96,119);text-align:center;white-space:nowrap;">Enterprise AI</div>
-<div class="g-b" style="position:absolute;left:18.1250vw;top:0.2604vw;width:7.3438vw;height:1.5625vw;box-sizing:border-box;border:0.0521vw solid rgb(236,238,242);"></div>
-<div class="g-t" style="position:absolute;left:19.0104vw;top:0.4167vw;width:5.5729vw;height:1.2500vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:1.0417vw;line-height:1.2500vw;color:rgb(82,96,119);text-align:center;white-space:nowrap;">Engineering</div>
-<div class="g-b" style="position:absolute;left:25.7812vw;top:0.2604vw;width:4.4792vw;height:1.5625vw;box-sizing:border-box;border:0.0521vw solid rgb(236,238,242);"></div>
-<div class="g-t" style="position:absolute;left:26.6667vw;top:0.4167vw;width:2.7083vw;height:1.2500vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:1.0417vw;line-height:1.2500vw;color:rgb(82,96,119);text-align:center;white-space:nowrap;">Other</div>
-</div>
-<div class="g-b" style="position:absolute;left:13.6979vw;top:80.5208vw;width:0.3646vw;height:0.3646vw;background-color:rgb(134,149,170);box-sizing:border-box;border:0.0521vw solid rgb(236,238,242);"></div>
-<div class="g-b" style="position:absolute;left:85.4167vw;top:80.5208vw;width:0.3646vw;height:0.3646vw;background-color:rgb(134,149,170);box-sizing:border-box;border:0.0521vw solid rgb(236,238,242);"></div>
-<div class="g-b" style="position:absolute;left:-0.2604vw;top:80.7292vw;width:100.0000vw;height:57.2396vw;box-sizing:border-box;border-bottom:0.0521vw solid rgb(236,238,242);"></div>
-<div class="g-b" style="position:absolute;left:13.8542vw;top:80.7292vw;width:71.7708vw;height:57.1875vw;box-sizing:border-box;border-right:0.0521vw solid rgb(236,238,242);border-left:0.0521vw solid rgb(236,238,242);"></div>
-<div class="g-b" style="position:absolute;left:13.9062vw;top:80.7292vw;width:23.8892vw;height:25.0000vw;box-sizing:border-box;border-right:0.0521vw solid rgb(236,238,242);border-bottom:0.0521vw solid rgb(236,238,242);"></div>
-<div class="g-img g-clip" data-ref="ece298d0ec2c16f10310d45724b276a6035cb503" role="presentation" aria-hidden="true" style="position:absolute;left:15.1562vw;top:81.9792vw;width:21.3371vw;height:12.0020vw;background-image:url(/assets/gen/ece298d0ec2c16f10310d45724b276a6035cb503.webp);background-size:cover;background-position:center;background-repeat:no-repeat;border-radius:0.4167vw;overflow:hidden;">
-</div>
-<div class="g-b" style="position:absolute;left:15.1562vw;top:95.2311vw;width:3.8542vw;height:1.2500vw;background-color:#cf3b15;"></div>
-<div class="g-t" style="position:absolute;left:15.4427vw;top:95.2832vw;width:3.2812vw;height:1.1458vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:0.6771vw;line-height:1.1458vw;color:rgb(255,255,255);text-align:left;white-space:nowrap;">PRODUCT</div>
-<div class="g-b g-clip" style="position:absolute;left:15.1562vw;top:97.1061vw;width:21.3371vw;height:3.8346vw;overflow:hidden;">
-<div class="g-t" style="position:absolute;left:0.0000vw;top:0.0000vw;width:21.3542vw;height:3.7500vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:1.2500vw;line-height:1.8750vw;color:rgb(35,39,46);text-align:left;white-space:pre-wrap;">Tune risk detection sensitivity, one policy at a time</div>
-</div>
-<div class="g-t" style="position:absolute;left:15.1562vw;top:103.1771vw;width:5.1042vw;height:1.2500vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:1.0417vw;line-height:1.2500vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">John Smith</div>
-<div class="g-t" style="position:absolute;left:29.8787vw;top:103.1771vw;width:6.6146vw;height:1.2500vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:1.0417vw;line-height:1.2500vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">June 29, 2026</div>
-<div class="g-b" style="position:absolute;left:37.7946vw;top:80.7292vw;width:23.8892vw;height:25.0000vw;box-sizing:border-box;border-right:0.0521vw solid rgb(236,238,242);border-bottom:0.0521vw solid rgb(236,238,242);"></div>
-<div class="g-img g-clip" data-ref="ece298d0ec2c16f10310d45724b276a6035cb503" role="presentation" aria-hidden="true" style="position:absolute;left:39.0446vw;top:81.9792vw;width:21.3371vw;height:12.0020vw;background-image:url(/assets/gen/ece298d0ec2c16f10310d45724b276a6035cb503.webp);background-size:cover;background-position:center;background-repeat:no-repeat;border-radius:0.4167vw;overflow:hidden;">
-</div>
-<div class="g-b" style="position:absolute;left:39.0446vw;top:95.2311vw;width:3.8542vw;height:1.2500vw;background-color:#cf3b15;"></div>
-<div class="g-t" style="position:absolute;left:39.3311vw;top:95.2832vw;width:3.2812vw;height:1.1458vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:0.6771vw;line-height:1.1458vw;color:rgb(255,255,255);text-align:left;white-space:nowrap;">PRODUCT</div>
-<div class="g-b g-clip" style="position:absolute;left:39.0446vw;top:97.1061vw;width:21.3371vw;height:3.8346vw;overflow:hidden;">
-<div class="g-t" style="position:absolute;left:0.0000vw;top:0.0000vw;width:21.3542vw;height:3.7500vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:1.2500vw;line-height:1.8750vw;color:rgb(35,39,46);text-align:left;white-space:pre-wrap;">Tune risk detection sensitivity, one policy at a time</div>
-</div>
-<div class="g-t" style="position:absolute;left:39.0446vw;top:103.1771vw;width:5.1042vw;height:1.2500vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:1.0417vw;line-height:1.2500vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">John Smith</div>
-<div class="g-t" style="position:absolute;left:53.7671vw;top:103.1771vw;width:6.6146vw;height:1.2500vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:1.0417vw;line-height:1.2500vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">June 29, 2026</div>
-<div class="g-b" style="position:absolute;left:61.6838vw;top:80.7292vw;width:23.8892vw;height:25.0000vw;box-sizing:border-box;border-right:0.0521vw solid rgb(236,238,242);border-bottom:0.0521vw solid rgb(236,238,242);"></div>
-<div class="g-img g-clip" data-ref="ece298d0ec2c16f10310d45724b276a6035cb503" role="presentation" aria-hidden="true" style="position:absolute;left:62.9338vw;top:81.9792vw;width:21.3371vw;height:12.0020vw;background-image:url(/assets/gen/ece298d0ec2c16f10310d45724b276a6035cb503.webp);background-size:cover;background-position:center;background-repeat:no-repeat;border-radius:0.4167vw;overflow:hidden;">
-</div>
-<div class="g-b" style="position:absolute;left:62.9338vw;top:95.2311vw;width:3.8542vw;height:1.2500vw;background-color:#cf3b15;"></div>
-<div class="g-t" style="position:absolute;left:63.2202vw;top:95.2832vw;width:3.2812vw;height:1.1458vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:0.6771vw;line-height:1.1458vw;color:rgb(255,255,255);text-align:left;white-space:nowrap;">PRODUCT</div>
-<div class="g-b g-clip" style="position:absolute;left:62.9338vw;top:97.1061vw;width:21.3371vw;height:3.8346vw;overflow:hidden;">
-<div class="g-t" style="position:absolute;left:0.0000vw;top:0.0000vw;width:21.3542vw;height:3.7500vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:1.2500vw;line-height:1.8750vw;color:rgb(35,39,46);text-align:left;white-space:pre-wrap;">Tune risk detection sensitivity, one policy at a time</div>
-</div>
-<div class="g-t" style="position:absolute;left:62.9338vw;top:103.1771vw;width:5.1042vw;height:1.2500vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:1.0417vw;line-height:1.2500vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">John Smith</div>
-<div class="g-t" style="position:absolute;left:77.6562vw;top:103.1771vw;width:6.6146vw;height:1.2500vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:1.0417vw;line-height:1.2500vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">June 29, 2026</div>
-<div class="g-b" style="position:absolute;left:13.9062vw;top:105.7292vw;width:23.8892vw;height:25.0000vw;box-sizing:border-box;border-right:0.0521vw solid rgb(236,238,242);border-bottom:0.0521vw solid rgb(236,238,242);"></div>
-<div class="g-img g-clip" data-ref="ece298d0ec2c16f10310d45724b276a6035cb503" role="presentation" aria-hidden="true" style="position:absolute;left:15.1562vw;top:106.9792vw;width:21.3371vw;height:12.0020vw;background-image:url(/assets/gen/ece298d0ec2c16f10310d45724b276a6035cb503.webp);background-size:cover;background-position:center;background-repeat:no-repeat;border-radius:0.4167vw;overflow:hidden;">
-</div>
-<div class="g-b" style="position:absolute;left:15.1562vw;top:120.2311vw;width:3.8542vw;height:1.2500vw;background-color:#cf3b15;"></div>
-<div class="g-t" style="position:absolute;left:15.4427vw;top:120.2832vw;width:3.2812vw;height:1.1458vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:0.6771vw;line-height:1.1458vw;color:rgb(255,255,255);text-align:left;white-space:nowrap;">PRODUCT</div>
-<div class="g-b g-clip" style="position:absolute;left:15.1562vw;top:122.1061vw;width:21.3371vw;height:3.8346vw;overflow:hidden;">
-<div class="g-t" style="position:absolute;left:0.0000vw;top:0.0000vw;width:21.3542vw;height:3.7500vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:1.2500vw;line-height:1.8750vw;color:rgb(35,39,46);text-align:left;white-space:pre-wrap;">Tune risk detection sensitivity, one policy at a time</div>
-</div>
-<div class="g-t" style="position:absolute;left:15.1562vw;top:128.1771vw;width:5.1042vw;height:1.2500vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:1.0417vw;line-height:1.2500vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">John Smith</div>
-<div class="g-t" style="position:absolute;left:29.8787vw;top:128.1771vw;width:6.6146vw;height:1.2500vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:1.0417vw;line-height:1.2500vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">June 29, 2026</div>
-<div class="g-b" style="position:absolute;left:37.7946vw;top:105.7292vw;width:23.8892vw;height:25.0000vw;box-sizing:border-box;border-right:0.0521vw solid rgb(236,238,242);border-bottom:0.0521vw solid rgb(236,238,242);"></div>
-<div class="g-img g-clip" data-ref="ece298d0ec2c16f10310d45724b276a6035cb503" role="presentation" aria-hidden="true" style="position:absolute;left:39.0446vw;top:106.9792vw;width:21.3371vw;height:12.0020vw;background-image:url(/assets/gen/ece298d0ec2c16f10310d45724b276a6035cb503.webp);background-size:cover;background-position:center;background-repeat:no-repeat;border-radius:0.4167vw;overflow:hidden;">
-</div>
-<div class="g-b" style="position:absolute;left:39.0446vw;top:120.2311vw;width:3.8542vw;height:1.2500vw;background-color:#cf3b15;"></div>
-<div class="g-t" style="position:absolute;left:39.3311vw;top:120.2832vw;width:3.2812vw;height:1.1458vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:0.6771vw;line-height:1.1458vw;color:rgb(255,255,255);text-align:left;white-space:nowrap;">PRODUCT</div>
-<div class="g-b g-clip" style="position:absolute;left:39.0446vw;top:122.1061vw;width:21.3371vw;height:3.8346vw;overflow:hidden;">
-<div class="g-t" style="position:absolute;left:0.0000vw;top:0.0000vw;width:21.3542vw;height:3.7500vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:1.2500vw;line-height:1.8750vw;color:rgb(35,39,46);text-align:left;white-space:pre-wrap;">Tune risk detection sensitivity, one policy at a time</div>
-</div>
-<div class="g-t" style="position:absolute;left:39.0446vw;top:128.1771vw;width:5.1042vw;height:1.2500vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:1.0417vw;line-height:1.2500vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">John Smith</div>
-<div class="g-t" style="position:absolute;left:53.7671vw;top:128.1771vw;width:6.6146vw;height:1.2500vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:1.0417vw;line-height:1.2500vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">June 29, 2026</div>
-<div class="g-b" style="position:absolute;left:61.6838vw;top:105.7292vw;width:23.8892vw;height:25.0000vw;box-sizing:border-box;border-right:0.0521vw solid rgb(236,238,242);border-bottom:0.0521vw solid rgb(236,238,242);"></div>
-<div class="g-img g-clip" data-ref="ece298d0ec2c16f10310d45724b276a6035cb503" role="presentation" aria-hidden="true" style="position:absolute;left:62.9338vw;top:106.9792vw;width:21.3371vw;height:12.0020vw;background-image:url(/assets/gen/ece298d0ec2c16f10310d45724b276a6035cb503.webp);background-size:cover;background-position:center;background-repeat:no-repeat;border-radius:0.4167vw;overflow:hidden;">
-</div>
-<div class="g-b" style="position:absolute;left:62.9338vw;top:120.2311vw;width:3.8542vw;height:1.2500vw;background-color:#cf3b15;"></div>
-<div class="g-t" style="position:absolute;left:63.2202vw;top:120.2832vw;width:3.2812vw;height:1.1458vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:0.6771vw;line-height:1.1458vw;color:rgb(255,255,255);text-align:left;white-space:nowrap;">PRODUCT</div>
-<div class="g-b g-clip" style="position:absolute;left:62.9338vw;top:122.1061vw;width:21.3371vw;height:3.8346vw;overflow:hidden;">
-<div class="g-t" style="position:absolute;left:0.0000vw;top:0.0000vw;width:21.3542vw;height:3.7500vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:1.2500vw;line-height:1.8750vw;color:rgb(35,39,46);text-align:left;white-space:pre-wrap;">Tune risk detection sensitivity, one policy at a time</div>
-</div>
-<div class="g-t" style="position:absolute;left:62.9338vw;top:128.1771vw;width:5.1042vw;height:1.2500vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:1.0417vw;line-height:1.2500vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">John Smith</div>
-<div class="g-t" style="position:absolute;left:77.6562vw;top:128.1771vw;width:6.6146vw;height:1.2500vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:1.0417vw;line-height:1.2500vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">June 29, 2026</div>
-<img class="g-vec" src="/assets/vec/5342-28344.svg" data-vec="5342:28344" loading="lazy" decoding="async" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:41.5348vw;top:133.2292vw;width:3.0208vw;height:2.1875vw;">
-<div class="g-t" style="position:absolute;left:45.0765vw;top:133.8021vw;width:0.4688vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:0.7292vw;line-height:1.0417vw;color:#c23714;text-align:center;white-space:nowrap;">1</div>
-<div class="g-t" style="position:absolute;left:46.3493vw;top:133.8021vw;width:0.4688vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:0.7292vw;line-height:1.0417vw;color:rgb(82,96,119);text-align:center;white-space:nowrap;">2</div>
-<div class="g-t" style="position:absolute;left:47.6221vw;top:133.8021vw;width:0.4688vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:0.7292vw;line-height:1.0417vw;color:rgb(82,96,119);text-align:center;white-space:nowrap;">3</div>
-<div class="g-t" style="position:absolute;left:48.8949vw;top:133.8021vw;width:0.4688vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:0.7292vw;line-height:1.0417vw;color:rgb(82,96,119);text-align:center;white-space:nowrap;">4</div>
-<div class="g-t" style="position:absolute;left:50.1676vw;top:133.8021vw;width:0.4688vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:0.7292vw;line-height:1.0417vw;color:rgb(82,96,119);text-align:center;white-space:nowrap;">5</div>
-<img class="g-vec" src="/assets/vec/5342-28360.svg" data-vec="5342:28360" loading="lazy" decoding="async" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:51.1279vw;top:133.3854vw;width:1.8750vw;height:1.8750vw;">
-<div class="g-t" style="position:absolute;left:53.5238vw;top:133.8021vw;width:0.8854vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:0.7292vw;line-height:1.0417vw;color:rgb(82,96,119);text-align:center;white-space:nowrap;">40</div>
-<img class="g-vec" src="/assets/vec/5342-28367.svg" data-vec="5342:28367" loading="lazy" decoding="async" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:54.9235vw;top:133.2292vw;width:3.0208vw;height:2.1875vw;">
-<div class="g-b" style="position:absolute;left:0.0000vw;top:2.2917vw;width:100.0000vw;height:20.4167vw;box-sizing:border-box;border-bottom:0.0521vw solid rgb(236,238,242);"></div>
-<div class="g-b" style="position:absolute;left:5.0000vw;top:4.7917vw;width:90.0000vw;height:17.8646vw;box-sizing:border-box;border-right:0.0521vw solid rgb(236,238,242);border-left:0.0521vw solid rgb(236,238,242);"></div>
-<div class="g-t" style="position:absolute;left:7.4479vw;top:9.1406vw;width:2.0312vw;height:1.0417vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:0.7292vw;line-height:1.0417vw;color:#c23714;text-align:center;white-space:nowrap;">BLOG</div>
-<h1 class="g-t" style="position:absolute;left:7.1354vw;top:11.6146vw;width:85.7292vw;height:3.7500vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:3.7500vw;line-height:3.7500vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Field notes from SAP, cloud, and AI delivery.
-</h1>
-<div class="g-t" style="position:absolute;left:7.1354vw;top:16.6146vw;width:35.0000vw;height:1.8750vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:1.2500vw;line-height:1.8750vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Long-form writing from our engineering and product teams.</div>
-<section class="ax-footer" style="left:0.0vw;top:159.4271vw;width:100.0vw;height:44.2708vw;background-color:#ffffff"><style id="ax-footer-css">.ax-footer a{color:inherit;text-decoration:none;transition:color .15s ease}.ax-footer a:hover{color:#c23714}.ax-footer .ax-ai{display:block;opacity:.72;transition:opacity .15s ease,transform .15s ease}.ax-footer .ax-ai:hover{opacity:1;transform:translateY(-0.0521vw)}</style>
+</main>
+<section class="ax-footer" style="left:0.0vw;top:0vw;position:relative;width:100.0vw;height:44.2708vw;background-color:#ffffff"><style id="ax-footer-css">.ax-footer a{color:inherit;text-decoration:none;transition:color .15s ease}.ax-footer a:hover{color:#c23714}.ax-footer .ax-ai{display:block;opacity:.72;transition:opacity .15s ease,transform .15s ease}.ax-footer .ax-ai:hover{opacity:1;transform:translateY(-0.0521vw)}</style>
 <div class="g-b" style="position:absolute;left:7.9167vw;top:0.0000vw;width:84.1667vw;height:44.2708vw;box-sizing:border-box;border:0.0521vw solid rgb(236,238,242);"></div>
 <img class="g-vec" src="/assets/vec/I5323-14151;5290-9193.svg" data-vec="I5323:14151;5290:9193" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:14.5833vw;top:0.0000vw;width:12.6042vw;height:3.6206vw;">
 <div class="g-t" style="position:absolute;left:14.5833vw;top:7.8394vw;width:12.0833vw;height:1.8750vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:1.2500vw;line-height:1.8750vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Sign up to learn more </div>
@@ -2710,287 +2822,6 @@ document.addEventListener('DOMContentLoaded',function(){
 })();
 </script>
 
-<div class="ax-mob"><main class="ax-page" style="position:relative;height:1901.3953vw">
-<div class="g-b" style="position:absolute;left:0.0000vw;top:1232.5581vw;width:100.0000vw;height:668.7385vw;background-color:rgb(255,255,255);"></div>
-<img class="g-vec" src="/assets/vec/6287-25084.svg" data-vec="6287:25084" loading="lazy" decoding="async" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:3.7209vw;top:1241.8605vw;width:23.2558vw;height:13.2558vw;">
-<div class="g-t" style="position:absolute;left:7.9070vw;top:1268.1608vw;width:41.6279vw;height:6.0465vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:4.2706vw;line-height:5.8721vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Sign up to learn more </div>
-<div class="g-t" style="position:absolute;left:7.9070vw;top:1279.0117vw;width:84.1860vw;height:6.0465vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:4.2706vw;line-height:5.8721vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">SAP. Cloud. AI. One accountable partner.
-</div>
-<div class="g-b g-clip" style="position:absolute;left:7.9070vw;top:1294.4003vw;width:84.1860vw;height:11.1628vw;background-color:#cf3b15;border-radius:1.8605vw;overflow:hidden;">
-<div class="g-t" style="position:absolute;left:3.7209vw;top:3.2558vw;width:17.4419vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:3.2558vw;line-height:4.6512vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">Get Started</div>
-<img class="g-vec" src="/assets/vec/I6287-25117;4046-29821.svg" data-vec="I6287:25117;4046:29821" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:74.4186vw;top:2.7907vw;width:5.5814vw;height:5.5814vw;">
-</div>
-<div class="g-t" style="position:absolute;left:10.1267vw;top:1318.6419vw;width:22.3256vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:3.7209vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Who we are
-</div>
-<div class="g-t" style="position:absolute;left:10.1267vw;top:1331.6968vw;width:19.7674vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Foundation
-</div>
-<div class="g-t" style="position:absolute;left:10.1267vw;top:1341.5489vw;width:18.3721vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Leadership</div>
-<div class="g-t" style="position:absolute;left:10.1267vw;top:1351.4009vw;width:12.3256vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Culture</div>
-<div class="g-t" style="position:absolute;left:10.1267vw;top:1361.2530vw;width:11.1628vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Career</div>
-<div class="g-t" style="position:absolute;left:10.1267vw;top:1371.1050vw;width:17.9070vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Contact us</div>
-<div class="g-t" style="position:absolute;left:10.1267vw;top:1390.5661vw;width:14.4186vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:3.7209vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Services</div>
-<div class="g-t" style="position:absolute;left:10.1267vw;top:1403.6212vw;width:20.4651vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">All services
-</div>
-<div class="g-t" style="position:absolute;left:10.1267vw;top:1413.4732vw;width:24.6512vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">RISE with SAP</div>
-<div class="g-t" style="position:absolute;left:10.1267vw;top:1423.3253vw;width:29.7674vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">GROW with SAP
-</div>
-<div class="g-t" style="position:absolute;left:10.1267vw;top:1433.1772vw;width:33.0233vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">SAP AMS (AXIOM)
-</div>
-<div class="g-t" style="position:absolute;left:10.1267vw;top:1443.0294vw;width:10.0000vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">AWS
-</div>
-<div class="g-t" style="position:absolute;left:10.1267vw;top:1452.8813vw;width:23.0233vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Google Cloud</div>
-<div class="g-t" style="position:absolute;left:10.1267vw;top:1462.7335vw;width:28.3721vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Multi-cloud CMS</div>
-<div class="g-t" style="position:absolute;left:10.1267vw;top:1482.1941vw;width:15.5814vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:3.7209vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Products</div>
-<div class="g-t" style="position:absolute;left:10.1267vw;top:1495.2494vw;width:21.6279vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">All products
-</div>
-<div class="g-t" style="position:absolute;left:10.1267vw;top:1505.1013vw;width:16.5116vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">SupplierX</div>
-<div class="g-t" style="position:absolute;left:10.1267vw;top:1514.9534vw;width:12.0930vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">OrderX</div>
-<div class="g-t" style="position:absolute;left:10.1267vw;top:1524.8054vw;width:12.5581vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Xpense</div>
-<div class="g-t" style="position:absolute;left:10.1267vw;top:1534.6575vw;width:14.1860vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">Logystix</div>
-<div class="g-t" style="position:absolute;left:10.1267vw;top:1544.5094vw;width:15.8140vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">ManuFeX</div>
-<div class="g-t" style="position:absolute;left:10.1267vw;top:1554.3616vw;width:32.3256vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(58,67,82);text-align:left;white-space:nowrap;">AXIOM AI Platform</div>
-<div class="g-t" style="position:absolute;left:10.1267vw;top:1573.8222vw;width:17.2093vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:3.7209vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Industries</div>
-<div class="g-t" style="position:absolute;left:10.1267vw;top:1586.8775vw;width:25.1163vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Manufacturing
-</div>
-<div class="g-t" style="position:absolute;left:10.1267vw;top:1596.7294vw;width:36.7442vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Metals &amp; Engineering
-</div>
-<div class="g-t" style="position:absolute;left:10.1267vw;top:1606.5816vw;width:33.0233vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Energy &amp; Oil &amp; Gas
-</div>
-<div class="g-t" style="position:absolute;left:10.1267vw;top:1616.4335vw;width:13.0233vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Textiles</div>
-<div class="g-t" style="position:absolute;left:10.1267vw;top:1626.2857vw;width:35.3488vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">FMCG &amp; Distribution
-</div>
-<div class="g-t" style="position:absolute;left:10.1267vw;top:1636.1376vw;width:42.5581vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Automotive &amp; Aerospace
-</div>
-<div class="g-t" style="position:absolute;left:10.1267vw;top:1645.9897vw;width:15.3488vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Alliances</div>
-<div class="g-t" style="position:absolute;left:10.1267vw;top:1665.4504vw;width:16.5116vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:3.7209vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">About Us</div>
-<div class="g-t" style="position:absolute;left:10.1267vw;top:1678.5056vw;width:21.1628vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Case studies</div>
-<div class="g-t" style="position:absolute;left:10.1267vw;top:1688.3576vw;width:26.9767vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Trust &amp; security
-</div>
-<div class="g-t" style="position:absolute;left:10.1267vw;top:1698.2097vw;width:7.9070vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Blog</div>
-<div class="g-t" style="position:absolute;left:10.1267vw;top:1708.0616vw;width:30.0000vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Investor relations
-</div>
-<div class="g-t" style="position:absolute;left:10.1267vw;top:1717.9138vw;width:26.7442vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">BSE disclosures</div>
-<div class="g-t" style="position:absolute;left:10.1267vw;top:1737.3746vw;width:17.4419vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:3.7209vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Follow Us</div>
-<div class="g-t" style="position:absolute;left:10.1267vw;top:1750.4299vw;width:11.8605vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Twitter</div>
-<div class="g-t" style="position:absolute;left:10.1267vw;top:1760.2818vw;width:14.1860vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">LinkedIn</div>
-<div class="g-img" data-ref="1a6724d5f1b0e3e74c7e42c83b442f552edd6040" role="presentation" aria-hidden="true" style="position:absolute;left:76.0465vw;top:1756.0465vw;width:20.2326vw;height:34.4186vw;background-image:url(/assets/partners/gptw-certified.png);background-size:contain;background-position:center;background-repeat:no-repeat;"></div>
-<div class="g-img" data-ref="9eb08a9ddab314e538d8d079612a05d15204b1c3" role="presentation" aria-hidden="true" style="position:absolute;left:74.8837vw;top:1700.4651vw;width:21.3953vw;height:21.3953vw;background-image:url(/assets/gen/9eb08a9ddab314e538d8d079612a05d15204b1c3.webp);background-size:35.6589vw 21.3953vw;background-position:-6.6258vw -0.0000vw;background-repeat:no-repeat;"></div>
-<div class="g-img" data-ref="f098495ead3741a8d723bd5d9f56e3a681293a2d" role="presentation" aria-hidden="true" style="position:absolute;left:74.1860vw;top:1727.4419vw;width:22.0930vw;height:23.0233vw;background-image:url(/assets/gen/f098495ead3741a8d723bd5d9f56e3a681293a2d.webp);background-size:22.9805vw 23.0233vw;background-position:-0.2104vw -0.0000vw;background-repeat:no-repeat;"></div>
-<div class="g-b" style="position:absolute;left:3.7209vw;top:1778.3844vw;width:92.5581vw;height:63.6100vw;box-sizing:border-box;border-bottom:0.2326vw solid rgb(236,238,242);"></div>
-<div class="g-t" style="position:absolute;left:10.3938vw;top:1784.5233vw;width:32.0930vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;"><a href="mailto:sales@aeonx.digital">sales@aeonx.digital</a></div>
-<div class="g-t" style="position:absolute;left:10.3938vw;top:1794.3755vw;width:32.5581vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Terms &amp; Conditions</div>
-<div class="g-t" style="position:absolute;left:47.6749vw;top:1794.3391vw;width:23.0233vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Privacy Policy</div>
-<div class="g-t" style="position:absolute;left:10.4656vw;top:1813.4089vw;width:79.0698vw;height:22.3256vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:pre-wrap;">© 2026 AeonX Digital Technology Limited. BSE-listed. |  All rights reserved. · SAP Gold Partner · AWS Advanced Tier · Google Cloud Partner</div>
-<div class="g-t" style="position:absolute;left:10.3938vw;top:1804.2274vw;width:13.0233vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Cookies</div>
-<div class="g-t" style="position:absolute;left:33.0237vw;top:1804.3391vw;width:13.9535vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.7209vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">Sitemap</div>
-<div class="g-b" style="position:absolute;left:3.7209vw;top:1778.2926vw;width:92.5581vw;height:0.2326vw;background:linear-gradient(90deg, rgba(133,128,123,0.180) 0.0%);"></div>
-<div class="g-b" style="position:absolute;left:3.7209vw;top:1850.3666vw;width:92.5581vw;height:10.6977vw;box-sizing:border-box;border:0.2326vw solid rgb(236,238,242);"></div>
-<div class="g-t" style="position:absolute;left:7.6744vw;top:1853.3898vw;width:46.7442vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:3.2558vw;line-height:4.6512vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Get an AI summary of this page</div>
-<img class="g-vec" src="/assets/vec/6287-25266.svg" data-vec="6287:25266" loading="lazy" decoding="async" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:71.8605vw;top:1853.3898vw;width:20.0000vw;height:4.6512vw;">
-<div class="g-b" style="position:absolute;left:3.7209vw;top:1861.0642vw;width:92.5581vw;height:28.1395vw;box-sizing:border-box;border-right:0.2326vw solid rgb(236,238,242);border-bottom:0.2326vw solid rgb(236,238,242);border-left:0.2326vw solid rgb(236,238,242);"></div>
-<div class="g-t" style="position:absolute;left:7.6744vw;top:1863.8549vw;width:49.3023vw;height:6.5116vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:4.1860vw;line-height:6.5116vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Get the latest from Aeonx</div>
-<div class="g-b g-clip" style="position:absolute;left:7.6744vw;top:1875.0177vw;width:54.6512vw;height:10.2326vw;border-radius:0.4651vw;box-sizing:border-box;border:0.1860vw solid rgb(246,168,123);overflow:hidden;">
-<div class="g-t" style="position:absolute;left:3.9072vw;top:2.3256vw;width:46.8372vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:3.7209vw;line-height:5.5814vw;color:#58677d;text-align:left;white-space:nowrap;">Work email</div>
-</div>
-<div class="g-b g-clip" style="position:absolute;left:65.1163vw;top:1875.0177vw;width:27.6744vw;height:10.2326vw;border-radius:0.4651vw;overflow:hidden;">
-<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:27.6744vw;height:10.2326vw;background-color:#cf3b15;border-radius:1.8605vw;overflow:hidden;">
-<div class="g-t" style="position:absolute;left:6.5116vw;top:2.7907vw;width:14.6512vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:3.2558vw;line-height:4.6512vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">Subscribe</div>
-</div>
-</div>
-<div class="g-b" style="position:absolute;left:0.0000vw;top:1149.3023vw;width:100.0930vw;height:83.2558vw;background-color:rgb(246,247,249);"></div>
-<div role="heading" aria-level="1" class="g-t" style="position:absolute;left:5.5814vw;top:1158.6047vw;width:88.8372vw;height:10.2326vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:8.3721vw;line-height:10.2326vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Request the trust pack.</div>
-<div class="g-t" style="position:absolute;left:5.9302vw;top:1171.6279vw;width:88.1395vw;height:19.5349vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:4.1860vw;line-height:6.5116vw;color:rgb(82,96,119);text-align:left;white-space:pre-wrap;">Send a one-line email, we&#x27;ll send the NDA the same day. Most procurement teams have the full pack within 48 hours.</div>
-<div class="g-b g-clip" style="position:absolute;left:5.5814vw;top:1198.1395vw;width:88.8372vw;height:11.1628vw;background-color:#cf3b15;border-radius:1.8605vw;overflow:hidden;">
-<div class="g-t" style="position:absolute;left:3.7209vw;top:3.2558vw;width:33.4884vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:3.2558vw;line-height:4.6512vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">Request the trust pack</div>
-<img class="g-vec" src="/assets/vec/I5637-76185;4046-29821.svg" data-vec="I5637:76185;4046:29821" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:79.0698vw;top:2.7907vw;width:5.5814vw;height:5.5814vw;">
-</div>
-<div class="g-b g-clip" style="position:absolute;left:5.5814vw;top:1212.0930vw;width:88.8372vw;height:11.1628vw;background-color:rgb(255,255,255);border-radius:1.8605vw;box-sizing:border-box;border:0.2326vw solid rgb(213,218,226);overflow:hidden;">
-<div class="g-t" style="position:absolute;left:3.7209vw;top:3.2558vw;width:30.9302vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:3.2558vw;line-height:4.6512vw;color:rgb(58,67,82);text-align:center;white-space:nowrap;">Talk to security team</div>
-<img class="g-vec" src="/assets/vec/I5637-76186;4046-29893.svg" data-vec="I5637:76186;4046:29893" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:79.0698vw;top:2.7907vw;width:5.5814vw;height:5.5814vw;">
-</div>
-<div class="g-b" style="position:absolute;left:0.0000vw;top:97.9070vw;width:100.0000vw;height:1051.3953vw;background-color:rgb(255,255,255);"></div>
-<div class="g-b" style="position:absolute;left:0.0000vw;top:97.9070vw;width:100.0000vw;height:43.0233vw;box-sizing:border-box;border-bottom:0.2326vw solid rgb(213,218,226);"></div>
-<div class="g-t" style="position:absolute;left:3.7209vw;top:107.2093vw;width:13.9535vw;height:8.3721vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:6.5116vw;line-height:8.3721vw;color:#c23714;text-align:left;white-space:nowrap;">Blog</div>
-<div class="g-b" style="position:absolute;left:3.7209vw;top:125.3488vw;width:90.6977vw;height:9.7674vw;background-color:rgb(246,247,249);border-radius:0.9302vw;box-sizing:border-box;border:0.2326vw solid rgb(213,218,226);"></div>
-<img class="g-vec" src="/assets/vec/5637-76196.svg" data-vec="5637:76196" loading="lazy" decoding="async" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:5.8140vw;top:128.3721vw;width:3.7209vw;height:3.7209vw;">
-<div class="g-t" style="position:absolute;left:10.9302vw;top:127.4419vw;width:14.4186vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:4.6512vw;line-height:5.5814vw;color:#c23714;text-align:center;white-space:nowrap;">Search</div>
-<div class="g-b" style="position:absolute;left:77.9070vw;top:126.7442vw;width:6.9767vw;height:6.9767vw;background-color:#cf3b15;border-radius:0.4651vw;"></div>
-<div class="g-t" style="position:absolute;left:79.4549vw;top:127.4419vw;width:3.9535vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:4.6512vw;line-height:5.5814vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">⌘</div>
-<div class="g-b" style="position:absolute;left:85.3488vw;top:126.7442vw;width:6.9767vw;height:6.9767vw;background-color:#cf3b15;border-radius:0.4651vw;"></div>
-<div class="g-t" style="position:absolute;left:87.3256vw;top:127.4419vw;width:3.0233vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:4.6512vw;line-height:5.5814vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">K</div>
-<div class="g-b" style="position:absolute;left:0.0000vw;top:97.9070vw;width:0.2326vw;height:42.8852vw;background-color:rgb(246,247,249);"></div>
-<div class="g-b" style="position:absolute;left:320.2326vw;top:97.9070vw;width:0.2326vw;height:42.8852vw;background-color:rgb(246,247,249);"></div>
-<div class="g-b" style="position:absolute;left:-0.6977vw;top:138.3721vw;width:1.6279vw;height:1.6279vw;background-color:rgb(134,149,170);box-sizing:border-box;border:0.2326vw solid rgb(213,218,226);"></div>
-<div class="g-b" style="position:absolute;left:319.5349vw;top:138.1395vw;width:1.6279vw;height:1.6279vw;background-color:rgb(134,149,170);box-sizing:border-box;border:0.2326vw solid rgb(213,218,226);"></div>
-<div class="g-b" style="position:absolute;left:0.0000vw;top:140.9302vw;width:100.0000vw;height:321.3953vw;box-sizing:border-box;border-bottom:0.2326vw solid rgb(213,218,226);"></div>
-<div class="g-b" style="position:absolute;left:3.7209vw;top:140.9302vw;width:92.5581vw;height:321.1628vw;box-sizing:border-box;border-right:0.2326vw solid rgb(213,218,226);border-left:0.2326vw solid rgb(213,218,226);"></div>
-<div class="g-b g-clip" style="position:absolute;left:5.8140vw;top:144.6512vw;width:88.8372vw;height:83.7209vw;overflow:hidden;">
-<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:88.8372vw;height:83.7209vw;box-sizing:border-box;border:0.2326vw solid rgb(246,247,249);overflow:hidden;">
-<div class="g-img g-clip" data-ref="ece298d0ec2c16f10310d45724b276a6035cb503" role="presentation" aria-hidden="true" style="position:absolute;left:0.2326vw;top:0.2326vw;width:148.3721vw;height:83.2558vw;background-image:url(/assets/gen/ece298d0ec2c16f10310d45724b276a6035cb503.webp);background-size:cover;background-position:center;background-repeat:no-repeat;overflow:hidden;">
-</div>
-</div>
-</div>
-<div class="g-b" style="position:absolute;left:5.8140vw;top:233.9535vw;width:26.7442vw;height:5.5814vw;background-color:#cf3b15;border-radius:0.4651vw;"></div>
-<div class="g-t" style="position:absolute;left:9.6512vw;top:234.4186vw;width:19.0698vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.2558vw;line-height:4.6512vw;color:rgb(255,255,255);text-align:left;white-space:nowrap;">Enterprise AI</div>
-<div class="g-t" style="position:absolute;left:5.8140vw;top:242.3256vw;width:88.8372vw;height:6.5116vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:4.1860vw;line-height:6.5116vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Making sense of the AI control plane</div>
-<div class="g-img g-clip" data-ref="ece298d0ec2c16f10310d45724b276a6035cb503" role="presentation" aria-hidden="true" style="position:absolute;left:5.8140vw;top:258.6047vw;width:6.5116vw;height:6.5116vw;background-image:url(/assets/gen/ece298d0ec2c16f10310d45724b276a6035cb503.webp);background-size:cover;background-position:center;background-repeat:no-repeat;border-radius:0.9302vw;overflow:hidden;">
-</div>
-<h2 class="g-t" style="position:absolute;left:13.7209vw;top:259.0698vw;width:23.2558vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:4.6512vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">John Nolan</h2>
-<h2 class="g-t" style="position:absolute;left:64.1860vw;top:259.0698vw;width:30.4651vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:4.6512vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">April 24, 2026</h2>
-<div class="g-b" style="position:absolute;left:3.9535vw;top:268.8372vw;width:92.5581vw;height:193.2558vw;box-sizing:border-box;border-left:0.2326vw solid rgb(213,218,226);"></div>
-<div class="g-b" style="position:absolute;left:4.1860vw;top:268.8372vw;width:92.3256vw;height:48.3721vw;box-sizing:border-box;border-bottom:0.2326vw solid rgb(213,218,226);"></div>
-<div class="g-b g-clip" style="position:absolute;left:6.0465vw;top:272.5581vw;width:40.9302vw;height:40.9302vw;overflow:hidden;">
-<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:40.9302vw;height:40.9302vw;box-sizing:border-box;border:0.2326vw solid rgb(246,247,249);overflow:hidden;">
-<div class="g-img g-clip" data-ref="ece298d0ec2c16f10310d45724b276a6035cb503" role="presentation" aria-hidden="true" style="position:absolute;left:0.2326vw;top:0.2326vw;width:41.3953vw;height:40.6977vw;background-image:url(/assets/gen/ece298d0ec2c16f10310d45724b276a6035cb503.webp);background-size:cover;background-position:center;background-repeat:no-repeat;overflow:hidden;">
-</div>
-</div>
-</div>
-<div class="g-b" style="position:absolute;left:49.0698vw;top:272.5581vw;width:23.9535vw;height:5.8140vw;background-color:rgb(246,247,249);"></div>
-<div class="g-t" style="position:absolute;left:50.1163vw;top:273.0233vw;width:21.8605vw;height:5.1163vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.0233vw;line-height:5.1163vw;color:rgb(255,255,255);text-align:left;white-space:nowrap;">ENTERPRISE AI</div>
-<div class="g-b g-clip" style="position:absolute;left:49.0698vw;top:281.1628vw;width:45.5814vw;height:32.3256vw;overflow:hidden;">
-<div class="g-t" style="position:absolute;left:0.0000vw;top:0.0000vw;width:45.5814vw;height:32.3256vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.0233vw;line-height:5.1163vw;color:rgb(35,39,46);text-align:left;white-space:pre-wrap;">Security first, capability second: Building virtual employees enterprises can actually trust</div>
-</div>
-<div class="g-b" style="position:absolute;left:4.1860vw;top:317.2093vw;width:92.3256vw;height:48.3721vw;box-sizing:border-box;border-bottom:0.2326vw solid rgb(213,218,226);"></div>
-<div class="g-b g-clip" style="position:absolute;left:6.0465vw;top:320.9302vw;width:40.9302vw;height:40.9302vw;overflow:hidden;">
-<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:40.9302vw;height:40.9302vw;box-sizing:border-box;border:0.2326vw solid rgb(246,247,249);overflow:hidden;">
-<div class="g-img g-clip" data-ref="ece298d0ec2c16f10310d45724b276a6035cb503" role="presentation" aria-hidden="true" style="position:absolute;left:0.2326vw;top:0.2326vw;width:41.3953vw;height:40.6977vw;background-image:url(/assets/gen/ece298d0ec2c16f10310d45724b276a6035cb503.webp);background-size:cover;background-position:center;background-repeat:no-repeat;overflow:hidden;">
-</div>
-</div>
-</div>
-<div class="g-b" style="position:absolute;left:49.0698vw;top:320.9302vw;width:17.4419vw;height:5.8140vw;background-color:rgb(246,247,249);"></div>
-<div class="g-t" style="position:absolute;left:50.4651vw;top:321.3953vw;width:14.6512vw;height:5.1163vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.0233vw;line-height:5.1163vw;color:rgb(255,255,255);text-align:left;white-space:nowrap;">PRODUCT</div>
-<div class="g-b g-clip" style="position:absolute;left:49.0698vw;top:329.5349vw;width:45.5814vw;height:32.3256vw;overflow:hidden;">
-<div class="g-t" style="position:absolute;left:0.0000vw;top:0.0000vw;width:45.5814vw;height:32.3256vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.0233vw;line-height:5.1163vw;color:rgb(35,39,46);text-align:left;white-space:pre-wrap;">MCP authorization: Roll out AI to every team, safely</div>
-</div>
-<div class="g-b" style="position:absolute;left:4.1860vw;top:365.5814vw;width:92.3256vw;height:48.3721vw;box-sizing:border-box;border-bottom:0.2326vw solid rgb(213,218,226);"></div>
-<div class="g-b g-clip" style="position:absolute;left:6.0465vw;top:369.3023vw;width:40.9302vw;height:40.9302vw;overflow:hidden;">
-<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:40.9302vw;height:40.9302vw;box-sizing:border-box;border:0.2326vw solid rgb(246,247,249);overflow:hidden;">
-<div class="g-img g-clip" data-ref="ece298d0ec2c16f10310d45724b276a6035cb503" role="presentation" aria-hidden="true" style="position:absolute;left:0.2326vw;top:0.2326vw;width:41.3953vw;height:40.6977vw;background-image:url(/assets/gen/ece298d0ec2c16f10310d45724b276a6035cb503.webp);background-size:cover;background-position:center;background-repeat:no-repeat;overflow:hidden;">
-</div>
-</div>
-</div>
-<div class="g-b" style="position:absolute;left:49.0698vw;top:369.3023vw;width:24.6512vw;height:5.8140vw;background-color:rgb(246,247,249);"></div>
-<div class="g-t" style="position:absolute;left:50.4651vw;top:369.7674vw;width:21.8605vw;height:5.1163vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.0233vw;line-height:5.1163vw;color:rgb(255,255,255);text-align:left;white-space:nowrap;">ENTERPRISE AI</div>
-<div class="g-b g-clip" style="position:absolute;left:49.0698vw;top:377.9070vw;width:45.5814vw;height:32.3256vw;overflow:hidden;">
-<div class="g-t" style="position:absolute;left:0.0000vw;top:0.0000vw;width:45.5814vw;height:32.3256vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.0233vw;line-height:5.1163vw;color:rgb(35,39,46);text-align:left;white-space:pre-wrap;">We were wrong about the hard problem</div>
-</div>
-<div class="g-b" style="position:absolute;left:4.1860vw;top:413.9535vw;width:92.3256vw;height:48.3721vw;box-sizing:border-box;border-bottom:0.2326vw solid rgb(213,218,226);"></div>
-<div class="g-b g-clip" style="position:absolute;left:6.0465vw;top:417.6744vw;width:40.9302vw;height:40.9302vw;overflow:hidden;">
-<div class="g-b g-clip" style="position:absolute;left:0.0000vw;top:0.0000vw;width:40.9302vw;height:40.9302vw;box-sizing:border-box;border:0.2326vw solid rgb(246,247,249);overflow:hidden;">
-<div class="g-img g-clip" data-ref="ece298d0ec2c16f10310d45724b276a6035cb503" role="presentation" aria-hidden="true" style="position:absolute;left:0.2326vw;top:0.2326vw;width:41.3953vw;height:40.6977vw;background-image:url(/assets/gen/ece298d0ec2c16f10310d45724b276a6035cb503.webp);background-size:cover;background-position:center;background-repeat:no-repeat;overflow:hidden;">
-</div>
-</div>
-</div>
-<div class="g-b" style="position:absolute;left:49.0698vw;top:417.6744vw;width:13.0233vw;height:5.8140vw;background-color:rgb(246,247,249);"></div>
-<div class="g-t" style="position:absolute;left:50.4651vw;top:418.1395vw;width:10.2326vw;height:5.1163vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.0233vw;line-height:5.1163vw;color:rgb(255,255,255);text-align:left;white-space:nowrap;">OTHER</div>
-<div class="g-b g-clip" style="position:absolute;left:49.0698vw;top:426.2791vw;width:45.5814vw;height:32.3256vw;overflow:hidden;">
-<div class="g-t" style="position:absolute;left:0.0000vw;top:0.0000vw;width:45.5814vw;height:32.3256vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.0233vw;line-height:5.1163vw;color:rgb(35,39,46);text-align:left;white-space:pre-wrap;">AEONX is SOC 2 Type II and ISO 27001 certified</div>
-</div>
-<div class="g-b" style="position:absolute;left:0.0000vw;top:462.3256vw;width:100.0000vw;height:27.6744vw;box-sizing:border-box;border-bottom:0.2326vw solid rgb(213,218,226);"></div>
-<div class="g-b" style="position:absolute;left:0.0000vw;top:462.3256vw;width:100.0000vw;height:27.4419vw;box-sizing:border-box;border-right:0.2326vw solid rgb(213,218,226);border-left:0.2326vw solid rgb(213,218,226);"></div>
-<h2 class="g-t" style="position:absolute;left:2.0930vw;top:466.0465vw;width:60.6977vw;height:8.3721vw;font-family:'Nunito Sans',sans-serif;font-weight:600;font-size:6.5116vw;line-height:8.3721vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">Browse by category:</h2>
-<div class="g-b g-clip" style="position:absolute;left:2.0930vw;top:476.7442vw;width:96.2791vw;height:9.3023vw;overflow:hidden;">
-<div class="g-b" style="position:absolute;left:0.0000vw;top:1.1628vw;width:11.8605vw;height:6.9767vw;background-color:#cf3b15;box-shadow:inset 0.0000vw -0.4651vw 0.2326vw rgba(0,0,0,0.050),inset 0.0000vw 0.4651vw 0.2326vw rgb(147,38,25);"></div>
-<div class="g-t" style="position:absolute;left:3.7209vw;top:2.3256vw;width:4.4186vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.2558vw;line-height:4.6512vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">All</div>
-<div class="g-b" style="position:absolute;left:13.2558vw;top:1.1628vw;width:24.1860vw;height:6.9767vw;box-sizing:border-box;border:0.2326vw solid rgb(213,218,226);"></div>
-<div class="g-t" style="position:absolute;left:17.2093vw;top:1.8605vw;width:16.2791vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:4.6512vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:center;white-space:nowrap;">Product</div>
-<div class="g-b" style="position:absolute;left:38.8372vw;top:1.1628vw;width:35.1163vw;height:6.9767vw;box-sizing:border-box;border:0.2326vw solid rgb(213,218,226);"></div>
-<h2 class="g-t" style="position:absolute;left:42.7907vw;top:1.8605vw;width:27.2093vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:4.6512vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:center;white-space:nowrap;">Enterprise AI</h2>
-<div class="g-b" style="position:absolute;left:75.3488vw;top:1.1628vw;width:32.7907vw;height:6.9767vw;box-sizing:border-box;border:0.2326vw solid rgb(213,218,226);"></div>
-<div class="g-t" style="position:absolute;left:79.3023vw;top:1.8605vw;width:24.8837vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:4.6512vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:center;white-space:nowrap;">Engineering</div>
-</div>
-<div class="g-b" style="position:absolute;left:0.0000vw;top:490.0000vw;width:100.0000vw;height:659.3023vw;box-sizing:border-box;border-bottom:0.2326vw solid rgb(213,218,226);"></div>
-<div class="g-b" style="position:absolute;left:0.0000vw;top:490.0000vw;width:100.0000vw;height:659.0698vw;box-sizing:border-box;border-right:0.2326vw solid rgb(213,218,226);border-left:0.2326vw solid rgb(213,218,226);"></div>
-<img class="g-vec" src="/assets/vec/5637-76303.svg" data-vec="5637:76303" loading="lazy" decoding="async" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:13.5974vw;top:495.5814vw;width:13.4884vw;height:9.7674vw;">
-<div class="g-t" style="position:absolute;left:29.4113vw;top:498.1395vw;width:2.0930vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.2558vw;line-height:4.6512vw;color:#c23714;text-align:center;white-space:nowrap;">1</div>
-<div class="g-t" style="position:absolute;left:35.0945vw;top:498.1395vw;width:2.0930vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.2558vw;line-height:4.6512vw;color:rgb(82,96,119);text-align:center;white-space:nowrap;">2</div>
-<div class="g-t" style="position:absolute;left:40.7776vw;top:498.1395vw;width:2.0930vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.2558vw;line-height:4.6512vw;color:rgb(82,96,119);text-align:center;white-space:nowrap;">3</div>
-<div class="g-t" style="position:absolute;left:46.4608vw;top:498.1395vw;width:2.0930vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.2558vw;line-height:4.6512vw;color:rgb(82,96,119);text-align:center;white-space:nowrap;">4</div>
-<div class="g-t" style="position:absolute;left:52.1439vw;top:498.1395vw;width:2.0930vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.2558vw;line-height:4.6512vw;color:rgb(82,96,119);text-align:center;white-space:nowrap;">5</div>
-<img class="g-vec" src="/assets/vec/5637-76319.svg" data-vec="5637:76319" loading="lazy" decoding="async" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:56.4317vw;top:496.2791vw;width:8.3721vw;height:8.3721vw;">
-<div class="g-t" style="position:absolute;left:67.1294vw;top:498.1395vw;width:3.9535vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.2558vw;line-height:4.6512vw;color:rgb(82,96,119);text-align:center;white-space:nowrap;">40</div>
-<img class="g-vec" src="/assets/vec/5637-76326.svg" data-vec="5637:76326" loading="lazy" decoding="async" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:73.3794vw;top:495.5814vw;width:13.4884vw;height:9.7674vw;">
-<div class="g-b" style="position:absolute;left:3.9535vw;top:505.3488vw;width:92.5581vw;height:104.1860vw;box-sizing:border-box;border:0.2326vw solid rgb(213,218,226);"></div>
-<div class="g-img g-clip" data-ref="ece298d0ec2c16f10310d45724b276a6035cb503" role="presentation" aria-hidden="true" style="position:absolute;left:5.8140vw;top:509.0698vw;width:88.8372vw;height:53.4884vw;background-image:url(/assets/gen/ece298d0ec2c16f10310d45724b276a6035cb503.webp);background-size:cover;background-position:center;background-repeat:no-repeat;border-radius:1.8605vw;overflow:hidden;">
-</div>
-<div class="g-b" style="position:absolute;left:5.8140vw;top:568.1395vw;width:17.2093vw;height:5.5814vw;background-color:#cf3b15;"></div>
-<div class="g-t" style="position:absolute;left:7.0930vw;top:568.3721vw;width:14.6512vw;height:5.1163vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.0233vw;line-height:5.1163vw;color:rgb(255,255,255);text-align:left;white-space:nowrap;">PRODUCT</div>
-<div class="g-b g-clip" style="position:absolute;left:5.8140vw;top:576.5116vw;width:88.8372vw;height:17.1221vw;overflow:hidden;">
-<h2 class="g-t" style="position:absolute;left:0.0000vw;top:0.0000vw;width:95.3488vw;height:16.7442vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:5.5814vw;line-height:8.3721vw;color:rgb(35,39,46);text-align:left;white-space:pre-wrap;">Tune risk detection sensitivity, one policy at a time</h2>
-</div>
-<div class="g-img g-clip" data-ref="ece298d0ec2c16f10310d45724b276a6035cb503" role="presentation" aria-hidden="true" style="position:absolute;left:5.8140vw;top:599.2151vw;width:6.5116vw;height:6.5116vw;background-image:url(/assets/gen/ece298d0ec2c16f10310d45724b276a6035cb503.webp);background-size:cover;background-position:center;background-repeat:no-repeat;border-radius:0.4651vw;overflow:hidden;">
-</div>
-<h2 class="g-t" style="position:absolute;left:13.7209vw;top:599.6802vw;width:22.7907vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:4.6512vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">John Smith</h2>
-<h2 class="g-t" style="position:absolute;left:65.1163vw;top:599.6802vw;width:29.5349vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:4.6512vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">June 29, 2026</h2>
-<div class="g-b" style="position:absolute;left:3.9535vw;top:611.3953vw;width:92.5581vw;height:104.1860vw;box-sizing:border-box;border:0.2326vw solid rgb(213,218,226);"></div>
-<div class="g-img g-clip" data-ref="ece298d0ec2c16f10310d45724b276a6035cb503" role="presentation" aria-hidden="true" style="position:absolute;left:5.8140vw;top:615.1163vw;width:88.8372vw;height:53.4884vw;background-image:url(/assets/gen/ece298d0ec2c16f10310d45724b276a6035cb503.webp);background-size:cover;background-position:center;background-repeat:no-repeat;border-radius:1.8605vw;overflow:hidden;">
-</div>
-<div class="g-b" style="position:absolute;left:5.8140vw;top:674.1860vw;width:17.2093vw;height:5.5814vw;background-color:#cf3b15;"></div>
-<div class="g-t" style="position:absolute;left:7.0930vw;top:674.4186vw;width:14.6512vw;height:5.1163vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.0233vw;line-height:5.1163vw;color:rgb(255,255,255);text-align:left;white-space:nowrap;">PRODUCT</div>
-<div class="g-b g-clip" style="position:absolute;left:5.8140vw;top:682.5581vw;width:88.8372vw;height:17.1221vw;overflow:hidden;">
-<h2 class="g-t" style="position:absolute;left:0.0000vw;top:0.0000vw;width:95.3488vw;height:16.7442vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:5.5814vw;line-height:8.3721vw;color:rgb(35,39,46);text-align:left;white-space:pre-wrap;">Tune risk detection sensitivity, one policy at a time</h2>
-</div>
-<div class="g-img g-clip" data-ref="ece298d0ec2c16f10310d45724b276a6035cb503" role="presentation" aria-hidden="true" style="position:absolute;left:5.8140vw;top:705.2616vw;width:6.5116vw;height:6.5116vw;background-image:url(/assets/gen/ece298d0ec2c16f10310d45724b276a6035cb503.webp);background-size:cover;background-position:center;background-repeat:no-repeat;border-radius:0.4651vw;overflow:hidden;">
-</div>
-<h2 class="g-t" style="position:absolute;left:13.7209vw;top:705.7267vw;width:22.7907vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:4.6512vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">John Smith</h2>
-<h2 class="g-t" style="position:absolute;left:65.1163vw;top:705.7267vw;width:29.5349vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:4.6512vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">June 29, 2026</h2>
-<div class="g-b" style="position:absolute;left:3.9535vw;top:717.4419vw;width:92.5581vw;height:104.1860vw;box-sizing:border-box;border:0.2326vw solid rgb(213,218,226);"></div>
-<div class="g-img g-clip" data-ref="ece298d0ec2c16f10310d45724b276a6035cb503" role="presentation" aria-hidden="true" style="position:absolute;left:5.8140vw;top:721.1628vw;width:88.8372vw;height:53.4884vw;background-image:url(/assets/gen/ece298d0ec2c16f10310d45724b276a6035cb503.webp);background-size:cover;background-position:center;background-repeat:no-repeat;border-radius:1.8605vw;overflow:hidden;">
-</div>
-<div class="g-b" style="position:absolute;left:5.8140vw;top:780.2326vw;width:17.2093vw;height:5.5814vw;background-color:#cf3b15;"></div>
-<div class="g-t" style="position:absolute;left:7.0930vw;top:780.4651vw;width:14.6512vw;height:5.1163vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.0233vw;line-height:5.1163vw;color:rgb(255,255,255);text-align:left;white-space:nowrap;">PRODUCT</div>
-<div class="g-b g-clip" style="position:absolute;left:5.8140vw;top:788.6047vw;width:88.8372vw;height:17.1221vw;overflow:hidden;">
-<h2 class="g-t" style="position:absolute;left:0.0000vw;top:0.0000vw;width:95.3488vw;height:16.7442vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:5.5814vw;line-height:8.3721vw;color:rgb(35,39,46);text-align:left;white-space:pre-wrap;">Tune risk detection sensitivity, one policy at a time</h2>
-</div>
-<div class="g-img g-clip" data-ref="ece298d0ec2c16f10310d45724b276a6035cb503" role="presentation" aria-hidden="true" style="position:absolute;left:5.8140vw;top:811.3081vw;width:6.5116vw;height:6.5116vw;background-image:url(/assets/gen/ece298d0ec2c16f10310d45724b276a6035cb503.webp);background-size:cover;background-position:center;background-repeat:no-repeat;border-radius:0.4651vw;overflow:hidden;">
-</div>
-<h2 class="g-t" style="position:absolute;left:13.7209vw;top:811.7733vw;width:22.7907vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:4.6512vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">John Smith</h2>
-<h2 class="g-t" style="position:absolute;left:65.1163vw;top:811.7733vw;width:29.5349vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:4.6512vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">June 29, 2026</h2>
-<div class="g-b" style="position:absolute;left:3.9535vw;top:823.4884vw;width:92.5581vw;height:104.1860vw;box-sizing:border-box;border:0.2326vw solid rgb(213,218,226);"></div>
-<div class="g-img g-clip" data-ref="ece298d0ec2c16f10310d45724b276a6035cb503" role="presentation" aria-hidden="true" style="position:absolute;left:5.8140vw;top:827.2093vw;width:88.8372vw;height:53.4884vw;background-image:url(/assets/gen/ece298d0ec2c16f10310d45724b276a6035cb503.webp);background-size:cover;background-position:center;background-repeat:no-repeat;border-radius:1.8605vw;overflow:hidden;">
-</div>
-<div class="g-b" style="position:absolute;left:5.8140vw;top:886.2791vw;width:17.2093vw;height:5.5814vw;background-color:#cf3b15;"></div>
-<div class="g-t" style="position:absolute;left:7.0930vw;top:886.5116vw;width:14.6512vw;height:5.1163vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.0233vw;line-height:5.1163vw;color:rgb(255,255,255);text-align:left;white-space:nowrap;">PRODUCT</div>
-<div class="g-b g-clip" style="position:absolute;left:5.8140vw;top:894.6512vw;width:88.8372vw;height:17.1221vw;overflow:hidden;">
-<h2 class="g-t" style="position:absolute;left:0.0000vw;top:0.0000vw;width:95.3488vw;height:16.7442vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:5.5814vw;line-height:8.3721vw;color:rgb(35,39,46);text-align:left;white-space:pre-wrap;">Tune risk detection sensitivity, one policy at a time</h2>
-</div>
-<div class="g-img g-clip" data-ref="ece298d0ec2c16f10310d45724b276a6035cb503" role="presentation" aria-hidden="true" style="position:absolute;left:5.8140vw;top:917.3547vw;width:6.5116vw;height:6.5116vw;background-image:url(/assets/gen/ece298d0ec2c16f10310d45724b276a6035cb503.webp);background-size:cover;background-position:center;background-repeat:no-repeat;border-radius:0.4651vw;overflow:hidden;">
-</div>
-<h2 class="g-t" style="position:absolute;left:13.7209vw;top:917.8198vw;width:22.7907vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:4.6512vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">John Smith</h2>
-<h2 class="g-t" style="position:absolute;left:65.1163vw;top:917.8198vw;width:29.5349vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:4.6512vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">June 29, 2026</h2>
-<div class="g-b" style="position:absolute;left:3.9535vw;top:929.5349vw;width:92.5581vw;height:104.1860vw;box-sizing:border-box;border:0.2326vw solid rgb(213,218,226);"></div>
-<div class="g-img g-clip" data-ref="ece298d0ec2c16f10310d45724b276a6035cb503" role="presentation" aria-hidden="true" style="position:absolute;left:5.8140vw;top:933.2558vw;width:88.8372vw;height:53.4884vw;background-image:url(/assets/gen/ece298d0ec2c16f10310d45724b276a6035cb503.webp);background-size:cover;background-position:center;background-repeat:no-repeat;border-radius:1.8605vw;overflow:hidden;">
-</div>
-<div class="g-b" style="position:absolute;left:5.8140vw;top:992.3256vw;width:17.2093vw;height:5.5814vw;background-color:#cf3b15;"></div>
-<div class="g-t" style="position:absolute;left:7.0930vw;top:992.5581vw;width:14.6512vw;height:5.1163vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.0233vw;line-height:5.1163vw;color:rgb(255,255,255);text-align:left;white-space:nowrap;">PRODUCT</div>
-<div class="g-b g-clip" style="position:absolute;left:5.8140vw;top:1000.6977vw;width:88.8372vw;height:17.1221vw;overflow:hidden;">
-<h2 class="g-t" style="position:absolute;left:0.0000vw;top:0.0000vw;width:95.3488vw;height:16.7442vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:5.5814vw;line-height:8.3721vw;color:rgb(35,39,46);text-align:left;white-space:pre-wrap;">Tune risk detection sensitivity, one policy at a time</h2>
-</div>
-<div class="g-img g-clip" data-ref="ece298d0ec2c16f10310d45724b276a6035cb503" role="presentation" aria-hidden="true" style="position:absolute;left:5.8140vw;top:1023.4012vw;width:6.5116vw;height:6.5116vw;background-image:url(/assets/gen/ece298d0ec2c16f10310d45724b276a6035cb503.webp);background-size:cover;background-position:center;background-repeat:no-repeat;border-radius:0.4651vw;overflow:hidden;">
-</div>
-<h2 class="g-t" style="position:absolute;left:13.7209vw;top:1023.8663vw;width:22.7907vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:4.6512vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">John Smith</h2>
-<h2 class="g-t" style="position:absolute;left:65.1163vw;top:1023.8663vw;width:29.5349vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:4.6512vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">June 29, 2026</h2>
-<div class="g-b" style="position:absolute;left:3.9535vw;top:1035.5814vw;width:92.5581vw;height:104.1860vw;box-sizing:border-box;border:0.2326vw solid rgb(213,218,226);"></div>
-<div class="g-img g-clip" data-ref="ece298d0ec2c16f10310d45724b276a6035cb503" role="presentation" aria-hidden="true" style="position:absolute;left:5.8140vw;top:1039.3023vw;width:88.8372vw;height:53.4884vw;background-image:url(/assets/gen/ece298d0ec2c16f10310d45724b276a6035cb503.webp);background-size:cover;background-position:center;background-repeat:no-repeat;border-radius:1.8605vw;overflow:hidden;">
-</div>
-<div class="g-b" style="position:absolute;left:5.8140vw;top:1098.3721vw;width:17.2093vw;height:5.5814vw;background-color:#cf3b15;"></div>
-<div class="g-t" style="position:absolute;left:7.0930vw;top:1098.6047vw;width:14.6512vw;height:5.1163vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.0233vw;line-height:5.1163vw;color:rgb(255,255,255);text-align:left;white-space:nowrap;">PRODUCT</div>
-<div class="g-b g-clip" style="position:absolute;left:5.8140vw;top:1106.7442vw;width:88.8372vw;height:17.1221vw;overflow:hidden;">
-<h2 class="g-t" style="position:absolute;left:0.0000vw;top:0.0000vw;width:95.3488vw;height:16.7442vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:5.5814vw;line-height:8.3721vw;color:rgb(35,39,46);text-align:left;white-space:pre-wrap;">Tune risk detection sensitivity, one policy at a time</h2>
-</div>
-<div class="g-img g-clip" data-ref="ece298d0ec2c16f10310d45724b276a6035cb503" role="presentation" aria-hidden="true" style="position:absolute;left:5.8140vw;top:1129.4477vw;width:6.5116vw;height:6.5116vw;background-image:url(/assets/gen/ece298d0ec2c16f10310d45724b276a6035cb503.webp);background-size:cover;background-position:center;background-repeat:no-repeat;border-radius:0.4651vw;overflow:hidden;">
-</div>
-<h2 class="g-t" style="position:absolute;left:13.7209vw;top:1129.9128vw;width:22.7907vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:4.6512vw;line-height:5.5814vw;color:rgb(35,39,46);text-align:left;white-space:nowrap;">John Smith</h2>
-<h2 class="g-t" style="position:absolute;left:65.1163vw;top:1129.9128vw;width:29.5349vw;height:5.5814vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:4.6512vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:nowrap;">June 29, 2026</h2>
-<div class="g-b" style="position:absolute;left:0.0000vw;top:22.3256vw;width:100.0000vw;height:75.5814vw;box-sizing:border-box;border-top:0.2326vw solid rgb(228,227,222);border-bottom:0.2326vw solid rgb(228,227,222);"></div>
-<div class="g-b" style="position:absolute;left:3.7209vw;top:22.5581vw;width:92.5581vw;height:75.1163vw;box-sizing:border-box;border-right:0.2326vw solid rgb(228,227,222);border-left:0.2326vw solid rgb(228,227,222);"></div>
-<div class="g-t" style="position:absolute;left:5.8140vw;top:33.7209vw;width:88.6047vw;height:5.1163vw;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:3.0233vw;line-height:5.1163vw;color:#c23714;text-align:left;white-space:nowrap;">BLOG</div>
-<h2 class="g-t" style="position:absolute;left:5.8140vw;top:41.8605vw;width:88.6047vw;height:20.4651vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:8.3721vw;line-height:10.2326vw;color:rgb(35,39,46);text-align:left;white-space:pre-wrap;">Field notes from SAP, cloud, and AI delivery.<br></h2>
-<h2 class="g-t" style="position:absolute;left:5.8140vw;top:73.4884vw;width:88.6047vw;height:11.1628vw;font-family:'Nunito Sans',sans-serif;font-weight:500;font-size:4.6512vw;line-height:5.5814vw;color:rgb(82,96,119);text-align:left;white-space:pre-wrap;">Long-form writing from our engineering and product teams.</h2>
-<div class="g-b" style="position:absolute;left:0.0000vw;top:0.0000vw;width:100.0000vw;height:9.5349vw;background:linear-gradient(270deg, rgb(255,135,5) 25.0%, rgba(223,63,23,0.920) 90.0%);"></div>
-<div class="g-t" style="position:absolute;left:19.4186vw;top:2.4419vw;width:61.1628vw;height:4.6512vw;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:3.2558vw;line-height:4.6512vw;color:rgb(255,255,255);text-align:center;white-space:nowrap;">Signup to LlamaParse for 10k free credits!</div>
-<img class="g-vec" src="/assets/vec/5637-76466.svg" data-vec="5637:76466" alt="" role="presentation" aria-hidden="true" style="position:absolute;left:1.8605vw;top:10.4651vw;width:96.2791vw;height:11.8605vw;backdrop-filter:blur(0.2326vw);-webkit-backdrop-filter:blur(0.2326vw);">
-</main></div>
 <style id="ax-ctawash-css">.ax-ctawash{position:absolute;pointer-events:none;opacity:.45;transition:opacity .7s ease;background:radial-gradient(38% 55% at 18% 80%,rgba(244,114,182,.55),transparent 70%),radial-gradient(30% 50% at 42% 90%,rgba(96,165,250,.5),transparent 70%),radial-gradient(28% 45% at 60% 82%,rgba(52,211,153,.45),transparent 70%),radial-gradient(30% 45% at 78% 88%,rgba(251,191,36,.5),transparent 70%),radial-gradient(40% 55% at 30% 25%,rgba(255,237,213,.7),transparent 75%);filter:blur(1.5vw);}.ax-ctawash.is-hot{opacity:1;}@media (prefers-reduced-motion:reduce){.ax-ctawash{transition:none;}}</style>
 <script>
 /* Final-CTA rainbow wash. The design puts a "Gradient Lines" asset in these
@@ -8064,649 +7895,6 @@ a.ax-pt-cta[href]:hover,a.ax-pt-cta[href]:focus-visible{background-color:rgb(21,
   });
   addEventListener('resize',function(){ clearTimeout(window.__axfxR);
     window.__axfxR=setTimeout(function(){ centerLabels(); spaceArrows(); },200); });
-})();
-</script>
-
-<style id="ax-bloglist-css">
-/* Real posts inside the DESIGNED Figma slots. Each designed card slot (image box,
-   category chip, title, author, date) gets real content; the search box, the
-   category filter and the pager row are rebuilt from the designed pieces so they
-   behave like a real blog index. */
-.ax-bl-hit{cursor:pointer}
-.ax-bl-hit:focus-visible,.ax-bl-chip:focus-visible,.ax-bl-pg:focus-visible,
-.ax-bl-arrow:focus-visible{outline:2px solid #cf3b15;outline-offset:2px}
-.ax-bl-img{background-size:cover!important;background-position:center!important;
-  background-repeat:no-repeat!important;transition:filter .3s ease}
-.ax-bl-img.ax-bl-hit:hover{filter:brightness(.95)}
-.ax-bl-img--ph{background-size:60%!important;background-color:#F6F7F9!important}
-.ax-bl-t{transition:color .18s ease;height:auto!important;display:-webkit-box;
-  -webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
-.ax-bl-hit:hover .ax-bl-t,.ax-bl-t.ax-bl-hit:hover{color:#c23714}
-/* page / filter / search changes: the grid fades down and back up */
-.ax-bl-fade{transition:opacity .28s ease,translate .32s cubic-bezier(.22,1,.36,1),color .18s ease,filter .3s ease}
-.ax-bl-out{opacity:0!important;translate:0 .42vw}
-/* category filter */
-.ax-bl-chip{cursor:pointer;transition:background-color .2s ease,border-color .2s ease}
-.ax-bl-chipl{pointer-events:none;transition:color .2s ease;white-space:nowrap;text-align:center}
-.ax-bl-chip:not(.is-on):hover{border-color:#cf3b15!important}
-.ax-bl-chip:not(.is-on):hover+.ax-bl-chipl{color:#c23714!important}
-.ax-bl-chip.is-on{background-color:#cf3b15!important;border-color:#cf3b15!important}
-.ax-bl-chip.is-on+.ax-bl-chipl{color:#fff!important}
-/* pager */
-.ax-bl-pg{cursor:pointer;transition:color .2s ease;white-space:nowrap;text-align:center}
-.ax-bl-pg:not(.is-gap):not(.is-on):hover{color:#c23714!important}
-.ax-bl-pg.is-on{color:#c23714!important;font-weight:700!important;cursor:default}
-.ax-bl-pg.is-gap{cursor:default}
-.ax-bl-arrow{cursor:pointer;transition:opacity .2s ease,translate .2s ease}
-.ax-bl-arrow.is-prev:not([aria-disabled="true"]):hover{translate:-.16vw 0}
-.ax-bl-arrow.is-next:not([aria-disabled="true"]):hover{translate:.16vw 0}
-.ax-bl-arrow[aria-disabled="true"]{opacity:.3;cursor:default}
-/* search */
-.ax-bl-search{position:absolute;border:0;outline:none;background:transparent;padding:0;
-  margin:0;color:rgb(35,39,46);text-align:center;font-family:'Nunito Sans',sans-serif}
-.ax-bl-search::placeholder{color:var(--ph,rgb(223,63,23));opacity:1}
-.ax-bl-search::-webkit-search-cancel-button{display:none}
-.ax-bl-sbox{cursor:text;transition:border-color .2s ease,box-shadow .2s ease}
-.ax-bl-sbox.is-focus{border-color:#cf3b15!important;box-shadow:0 0 0 .21vw rgba(223,63,23,.12)}
-.ax-bl-scroll{overflow-x:auto!important;overflow-y:hidden!important;scrollbar-width:none;
-  -webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
-.ax-bl-scroll::-webkit-scrollbar{display:none}
-.ax-bl-empty{position:absolute;font-family:'Nunito Sans',sans-serif;color:rgb(82,96,119);
-  white-space:nowrap}
-@media (prefers-reduced-motion:reduce){
-  .ax-bl-fade,.ax-bl-chip,.ax-bl-chipl,.ax-bl-pg,.ax-bl-arrow,.ax-bl-img,.ax-bl-sbox{transition:none}
-}
-</style>
-<script>
-/* ---- REAL POSTS IN THE DESIGNED BLOG SLOTS ----
-   Posts come from _blogdata.json (baked in at build time). The five cards above
-   "Browse by category" are the featured latest posts and never change; the grid
-   below is the index: filtered by category, searched from the box beside the
-   title, paged by the row under it. State lives in the URL (?cat=, ?q=, ?page=)
-   so a filtered page can be linked, refreshed and navigated back to. */
-(function(){
-  var POSTS = [{"u":"/2026/08/13/agent-sprawl-is-the-new-shadow-ai-governing-autonomous-agents-before-they-govern-you/","t":"Agent Sprawl Is the New Shadow AI: Governing Autonomous Agents Before They Govern You","c":"AWS","d":"August 13, 2026","i":"/assets/blog-thumbs/06a3b9a739ef-blog14-architecture-diagram.webp","ph":0,"a":"Rajat Jindal","ts":"20260813"},{"u":"/2026/07/23/the-agent-evaluation-gap-why-most-enterprises-cant-tell-if-their-ai-agents-actually-work/","t":"The Agent Evaluation Gap: Why Most Enterprises Can't Tell If Their AI Agents Actually Work","c":"AWS","d":"July 23, 2026","i":"/assets/blog-thumbs/791aa13dae12-blog13-architecture-diagram.webp","ph":0,"a":"Rajat Jindal","ts":"20260723"},{"u":"/2026/07/08/guardrails-for-production-genai-how-we-stopped-prompt-injection-and-pii-leakage-before-it-reached-amazon-bedrock/10/00/00/243291/aws/chandni-gadhvi/","t":"Guardrails for Production GenAI: How We Stopped Prompt Injection and PII Leakage Before It Reached Amazon Bedrock","c":"AWS","d":"July 8, 2026","i":"/assets/aeonx-logo.svg","ph":1,"a":"Chandni Gadhvi","ts":"20260708"},{"u":"/2026/07/02/how-an-fmcg-manufacturer-reduced-logistics-costs-by-24-using-agentic-ai-on-aws-architecture-deployment-and-what-broke/10/00/00/243275/aws/rajat-jindal/","t":"How an FMCG Manufacturer Reduced Logistics Costs by 24% Using Agentic AI on AWS: Architecture, Deployment, and What Broke","c":"AWS","d":"July 2, 2026","i":"/assets/blog-thumbs/c63226357faf-blog12-architecture-diagram.webp","ph":0,"a":"Rajat Jindal","ts":"20260702"},{"u":"/2026/06/24/cost-aware-ai-architecture-how-we-reduced-amazon-bedrock-spend-by-52-without-sacrificing-output-quality/10/00/00/243290/aws/chandni-gadhvi/","t":"Cost-Aware AI Architecture: How We Reduced Amazon Bedrock Spend by 52% Without Sacrificing Output Quality","c":"AWS","d":"June 24, 2026","i":"/assets/blog-thumbs/a25935f578c4-aws-blog7-diagram-v2.webp","ph":0,"a":"Chandni Gadhvi","ts":"20260624"},{"u":"/2026/06/11/how-an-enterprise-apparel-company-cut-expense-claim-processing-from-45-minutes-to-under-5-using-agentic-ai-on-aws-architecture-deployment-and-what-broke/10/00/00/243274/aws/rajat-jindal/","t":"How an Enterprise Apparel Company Cut Expense Claim Processing From 45 Minutes to Under 5 Using Agentic AI on AWS: Architecture, Deployment, and What Broke","c":"AWS","d":"June 11, 2026","i":"/assets/blog-thumbs/06d24b67f7ce-blog11-architecture-diagram.webp","ph":0,"a":"Rajat Jindal","ts":"20260611"},{"u":"/2026/06/10/building-a-self-healing-data-pipeline-on-aws-how-we-used-amazon-bedrock-to-diagnose-and-auto-remediate-etl-failures/10/00/00/243289/aws/chandni-gadhvi/","t":"Building a Self-Healing Data Pipeline on AWS: How We Used Amazon Bedrock to Diagnose and Auto-Remediate ETL Failures","c":"AWS","d":"June 10, 2026","i":"/assets/blog-thumbs/4832685bdf1a-aws-blog6-diagram.webp","ph":0,"a":"Chandni Gadhvi","ts":"20260610"},{"u":"/2026/05/27/agentic-ai-in-finance-how-we-built-an-autonomous-accounts-payable-agent-on-amazon-bedrock-that-processes-invoices-end-to-end/10/00/00/243288/aws/chandni-gadhvi/","t":"Agentic AI in Finance: How We Built an Autonomous Accounts Payable Agent on Amazon Bedrock That Processes Invoices End-to-End","c":"AWS","d":"May 27, 2026","i":"/assets/blog-thumbs/8f1f09b4608f-aws-blog5-diagram.webp","ph":0,"a":"Chandni Gadhvi","ts":"20260527"},{"u":"/2026/05/21/sap-on-aws-meets-generative-ai-why-your-erp-is-the-most-underused-ai-data-source-in-the-enterprise/10/00/00/243271/aws/rajat-jindal/","t":"SAP on AWS Meets Generative AI: Why Your ERP Is the Most Underused AI Data Source in the Enterprise","c":"AWS","d":"May 21, 2026","i":"/assets/blog-thumbs/ed7be5ed71b7-diagram10.webp","ph":0,"a":"Rajat Jindal","ts":"20260521"},{"u":"/2026/05/13/multi-tenant-ai-how-we-built-a-single-amazon-bedrock-integration-that-serves-five-business-units-with-isolated-data-security-and-costs/10/00/00/243287/aws/chandni-gadhvi/","t":"Multi-Tenant AI: How We Built a Single Amazon Bedrock Integration That Serves Five Business Units With Isolated Data, Security, and Costs","c":"AWS","d":"May 13, 2026","i":"/assets/blog-thumbs/7c2a35662e97-aws-blog4-diagram.webp","ph":0,"a":"Chandni Gadhvi","ts":"20260513"},{"u":"/2026/05/07/data-governance-is-the-ai-gatekeeper-how-lake-formation-decides-what-your-ai-can-and-cannot-see/10/00/00/243270/aws/rajat-jindal/","t":"Data Governance Is the AI Gatekeeper: How Lake Formation Decides What Your AI Can and Cannot See","c":"AWS","d":"May 7, 2026","i":"/assets/aeonx-logo.svg","ph":1,"a":"Rajat Jindal","ts":"20260507"},{"u":"/2026/04/29/the-observability-gap-in-ml-systems-how-we-built-a-model-health-dashboard-that-catches-degradation-before-users-do/10/00/00/243286/aws/chandni-gadhvi/","t":"The Observability Gap in ML Systems: How We Built a Model Health Dashboard That Catches Degradation Before Users Do","c":"AWS","d":"April 29, 2026","i":"/assets/blog-thumbs/54feb07c4ade-aws-blog3-diagram.webp","ph":0,"a":"Chandni Gadhvi","ts":"20260429"},{"u":"/2026/04/23/zero-etl-is-the-end-of-pipeline-engineering-how-aws-is-eliminating-the-data-lakes-biggest-bottleneck/10/00/00/243269/aws/rajat-jindal/","t":"Zero-ETL Is the End of Pipeline Engineering: How AWS Is Eliminating the Data Lake\u2019s Biggest Bottleneck","c":"AWS","d":"April 23, 2026","i":"/assets/blog-thumbs/4f9ed25d086b-diagram8_1.webp","ph":0,"a":"Rajat Jindal","ts":"20260423"},{"u":"/2026/04/15/building-an-ai-powered-visual-inspection-system-on-aws-with-yolov11-and-amazon-bedrock/10/00/00/243197/aws/chandni-gadhvi/","t":"Building an AI-Powered Visual Inspection System on AWS with YOLOv11 and Amazon Bedrock","c":"AWS","d":"April 15, 2026","i":"/assets/blog-thumbs/4aebfe5177e5-aws-blog2-diagram.webp","ph":0,"a":"Chandni Gadhvi","ts":"20260415"},{"u":"/2026/04/09/your-data-lake-is-a-data-swamp-until-ai-can-query-it-building-semantic-data-lakes-on-aws/10/00/00/243268/aws/rajat-jindal/","t":"Your Data Lake Is a Data Swamp Until AI Can Query It: Building Semantic Data Lakes on AWS","c":"AWS","d":"April 9, 2026","i":"/assets/blog-thumbs/a0fd8a5ca158-diagram7.webp","ph":0,"a":"Rajat Jindal","ts":"20260409"},{"u":"/2026/04/01/architecting-an-ai-driven-freight-optimization-platform-on-aws-using-amazon-bedrock-and-sagemaker/10/00/00/243180/aws/chandni-gadhvi/","t":"Architecting an AI-Driven Freight Optimization Platform on AWS Using Amazon Bedrock and SageMaker","c":"AWS","d":"April 1, 2026","i":"/assets/blog-thumbs/32c7ad594983-aws-blog1-diagram.webp","ph":0,"a":"Chandni Gadhvi","ts":"20260401"},{"u":"/2026/03/26/the-multi-model-strategy-why-locking-into-one-ai-provider-is-the-new-vendor-lock-in/10/00/00/243267/aws/rajat-jindal/","t":"The Multi-Model Strategy: Why Locking Into One AI Provider Is the New Vendor Lock-In","c":"AWS","d":"March 26, 2026","i":"/assets/blog-thumbs/70f10b02e320-blog6-architecture-diagram.webp","ph":0,"a":"Rajat Jindal","ts":"20260326"},{"u":"/2026/03/05/shadow-ai-is-the-biggest-data-risk-your-ciso-hasnt-budgeted-for-and-its-already-inside-your-organisation/10/00/00/243266/aws/rajat-jindal/","t":"Shadow AI Is the Biggest Data Risk Your CISO Hasn\u2019t Budgeted For \u2014 And It\u2019s Already Inside Your Organisation","c":"AWS","d":"March 5, 2026","i":"/assets/aeonx-logo.svg","ph":1,"a":"Rajat Jindal","ts":"20260305"},{"u":"/2026/02/12/building-an-ai-ready-data-foundation/10/00/00/243240/aws/rajat-jindal/","t":"Building an AI-Ready Data Foundation","c":"AWS","d":"February 12, 2026","i":"/assets/aeonx-logo.svg","ph":1,"a":"Rajat Jindal","ts":"20260212"},{"u":"/2026/02/05/applying-the-aws-well-architected-framework-to-modernize-a-legacy-crm-and-employee-portal-platform/10/00/00/243212/aws/rajat-jindal/","t":"Applying the AWS Well-Architected Framework to Modernize a Legacy CRM and Employee Portal Platform","c":"AWS","d":"February 5, 2026","i":"/assets/aeonx-logo.svg","ph":1,"a":"Rajat Jindal","ts":"20260205"},{"u":"/2026/01/29/architecting-a-secure-multi-application-platform-with-ci-cd-and-cross-region-disaster-recovery-on-aws/10/00/00/243183/aws/rajat-jindal/","t":"Architecting a Secure Multi-Application Platform with CI/CD and Cross-Region Disaster Recovery on AWS","c":"AWS","d":"January 29, 2026","i":"/assets/blog-thumbs/80dd265d9d9f-blog2-architecture-diagram.webp","ph":0,"a":"Rajat Jindal","ts":"20260129"},{"u":"/2026/01/26/architecting-a-secure-multi-vpc-rd-platform-on-aws-with-hybrid-connectivity-and-ci-cd-automation/01/23/06/243191/aws/rajat-jindal/","t":"Architecting a Secure Multi-VPC R&D Platform on AWS with Hybrid Connectivity and CI/CD Automation","c":"AWS","d":"January 26, 2026","i":"/assets/aeonx-logo.svg","ph":1,"a":"Rajat Jindal","ts":"20260126"},{"u":"/2026/01/23/building-a-real-time-inventory-validation-system-on-aws-using-iot-containers-and-automated-devops/01/13/19/243176/aws/rajat-jindal/","t":"Building a Real-Time Inventory Validation System on AWS Using IoT, Containers, and Automated DevOps","c":"AWS","d":"January 23, 2026","i":"/assets/aeonx-logo.svg","ph":1,"a":"Rajat Jindal","ts":"20260123"},{"u":"/2026/01/22/modernizing-enterprise-crm-and-employee-platforms-with-aws-fargate-and-end-to-end-ci-cd/10/00/00/243171/aws/rajat-jindal/","t":"Modernizing an Enterprise CRM Platform Using Amazon ECS Fargate and AWS CI/CD","c":"AWS","d":"January 22, 2026","i":"/assets/blog-thumbs/8908c847595f-blog1-architecture-diagram.webp","ph":0,"a":"Rajat Jindal","ts":"20260122"},{"u":"/2023/04/14/itd/05/25/44/240713/success-stories-sap/admin/","t":"ITD Cementation","c":"Success Stories","d":"April 14, 2023","i":"/assets/blog-thumbs/66d1b15c5f77-itd-top-banner.webp","ph":0,"a":"Admin","ts":"20230414"},{"u":"/2023/03/01/sap-on-aws-delux-bearings/04/21/19/240608/success-stories-aws/admin/","t":"Hosting SAP workloads on AWS","c":"Success Stories","d":"March 1, 2023","i":"/assets/blog-thumbs/918696ff9b35-top-banner2.webp","ph":0,"a":"Admin","ts":"20230301"},{"u":"/2023/01/03/ashok-alco-chem-case-study/07/29/19/240171/success-stories-aws/admin/","t":"Ashok Alco Chem Case Study","c":"Success Stories","d":"January 3, 2023","i":"/assets/blog-thumbs/968cf25ad10b-test-post2-2.webp","ph":0,"a":"Admin","ts":"20230103"},{"u":"/2023/01/03/konark-case-study/05/36/54/240144/success-stories-aws/admin/","t":"SAP on AWS: A Comprehensive Guide for Konark Group","c":"Success Stories","d":"January 3, 2023","i":"/assets/blog-thumbs/2b8976fa5b0d-top-banner.webp","ph":0,"a":"Admin","ts":"20230103"},{"u":"/2023/01/03/ckbh-case-study/07/01/09/240160/success-stories-aws/admin/","t":"AWS Cloud Solutions CKBH Case Study: Ready to Migrate to the Cloud? You\u2019ll be surprised at how easy it is","c":"Success Stories","d":"January 3, 2023","i":"/assets/blog-thumbs/a179f80322ae-top-banner-final.webp","ph":0,"a":"Admin","ts":"20230103"},{"u":"/2022/09/30/reaping-the-benefits-of-aws/11/34/26/239403/success-stories-aws/admin/","t":"Reaping the benefits of AWS","c":"Success Stories","d":"September 30, 2022","i":"/assets/blog-thumbs/4d129f08f598-MicrosoftTeams-image-1-1.webp","ph":0,"a":"Admin","ts":"20220930"},{"u":"/2022/09/15/bvg-india-limited-deploys-aws-for-disaster-recovery-2/10/08/31/1112/aws/admin/","t":"BVG India Limited deploys AWS for Disaster Recovery","c":"AWS","d":"September 15, 2022","i":"/assets/blog-thumbs/8a1f33abb43d-02_Aeonx-blog-02-1.webp","ph":0,"a":"Admin","ts":"20220915"},{"u":"/2022/09/13/public-sector-competency-in-aws/12/56/17/1052/aws/admin/","t":"Public Sector Competency in AWS","c":"AWS","d":"September 13, 2022","i":"/assets/blog-thumbs/730794a0a13a-technology.webp","ph":0,"a":"Admin","ts":"20220913"},{"u":"/2022/09/06/the-proliferation-of-brands-with-sap-ams-cpg/10/17/32/1012/sap/admin/","t":"The proliferation of brands with SAP AMS CPG.","c":"SAP","d":"September 6, 2022","i":"/assets/blog-thumbs/2f3627d328ff-03_AeonX-Blogs-04.webp","ph":0,"a":"Admin","ts":"20220906"},{"u":"/2022/09/06/sap-ams-support-for-mining-and-exploration/10/32/56/1007/sap/admin/","t":"SAP AMS support for mining and exploration.","c":"SAP","d":"September 6, 2022","i":"/assets/blog-thumbs/69d9994ff484-Untitled-design-2.webp","ph":0,"a":"Admin","ts":"20220906"},{"u":"/2022/09/06/success-story-of-technology-adoption/12/09/24/1003/sap/admin/","t":"Success Story of Technology Adoption","c":"SAP","d":"September 6, 2022","i":"/assets/blog-thumbs/c848294e8c5a-02_Aeonx-blog-01.webp","ph":0,"a":"Admin","ts":"20220906"},{"u":"/2022/09/06/sap-ams-for-using-multiple-data-sources/10/09/42/1009/sap/admin/","t":"SAP AMS for using multiple data sources","c":"SAP","d":"September 6, 2022","i":"/assets/blog-thumbs/f11f975673b2-03_AeonX-Blogs-02.webp","ph":0,"a":"Admin","ts":"20220906"},{"u":"/2022/09/01/sap-ams-to-streamline-and-enhance-real-state-management-processes/12/49/29/1000/sap/admin/","t":"SAP AMS to streamline and enhance Real State management processes.","c":"SAP","d":"September 1, 2022","i":"/assets/blog-thumbs/12b32e590e56-03_AeonX-Blogs-03.webp","ph":0,"a":"Admin","ts":"20220901"},{"u":"/2022/08/30/sap-ams-to-establish-strategic-and-targeted-value/12/06/57/996/sap/admin/","t":"SAP AMS to establish strategic and targeted value.","c":"SAP","d":"August 30, 2022","i":"/assets/blog-thumbs/b6bfe45d6a9e-02_Aeonx-blog-02.webp","ph":0,"a":"Admin","ts":"20220830"},{"u":"/2022/08/30/sap-ams-fostering-advancement-through-developing-technology/12/10/13/992/sap/admin/","t":"SAP AMS fostering advancement through developing technology.","c":"SAP","d":"August 30, 2022","i":"/assets/blog-thumbs/8a952c9bdbac-02_Aeonx-blog-04.webp","ph":0,"a":"Admin","ts":"20220830"},{"u":"/2022/07/19/case-study-for-integration-of-trackabout-with-sap-erp/07/52/04/984/sap/admin/","t":"Case Study for Integration of TrackAbout with SAP ERP","c":"SAP","d":"July 19, 2022","i":"/assets/blog-thumbs/d5698276b2f2-01_Aeonx-blog-04.webp","ph":0,"a":"Admin","ts":"20220719"},{"u":"/2022/07/07/migrate-to-modernize-a-case-study/06/08/04/938/aws/admin/","t":"Migrate-to-Modernize: A Case Study","c":"AWS","d":"July 7, 2022","i":"/assets/blog-thumbs/e96e868c347e-01_Aeonx-blog-02-1.webp","ph":0,"a":"Admin","ts":"20220707"},{"u":"/2022/06/13/aeonx-modernizing-the-gopal-namkeen-processing-system-using-sap/14/37/26/932/sap/admin/","t":"AeonX modernizing the Gopal Namkeen processing system using SAP/AWS","c":"SAP","d":"June 13, 2022","i":"/assets/blog-thumbs/0d26de9ffb3a-01_Aeonx-blog-01.webp","ph":0,"a":"Admin","ts":"20220613"},{"u":"/2022/06/08/aeonx-aws-partner-network/05/48/43/918/aws/admin/","t":"AeonX achieves Advanced Tier Status in the AWS Partner Network","c":"AWS","d":"June 8, 2022","i":"/assets/blog-thumbs/493d1192b90f-Untitled-design-10.webp","ph":0,"a":"Admin","ts":"20220608"},{"u":"/2022/03/11/sap-consultant-guide-career-salary-jobs-scope-skills/06/41/07/795/sap/admin/","t":"A Sap Consultant Guide 2022 : Career, Salary, Jobs, Scope, Skills","c":"SAP","d":"March 11, 2022","i":"/assets/blog-thumbs/a0902f2bf653-sap_guide.webp","ph":0,"a":"Admin","ts":"20220311"},{"u":"/2022/03/11/disaster-recovery-for-bhilosa-industry-using-aws/09/17/41/814/sap/admin/","t":"Disaster Recovery for Bhilosa Industry Using AWS.","c":"SAP","d":"March 11, 2022","i":"/assets/blog-thumbs/d7eb9e3142e4-Disaster-Recovery-using-AWS.webp","ph":0,"a":"Admin","ts":"20220311"},{"u":"/2021/12/18/is-the-rise-of-the-internet-increasing-the-need-for-digital-transformation-in-businesses/08/22/06/768/digital-transformation/admin/","t":"What role does the internet play in the rise of Digital Transformation?","c":"Digital Transformation","d":"December 18, 2021","i":"/assets/blog-thumbs/841596b87e91-AenoX-Blog-Banner-3-1.webp","ph":0,"a":"Admin","ts":"20211218"},{"u":"/2021/12/17/what-does-cloud-computing-mean-for-todays-businesses/14/13/21/746/cloud-computing/admin/","t":"What does cloud computing mean for today's businesses","c":"Cloud","d":"December 17, 2021","i":"/assets/blog-thumbs/845d991f42c8-AenoX-Blog-Banner.webp","ph":0,"a":"Admin","ts":"20211217"},{"u":"/2021/03/15/how-does-sap-protect-your-data/07/54/52/694/sap/admin/","t":"How Does SAP Protect Your Data? - AeonX Digital Solution","c":"SAP","d":"March 15, 2021","i":"/assets/blog-thumbs/34c51cc81e75-Untitled-design-3.webp","ph":0,"a":"Admin","ts":"20210315"},{"u":"/2021/02/07/driving-innovation-with-sap/06/49/35/631/sap/admin/","t":"Driving Innovation With SAP","c":"SAP","d":"February 7, 2021","i":"/assets/blog-thumbs/5c6fbd8dfa88-Untitled-design-4.webp","ph":0,"a":"Admin","ts":"20210207"},{"u":"/2021/01/28/sap-interview-questions/07/21/25/633/sap/admin/","t":"Top 30 SAP Interview Questions & Answers","c":"SAP","d":"January 28, 2021","i":"/assets/blog-thumbs/db4b87d801e4-Untitled-design-5.webp","ph":0,"a":"Admin","ts":"20210128"},{"u":"/2020/12/29/e-invoicing-under-gst-india/06/43/49/628/sap/admin/","t":"E-Invoicing Under GST India","c":"SAP","d":"December 29, 2020","i":"/assets/blog-thumbs/864936ba6a1c-Untitled-design-6.webp","ph":0,"a":"Admin","ts":"20201229"},{"u":"/2020/12/16/where-there-is-business-there-is-sap/06/52/05/624/sap/admin/","t":"Where There Is Business, There is SAP","c":"SAP","d":"December 16, 2020","i":"/assets/blog-thumbs/cdff6634cecb-Untitled-design-7.webp","ph":0,"a":"Admin","ts":"20201216"},{"u":"/2020/10/19/steps-to-activate-electronic-bank-reconciliation-statement-mt940-format-part-i/17/04/20/604/sap/admin/","t":"Steps to Activate Electronic BRS \u2013 MT940 Format \u2013 Part I","c":"SAP","d":"October 19, 2020","i":"/assets/blog-thumbs/1611c5908f55-Untitled-design-8.webp","ph":0,"a":"Admin","ts":"20201019"},{"u":"/2020/10/19/search-string-in-electronic-bank-reconciliation-mt940-format-part-ii/17/10/16/607/sap/admin/","t":"Search String in Electronic Bank Reconciliation \u2013 MT940 Format \u2013 Part II","c":"SAP","d":"October 19, 2020","i":"/assets/blog-thumbs/d8c34356d54b-Untitled-design-8.webp","ph":0,"a":"Admin","ts":"20201019"},{"u":"/2020/10/12/sales-order-level-approval-workflow-and-release-from-credit-block-2-in-1/11/08/18/545/sap/admin/","t":"Sales Order \u2013 Level Approval Workflow","c":"SAP","d":"October 12, 2020","i":"/assets/blog-thumbs/d36e107fb34a-Untitled-design-9-400x250.webp","ph":0,"a":"Admin","ts":"20201012"}];
-  var CATS  = ["All","AWS","Success Stories","SAP","Digital Transformation","Cloud"];
-  var REDUCED = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  function txt(e){ return (e.textContent||'').replace(/\s+/g,' ').trim(); }
-  function rect(e){ return e.getBoundingClientRect(); }
-  function vwpx(){ return (document.documentElement.clientWidth||innerWidth||1920)/100; }
-  function gv(el,k){ return parseFloat(el.style[k]); }                 /* inline vw */
-  function sv(el,k,v){ el.style[k]=(+v).toFixed(4)+'vw'; }
-  function ink(el){ var r=document.createRange(); r.selectNodeContents(el);
-    return r.getBoundingClientRect().width/vwpx(); }
-
-  /* The page carries two layouts: the desktop canvas (main.ax-page) and the phone
-     block (.ax-mob). Each is wired on its own, once it is actually on screen. */
-  function inRoot(root,e){ return root.classList.contains('ax-mob')||!e.closest('.ax-mob'); }
-  /* Everything is measured in DESIGN px (the 1920 canvas, or 430 on the phone), not
-     screen px: the layout is in vw, so a card that is 16px text at 1920 is 11px at
-     900 and 21px at 2560, and fixed px thresholds only matched at some widths. */
-  function scaleOf(page){
-    return (page.classList.contains('ax-mob')?430:1920)/(document.documentElement.clientWidth||innerWidth||1920);
-  }
-  function drect(e,K){ var r=rect(e);
-    return {left:r.left*K,top:r.top*K,right:r.right*K,bottom:r.bottom*K,width:r.width*K,height:r.height*K}; }
-  function slots(page){
-    var imgs=[],texts=[],K=scaleOf(page);
-    page.querySelectorAll('.g-img,.g-b.g-clip').forEach(function(e){
-      if(!inRoot(page,e)) return;
-      var r=drect(e,K), st=e.getAttribute('style')||'';
-      if(r.width>90&&r.height>60&&r.width<900&&/background-image/.test(st))
-        imgs.push({el:e,r:r});
-    });
-    page.querySelectorAll('.g-t').forEach(function(e){
-      if(!inRoot(page,e)) return;
-      var r=drect(e,K); if(!r.width) return;
-      texts.push({el:e,r:r,t:txt(e),fs:(parseFloat(getComputedStyle(e).fontSize)||0)*K});
-    });
-    /* one image box per visual position (Figma stacks a fill box under the image) */
-    var seen={},uniq=[];
-    imgs.sort(function(a,b){return a.r.top-b.r.top||a.r.left-b.r.left;});
-    imgs.forEach(function(i){
-      var k=Math.round(i.r.left)+'x'+Math.round(i.r.top);
-      if(!seen[k]){ seen[k]=1; uniq.push(i); }
-    });
-    return {imgs:uniq,texts:texts,K:K};
-  }
-
-  /* the card's title: the biggest text starting below the image, in its column */
-  var DATE=/^[A-Z][a-z]+ \d{1,2}, \d{4}$/, NAME=/^[A-Z][a-z]+ [A-Z][a-z]+$/;
-  function titleFor(img,texts,cut){
-    var above=img.r.top<cut;
-    var c=texts.filter(function(t){
-      return t.fs>=12 && t.t.length>12 && !DATE.test(t.t) && !NAME.test(t.t) &&
-             t.t!==t.t.toUpperCase() && (!above||t.r.top<cut) &&
-             t.r.top>=img.r.top-8 && t.r.top<img.r.bottom+150 &&
-             t.r.left>=img.r.left-8 && t.r.left<img.r.right+420 &&
-             !/^(Field notes|Long-form|Browse by|Want the long|Subscribe|Sign up)/.test(t.t);
-    });
-    c.sort(function(a,b){ return (b.fs-a.fs) || (a.r.top-b.r.top); });
-    return c[0];
-  }
-  function chipFor(title,texts){
-    if(!title) return null;
-    var c=texts.filter(function(t){
-      return t!==title && /^[A-Za-z][A-Za-z &]{2,}$/.test(t.t) && t.t.length<26 &&
-             t.fs<15 && t.r.bottom<=title.r.top+4 && title.r.top-t.r.bottom<70 &&
-             Math.abs(t.r.left-title.r.left)<60;
-    });
-    c.sort(function(a,b){ return b.r.bottom-a.r.bottom; });
-    return c[0];
-  }
-  /* the painted box(es) a label sits on: siblings that hold the label's own box */
-  function platesOf(lbl){
-    var lr=rect(lbl);
-    return [].filter.call(lbl.parentElement.children,function(s){
-      if(s===lbl||!/\bg-b\b/.test(s.className)) return false;
-      var r=rect(s);
-      return r.height>0&&r.height<lr.height*2.6&&r.top<=lr.top+3&&r.bottom>=lr.bottom-3&&
-             r.left<=lr.left+3&&r.right>lr.left;
-    });
-  }
-
-  function wire(el,url){
-    if(!el) return;
-    el.classList.add('ax-bl-hit');
-    /* One link per card for keyboards and screen readers: the image, named by the
-       post title. The title heading still opens the post on click, but a role="link"
-       on an <h2> is not allowed, and the image used to be focusable while marked
-       aria-hidden, so a screen reader landed on something it had been told to skip. */
-    if(!/^H[1-6]$/.test(el.tagName)){
-      el.setAttribute('tabindex','0');
-      el.setAttribute('role','link');
-      el.removeAttribute('aria-hidden');
-    }
-    if(el.__axgo){ el.__axgo.url=url; return; }
-    var box={url:url};
-    el.__axgo=box;
-    var go=function(){ if(box.url) location.href=box.url; };
-    el.addEventListener('click',go);
-    el.addEventListener('keydown',function(e){
-      if(e.key==='Enter'||e.key===' '){ e.preventDefault(); go(); }
-    });
-  }
-
-  /* each part is independent: a layout Figma changes under one of them must not
-     leave the rest of the page unwired */
-  function safe(fn){ try{ return fn(); }catch(e){ if(window.console) console.warn('bloglist:',e); return null; } }
-
-  /* One state for both layouts. Only the layout on screen renders or writes the URL;
-     the other catches up when it is shown. */
-  var state={cat:'All',q:'',page:0};
-  (function(){
-    var qs=new URLSearchParams(location.search);
-    if(CATS.indexOf(qs.get('cat'))>0) state.cat=qs.get('cat');
-    if(qs.get('q')) state.q=qs.get('q').slice(0,80);
-    var pn=parseInt(qs.get('page'),10);
-    if(pn>1) state.page=pn-1;
-  })();
-  function writeURL(){
-    var u=new URLSearchParams(location.search);
-    ['cat','q','page','i'].forEach(function(k){ u.delete(k); });
-    if(state.cat!=='All') u.set('cat',state.cat);
-    if(state.q) u.set('q',state.q);
-    if(state.page>0) u.set('page',String(state.page+1));
-    var q=u.toString();
-    try{ history.replaceState(history.state,'',location.pathname+(q?'?'+q:'')+location.hash); }catch(e){}
-  }
-
-  function init(page){
-    if(!page||page.dataset.axBl) return;
-    var MOB=page.classList.contains('ax-mob');
-    var s=slots(page);
-    if(s.imgs.length<3) return;                    /* not laid out (or not on screen) yet */
-    page.dataset.axBl='1';
-    var texts=s.texts;
-    var head=texts.filter(function(t){ return /^Browse by category/i.test(t.t); })[0];
-    var cut=head?head.r.top:Infinity;
-
-    /* author and date: under the title, inside the card's own column (the grid
-       columns are closer together than a loose tolerance, and a neighbour's name was
-       taken when two candidates tied on height) */
-    function nearBelow(title,img,test){
-      if(!title) return null;
-      var L=Math.min(img.r.left,title.r.left)-10, R=Math.max(img.r.right,title.r.right)+10;
-      var c=texts.filter(function(t){
-        return t!==title && test(t.t) && t.r.top>=title.r.bottom-4 &&
-               t.r.top-title.r.bottom<90 && t.r.left>=L && t.r.right<=R;
-      });
-      c.sort(function(a,b){ return (a.r.top-b.r.top)||
-        (Math.abs(a.r.left-title.r.left)-Math.abs(b.r.left-title.r.left)); });
-      return c[0];
-    }
-    var cards=s.imgs.map(function(img){
-      var t=titleFor(img,texts,cut), ch=chipFor(t,texts);
-      var c={img:img, title:t, chip:ch,
-             author:nearBelow(t,img,function(x){ return NAME.test(x); }),
-             date:nearBelow(t,img,function(x){ return DATE.test(x); })};
-      c.plates=ch?platesOf(ch.el):[];
-      c.upper=!!(ch&&ch.t===ch.t.toUpperCase());      /* the design sets this chip in caps */
-      /* Figma's stock headshot beside the author: the real posts have no author
-         photos, so it goes and the name takes its place */
-      if(c.author){
-        var a=c.author.el, ar=rect(a);
-        var av=[].filter.call(a.parentElement.children,function(e){
-          if(!/\bg-img\b/.test(e.className)) return false;
-          var r=rect(e);
-          return r.width>0&&r.width<ar.height*3&&r.right<=ar.left+6&&
-                 Math.abs((r.top+r.bottom)/2-(ar.top+ar.bottom)/2)<ar.height;
-        })[0];
-        if(av&&av.style.left){ av.style.display='none'; a.style.left=av.style.left; }
-      }
-      /* an image box cut wider than the frame that clips it shows only part of the
-         photo; it is brought back to the frame's width */
-      var fp=img.el.parentElement;
-      if(fp&&/\bg-clip\b/.test(fp.className)&&!isNaN(gv(fp,'width'))&&gv(img.el,'width')>gv(fp,'width')*1.1){
-        var inset=gv(img.el,'left')||0;
-        sv(img.el,'width',gv(fp,'width')-2*inset);
-      }
-      c.els=[img.el,t&&t.el,ch&&ch.el,c.author&&c.author.el,c.date&&c.date.el]
-        .concat(c.plates).filter(Boolean);
-      return c;
-    }).filter(function(c){ return c.title; });
-    if(!cards.length) return;
-
-    var hero=cards.filter(function(c){ return c.img.r.top<cut; });
-    var grid=cards.filter(function(c){ return c.img.r.top>=cut; });
-    grid.forEach(function(c){ c.els.forEach(function(e){ e.classList.add('ax-bl-fade'); }); });
-
-    function fillCard(c,p){
-      c.els.forEach(function(e){ e.style.visibility=p?'':'hidden'; });
-      if(p) c.img.el.setAttribute('tabindex','0'); else c.img.el.removeAttribute('tabindex');
-      if(!p) return;
-      var st=(c.img.el.getAttribute('style')||'').replace(/background-image:[^;]*;?/,'');
-      c.img.el.setAttribute('style', st+';background-image:url("'+p.i+'")');
-      c.img.el.classList.add('ax-bl-img');
-      c.img.el.classList.toggle('ax-bl-img--ph', !!p.ph);
-      c.img.el.setAttribute('aria-label', p.t);
-      c.title.el.textContent=p.t;
-      c.title.el.style.whiteSpace='normal';
-      c.title.el.style.overflow='hidden';
-      c.title.el.classList.add('ax-bl-t');
-      wire(c.title.el,p.u);
-      wire(c.img.el,p.u);
-      if(c.chip) c.chip.el.textContent=c.upper?p.c.toUpperCase():p.c;
-      if(c.author) c.author.el.textContent=p.a||'AeonX Digital';
-      if(c.date) c.date.el.textContent=p.d;
-    }
-
-    /* ---- category chips on the cards: one length for every chip ----
-       Figma cut each chip's plate to the word it was drawn with, so two "AWS"
-       chips came out different widths. Every chip is now the width of the longest
-       category label plus even padding, the label centred in it. */
-    function sizeCardChips(){
-      var list=cards.filter(function(c){ return c.chip&&c.plates.length; });
-      if(!list.length) return;
-      var maxInk=0;
-      list.forEach(function(c){
-        var keep=c.chip.el.textContent;
-        CATS.forEach(function(cat){ if(cat==='All') return;
-          c.chip.el.textContent=c.upper?cat.toUpperCase():cat; maxInk=Math.max(maxInk,ink(c.chip.el)); });
-        c.chip.el.textContent=keep;
-      });
-      if(!maxInk) return;
-      var PAD=MOB?1.8605:0.4167;                        /* 8px at 430 / 1920 */
-      list.forEach(function(c){
-        var pl=gv(c.plates[0],'left'); if(isNaN(pl)) return;
-        c.plates.forEach(function(p){ sv(p,'width',maxInk+2*PAD); p.dataset.axLaid='1'; });
-        sv(c.chip.el,'left',pl+PAD); sv(c.chip.el,'width',maxInk);
-        c.chip.el.style.textAlign='center'; c.chip.el.style.whiteSpace='nowrap';
-        c.chip.el.dataset.axCentred='1';
-      });
-    }
-
-    function visible(){ var r=rect(page); return r.width>0&&r.height>0; }
-    function matches(p){
-      if(!state.q) return true;
-      var hay=(p.t+' '+p.c+' '+(p.a||'')).toLowerCase();
-      return state.q.toLowerCase().split(/\s+/).every(function(w){ return !w||hay.indexOf(w)>-1; });
-    }
-    /* the grid excludes the featured posts only while it is showing everything */
-    function gridList(){
-      if(state.cat==='All'&&!state.q) return POSTS.slice(hero.length);
-      return POSTS.filter(function(p){ return (state.cat==='All'||p.c===state.cat)&&matches(p); });
-    }
-
-    /* ---- empty state ---- */
-    var empty=null;
-    function showEmpty(on){
-      if(!grid.length) return;
-      if(!empty){
-        var g0=grid[0].title.el;
-        empty=document.createElement('div');
-        empty.className='ax-bl-empty';
-        empty.setAttribute('role','status');
-        empty.style.left=grid[0].img.el.style.left;
-        empty.style.top=grid[0].img.el.style.top;
-        empty.style.fontSize=getComputedStyle(g0).fontSize;
-        grid[0].img.el.parentElement.appendChild(empty);
-      }
-      empty.textContent=on?('No posts match'+(state.q?' “'+state.q+'”':'')+
-        (state.cat!=='All'?' in '+state.cat:'')+'.'):'';
-      empty.style.display=on?'':'none';
-    }
-
-    /* ---- pager: rebuilt from the designed row ----
-       The row was drawn for "1 2 3 4 5 ... 40": fixed number slots, a last-page slot
-       parked well to the right, and a stray "..." icon after the next arrow. The
-       numbers are now laid out edge to edge at an even pitch, centred where the
-       design centred the row, and the stray icon is gone. */
-    var pager=safe(function(){
-      var nums=texts.filter(function(t){ return /^(\d{1,3}|…|\.\.\.)$/.test(t.t); });
-      if(nums.length<3) return null;
-      var rows={};
-      nums.forEach(function(t){ var k=Math.round(t.r.top/6); (rows[k]=rows[k]||[]).push(t); });
-      var bar=Object.keys(rows).map(function(k){ return rows[k]; })
-        .sort(function(a,b){ return b.length-a.length; })[0];
-      if(!bar||bar.length<3) return null;
-      bar.sort(function(a,b){ return a.r.left-b.r.left; });
-      var par=bar[0].el.parentElement;
-      if(bar.some(function(t){ return t.el.parentElement!==par; })) return null;
-      var cy=bar[0].r.top+bar[0].r.height/2, K=s.K;
-      var icons=[].filter.call(par.querySelectorAll(':scope > img.g-vec'),function(e){
-        var r=drect(e,K); return r.width&&Math.abs(r.top+r.height/2-cy)<40; })
-        .sort(function(a,b){ return drect(a,K).left-drect(b,K).left; });
-      var firstL=bar[0].r.left, lastR=bar[bar.length-1].r.right;
-      var prev=icons.filter(function(e){ return drect(e,K).right<=firstL+2; }).pop();
-      var after=icons.filter(function(e){ return drect(e,K).left>=lastR-2; });
-      var next=after[0];
-      if(!prev||!next) return null;
-      /* anything else on the row is the design's "..." (an icon after the next arrow
-         on desktop, a glyph between the numbers on the phone): the pager draws its own */
-      icons.forEach(function(e){ if(e!==prev&&e!==next) e.style.display='none'; });
-      var tpl=bar[0].el;
-      /* The design draws "1" as the current page, in orange. The numbers are cloned
-         from it, so they take the resting colour and weight from its neighbour and
-         .is-on adds the orange back for the page actually showing. */
-      var restColor=getComputedStyle(bar[1].el).color, restWeight=getComputedStyle(bar[1].el).fontWeight;
-      var gapA=gv(bar[0].el,'left')-(gv(prev,'left')+gv(prev,'width'));
-      var pitchGap=Math.max(0.5,(gv(bar[1].el,'left')-gv(bar[0].el,'left'))-(gv(bar[0].el,'width')||0.47));
-      var mid=(gv(prev,'left')+gv(next,'left')+gv(next,'width'))/2;
-      bar.forEach(function(t){ t.el.style.display='none'; });
-      var pool=[];
-      function node(i){
-        if(pool[i]) return pool[i];
-        var n=tpl.cloneNode(false);
-        n.classList.add('ax-bl-pg');
-        n.style.display='';
-        n.style.color=restColor; n.style.fontWeight=restWeight;
-        n.addEventListener('click',function(){ if(n.__pg) go(n.__pg-1,true); });
-        n.addEventListener('keydown',function(e){
-          if((e.key==='Enter'||e.key===' ')&&n.__pg){ e.preventDefault(); go(n.__pg-1,true); } });
-        par.insertBefore(n,next);
-        return (pool[i]=n);
-      }
-      [[prev,-1,'Previous page','is-prev'],[next,1,'Next page','is-next']].forEach(function(a){
-        var el=a[0];
-        el.classList.add('ax-bl-arrow',a[3]);
-        el.setAttribute('role','button'); el.setAttribute('tabindex','0');
-        el.setAttribute('aria-label',a[2]);
-        el.removeAttribute('aria-hidden');   /* the export marks every vector decorative; this one is a control */
-        var step=function(){ if(el.getAttribute('aria-disabled')!=='true') go(state.page+a[1],true); };
-        el.addEventListener('click',step);
-        el.addEventListener('keydown',function(e){
-          if(e.key==='Enter'||e.key===' '){ e.preventDefault(); step(); } });
-      });
-      function list(total,cur){                          /* 1-based page labels */
-        var out=[],i;
-        if(total<=7){ for(i=1;i<=total;i++) out.push(i); return out; }
-        if(cur<=4){ return [1,2,3,4,5,0,total]; }
-        if(cur>=total-3){ return [1,0,total-4,total-3,total-2,total-1,total]; }
-        return [1,0,cur-1,cur,cur+1,0,total];
-      }
-      function paint(total){
-        var hadFocus=pool.indexOf(document.activeElement)>-1;
-        var show=total>1;
-        prev.style.display=next.style.display=show?'':'none';
-        pool.forEach(function(n){ n.style.display='none'; });
-        if(!show) return;
-        var items=list(total,state.page+1), w=[];
-        items.forEach(function(v,i){
-          var n=node(i);
-          n.style.display='';
-          n.textContent=v?String(v):'…';
-          n.__pg=v||0;
-          n.classList.toggle('is-on',v===state.page+1);
-          n.classList.toggle('is-gap',!v);
-          if(v){ n.setAttribute('role','button'); n.setAttribute('tabindex','0');
-                 n.setAttribute('aria-label','Page '+v); }
-          else { n.removeAttribute('role'); n.removeAttribute('tabindex'); n.removeAttribute('aria-label'); }
-          if(v===state.page+1) n.setAttribute('aria-current','page'); else n.removeAttribute('aria-current');
-          n.style.width='auto';
-          w.push(Math.max(ink(n),0.47));
-        });
-        var inner=w.reduce(function(a,b){ return a+b; },0)+pitchGap*(w.length-1);
-        var pw=gv(prev,'width'), nw=gv(next,'width');
-        var x=mid-(pw+gapA+inner+gapA+nw)/2;
-        sv(prev,'left',x); x+=pw+gapA;
-        items.forEach(function(v,i){ var n=pool[i]; sv(n,'left',x); sv(n,'width',w[i]); x+=w[i]+pitchGap; });
-        sv(next,'left',x-pitchGap+gapA);
-        prev.setAttribute('aria-disabled',state.page<=0?'true':'false');
-        next.setAttribute('aria-disabled',state.page>=total-1?'true':'false');
-        if(hadFocus){ var on=pool.filter(function(n){ return n.classList.contains('is-on'); })[0];
-          if(on) on.focus({preventScroll:true}); }
-      }
-      return {paint:paint};
-    });
-
-    /* ---- category filter: rebuilt from the designed chip row ----
-       The row had five slots cut to Figma's own labels (All / Product / ...). Real
-       category names are longer, so they ran into each other, and there are six of
-       them. Each chip is now sized to its label with the design's padding and gap,
-       and the row keeps the design's right edge. */
-    var chips=[];
-    safe(function(){
-      if(!head) return;
-      var lbls=texts.filter(function(t){
-        if(t===head||t.t.length>=30) return false;
-        if(MOB) return t.r.top>=head.r.bottom-2&&t.r.top<=head.r.bottom+head.r.height*2.5;
-        return t.r.top>=head.r.top-10&&t.r.bottom<=head.r.bottom+14&&t.r.left>head.r.right; });
-      var slotsR=lbls.map(function(t){ return {lbl:t.el,plate:platesOf(t.el)[0]}; })
-        .filter(function(x){ return x.plate&&x.plate.parentElement===x.lbl.parentElement; })
-        .sort(function(a,b){ return gv(a.plate,'left')-gv(b.plate,'left'); });
-      if(slotsR.length<2) return;
-      var par=slotsR[0].plate.parentElement;
-      var off=slotsR.filter(function(x){
-        return getComputedStyle(x.plate).backgroundColor==='rgba(0, 0, 0, 0)'; })[0]||slotsR[1];
-      var padX=gv(off.lbl,'left')-gv(off.plate,'left');
-      var gap=gv(slotsR[1].plate,'left')-(gv(slotsR[0].plate,'left')+gv(slotsR[0].plate,'width'));
-      var last=slotsR[slotsR.length-1];
-      var right=gv(last.plate,'left')+gv(last.plate,'width');
-      var dTop=gv(off.lbl,'top')-gv(off.plate,'top');
-      var top=gv(off.plate,'top');
-      /* The chips sit inside the row's own frame, so their lefts are measured from
-         it. A longer row starts left of the frame, which is grown leftwards to hold
-         it (and the chips shifted by the same amount) rather than clipping them. */
-      var frame=/\bg-b\b/.test(par.className)&&!isNaN(gv(par,'left'))?par:null;
-      if(frame){ frame.dataset.axL=frame.style.left; frame.dataset.axW=frame.style.width; }
-      slotsR.forEach(function(x){ x.plate.style.display='none'; x.lbl.style.display='none'; });
-      CATS.forEach(function(cat){
-        var p=off.plate.cloneNode(false), l=off.lbl.cloneNode(false);
-        p.style.display=''; l.style.display='';
-        p.classList.add('ax-bl-chip'); l.classList.add('ax-bl-chipl');
-        p.dataset.axLaid='1'; l.dataset.axCentred='1';
-        p.setAttribute('role','button'); p.setAttribute('tabindex','0');
-        p.setAttribute('aria-label','Show '+(cat==='All'?'all posts':cat+' posts'));
-        l.textContent=cat;
-        par.insertBefore(p,slotsR[0].plate); par.insertBefore(l,slotsR[0].plate);
-        var pick=function(){
-          if(state.cat===cat) return; state.cat=cat; state.page=0; update(true,true);
-          if(MOB&&p.scrollIntoView) p.scrollIntoView({inline:'nearest',block:'nearest',behavior:REDUCED?'auto':'smooth'});
-        };
-        p.addEventListener('click',pick);
-        p.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); pick(); } });
-        chips.push({cat:cat,p:p,l:l});
-      });
-      function layout(){
-        var ws=chips.map(function(c){ c.l.style.width='auto'; return ink(c.l); });
-        var total=ws.reduce(function(a,b){ return a+b+2*padX; },0)+gap*(chips.length-1);
-        var x=right-total, shift=0;
-        if(MOB){
-          /* a phone is too narrow for six chips: they keep the design's left start and
-             the row scrolls sideways */
-          x=gv(slotsR[0].plate,'left');
-          if(frame&&x+total>gv(frame,'width')) frame.classList.add('ax-bl-scroll');
-        }
-        else if(frame){
-          var fl=parseFloat(frame.dataset.axL), fw=parseFloat(frame.dataset.axW);
-          var inset=gv(slotsR[0].plate,'left');          /* the frame's own left padding */
-          shift=Math.max(0,inset-x);
-          sv(frame,'left',fl-shift); sv(frame,'width',fw+shift);
-          x+=shift;
-        }
-        chips.forEach(function(c,i){
-          sv(c.p,'left',x); sv(c.p,'width',ws[i]+2*padX); sv(c.p,'top',top);
-          sv(c.l,'left',x+padX); sv(c.l,'width',ws[i]); sv(c.l,'top',top+dTop);
-          x+=ws[i]+2*padX+gap;
-        });
-      }
-      chips.layout=layout;
-      layout();
-    });
-    function paintChips(){
-      chips.forEach(function(c){
-        var on=c.cat===state.cat;
-        c.p.classList.toggle('is-on',on);
-        c.p.setAttribute('aria-pressed',on?'true':'false');
-      });
-    }
-
-    /* ---- search: the designed box becomes a real field ---- */
-    var input=null;
-    safe(function(){
-      var lbl=texts.filter(function(t){ return /^search$/i.test(t.t); })[0];
-      if(!lbl) return;
-      var box=platesOf(lbl.el).sort(function(a,b){ return rect(b).width-rect(a).width; })[0];
-      if(!box) return;
-      var par=lbl.el.parentElement, br=rect(box);
-      var inBox=function(e){ var r=rect(e); return r.width&&r.left>=br.left-2&&r.right<=br.right+2&&r.top>=br.top-4&&r.bottom<=br.bottom+4; };
-      var icon=[].filter.call(par.querySelectorAll(':scope > img.g-vec'),inBox)[0];
-      var caps=texts.filter(function(t){ return /^(⌘|K|Ctrl)$/.test(t.t)&&inBox(t.el); });
-      var capsL=caps.length?Math.min.apply(null,caps.map(function(t){ return gv(t.el,'left'); }).map(function(v){ return v-0.2; })):gv(box,'left')+gv(box,'width');
-      [].forEach.call(par.children,function(e){ if(e!==box&&/\bg-b\b/.test(e.className)&&inBox(e)&&caps.length){
-        var r=rect(e); if(r.width<rect(lbl.el).width) capsL=Math.min(capsL,gv(e,'left')); } });
-      var x0=icon?gv(icon,'left')+gv(icon,'width')+0.42:gv(box,'left')+0.63;
-      input=document.createElement('input');
-      input.type='search'; input.className='ax-bl-search';
-      input.placeholder='Search'; input.autocomplete='off'; input.spellcheck=false;
-      input.setAttribute('aria-label','Search the blog');
-      sv(input,'left',x0); sv(input,'width',Math.max(4,capsL-0.42-x0));
-      input.style.top=box.style.top; input.style.height=box.style.height;
-      input.style.fontSize=lbl.el.style.fontSize||getComputedStyle(lbl.el).fontSize;
-      input.style.fontWeight=getComputedStyle(lbl.el).fontWeight;
-      input.style.textAlign=(gv(lbl.el,'left')-x0)<2?'left':'center';
-      input.style.setProperty('--ph',getComputedStyle(lbl.el).color);
-      lbl.el.style.display='none';
-      par.insertBefore(input,lbl.el);
-      box.classList.add('ax-bl-sbox'); box.dataset.axLaid='1';
-      [box,icon].concat(caps.map(function(t){ return t.el; })).forEach(function(e){
-        if(e) e.addEventListener('mousedown',function(ev){ ev.preventDefault(); input.focus(); }); });
-      input.addEventListener('focus',function(){ box.classList.add('is-focus'); });
-      input.addEventListener('blur',function(){ box.classList.remove('is-focus'); });
-      var t=null, jumped=false;
-      input.addEventListener('input',function(){
-        clearTimeout(t);
-        t=setTimeout(function(){
-          state.q=input.value.trim().slice(0,80); state.page=0;
-          update(true,!jumped&&!!state.q); jumped=jumped||!!state.q;
-          if(!state.q) jumped=false;
-        },200);
-      });
-      input.addEventListener('keydown',function(e){
-        e.stopPropagation();               /* the chrome's own shortcuts must not eat typing */
-        if(e.key==='Enter'){ e.preventDefault(); clearTimeout(t);
-          state.q=input.value.trim().slice(0,80); state.page=0; update(true,true); }
-        if(e.key==='Escape'){ clearTimeout(t);
-          if(!input.value&&!state.q){ input.blur(); return; }
-          input.value=''; state.q=''; state.page=0; update(true,false); input.blur(); }
-      });
-      /* the box shows Cmd-K: on this page it opens this search, not the site-wide one */
-      window.addEventListener('keydown',function(e){
-        if(!input.offsetParent) return;          /* the other layout's box is on screen */
-        if((e.metaKey||e.ctrlKey)&&!e.shiftKey&&!e.altKey&&(e.key==='k'||e.key==='K')){
-          e.preventDefault(); e.stopImmediatePropagation(); input.focus(); input.select(); }
-      },true);
-      input.value=state.q;
-    });
-
-    /* ---- render ---- */
-    function scrollToGrid(){
-      if(!head) return;
-      var y=rect(head.el).top+scrollY-Math.round(innerHeight*0.14);
-      if(Math.abs(y-scrollY)<24) return;
-      window.scrollTo({top:y,behavior:REDUCED?'auto':'smooth'});
-    }
-    var busy=null;
-    function apply(){
-      if(!visible()) return;
-      var list=gridList();
-      var total=Math.max(1,Math.ceil(list.length/Math.max(1,grid.length)));
-      if(state.page>total-1) state.page=total-1;
-      if(state.page<0) state.page=0;
-      var off=state.page*grid.length;
-      grid.forEach(function(c,i){ fillCard(c,list[off+i]); });
-      showEmpty(!list.length);
-      if(pager) pager.paint(list.length?total:0);
-      paintChips();
-      writeURL();
-    }
-    function update(animate,scroll){
-      if(scroll) scrollToGrid();
-      if(!animate||REDUCED){ apply(); return; }
-      grid.forEach(function(c){ c.els.forEach(function(e){ e.classList.add('ax-bl-out'); }); });
-      clearTimeout(busy);
-      busy=setTimeout(function(){
-        apply();
-        requestAnimationFrame(function(){ requestAnimationFrame(function(){
-          grid.forEach(function(c){ c.els.forEach(function(e){ e.classList.remove('ax-bl-out'); }); });
-        }); });
-      },220);
-    }
-    function go(n,scroll){
-      var total=Math.max(1,Math.ceil(gridList().length/Math.max(1,grid.length)));
-      n=Math.min(Math.max(0,n),total-1);
-      if(n===state.page) return;
-      state.page=n; update(true,scroll);
-    }
-
-    hero.forEach(function(c,i){ fillCard(c,POSTS[i]); });
-    apply();
-    safe(sizeCardChips);
-    /* measurements depend on the web font: redo them once it is in */
-    var relayout=function(){
-      if(!visible()) return;                    /* ink() is 0 inside display:none */
-      safe(sizeCardChips); if(chips.layout) chips.layout(); apply();
-    };
-    page.__blShow=function(){ if(input) input.value=state.q; relayout(); };
-    if(document.fonts){ document.fonts.ready.then(relayout);
-      if(document.fonts.addEventListener) document.fonts.addEventListener('loadingdone',relayout); }
-    addEventListener('load',relayout);
-  }
-
-  function boot(){
-    init(document.querySelector('main.ax-page'));
-    init(document.querySelector('.ax-mob'));
-  }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot);
-  else boot();
-  addEventListener('load',function(){ setTimeout(boot,150); });
-  /* A layout that was hidden at load is wired when it first gets a size. A resize
-     listener was not enough: the event can arrive before the newly shown layout has
-     been laid out, and then nothing retried. */
-  if(window.ResizeObserver){
-    var ro=new ResizeObserver(function(es){
-      es.forEach(function(e){
-        if(!(e.contentRect.width>0)) return;
-        setTimeout(function(){ if(e.target.__blShow) e.target.__blShow(); else init(e.target); },60);
-      });
-    });
-    [document.querySelector('main.ax-page'),document.querySelector('.ax-mob')].forEach(function(r){ if(r) ro.observe(r); });
-  } else {
-    var rt=null;
-    addEventListener('resize',function(){ clearTimeout(rt); rt=setTimeout(boot,250); });
-  }
 })();
 </script>
 
