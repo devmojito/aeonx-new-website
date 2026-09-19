@@ -246,6 +246,7 @@
   function applyTitleCase(root){
     (root||document).querySelectorAll('.g-t,.ax-mm2__feat-btn,.ax-mm2__api-btn').forEach(function(e){
       if(e.children.length) return;                     /* leave rich labels alone */
+      if(e.closest('[data-ax-case="keep"]')) return;    /* a module that owns its labels' casing */
       /* The two nav buttons ship uppercase in the markup and the client wants them
          kept that way -- TALK TO US / REQUEST A PROPOSAL. Title Case is for the CTAs
          in the page body, not for the fixed chrome. */

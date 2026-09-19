@@ -673,7 +673,9 @@
   function buildButtons(root, boxes, texts){
     var U = (root.clientWidth || innerWidth) / 100;
     var hits = qsa('[data-cta],[data-axcta],[data-axpill],[role="link"],a,button', root)
-      .filter(function(el){ return !chrome(el) && el.offsetWidth; })
+      /* data-ax-hv="off": a module that draws its own hover states (the events
+         listing's selects, chips and cards) */
+      .filter(function(el){ return !chrome(el) && el.offsetWidth && !el.closest('[data-ax-hv="off"]'); })
       .map(box)
       .sort(function(x, y){ return y.a - x.a; });     /* skins first */
 

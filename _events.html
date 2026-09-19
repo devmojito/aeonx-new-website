@@ -1,0 +1,571 @@
+<style id="ax-events-css">
+/* ---- EVENTS LISTING (/insights/events/) ----
+   Figma draws this page as a static picture of a busy listing: six copies of one
+   event card, "40 results", a 1-2-3-4-5 ... 40 pager and tabs, search, location and
+   sort controls that do nothing. This makes them real, driven by the EVENTS list in
+   the script below: one entry per event, and every count, card, tab and filter on
+   both layouts follows from it. The design's slots are reused as drawn; unused ones
+   are removed and the space below closes up. */
+.ax-ev-hit{cursor:pointer}
+.ax-ev-hit:focus-visible,.ax-ev-opt:focus-visible{outline:2px solid #c23714;outline-offset:2px}
+.ax-ev-title{transition:color .2s ease}
+.ax-ev-title.is-hover{color:#c23714!important}
+.ax-ev-img{transition:filter .3s ease}
+.ax-ev-img.is-hover{filter:brightness(.96)}
+.ax-ev-chip{transition:background-color .2s ease}
+.ax-ev-chip:hover{background-color:rgb(198,205,216)!important}
+.ax-ev-chip.is-on{background-color:#df3f17!important}
+.ax-ev-chipl{pointer-events:none;transition:color .2s ease}
+.ax-ev-chipl.is-on{color:#fff!important}
+.ax-ev-input{position:absolute;border:0;outline:none;background:transparent;padding:0;margin:0;
+  font-family:'Nunito Sans',sans-serif;font-weight:400;color:rgb(35,39,46)}
+.ax-ev-input::placeholder{color:rgb(88,103,125);opacity:1}
+.ax-ev-input::-webkit-search-cancel-button{display:none}
+.ax-ev-box.is-focus{border-color:#df3f17!important;box-shadow:0 0 0 3px rgba(223,63,23,.12)}
+.ax-ev-menu{position:absolute;z-index:40;background:#fff;border:1px solid rgb(236,238,242);
+  box-shadow:0 10px 28px rgba(15,23,42,.12);box-sizing:border-box;overflow:hidden;display:none}
+.ax-ev-menu.is-open{display:block;animation:ax-ev-in .16s ease}
+.ax-ev-opt{display:block;width:100%;box-sizing:border-box;border:0;background:transparent;text-align:left;
+  cursor:pointer;font-family:'Nunito Sans',sans-serif;color:rgb(35,39,46);white-space:nowrap}
+.ax-ev-opt:hover,.ax-ev-opt.is-cur{background:#F6F7F9}
+.ax-ev-opt[aria-selected="true"]{color:#c23714;font-weight:600}
+.ax-ev-caret{transition:transform .2s ease}
+.ax-ev-caret.is-open{transform:rotate(180deg)}
+.ax-ev-empty{position:absolute;font-family:'Nunito Sans',sans-serif;color:rgb(82,96,119);text-align:center;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.8em}
+.ax-ev-empty .ax-ev-msg,.ax-ev-empty button{position:static}
+.ax-ev-empty button{border:0;background:none;color:#c23714;font:inherit;font-weight:600;cursor:pointer;padding:0}
+.ax-ev-pg{cursor:pointer;text-align:center!important}
+.ax-ev-pg.is-on{color:#c23714!important;font-weight:700!important;cursor:default}
+.ax-ev-arrow[aria-disabled="true"]{opacity:.3;cursor:default}
+@keyframes ax-ev-in{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.ax-ev-menu.is-open{animation:none}.ax-ev-caret,.ax-ev-chip,.ax-ev-img{transition:none}}
+</style>
+<script>
+(function () {
+  /* One entry per event. `end` decides Upcoming vs Past (it moves over by itself
+     once the event is over). `topics` use the chip labels under "Filter by Services".
+     `img` is the card picture; left empty, the card keeps the one Figma drew. */
+  var EVENTS = [
+    { t: 'The Future of Public Sector Transformation',
+      u: '/insights/events/the-future-of-public-sector-transformation/',
+      date: 'September 25, 2026', end: '2026-09-25T22:00:00+05:30',
+      city: 'Gandhinagar', venue: 'Hotel Pride Elite, Gujarat',
+      topics: ['SAP', 'AMAZON WEB SERVICES', 'GENERATIVE AI'], img: '' }
+  ];
+  var SORTS = ['Upcoming first', 'Latest first'];
+  var PER_PAGE = 6;                                   /* the desktop grid is 3 x 2 */
+
+  var now = Date.now();
+  EVENTS.forEach(function (e) { e.past = new Date(e.end).getTime() < now; e.ts = new Date(e.end).getTime(); });
+  var CITIES = EVENTS.map(function (e) { return e.city; })
+    .filter(function (c, i, a) { return c && a.indexOf(c) === i; }).sort();
+  var state = { tab: 'all', q: '', city: '', sort: SORTS[0], topic: '', page: 0 };
+
+  function txt(e) { return (e.textContent || '').replace(/\s+/g, ' ').trim(); }
+  function gv(e, k) { var v = e.style[k]; return v && /vw$/.test(v) ? parseFloat(v) : (v && /px$/.test(v) ? parseFloat(v) * 100 / innerWidth : 0); }
+  function sv(e, k, v) { e.style[k] = v.toFixed(4) + 'vw'; }
+  function kids(p) { return [].slice.call(p.children); }
+  function inBox(e, b) {
+    var l = gv(e, 'left'), t = gv(e, 'top');
+    return l >= gv(b, 'left') - 0.05 && t >= gv(b, 'top') - 0.05 &&
+           l + gv(e, 'width') <= gv(b, 'left') + gv(b, 'width') + 0.05 &&
+           t + gv(e, 'height') <= gv(b, 'top') + gv(b, 'height') + 0.05;
+  }
+  var cv = document.createElement('canvas').getContext('2d');
+  /* ink width in vw from the label's own computed font: works on the layout that
+     is currently display:none as well, which rect measuring cannot */
+  function ink(el) {
+    var cs = getComputedStyle(el);
+    cv.font = cs.fontWeight + ' ' + cs.fontSize + ' "Nunito Sans", sans-serif';
+    var ls = parseFloat(cs.letterSpacing) || 0, s = txt(el);
+    return (cv.measureText(s).width + ls * s.length) * 100 / innerWidth;
+  }
+  function matches(e, skip) {
+    if (skip !== 'tab' && state.tab === 'up' && e.past) return false;
+    if (skip !== 'tab' && state.tab === 'past' && !e.past) return false;
+    if (state.city && e.city !== state.city) return false;
+    if (state.topic && e.topics.indexOf(state.topic) < 0) return false;
+    if (state.q) {
+      var hay = [e.t, e.city, e.venue, e.date].concat(e.topics).join(' ').toLowerCase();
+      if (state.q.toLowerCase().split(/\s+/).some(function (w) { return w && hay.indexOf(w) < 0; })) return false;
+    }
+    return true;
+  }
+  function results() {
+    var r = EVENTS.filter(function (e) { return matches(e); });
+    return r.sort(function (a, b) {
+      if (state.sort === 'Latest first') return b.ts - a.ts;
+      if (a.past !== b.past) return a.past ? 1 : -1;       /* upcoming first, soonest on top */
+      return a.past ? b.ts - a.ts : a.ts - b.ts;
+    });
+  }
+
+  /* Push everything at or below local y `cut` by `d` vw and grow or shrink the
+     boxes that straddle it. Every element on these pages is placed in vw. */
+  function shift(box, cut, d) {
+    kids(box).forEach(function (c) {
+      if (!/vw$/.test(c.style.top || '') || c.classList.contains('ax-ev-menu')) return;
+      var t = gv(c, 'top'), h = gv(c, 'height');
+      if (t >= cut - 0.01) c.style.top = (t + d).toFixed(4) + 'vw';
+      else if (h && t + h > cut + 0.01) { c.style.height = (h + d).toFixed(4) + 'vw'; shift(c, cut - t, d); }
+    });
+  }
+
+  function Layout(main, D, mob) {
+    var PX = 100 / D;                                    /* one design px, in vw */
+    var all = [].slice.call(main.querySelectorAll('.g-t'));
+    function find(s) { return all.filter(function (e) { return txt(e) === s; }); }
+    function next(el, cls) { var n = el.nextElementSibling; while (n && !n.classList.contains(cls)) n = n.nextElementSibling; return n; }
+    function prevEl(el, cls) { var n = el.previousElementSibling; while (n && !n.classList.contains(cls)) n = n.previousElementSibling; return n; }
+    /* plate + label hug: the plate is sized to the label's ink plus Figma's padding */
+    function hug(plate, label, padX, minW) {
+      var w = ink(label), pw = Math.max(w + 2 * padX * PX, (minW || 0) * PX);
+      label.style.width = (w + 0.05).toFixed(4) + 'vw';
+      plate.style.width = pw.toFixed(4) + 'vw';
+      label.style.left = (gv(plate, 'left') + (pw - w) / 2).toFixed(4) + 'vw';
+      label.style.textAlign = 'left';
+    }
+    var L = { main: main, mob: mob };
+
+    /* ---- tabs ---- */
+    var TABS = [['All events', 'all'], ['Upcoming', 'up'], ['Past events', 'past']].map(function (x) {
+      var lab = find(x[0])[0]; if (!lab) return null;
+      var badge = next(lab, 'g-b'), cnt = badge && next(badge, 'g-t');
+      return { key: x[1], lab: lab, badge: badge, cnt: cnt };
+    }).filter(Boolean);
+    var under = TABS.length && [].filter.call(main.querySelectorAll('.g-b'), function (b) {
+      return /solid/.test(b.style.borderBottom || '') && /(207, 59, 21|223, 63, 23)/.test(b.style.borderBottomColor || b.style.borderBottom) &&
+             b.parentElement === TABS[0].lab.parentElement;
+    })[0];
+    var ON = TABS[0] && { lab: TABS[0].lab.style.color, bg: TABS[0].badge.style.backgroundColor, cnt: TABS[0].cnt.style.color };
+    var OFF = TABS[1] && { lab: TABS[1].lab.style.color, bg: TABS[1].badge.style.backgroundColor, cnt: TABS[1].cnt.style.color };
+    TABS.forEach(function (tb) {
+      tb.lab.dataset.axCase = 'keep';
+      tb.lab.textContent = ['All events', 'Upcoming', 'Past events'][['all', 'up', 'past'].indexOf(tb.key)];
+      [tb.lab, tb.badge, tb.cnt].forEach(function (e) {
+        e.classList.add('ax-ev-hit'); e.dataset.axOwned = '1'; e.dataset.cta = '1';
+        e.addEventListener('click', function (ev) { ev.preventDefault(); ev.stopPropagation(); set({ tab: tb.key }); });
+      });
+      tb.lab.setAttribute('role', 'tab'); tb.lab.tabIndex = 0;
+      tb.lab.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); set({ tab: tb.key }); }
+        if (ev.key === 'ArrowRight' || ev.key === 'ArrowLeft') {
+          var i = TABS.indexOf(tb) + (ev.key === 'ArrowRight' ? 1 : -1);
+          var t2 = TABS[(i + TABS.length) % TABS.length]; set({ tab: t2.key }); t2.lab.focus();
+        }
+      });
+    });
+    L.paintTabs = function () {
+      TABS.forEach(function (tb) {
+        var on = tb.key === state.tab, n = EVENTS.filter(function (e) {
+          return matches(e, 'tab') && (tb.key === 'all' || (tb.key === 'up') === !e.past); }).length;
+        tb.cnt.textContent = String(n);
+        tb.lab.style.color = on ? ON.lab : OFF.lab;
+        tb.badge.style.backgroundColor = on ? ON.bg : OFF.bg;
+        tb.cnt.style.color = on ? ON.cnt : OFF.cnt;
+        tb.lab.setAttribute('aria-selected', on ? 'true' : 'false');
+        hug(tb.badge, tb.cnt, 6, 22);
+        tb.badge.style.left = (gv(tb.lab, 'left') + gv(tb.lab, 'width') + 9 * PX).toFixed(4) + 'vw';
+        /* the count spans the badge and centres itself, as Figma's hug frame does */
+        tb.cnt.style.left = tb.badge.style.left; tb.cnt.style.width = tb.badge.style.width;
+        tb.cnt.style.textAlign = 'center';
+        if (on && under) {
+          sv(under, 'left', gv(tb.lab, 'left') - 2 * PX);
+          sv(under, 'width', gv(tb.badge, 'left') + gv(tb.badge, 'width') + 2 * PX - (gv(tb.lab, 'left') - 2 * PX));
+        }
+      });
+    };
+
+    /* ---- search ---- */
+    var ph = all.filter(function (e) { return /^search by event/i.test(txt(e)); })[0];
+    if (ph) {
+      var sbox = ph.parentElement, icon = prevEl(sbox, 'g-vec');
+      /* the magnifier was drawn BEFORE the white field, so the field covered it */
+      if (icon) sbox.parentElement.insertBefore(icon, sbox.nextSibling);
+      var inp = document.createElement('input');
+      inp.type = 'search'; inp.className = 'ax-ev-input'; inp.id = 'ax-ev-q' + (mob ? '-m' : '');
+      inp.placeholder = 'Search by event, topic or city';
+      inp.setAttribute('aria-label', 'Search events');
+      inp.autocomplete = 'off';
+      inp.style.cssText += ';left:' + ph.style.left + ';top:0;width:' + (gv(sbox, 'width') - gv(ph, 'left') - 12 * PX).toFixed(4) +
+        'vw;height:100%;font-size:' + ph.style.fontSize + ';line-height:' + ph.style.lineHeight;
+      ph.style.display = 'none';
+      sbox.appendChild(inp);
+      sbox.classList.add('ax-ev-box'); sbox.style.cursor = 'text';
+      sbox.addEventListener('click', function () { inp.focus(); });
+      inp.addEventListener('focus', function () { sbox.classList.add('is-focus'); });
+      inp.addEventListener('blur', function () { sbox.classList.remove('is-focus'); });
+      inp.addEventListener('input', function () { set({ q: inp.value.trim() }); });
+      L.inp = inp;
+    }
+
+    /* ---- dropdowns: Location and Sort by ---- */
+    function dropdown(label, options, current, onPick) {
+      var lab = find(label)[0]; if (!lab) return null;
+      var clip = lab.parentElement, box = prevEl(clip, 'g-b'), caret = next(clip, 'g-vec');
+      if (!box) return null;
+      var host = box.parentElement;
+      var menu = document.createElement('div');
+      menu.className = 'ax-ev-menu'; menu.setAttribute('role', 'listbox');
+      menu.style.left = box.style.left; menu.style.width = box.style.width;
+      menu.style.top = (gv(box, 'top') + gv(box, 'height') + 4 * PX).toFixed(4) + 'vw';
+      menu.style.borderRadius = (3 * PX).toFixed(4) + 'vw';
+      host.appendChild(menu);
+      var opts = options.map(function (o) {
+        var b = document.createElement('button');
+        b.type = 'button'; b.className = 'ax-ev-opt'; b.textContent = o.label; b.setAttribute('role', 'option');
+        b.style.fontSize = lab.style.fontSize; b.style.lineHeight = lab.style.lineHeight;
+        b.style.padding = (9 * PX).toFixed(4) + 'vw ' + (14 * PX).toFixed(4) + 'vw';
+        b.addEventListener('click', function (ev) { ev.stopPropagation(); pick(o); close(); box.focus(); });
+        menu.appendChild(b);
+        return b;
+      });
+      var restColor = lab.style.color;
+      lab.dataset.axCase = 'keep';
+      function pick(o) {
+        lab.textContent = o.label;
+        lab.style.color = o.value === options[0].value ? restColor : 'rgb(35,39,46)';
+        opts.forEach(function (b, i) { b.setAttribute('aria-selected', options[i].value === o.value ? 'true' : 'false'); });
+        onPick(o.value);
+      }
+      function open() { menu.classList.add('is-open'); caret && caret.classList.add('is-open'); box.setAttribute('aria-expanded', 'true'); }
+      function close() { menu.classList.remove('is-open'); caret && caret.classList.remove('is-open'); box.setAttribute('aria-expanded', 'false'); }
+      /* only the box is marked as a control: tagging the label made the site's
+         button-label pass centre it, and Figma sets these left-aligned */
+      box.dataset.cta = '1';
+      [box, clip, lab, caret].forEach(function (e) {
+        if (!e) return;
+        e.classList.add('ax-ev-hit'); e.dataset.axOwned = '1';
+        e.addEventListener('click', function (ev) { ev.preventDefault(); ev.stopPropagation(); menu.classList.contains('is-open') ? close() : open(); });
+      });
+      caret && caret.classList.add('ax-ev-caret');
+      box.tabIndex = 0; box.setAttribute('role', 'button'); box.setAttribute('aria-haspopup', 'listbox');
+      box.setAttribute('aria-label', label === options[0].label ? 'Location' : 'Sort by');
+      box.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Enter' || ev.key === ' ' || ev.key === 'ArrowDown') { ev.preventDefault(); open(); (opts.filter(function (b) { return b.getAttribute('aria-selected') === 'true'; })[0] || opts[0]).focus(); }
+        if (ev.key === 'Escape') close();
+      });
+      menu.addEventListener('keydown', function (ev) {
+        var i = opts.indexOf(document.activeElement);
+        if (ev.key === 'ArrowDown') { ev.preventDefault(); opts[Math.min(i + 1, opts.length - 1)].focus(); }
+        if (ev.key === 'ArrowUp') { ev.preventDefault(); opts[Math.max(i - 1, 0)].focus(); }
+        if (ev.key === 'Escape' || ev.key === 'Tab') { close(); box.focus(); }
+      });
+      document.addEventListener('click', function (ev) { if (!menu.contains(ev.target)) close(); });
+      pick(options.filter(function (o) { return o.value === current; })[0] || options[0]);
+      return { close: close };
+    }
+    dropdown('All locations', [{ label: 'All locations', value: '' }].concat(CITIES.map(function (c) { return { label: c, value: c }; })),
+      '', function (v) { if (v !== state.city) set({ city: v }); });
+    dropdown('Upcoming first', SORTS.map(function (s) { return { label: s, value: s }; }),
+      state.sort, function (v) { if (v !== state.sort) set({ sort: v }); });
+
+    /* ---- status line and results count ---- */
+    var status = all.filter(function (e) { return /^\d+ events? to explore$/.test(txt(e)); })[0];
+    var resN = all.filter(function (e) { return /^\d+ results?$/.test(txt(e)); })[0];
+    /* Figma sets "40 results" flush against the column's right edge; keep that edge
+       whatever the number is */
+    if (resN) resN.style.textAlign = 'right';
+    L.paintCounts = function (n) {
+      if (status) {
+        var sp = status.querySelectorAll('span');
+        if (sp.length === 2) { sp[0].textContent = n; sp[1].textContent = ' ' + (n === 1 ? 'event' : 'events') + ' to explore'; }
+        else status.textContent = n + ' ' + (n === 1 ? 'event' : 'events') + ' to explore';
+      }
+      if (resN) resN.textContent = n + (n === 1 ? ' result' : ' results');
+    };
+
+    /* ---- topic chips ---- */
+    var CHIPS = ['SAP', 'SaaS', 'GENERATIVE AI', 'AMAZON WEB SERVICES', 'GOOGLE CLOUD PARTNER'].map(function (s) {
+      var lab = find(s).filter(function (e) { var p = prevEl(e, 'g-b'); return p && /213, 218, 226/.test(p.style.backgroundColor); })[0];
+      if (!lab) return null;
+      var plate = prevEl(lab, 'g-b');
+      plate.classList.add('ax-ev-chip', 'ax-ev-hit'); lab.classList.add('ax-ev-chipl');
+      lab.dataset.axCase = 'keep'; lab.textContent = s;
+      plate.dataset.axOwned = '1'; plate.dataset.cta = '1';
+      plate.setAttribute('role', 'button'); plate.tabIndex = 0; plate.setAttribute('aria-label', 'Filter by ' + s);
+      var go = function (ev) { ev.preventDefault(); ev.stopPropagation(); set({ topic: state.topic === s ? '' : s }); };
+      plate.addEventListener('click', go);
+      plate.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' || ev.key === ' ') go(ev); });
+      return { s: s, plate: plate, lab: lab };
+    }).filter(Boolean);
+    L.hugChips = function () { CHIPS.forEach(function (c) { hug(c.plate, c.lab, 8); }); };
+    L.paintChips = function () {
+      CHIPS.forEach(function (c) {
+        var on = c.s === state.topic;
+        c.plate.classList.toggle('is-on', on); c.lab.classList.toggle('is-on', on);
+        c.plate.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+    };
+
+    /* ---- card slots ---- */
+    var tags = find('UPCOMING');
+    var slots = tags.map(function (tagL) {
+      var host = tagL.parentElement;
+      var card = kids(host).filter(function (b) {
+        return b.classList.contains('g-b') && !b.classList.contains('g-clip') && inBox(tagL, b) &&
+               gv(b, 'height') > 300 * PX && gv(b, 'height') < 700 * PX;
+      })[0];
+      if (!card) return null;
+      var members = kids(host).filter(function (e) { return e !== card && inBox(e, card); });
+      var g = function (f) { return members.filter(f)[0]; };
+      var tagP = prevEl(tagL, 'g-b');
+      var titleClip = g(function (e) { return e.classList.contains('g-clip') && e.querySelector('.g-t') && !e.classList.contains('g-img'); });
+      return {
+        host: host, card: card, members: members, tagP: tagP, tagL: tagL,
+        img: g(function (e) { return e.classList.contains('g-img'); }),
+        title: titleClip && titleClip.querySelector('.g-t'),
+        loc: g(function (e) { return e.classList.contains('g-t') && /Gujarat|,/.test(txt(e)) && !/\d{4}$/.test(txt(e)); }),
+        date: g(function (e) { return e.classList.contains('g-t') && /\d{4}$/.test(txt(e)); }),
+        top: gv(card, 'top'), ev: null
+      };
+    }).filter(Boolean).sort(function (a, b) { return a.top - b.top || gv(a.card, 'left') - gv(b.card, 'left'); });
+    var host = slots.length && slots[0].host;
+    /* Phone: Figma drew five stacked slots and no pager, so every event needs a slot
+       of its own. Extra ones are copies of the first, one card pitch further down,
+       with the rest of the page moved down to make room. */
+    if (mob && slots.length > 1 && EVENTS.length > slots.length) (function () {
+      var s0 = slots[0], last = slots[slots.length - 1], p0 = slots[1].top - s0.top;
+      var need = EVENTS.length - slots.length, h0 = gv(s0.card, 'height');
+      var ht = 0; for (var e1 = host; e1 && e1 !== main; e1 = e1.parentElement) ht += gv(e1, 'top');
+      shift(main, ht + last.top + h0, need * p0);
+      main.style.height = (gv(main, 'height') + need * p0).toFixed(4) + 'vw';
+      var src = [s0.card].concat(s0.members), anchor = last.members[last.members.length - 1] || last.card;
+      for (var k = 1; k <= need; k++) {
+        var dy = last.top - s0.top + k * p0;
+        var cl = src.map(function (e) { var c = e.cloneNode(true); c.style.top = (gv(e, 'top') + dy).toFixed(4) + 'vw'; return c; });
+        cl.forEach(function (c) { host.insertBefore(c, anchor.nextSibling); anchor = c; });
+        var at = function (x) { var i = src.indexOf(x); return i < 0 ? null : cl[i]; };
+        var tc = s0.title ? at(s0.title.parentElement) : null;
+        slots.push({ host: host, card: cl[0], members: cl.slice(1), tagP: at(s0.tagP), tagL: at(s0.tagL),
+                     img: at(s0.img), title: tc && tc.querySelector('.g-t'), loc: at(s0.loc), date: at(s0.date),
+                     top: gv(cl[0], 'top'), ev: null });
+      }
+    })();
+    var designImg = slots.length && slots[0].img && slots[0].img.style.backgroundImage;
+    var rowsTop = slots.map(function (s) { return s.top; }).filter(function (t, i, a) { return a.indexOf(t) === i; });
+    var perRow = slots.filter(function (s) { return s.top === rowsTop[0]; }).length || 1;
+    var pitch = rowsTop.length > 1 ? rowsTop[1] - rowsTop[0] : 0;
+    L.cap = mob ? slots.length : PER_PAGE;
+    slots.forEach(function (s) {
+      var hov = function (on) { [s.title, s.img].forEach(function (x) { x && x.classList.toggle('is-hover', on); }); };
+      s.members.concat([s.card]).forEach(function (e) {
+        e.dataset.axOwned = '1';
+        e.classList.add('ax-ev-hit');
+        e.addEventListener('click', function (ev) { if (s.ev) { ev.preventDefault(); ev.stopPropagation(); location.href = s.ev.u; } });
+        e.addEventListener('mouseenter', function () { hov(true); });
+        e.addEventListener('mouseleave', function () { hov(false); });
+      });
+      s.title && s.title.classList.add('ax-ev-title');
+      s.img && s.img.classList.add('ax-ev-img');
+      s.card.classList.add('ax-ev-card');
+      s.members.concat([s.card]).forEach(function (e) { e.dataset.axCase = 'keep'; });
+      s.card.setAttribute('role', 'link'); s.card.tabIndex = 0;
+      s.card.addEventListener('keydown', function (ev) { if ((ev.key === 'Enter' || ev.key === ' ') && s.ev) { ev.preventDefault(); location.href = s.ev.u; } });
+    });
+
+    /* ---- pager (desktop): the designed row, re-laid for the real page count ---- */
+    var pgNums = find('1').concat(find('2'), find('3'), find('4'), find('5'), find('40')).filter(function (e) {
+      return host && e.parentElement === host && gv(e, 'top') > rowsTop[rowsTop.length - 1] + pitch * 0.9;
+    }).sort(function (a, b) { return gv(a, 'left') - gv(b, 'left'); });
+    var pgRow = pgNums.length ? gv(pgNums[0], 'top') : 0;
+    var pgIcons = host ? kids(host).filter(function (e) {
+      return e.classList.contains('g-vec') && pgNums.length && Math.abs(gv(e, 'top') + gv(e, 'height') / 2 - (pgRow + gv(pgNums[0], 'height') / 2)) < 30 * PX;
+    }).sort(function (a, b) { return gv(a, 'left') - gv(b, 'left'); }) : [];
+    /* the two arrows are the identical 58 x 42 boxes; the smaller icon is the "..." */
+    var bigW = Math.max.apply(null, pgIcons.map(function (e) { return gv(e, 'width'); }).concat([0]));
+    var arrows = pgIcons.filter(function (e) { return Math.abs(gv(e, 'width') - bigW) < 0.05; });
+    var prev = arrows.length === 2 ? arrows[0] : null, nxt = arrows.length === 2 ? arrows[1] : null;
+    var dots = pgIcons.filter(function (e) { return e !== prev && e !== nxt; });
+    var pager = pgNums.concat(pgIcons);
+    if (prev && nxt) {
+      [[prev, -1, 'Previous page'], [nxt, 1, 'Next page']].forEach(function (a) {
+        var el = a[0];
+        el.classList.add('ax-ev-hit', 'ax-ev-arrow'); el.dataset.axOwned = '1';
+        el.setAttribute('role', 'button'); el.tabIndex = 0; el.setAttribute('aria-label', a[2]); el.removeAttribute('aria-hidden');
+        var step = function () { if (el.getAttribute('aria-disabled') !== 'true') { set({ page: state.page + a[1] }, true); } };
+        el.addEventListener('click', function (ev) { ev.preventDefault(); ev.stopPropagation(); step(); });
+        el.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); step(); } });
+      });
+      pgNums.forEach(function (n) {
+        n.classList.add('ax-ev-pg'); n.dataset.axOwned = '1';
+        n.addEventListener('click', function (ev) { ev.preventDefault(); ev.stopPropagation(); if (n.__pg) set({ page: n.__pg - 1 }, true); });
+      });
+    }
+    var restPg = pgNums[1] ? pgNums[1].style.color : '';
+    var mid = prev && nxt ? (gv(prev, 'left') + gv(nxt, 'left') + gv(nxt, 'width')) / 2 : 0;
+    L.paintPager = function (pages) {
+      var show = pages > 1 && prev && nxt;
+      pager.forEach(function (e) { e.style.display = show ? '' : 'none'; });
+      if (!show) return;
+      dots.forEach(function (e) { e.style.display = 'none'; });
+      var cur = state.page + 1, items = [], i;
+      /* 0 = a gap, drawn as an ellipsis */
+      if (pages <= 7) for (i = 1; i <= pages; i++) items.push(i);
+      else if (cur <= 4) items = [1, 2, 3, 4, 5, 0, pages];
+      else if (cur >= pages - 3) items = [1, 0, pages - 4, pages - 3, pages - 2, pages - 1, pages];
+      else items = [1, 0, cur - 1, cur, cur + 1, 0, pages];
+      while (pgNums.length < items.length) {
+        var c = pgNums[0].cloneNode(true);
+        c.addEventListener('click', function (ev) { ev.preventDefault(); ev.stopPropagation(); if (this.__pg) set({ page: this.__pg - 1 }, true); });
+        pgNums[pgNums.length - 1].parentElement.insertBefore(c, pgNums[pgNums.length - 1].nextSibling);
+        pgNums.push(c); pager.push(c);
+      }
+      var gap = 4 * PX, w = [], x;
+      pgNums.forEach(function (n, j) {
+        var v = items[j];
+        n.style.display = j < items.length ? '' : 'none';
+        if (j >= items.length) return;
+        n.textContent = v ? String(v) : '\u2026'; n.__pg = v;
+        n.style.width = 'auto'; w[j] = Math.max(ink(n), 9 * PX) + 11 * PX;
+        n.classList.toggle('is-on', v === cur);
+        n.style.color = v === cur ? '' : restPg;
+        n.style.cursor = v ? '' : 'default';
+        if (v) { n.setAttribute('role', 'button'); n.tabIndex = v === cur ? -1 : 0; n.setAttribute('aria-label', 'Page ' + v); }
+        else { n.removeAttribute('role'); n.removeAttribute('tabindex'); n.removeAttribute('aria-label'); }
+        if (v === cur) n.setAttribute('aria-current', 'page'); else n.removeAttribute('aria-current');
+      });
+      var inner = w.reduce(function (a, b) { return a + (b || 0); }, 0) + gap * (items.length - 1);
+      x = mid - (gv(prev, 'width') + inner + gv(nxt, 'width')) / 2;
+      sv(prev, 'left', x); x += gv(prev, 'width');
+      pgNums.forEach(function (n, j) { if (j >= items.length) return; sv(n, 'left', x); sv(n, 'width', w[j]); x += w[j] + gap; });
+      sv(nxt, 'left', x - gap);
+      prev.setAttribute('aria-disabled', state.page <= 0 ? 'true' : 'false');
+      nxt.setAttribute('aria-disabled', state.page >= pages - 1 ? 'true' : 'false');
+    };
+
+    /* ---- empty state, drawn in the first slot ---- */
+    var empty = null;
+    function showEmpty(on) {
+      if (!slots.length) return;
+      if (!empty) {
+        var c = slots[0].card;
+        empty = document.createElement('div');
+        empty.className = 'ax-ev-empty'; empty.setAttribute('role', 'status');
+        empty.style.left = c.style.left; empty.style.top = c.style.top;
+        empty.style.width = mob ? c.style.width : (gv(c, 'width') * perRow).toFixed(4) + 'vw';
+        empty.style.height = c.style.height;
+        empty.style.fontSize = (16 * PX).toFixed(4) + 'vw';
+        empty.innerHTML = '<div class="ax-ev-msg"></div><button type="button">Clear filters</button>';
+        empty.querySelector('button').addEventListener('click', function () {
+          if (L.inp) L.inp.value = '';
+          set({ tab: 'all', q: '', city: '', topic: '', page: 0 });
+          layouts.forEach(function (l) { l.resetDrops && l.resetDrops(); });
+        });
+        host.appendChild(empty);
+      }
+      empty.querySelector('.ax-ev-msg').textContent = 'No events match these filters.';
+      empty.style.display = on ? '' : 'none';
+    }
+
+    /* ---- the grid closes up to the rows it needs ----
+       Always applied to the ORIGINAL geometry (snapshotted once): a filter that goes
+       from one row back to two has to put everything back exactly where it was. */
+    var snap = null, mainH0 = main.style.height;
+    var cardH = slots.length ? gv(slots[0].card, 'height') : 0;
+    var lastBottom = rowsTop.length ? rowsTop[rowsTop.length - 1] + cardH : 0;
+    /* no pager: its band (gap + row) goes too, leaving the design's bottom padding */
+    var extra = (!mob && prev && nxt) ? gv(prev, 'top') + gv(prev, 'height') - lastBottom : 0;
+    var hostTop = 0;
+    for (var e0 = host; e0 && e0 !== main; e0 = e0.parentElement) hostTop += gv(e0, 'top');
+    L.close = function (shown, pagerOn) {
+      if (!slots.length) return;
+      var rows = Math.min(rowsTop.length, Math.max(1, Math.ceil(shown / perRow)));
+      var want = (rowsTop.length - rows) * pitch + (pagerOn ? 0 : extra);
+      if (!snap) {
+        if (!want) return;
+        snap = [].map.call(main.querySelectorAll('*'), function (el) { return [el, el.style.top, el.style.height]; });
+      }
+      snap.forEach(function (x) { x[0].style.top = x[1]; x[0].style.height = x[2]; });
+      main.style.height = mainH0;
+      if (!want) return;
+      shift(main, hostTop + (rows < rowsTop.length ? rowsTop[rows] : lastBottom), -want);
+      main.style.height = (gv(main, 'height') - want).toFixed(4) + 'vw';
+    };
+
+    L.paint = function (list) {
+      /* the phone layout has no pager: it lists every event, one slot each */
+      var pages = mob ? 1 : Math.max(1, Math.ceil(list.length / L.cap));
+      var view = mob ? list.slice(0, L.cap) : list.slice(state.page * L.cap, state.page * L.cap + L.cap);
+      slots.forEach(function (s, i) {
+        var e = view[i];
+        s.ev = e || null;
+        [s.card].concat(s.members).forEach(function (m) { m.style.display = e ? '' : 'none'; });
+        if (!e) return;
+        s.tagL.textContent = e.past ? 'PAST' : 'UPCOMING';
+        hug(s.tagP, s.tagL, 5);
+        if (s.title) s.title.textContent = e.t;
+        if (s.loc) s.loc.textContent = e.venue;
+        if (s.date) s.date.textContent = e.date;
+        if (s.img) s.img.style.backgroundImage = e.img ? 'url("' + e.img + '")' : designImg;
+        s.card.setAttribute('aria-label', e.t + ', ' + e.date + ', ' + e.venue);
+      });
+      showEmpty(!list.length);
+      L.paintCounts(list.length);
+      L.paintTabs(); L.paintChips(); L.paintPager(pages);
+      L.close(Math.max(view.length, 1), pages > 1);
+    };
+    L.resetDrops = function () {
+      [].forEach.call(main.querySelectorAll('.ax-ev-menu .ax-ev-opt:first-child'), function (b) { b.click(); });
+    };
+    /* every control and card here has its own hover styling (see the CSS above) */
+    [].forEach.call(main.querySelectorAll('.ax-ev-hit,.ax-ev-box,.ax-ev-menu,.ax-ev-empty,.ax-ev-card'),
+      function (e) { e.dataset.axHv = 'off'; });
+    L.hugChips();
+    return L;
+  }
+
+  /* Claim this module's labels as soon as the script runs, before the page-wide
+     passes fire at DOMContentLoaded. Adding Events to the menu taught the chrome's
+     CTA linker that "events" is a page, so it turned the "All events" TAB into a
+     link to this very page and Title Cased it; the hover and centring passes would
+     restyle the others. Each pass has an opt-out; set them here. */
+  (function claim() {
+    var OWN = ['All events', 'Upcoming', 'Past events', 'All locations', 'Upcoming first', 'SAP', 'SaaS',
+               'GENERATIVE AI', 'AMAZON WEB SERVICES', 'GOOGLE CLOUD PARTNER', 'UPCOMING'];
+    [].forEach.call(document.querySelectorAll('main.ax-page .g-t'), function (e) {
+      var t = txt(e);
+      if (OWN.indexOf(t) < 0) return;
+      e.dataset.axOwned = '1'; e.dataset.axCase = 'keep'; e.dataset.axHv = 'off'; e.dataset.axCentred = '1';
+      if (/^(All events|Upcoming|Past events)$/.test(t)) e.dataset.cta = '1';   /* keeps the linker off */
+    });
+  })();
+
+  var layouts = [];
+  function set(patch, keepPage) {
+    var changed = false;
+    Object.keys(patch).forEach(function (k) { if (state[k] !== patch[k]) { state[k] = patch[k]; changed = true; } });
+    if (!changed) return;
+    if (!keepPage && !('page' in patch)) state.page = 0;
+    render();
+  }
+  function render() {
+    var list = results(), pages = Math.max(1, Math.ceil(list.length / PER_PAGE));
+    state.page = Math.min(Math.max(state.page, 0), pages - 1);
+    layouts.forEach(function (l) { l.paint(list); });
+  }
+
+  /* The generic hover pass scans at DOMContentLoaded, before this module has marked
+     anything, and again after load (when it honours data-ax-hv / data-ax-owned).
+     Clear whatever the first scan attached, once now and once after the second. */
+  function unskin() {
+    [].forEach.call(document.querySelectorAll('[data-ax-hv="off"],[data-ax-hv="off"] *'), function (e) {
+      [].slice.call(e.classList).forEach(function (c) { if (/^ax-hv-/.test(c)) e.classList.remove(c); });
+    });
+  }
+  function run() {
+    var desk = [].filter.call(document.querySelectorAll('main.ax-page'), function (m) { return !m.closest('.ax-mob'); })[0];
+    var mob = document.querySelector('.ax-mob main.ax-page');
+    if (desk) layouts.push(Layout(desk, 1920, false));
+    if (mob) layouts.push(Layout(mob, 430, true));
+    render();
+    unskin();
+    if (document.readyState === 'complete') setTimeout(unskin, 400);
+    else addEventListener('load', function () { setTimeout(unskin, 400); });
+  }
+  function start() { (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(run); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+  else start();
+})();
+</script>
