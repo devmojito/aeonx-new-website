@@ -1030,7 +1030,9 @@ function skipBtn(n){ return NOTBTN.test(n)||NOTBTN2.indexOf(n)>=0; }
        hit, not the '#' fallback) is just as dead for the same reason and
        deserves the same fix -- guessing is still off the table, resolve()
        already refuses to guess. */
-    if(n==='explore'||/^explore .+/.test(n)){ make(t, resolve(n)||'#'); return; }
+    /* a label, not a sentence: body copy that happens to open with "Explore" (the
+       events pages have three) is not a button */
+    if(n==='explore'||(/^explore .+/.test(n)&&n.length<=40&&!/[.,;:?!]/.test(n))){ make(t, resolve(n)||'#'); return; }
     var rr=resolve(n); if(rr) make(t, rr);
   });
 });

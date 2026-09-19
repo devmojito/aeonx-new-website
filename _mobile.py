@@ -62,6 +62,8 @@ def main():
         'What we do/Products/SetuMove': 'products/setu-move',
         'What we do/Products/Quic': 'products/quic',
         'Home/AI & Data': 'services/ai-data',
+        'Insights/Editorial/Events': 'insights/events',
+        'Insights/Editorial/Events/25th Sept 2026': 'insights/events/the-future-of-public-sector-transformation',
         'What we do/Products/Jarvis': 'products/jarvis',
         'What we do/Products/Datasetu.ai': 'products/datasetu-ai',
         'What we do/Products/SetuEdge': 'products/setuedge',
