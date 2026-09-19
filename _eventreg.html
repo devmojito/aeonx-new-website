@@ -1,0 +1,34 @@
+<style id="ax-eventreg-css">
+.ax-er{cursor:pointer}
+.ax-er:focus-visible{outline:2px solid #c23714;outline-offset:2px;border-radius:3px}
+</style>
+<script>
+/* ---- EVENT PAGE: REGISTER BUTTONS ----
+   Registration is run by the organiser (SEES, for AWS), not on this site, so both
+   "Register for the Event" and "Register now" open their form in a new tab. The
+   pill is the painted box wrapping the label; the whole pill is the target. */
+(function () {
+  var URL = 'https://registrations.seesevent.com/#/aws-pspcrt';
+  function txt(e) { return (e.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase(); }
+  function go(e) { e.preventDefault(); e.stopImmediatePropagation(); window.open(URL, '_blank', 'noopener'); }
+  function run() {
+    [].forEach.call(document.querySelectorAll('.g-t'), function (t) {
+      if (!/^register (for the event|now)$/.test(txt(t))) return;
+      /* the label sits in a clip box inside the painted pill: take the outermost
+         box that still holds nothing but this label */
+      var el = t;
+      while (el.parentElement && /g-b/.test(el.parentElement.className) &&
+             txt(el.parentElement) === txt(t)) el = el.parentElement;
+      [el, t].forEach(function (x) { x.dataset.cta = '1'; x.dataset.axOwned = '1'; x.dataset.axTo = URL; });
+      el.classList.add('ax-er');
+      el.setAttribute('role', 'link');
+      el.setAttribute('tabindex', '0');
+      el.setAttribute('aria-label', t.textContent.trim() + ' (opens the organiser’s registration page)');
+      el.addEventListener('click', go, true);
+      el.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') go(e); });
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
+  else run();
+})();
+</script>

@@ -99,6 +99,7 @@ SCOPED = [
     ('who-we-are/leadership/index.html', 'ax-leadscroll-css', '_leadscroll.html'),
     ('index.html',                       'ax-homecta-css',  '_homecta.html'),
     ('services/grow-with-sap/index.html', 'ax-weektabs-css', '_weektabs.html'),
+    ('insights/events/the-future-of-public-sector-transformation/index.html', 'ax-eventreg-css', '_eventreg.html'),
     ('products/axiom/index.html',        'ax-varswap-css', '_varswap.html'),
     ('services/google-cloud/index.html', 'ax-varswap-css', '_varswap.html'),
     ('alliances/google-cloud-partner/index.html', 'ax-varswap-css', '_varswap.html'),
