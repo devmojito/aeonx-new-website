@@ -127,6 +127,15 @@ def fix_typos(s):
     return s
 
 
+def cover_in_body(thumb, body):
+    """True when the cover is also an image inside the article. The AWS blogs use
+    their architecture diagram as both, so the page showed it twice (the authors
+    asked for the top copy to go). Storage prefixes each upload with a 12-hex
+    hash, so the cover and the inline copy match on the name after it."""
+    name = lambda u: re.sub(r'^[0-9a-f]{12}-', '', os.path.basename(u.split('?')[0]))
+    return bool(thumb) and name(thumb) in {name(u) for u in re.findall(r'<img[^>]+src="([^"]+)"', body)}
+
+
 def build_post(p, top, footer, bottom):
     title = fix_typos(re.sub(r'\s*[-|]\s*AeonX Digital\s*$', '', p['title'] or p['slug']))
     cat = LABEL.get(p['category'], p['category'].replace('-', ' ').title())
@@ -147,11 +156,13 @@ def build_post(p, top, footer, bottom):
         '<div class="ax-post__eyebrow">%s</div>\n'
         '<h1 class="ax-post__title">%s</h1>\n'
         '<div class="ax-post__meta">%s &middot; %s</div>\n'
-        '<img class="ax-post__hero%s" src="%s" alt="%s">\n'
+        '%s'
         '<div class="ax-post__body">\n%s\n</div>\n'
         '<a class="ax-post__back" href="/insights/blog/">&larr; All insights</a>\n'
         '</div>\n</main>'
-    ) % (esc(cat), esc(title), esc(date), esc(author), ph, esc(thumb), esc(title), body)
+    ) % (esc(cat), esc(title), esc(date), esc(author),
+         '' if cover_in_body(p['thumb'], body) else
+         '<img class="ax-post__hero%s" src="%s" alt="%s">\n' % (ph, esc(thumb), esc(title)), body)
 
     return head + '\n' + art + '\n' + footer + '\n' + bottom
 
